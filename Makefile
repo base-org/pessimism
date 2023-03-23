@@ -35,5 +35,6 @@ lint:
 
 	@golangci-lint run
 
-# Returns Makefile variable value provided a variable name (i.e, get-var-RED) 
+# Returns Makefile variable value provided a variable name (i.e, get-var-RED)
+# This is done to ensure that version specific variables are only declared once and not duplicated within buildkite.
 get-var-%  : ; @echo $($*)
