@@ -1,5 +1,6 @@
 # pessimism
 __Because you can't always be optimistic__
+_Pessimism_ is a public good monitoring service for Optimism bedrock chains _(BASE, OP)_ to be continously assessed for real-time threats. 
 
 <!-- Badge row 1 - status -->
 
@@ -13,3 +14,5 @@ __Because you can't always be optimistic__
 
 [![GitHub pull requests by-label](https://img.shields.io/github/issues-pr-raw/base-org/pessimism)](https://github.com/base-org/pessimism/pulls)
 [![GitHub Issues](https://img.shields.io/github/issues-raw/base-org/pessimism.svg)](https://github.com/base-org/pessimism/issues)
+
+# TBD
