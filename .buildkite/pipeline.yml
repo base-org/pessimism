@@ -2,7 +2,7 @@ steps:
   - name: "Run Unit Tests"
     command: "make test"
 
-  - name: "Make Lint"
+  - name: "Run Go Lint"
     command: '
       eval $(make get-var-GET_LINT_CMD) &&
       make lint
