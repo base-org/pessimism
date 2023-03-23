@@ -1,4 +1,9 @@
 steps:
-  - name: ":golang:"
-    command: "echo \"I work\""
-    
+  - name: "Run Unit Tests"
+    command: "make test"
+
+  - name: "Make Lint"
+    command: '
+      eval $(make get-var-GET_LINT_CMD) &&
+      make lint
+    '

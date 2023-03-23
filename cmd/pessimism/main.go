@@ -3,5 +3,5 @@ package main
 import "log"
 
 func main() {
-	log.Println("TBD")
+	log.Println("I have yet to be implemented")
 }
