@@ -9,6 +9,12 @@ type TransitData struct {
 	Value interface{}
 }
 
+type TransitChannel = chan TransitData
+
+func NewTransitChannel() TransitChannel {
+	return make(chan TransitData)
+}
+
 type ComponentType int
 
 const (

@@ -6,9 +6,6 @@ import (
 	"github.com/base-org/pessimism/internal/conduit/models"
 )
 
-type OracleReadRoutine = func(chan models.TransitData)
-type OracleConfigureRoutine = func(lo *LiveOracle) error
-
 type OracleType = string
 
 const (
@@ -18,14 +15,9 @@ const (
 
 type ConnectionType = int
 
-const (
-	Poll   ConnectionType = 0
-	Stream ConnectionType = 1
-)
-
-type Oracle interface {
-	// TODO - Implement me
-	Type() OracleType
+type OracleDefinition interface {
+	ConfigureRoutine() error
+	ReadRoutine(context.Context, chan models.TransitData) error
 }
 
 type LiveOracleOption = func(*LiveOracle)
@@ -34,30 +26,28 @@ type LiveOracle struct {
 	ct  ConnectionType
 	ctx context.Context
 
-	configureRoutine OracleConfigureRoutine
-	readRoutine      OracleReadRoutine
-	router           *OutputRouter
+	od OracleDefinition
 
-	InnerState map[string]interface{}
+	Routing
 }
 
-func (lo *LiveOracle) Type() OracleType {
-	return Live
+func (lo *LiveOracle) Type() models.ComponentType {
+	return models.Oracle
 }
 
-func NewLiveOracle(ctx context.Context, ot OracleType, orr OracleReadRoutine, ocr OracleConfigureRoutine, opts ...LiveOracleOption) Oracle {
+func NewOracle(ctx context.Context, ot OracleType, od OracleDefinition, opts ...LiveOracleOption) PipelineComponent {
 	if ot == Live {
 		lo := &LiveOracle{
-			readRoutine:      orr,
-			configureRoutine: ocr,
-			router:           NewOutputRouter(),
+			ctx:     ctx,
+			od:      od,
+			Routing: Routing{router: NewOutputRouter()},
 		}
 
 		for _, opt := range opts {
 			opt(lo)
 		}
 
-		ocr(lo)
+		od.ConfigureRoutine()
 		return lo
 	}
 
@@ -69,12 +59,16 @@ func (lo *LiveOracle) EventLoop() error {
 
 	oracleChannel := make(chan models.TransitData)
 
+	go lo.od.ReadRoutine(lo.ctx, oracleChannel)
+
 	for {
 		select {
 		case registerData := <-oracleChannel:
 			lo.router.TransitOutput(registerData)
 
 		case <-lo.ctx.Done():
+			close(oracleChannel)
+
 			return nil
 		}
 

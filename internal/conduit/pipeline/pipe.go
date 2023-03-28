@@ -11,7 +11,7 @@ type PipeOption func(*Pipe)
 
 func WithRouter(router *OutputRouter) PipeOption {
 	return func(p *Pipe) {
-		p.router = router
+		p.Routing.router = router
 	}
 }
 
@@ -23,7 +23,8 @@ type Pipe struct {
 	tform TranformFunc
 
 	inputChan chan models.TransitData
-	router    *OutputRouter
+
+	Routing
 }
 
 func NewPipe(ctx context.Context, tform TranformFunc, inputChan chan models.TransitData, opts ...PipeOption) PipelineComponent {
@@ -33,7 +34,7 @@ func NewPipe(ctx context.Context, tform TranformFunc, inputChan chan models.Tran
 		ctx:       ctx,
 		tform:     tform,
 		inputChan: inputChan,
-		router:    NewOutputRouter(),
+		Routing:   Routing{router: NewOutputRouter()},
 	}
 
 	for _, opt := range opts {

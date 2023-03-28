@@ -15,4 +15,6 @@ _Pessimism_ is a public good monitoring service for Optimism bedrock chains _(BA
 [![GitHub pull requests by-label](https://img.shields.io/github/issues-pr-raw/base-org/pessimism)](https://github.com/base-org/pessimism/pulls)
 [![GitHub Issues](https://img.shields.io/github/issues-raw/base-org/pessimism.svg)](https://github.com/base-org/pessimism/issues)
 
-# TBD
+## Setup
+1. Create local config file (`config.env`)
+    * `cp config.env.template config.env`
