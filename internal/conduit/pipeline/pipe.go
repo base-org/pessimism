@@ -43,6 +43,10 @@ func NewPipe(ctx context.Context, tform TranformFunc, inputChan chan models.Tran
 	return pipe
 }
 
+func (p *Pipe) Type() models.ComponentType {
+	return models.Pipe
+}
+
 func (p *Pipe) EventLoop() error {
 	for {
 

@@ -4,44 +4,43 @@ import (
 	"fmt"
 
 	"github.com/base-org/pessimism/internal/conduit/models"
-
-	id "github.com/google/uuid"
+	"github.com/rs/xid"
 )
 
 type RouterOption func(*OutputRouter) error
 
-func WithDirective(componentID id.UUID, outChan chan models.TransitData) RouterOption {
-	return func(oo *OutputRouter) error {
-		return oo.AddDirective(componentID, outChan)
+func WithDirective(componentID xid.ID, outChan chan models.TransitData) RouterOption {
+	return func(r *OutputRouter) error {
+		return r.AddDirective(componentID, outChan)
 	}
 }
 
 type OutputRouter struct {
-	outChans map[id.UUID]chan models.TransitData
+	outChans map[xid.ID]chan models.TransitData
 }
 
 func NewOutputRouter(opts ...RouterOption) *OutputRouter {
-	or := &OutputRouter{
-		make(map[id.UUID]chan models.TransitData),
+
+	router := &OutputRouter{
+		make(map[xid.ID]chan models.TransitData),
 	}
 
 	for _, opt := range opts {
-		opt(or)
+		opt(router)
 	}
 
-	return or
+	return router
 }
 
 func (router *OutputRouter) TransitOutput(data models.TransitData) {
 	// TODO - Consider introducing a fail safe timeout to ensure that freezing on clogged chanel buffers is recognized
 
 	for _, channel := range router.outChans {
-		// Write that data
 		channel <- data
 	}
 }
 
-func (router *OutputRouter) AddDirective(componentID id.UUID, outChan chan models.TransitData) error {
+func (router *OutputRouter) AddDirective(componentID xid.ID, outChan chan models.TransitData) error {
 	if _, found := router.outChans[componentID]; found {
 		return fmt.Errorf("%s already exists within component router mapping", componentID.String())
 	}
@@ -50,7 +49,7 @@ func (router *OutputRouter) AddDirective(componentID id.UUID, outChan chan model
 	return nil
 }
 
-func (router *OutputRouter) RemoveDirective(componentID id.UUID) error {
+func (router *OutputRouter) RemoveDirective(componentID xid.ID) error {
 	if _, found := router.outChans[componentID]; !found {
 		return fmt.Errorf("No key %s exists within component router mapping", componentID.String())
 	}

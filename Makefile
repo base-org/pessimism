@@ -10,6 +10,8 @@ GREEN = \033[0;32m
 BLUE = \033[0;34m
 COLOR_END = \033[0;39m
 
+TEST_LIMIT = 10s
+
 build-app:
 	@echo "$(BLUE)» building application binary... $(COLOR_END)"
 	@CGO_ENABLED=0 go build -a -tags netgo -o bin/$(APP_NAME) ./cmd/pessimism/
@@ -20,7 +22,7 @@ run-app:
 
 .PHONY: test
 test:
-	@ go test ./... -v
+	@ go test ./... -v -timeout $(TEST_LIMIT)
 
 .PHONY: lint
 lint:
