@@ -18,6 +18,6 @@ _Pessimism_ is a public good monitoring service that allows for Optimism bedrock
 [![GitHub Issues](https://img.shields.io/github/issues-raw/base-org/pessimism.svg)](https://github.com/base-org/pessimism/issues)
 
 **Warning:**
-Pessimism is currently experimental and very much in development. It means Pessimism is currently not secure nor stable, code will change and builds can break over the coming months. If you come across problems, it would help greatly to open issues so that we can fix them as quickly as possible. Furthermore, there is no active Coinbase hackerone bug bounty program for the Pessimism service.
+Pessimism is currently experimental and very much in development. It means Pessimism is currently not secure nor stable, so code will change and builds can break over the coming months. If you come across problems, it would help greatly to open issues so that we can fix them as quickly as possible. Furthermore, there is no active Coinbase HackerOne bug bounty program for the Pessimism service.
 
 # TBD
