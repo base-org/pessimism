@@ -4,69 +4,73 @@ import (
 	"context"
 
 	"github.com/base-org/pessimism/internal/conduit/models"
+	"github.com/base-org/pessimism/internal/config"
 )
 
 type OracleType = string
 
 const (
-	Backtest OracleType = "backtest"
-	Live     OracleType = "live"
+	BacktestOracle OracleType = "backtest"
+	LiveOracle     OracleType = "live"
 )
 
-type ConnectionType = int
-
+// OracleDefinition provides a plug & play
 type OracleDefinition interface {
 	ConfigureRoutine() error
-	ReadRoutine(context.Context, chan models.TransitData) error
+	ReadRoutine(ctx context.Context, componentChan chan models.TransitData) error
 }
 
-type LiveOracleOption = func(*LiveOracle)
+type OracleConstructor = func(ctx context.Context, ot OracleType, cfg *config.OracleConfig) PipelineComponent
 
-type LiveOracle struct {
-	ct  ConnectionType
+type OracleOption = func(*Oracle)
+
+type Oracle struct {
 	ctx context.Context
 
 	od OracleDefinition
 
-	Routing
+	*OutputRouter
 }
 
-func (lo *LiveOracle) Type() models.ComponentType {
+func (o *Oracle) Type() models.ComponentType {
 	return models.Oracle
 }
 
-func NewOracle(ctx context.Context, ot OracleType, od OracleDefinition, opts ...LiveOracleOption) PipelineComponent {
-	if ot == Live {
-		lo := &LiveOracle{
-			ctx:     ctx,
-			od:      od,
-			Routing: Routing{router: NewOutputRouter()},
+func NewOracle(ctx context.Context, ot OracleType, od OracleDefinition, opts ...OracleOption) PipelineComponent {
+	if ot == LiveOracle {
+		o := &Oracle{
+			ctx:          ctx,
+			od:           od,
+			OutputRouter: NewOutputRouter(),
 		}
 
 		for _, opt := range opts {
-			opt(lo)
+			opt(o)
 		}
 
 		od.ConfigureRoutine()
-		return lo
+		return o
+
+	} else if ot == BacktestOracle {
+
 	}
 
 	return nil
 
 }
 
-func (lo *LiveOracle) EventLoop() error {
+func (o *Oracle) EventLoop() error {
 
 	oracleChannel := make(chan models.TransitData)
 
-	go lo.od.ReadRoutine(lo.ctx, oracleChannel)
+	go o.od.ReadRoutine(o.ctx, oracleChannel)
 
 	for {
 		select {
 		case registerData := <-oracleChannel:
-			lo.router.TransitOutput(registerData)
+			o.OutputRouter.TransitOutput(registerData)
 
-		case <-lo.ctx.Done():
+		case <-o.ctx.Done():
 			close(oracleChannel)
 
 			return nil

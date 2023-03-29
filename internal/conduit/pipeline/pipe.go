@@ -11,30 +11,34 @@ type PipeOption func(*Pipe)
 
 func WithRouter(router *OutputRouter) PipeOption {
 	return func(p *Pipe) {
-		p.Routing.router = router
+		p.OutputRouter = router
 	}
 }
 
-// TransformFunc ...
+// TransformFunc ... Generic transformation function
 type TranformFunc func(data models.TransitData) (*models.TransitData, error)
+
+// Pipe ... component used to represent any arbitrary computation; pipes must always read from an existing component
+// E.G, (ORACLE || CONVEYOR || PIPE) --> PIPE
 
 type Pipe struct {
 	ctx   context.Context
 	tform TranformFunc
 
+	// Channel that a pipe is subscribed to for new data events
 	inputChan chan models.TransitData
 
-	Routing
+	*OutputRouter
 }
 
 func NewPipe(ctx context.Context, tform TranformFunc, inputChan chan models.TransitData, opts ...PipeOption) PipelineComponent {
 	log.Print("Constructing new component pipe ")
 
 	pipe := &Pipe{
-		ctx:       ctx,
-		tform:     tform,
-		inputChan: inputChan,
-		Routing:   Routing{router: NewOutputRouter()},
+		ctx:          ctx,
+		tform:        tform,
+		inputChan:    inputChan,
+		OutputRouter: NewOutputRouter(),
 	}
 
 	for _, opt := range opts {
@@ -65,7 +69,7 @@ func (p *Pipe) EventLoop() error {
 			}
 
 			log.Printf("Transiting output")
-			p.router.TransitOutput(*outputData)
+			p.OutputRouter.TransitOutput(*outputData)
 
 		// Manager is telling us to shutdown
 		case <-p.ctx.Done():

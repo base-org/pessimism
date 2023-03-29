@@ -1,11 +1,15 @@
 package models
 
-import "time"
+import (
+	"time"
+)
+
+type RegisterType string
 
 type TransitData struct {
 	Timestamp time.Time
 
-	Type  string
+	Type  RegisterType
 	Value interface{}
 }
 

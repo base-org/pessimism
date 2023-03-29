@@ -33,8 +33,7 @@ func NewOutputRouter(opts ...RouterOption) *OutputRouter {
 }
 
 func (router *OutputRouter) TransitOutput(data models.TransitData) {
-	// TODO - Consider introducing a fail safe timeout to ensure that freezing on clogged chanel buffers is recognized
-
+	// NOTE - Consider introducing a fail safe timeout to ensure that freezing on clogged chanel buffers is recognized
 	for _, channel := range router.outChans {
 		channel <- data
 	}

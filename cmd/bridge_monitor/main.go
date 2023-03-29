@@ -23,12 +23,22 @@ func main() {
 	start = new(int)
 	*start = 0
 
-	gethConfig := &registry.GethBlockOracleConfig{
-		EthRpc:      cfg.L1RpcEndpoint,
+	l1OracleCfg := &config.OracleConfig{
+		RpcEndpoint: cfg.L1RpcEndpoint,
 		StartHeight: start,
 		EndHeight:   nil}
 
-	l1OracleDef := registry.NewGethBlockOracle(gethConfig)
+	register, err := registry.GetRegister(registry.GETH_BLOCK)
+	if err != nil {
+		panic(err)
+	}
+
+	init, success := register.ComponentConstructor.(pipeline.OracleConstructor)
+	if !success {
+		panic("Could not read constructor value")
+	}
+
+	l1Oracle := init(appCtx, pipeline.LiveOracle, l1OracleCfg)
 
 	id := xid.New()
 	outChan := make(chan models.TransitData)
@@ -36,14 +46,13 @@ func main() {
 	router := pipeline.NewOutputRouter()
 	router.AddDirective(id, outChan)
 
-	l1BlockOracle := pipeline.NewOracle(appCtx, pipeline.Live, l1OracleDef)
-	l1BlockOracle.AddDirective(id, outChan)
+	l1Oracle.AddDirective(id, outChan)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
 	go func() {
-		if err := l1BlockOracle.EventLoop(); err != nil {
+		if err := l1Oracle.EventLoop(); err != nil {
 			log.Printf("Error recieved from oracle event loop %e", err)
 		}
 		return

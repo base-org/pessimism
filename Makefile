@@ -27,7 +27,7 @@ test:
 .PHONY: lint
 lint:
 	@echo "$(GREEN) Linting repository Go code...$(COLOR_END)"
-	@if ! command -v golangc-lint &> /dev/null; \
+	@if ! command -v golangci-lint &> /dev/null; \
 	then \
     	echo "golangci-lint command could not be found...."; \
 		echo "\nTo install, please run $(GREEN)  $(GET_LINT_CMD) $(COLOR_END)"; \

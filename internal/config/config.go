@@ -12,11 +12,20 @@ import (
 
 type FilePath string
 
+// Config ... Application level configuration defined by `FilePath` value
 type Config struct {
 	L1RpcEndpoint string
 	L2RpcEndpoint string
 }
 
+// OracleConfig ... Configuration passed through to an oracle component constructor
+type OracleConfig struct {
+	RpcEndpoint string
+	StartHeight *int
+	EndHeight   *int
+}
+
+// NewConfig ... Initializer
 func NewConfig(fileName FilePath) *Config {
 
 	if err := godotenv.Load(string(fileName)); err != nil {

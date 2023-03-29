@@ -13,15 +13,3 @@ type PipelineComponent interface {
 	EventLoop() error
 	Type() models.ComponentType
 }
-
-type Routing struct {
-	router *OutputRouter
-}
-
-func (r *Routing) AddDirective(id xid.ID, outChan chan models.TransitData) error {
-	return r.router.AddDirective(id, outChan)
-}
-
-func (r *Routing) RemoveDirective(id xid.ID) error {
-	return r.router.RemoveDirective(id)
-}
