@@ -1,5 +1,6 @@
 # pessimism
 __Because you can't always be optimistic__
+
 _Pessimism_ is a public good monitoring service for Optimism bedrock chains _(BASE, OP)_ to be continously assessed for real-time threats. 
 
 <!-- Badge row 1 - status -->
@@ -18,3 +19,5 @@ _Pessimism_ is a public good monitoring service for Optimism bedrock chains _(BA
 ## Setup
 1. Create local config file (`config.env`)
     * `cp config.env.template config.env`
+
+# TBD
