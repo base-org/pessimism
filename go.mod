@@ -5,7 +5,6 @@ go 1.19
 require (
 	github.com/ethereum/go-ethereum v1.11.4
 	github.com/joho/godotenv v1.5.1
-	github.com/rs/xid v1.4.0
 	github.com/stretchr/testify v1.8.2
 )
 
