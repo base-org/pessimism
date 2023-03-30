@@ -8,7 +8,7 @@ import (
 
 const (
 	alreadyExistsErr = "%d already exists within component router mapping"
-	notFoundErr      = "No key %d exists within component router mapping"
+	notFoundErr      = "no key %d exists within component router mapping"
 )
 
 type RouterOption func(*OutputRouter) error
@@ -24,17 +24,18 @@ type OutputRouter struct {
 }
 
 // NewOutputRouter ... Initializer
-func NewOutputRouter(opts ...RouterOption) *OutputRouter {
-
+func NewOutputRouter(opts ...RouterOption) (*OutputRouter, error) {
 	router := &OutputRouter{
 		make(map[int]chan models.TransitData),
 	}
 
 	for _, opt := range opts {
-		opt(router)
+		if err := opt(router); err != nil {
+			return nil, err
+		}
 	}
 
-	return router
+	return router, nil
 }
 
 // TransitOutput ... Sends single piece of transitData to all innner mapping value channels
@@ -55,7 +56,6 @@ func (router *OutputRouter) TransitOutputs(dataSlice []models.TransitData) {
 
 // AddDirective ... Inserts a new output directive given an ID and channel; fail on key collision
 func (router *OutputRouter) AddDirective(componentID int, outChan chan models.TransitData) error {
-
 	if _, found := router.outChans[componentID]; found {
 		return fmt.Errorf(alreadyExistsErr, componentID)
 	}

@@ -23,7 +23,8 @@ func Test_Add_Remove_Directive(t *testing.T) {
 			description: "When multiple directives are passed to AddDirective function, they should successfully be added to the router mapping",
 
 			constructionLogic: func() *OutputRouter {
-				return NewOutputRouter()
+				router, _ := NewOutputRouter()
+				return router
 			},
 
 			testLogic: func(t *testing.T, router *OutputRouter) {
@@ -47,7 +48,7 @@ func Test_Add_Remove_Directive(t *testing.T) {
 				id := 0x420
 				outChan := make(chan models.TransitData)
 
-				router := NewOutputRouter()
+				router, _ := NewOutputRouter()
 				_ = router.AddDirective(id, outChan)
 				return router
 			},
@@ -69,7 +70,7 @@ func Test_Add_Remove_Directive(t *testing.T) {
 				id := 0x420
 				outChan := make(chan models.TransitData)
 
-				router := NewOutputRouter()
+				router, _ := NewOutputRouter()
 				_ = router.AddDirective(id, outChan)
 				return router
 			},
@@ -91,7 +92,7 @@ func Test_Add_Remove_Directive(t *testing.T) {
 				id := 0x420
 				outChan := make(chan models.TransitData)
 
-				router := NewOutputRouter()
+				router, _ := NewOutputRouter()
 				_ = router.AddDirective(id, outChan)
 				return router
 			},
@@ -116,7 +117,7 @@ func Test_Add_Remove_Directive(t *testing.T) {
 }
 
 func Test_Transit_Output(t *testing.T) {
-	testRouter := NewOutputRouter()
+	testRouter, _ := NewOutputRouter()
 
 	var directives = []struct {
 		channel chan models.TransitData
@@ -141,7 +142,8 @@ func Test_Transit_Output(t *testing.T) {
 	}
 
 	for _, directive := range directives {
-		testRouter.AddDirective(directive.id, directive.channel)
+		err := testRouter.AddDirective(directive.id, directive.channel)
+		assert.NoError(t, err, "Received error when trying to add directive")
 	}
 
 	expectedOutput := models.TransitData{

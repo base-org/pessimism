@@ -12,6 +12,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
+const (
+	outChanID   = 0x420
+	interChanID = 0x42
+)
+
 func main() {
 	/*
 		This a simple experimental POC showcasing an implicit CONTRACT_CREATE_TX register pipeline
@@ -28,23 +33,26 @@ func main() {
 
 	cfg := config.NewConfig("config.env")
 	l1OracleCfg := &config.OracleConfig{
-		RpcEndpoint: cfg.L1RpcEndpoint,
+		RPCEndpoint: cfg.L1RpcEndpoint,
 		StartHeight: nil,
 		EndHeight:   nil}
 
 	// 1. Configure blackhole tx pipe component
-	createRegister, err := registry.GetRegister(registry.CONTRACT_CREATE_TX)
+	createRegister, err := registry.GetRegister(registry.ContractCreateTX)
 	if err != nil {
 		panic(err)
 	}
 
 	initPipe, success := createRegister.ComponentConstructor.(pipeline.PipeConstructorFunc)
+	if !success {
+		panic("Could not read component constructor Pipe constructor type")
+	}
 
 	inputChan := make(chan models.TransitData)
 
 	createTxPipe := initPipe(appCtx, inputChan)
 
-	register, err := registry.GetRegister(registry.GETH_BLOCK)
+	register, err := registry.GetRegister(registry.GethBlock)
 	if err != nil {
 		panic(err)
 	}
@@ -55,27 +63,33 @@ func main() {
 	}
 
 	go func() {
-		if err := createTxPipe.EventLoop(); err != nil {
+		if routineErr := createTxPipe.EventLoop(); routineErr != nil {
 			log.Printf("Error recieved from oracle event loop %e", err)
 		}
-		return
 	}()
 
-	l1Oracle := init(appCtx, pipeline.LiveOracle, l1OracleCfg)
+	l1Oracle, err := init(appCtx, pipeline.LiveOracle, l1OracleCfg)
+	if err != nil {
+		panic(err)
+	}
 
-	l1Oracle.AddDirective(0x42, inputChan)
+	if err := l1Oracle.AddDirective(interChanID, inputChan); err != nil {
+		panic(err)
+	}
 
 	outputChan := make(chan models.TransitData)
-	createTxPipe.AddDirective(0x420, outputChan)
+
+	if err := createTxPipe.AddDirective(outChanID, outputChan); err != nil {
+		panic(err)
+	}
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
 	go func() {
-		if err := l1Oracle.EventLoop(); err != nil {
+		if routineErr := l1Oracle.EventLoop(); routineErr != nil {
 			log.Printf("Error recieved from oracle event loop %e", err)
 		}
-		return
 	}()
 
 	for td := range outputChan {

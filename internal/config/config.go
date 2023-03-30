@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"log"
-	"strconv"
 
 	"github.com/joho/godotenv"
 
@@ -20,14 +19,13 @@ type Config struct {
 
 // OracleConfig ... Configuration passed through to an oracle component constructor
 type OracleConfig struct {
-	RpcEndpoint string
+	RPCEndpoint string
 	StartHeight *int
 	EndHeight   *int
 }
 
 // NewConfig ... Initializer
 func NewConfig(fileName FilePath) *Config {
-
 	if err := godotenv.Load(string(fileName)); err != nil {
 		log.Printf("Config file not found for file name: %s", fileName)
 		panic(err)
@@ -50,13 +48,13 @@ func getEnv(name string) string {
 	return envVar
 }
 
-func convertToInt(str string) int {
-	intRep, err := strconv.Atoi(str)
+// func convertToInt(str string) int {
+// 	intRep, err := strconv.Atoi(str)
 
-	if err != nil {
-		panic(err)
-	}
+// 	if err != nil {
+// 		panic(err)
+// 	}
 
-	return intRep
+// 	return intRep
 
-}
+// }

@@ -1,3 +1,4 @@
+// noinspection
 package registry
 
 import (
@@ -7,25 +8,25 @@ import (
 )
 
 const (
-	GETH_BLOCK         models.RegisterType = "GETH_BLOCK"
-	CONTRACT_CREATE_TX models.RegisterType = "CONTRACT_CREATE_TX"
+	GethBlock        models.RegisterType = "GETH_BLOCK"
+	ContractCreateTX models.RegisterType = "CONTRACT_CREATE_TX"
 )
 
 // TODO - Add dependency inference logic
 
 var (
-	geth_block_register = &DataRegister{
-		DataType:             GETH_BLOCK,
+	gethBlockReg = &DataRegister{
+		DataType:             GethBlock,
 		ComponentType:        models.Oracle,
 		ComponentConstructor: NewGethBlockOracle,
 		Dependencies:         make([]*DataRegister, 0),
 	}
 
-	contract_create_tx = &DataRegister{
-		DataType:             CONTRACT_CREATE_TX,
+	contractCreateTXReg = &DataRegister{
+		DataType:             ContractCreateTX,
 		ComponentType:        models.Pipe,
 		ComponentConstructor: NewCreateContractTxPipe,
-		Dependencies:         []*DataRegister{geth_block_register},
+		Dependencies:         []*DataRegister{gethBlockReg},
 	}
 )
 
@@ -38,16 +39,14 @@ type DataRegister struct {
 }
 
 func GetRegister(rt models.RegisterType) (*DataRegister, error) {
-
 	switch rt {
-	case GETH_BLOCK:
-		return geth_block_register, nil
+	case GethBlock:
+		return gethBlockReg, nil
 
-	case CONTRACT_CREATE_TX:
-		return contract_create_tx, nil
+	case ContractCreateTX:
+		return contractCreateTXReg, nil
 
 	default:
-		return nil, fmt.Errorf("No register could be found for type: %s", rt)
+		return nil, fmt.Errorf("no register could be found for type: %s", rt)
 	}
-
 }

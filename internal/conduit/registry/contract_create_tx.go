@@ -12,7 +12,7 @@ import (
 func extractContractCreateTxs(td models.TransitData) ([]models.TransitData, error) {
 	asBlock, success := td.Value.(types.Block)
 	if !success {
-		return []models.TransitData{}, fmt.Errorf("Could not convert to block")
+		return []models.TransitData{}, fmt.Errorf("could not convert to block")
 	}
 
 	nilTxs := make([]models.TransitData, 0)
@@ -21,7 +21,7 @@ func extractContractCreateTxs(td models.TransitData) ([]models.TransitData, erro
 		if tx.To() == nil {
 			nilTxs = append(nilTxs, models.TransitData{
 				Timestamp: td.Timestamp,
-				Type:      CONTRACT_CREATE_TX,
+				Type:      ContractCreateTX,
 				Value:     tx,
 			})
 		}
@@ -30,6 +30,7 @@ func extractContractCreateTxs(td models.TransitData) ([]models.TransitData, erro
 	return nilTxs, nil
 }
 
-func NewCreateContractTxPipe(ctx context.Context, inputChan chan models.TransitData) pipeline.PipelineComponent {
+func NewCreateContractTxPipe(ctx context.Context,
+	inputChan chan models.TransitData) (pipeline.Component, error) {
 	return pipeline.NewPipe(ctx, extractContractCreateTxs, inputChan)
 }

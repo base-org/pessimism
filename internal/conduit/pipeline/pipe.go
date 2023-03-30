@@ -15,7 +15,7 @@ func WithRouter(router *OutputRouter) PipeOption {
 	}
 }
 
-type PipeConstructorFunc = func(ctx context.Context, inputChan chan models.TransitData) PipelineComponent
+type PipeConstructorFunc = func(ctx context.Context, inputChan chan models.TransitData) Component
 
 // TransformFunc ... Generic transformation function
 type TranformFunc func(data models.TransitData) ([]models.TransitData, error)
@@ -33,21 +33,27 @@ type Pipe struct {
 	*OutputRouter
 }
 
-func NewPipe(ctx context.Context, tform TranformFunc, inputChan chan models.TransitData, opts ...PipeOption) PipelineComponent {
+func NewPipe(ctx context.Context, tform TranformFunc,
+	inputChan chan models.TransitData, opts ...PipeOption) (Component, error) {
 	log.Print("Constructing new component pipe ")
+
+	router, err := NewOutputRouter()
+	if err != nil {
+		return nil, err
+	}
 
 	pipe := &Pipe{
 		ctx:          ctx,
 		tform:        tform,
 		inputChan:    inputChan,
-		OutputRouter: NewOutputRouter(),
+		OutputRouter: router,
 	}
 
 	for _, opt := range opts {
 		opt(pipe)
 	}
 
-	return pipe
+	return pipe, nil
 }
 
 func (p *Pipe) Type() models.ComponentType {
@@ -56,9 +62,7 @@ func (p *Pipe) Type() models.ComponentType {
 
 func (p *Pipe) EventLoop() error {
 	for {
-
 		select {
-
 		// Input has been fed to the component
 		case inputData := <-p.inputChan:
 			log.Printf("Got input data")
@@ -77,7 +81,5 @@ func (p *Pipe) EventLoop() error {
 		case <-p.ctx.Done():
 			return nil
 		}
-
 	}
-
 }

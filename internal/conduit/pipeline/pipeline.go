@@ -4,7 +4,7 @@ import (
 	"github.com/base-org/pessimism/internal/conduit/models"
 )
 
-type PipelineComponent interface {
+type Component interface {
 	AddDirective(id int, outChan chan models.TransitData) error
 	RemoveDirective(id int) error
 
