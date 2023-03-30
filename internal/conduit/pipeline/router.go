@@ -4,25 +4,30 @@ import (
 	"fmt"
 
 	"github.com/base-org/pessimism/internal/conduit/models"
-	"github.com/rs/xid"
+)
+
+const (
+	alreadyExistsErr = "%d already exists within component router mapping"
+	notFoundErr      = "No key %d exists within component router mapping"
 )
 
 type RouterOption func(*OutputRouter) error
 
-func WithDirective(componentID xid.ID, outChan chan models.TransitData) RouterOption {
+func WithDirective(componentID int, outChan chan models.TransitData) RouterOption {
 	return func(r *OutputRouter) error {
 		return r.AddDirective(componentID, outChan)
 	}
 }
 
 type OutputRouter struct {
-	outChans map[xid.ID]chan models.TransitData
+	outChans map[int]chan models.TransitData
 }
 
+// NewOutputRouter ... Initializer
 func NewOutputRouter(opts ...RouterOption) *OutputRouter {
 
 	router := &OutputRouter{
-		make(map[xid.ID]chan models.TransitData),
+		make(map[int]chan models.TransitData),
 	}
 
 	for _, opt := range opts {
@@ -32,6 +37,7 @@ func NewOutputRouter(opts ...RouterOption) *OutputRouter {
 	return router
 }
 
+// TransitOutput ... Sends single piece of transitData to all innner mapping value channels
 func (router *OutputRouter) TransitOutput(data models.TransitData) {
 	// NOTE - Consider introducing a fail safe timeout to ensure that freezing on clogged chanel buffers is recognized
 	for _, channel := range router.outChans {
@@ -39,18 +45,29 @@ func (router *OutputRouter) TransitOutput(data models.TransitData) {
 	}
 }
 
-func (router *OutputRouter) AddDirective(componentID xid.ID, outChan chan models.TransitData) error {
+// TransitOutput ... Sends slice of transitData to all innner mapping value channels
+func (router *OutputRouter) TransitOutputs(dataSlice []models.TransitData) {
+	// NOTE - Consider introducing a fail safe timeout to ensure that freezing on clogged chanel buffers is recognized
+	for _, data := range dataSlice {
+		router.TransitOutput(data)
+	}
+}
+
+// AddDirective ... Inserts a new output directive given an ID and channel; fail on key collision
+func (router *OutputRouter) AddDirective(componentID int, outChan chan models.TransitData) error {
+
 	if _, found := router.outChans[componentID]; found {
-		return fmt.Errorf("%s already exists within component router mapping", componentID.String())
+		return fmt.Errorf(alreadyExistsErr, componentID)
 	}
 
 	router.outChans[componentID] = outChan
 	return nil
 }
 
-func (router *OutputRouter) RemoveDirective(componentID xid.ID) error {
+// RemoveDirective ... Removes an output directive given an ID; fail if no key found
+func (router *OutputRouter) RemoveDirective(componentID int) error {
 	if _, found := router.outChans[componentID]; !found {
-		return fmt.Errorf("No key %s exists within component router mapping", componentID.String())
+		return fmt.Errorf(notFoundErr, componentID)
 	}
 
 	delete(router.outChans, componentID)

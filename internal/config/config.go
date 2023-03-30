@@ -39,6 +39,7 @@ func NewConfig(fileName FilePath) *Config {
 	}
 }
 
+// getEnv ... Reads env var from process environment, panics if not found
 func getEnv(name string) string {
 	envVar := os.Getenv(name)
 	// Not found

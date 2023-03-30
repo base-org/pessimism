@@ -15,10 +15,12 @@ func WithRouter(router *OutputRouter) PipeOption {
 	}
 }
 
-// TransformFunc ... Generic transformation function
-type TranformFunc func(data models.TransitData) (*models.TransitData, error)
+type PipeConstructorFunc = func(ctx context.Context, inputChan chan models.TransitData) PipelineComponent
 
-// Pipe ... component used to represent any arbitrary computation; pipes must always read from an existing component
+// TransformFunc ... Generic transformation function
+type TranformFunc func(data models.TransitData) ([]models.TransitData, error)
+
+// Pipe ... Component used to represent any arbitrary computation; pipes must always read from an existing component
 // E.G, (ORACLE || CONVEYOR || PIPE) --> PIPE
 
 type Pipe struct {
@@ -69,7 +71,7 @@ func (p *Pipe) EventLoop() error {
 			}
 
 			log.Printf("Transiting output")
-			p.OutputRouter.TransitOutput(*outputData)
+			p.OutputRouter.TransitOutputs(outputData)
 
 		// Manager is telling us to shutdown
 		case <-p.ctx.Done():

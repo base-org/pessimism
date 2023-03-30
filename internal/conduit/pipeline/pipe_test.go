@@ -14,11 +14,10 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/rs/xid"
 	"github.com/stretchr/testify/assert"
 )
 
-func tranformBlockToTxSlice(td models.TransitData) (*models.TransitData, error) {
+func tranformBlockToTxSlice(td models.TransitData) ([]models.TransitData, error) {
 
 	parsedBlock, success := td.Value.(types.Block)
 	if !success {
@@ -27,24 +26,24 @@ func tranformBlockToTxSlice(td models.TransitData) (*models.TransitData, error) 
 
 	txs := parsedBlock.Transactions()
 
-	tfTd := &models.TransitData{
+	tfTd := models.TransitData{
 		Timestamp: td.Timestamp,
 		Type:      "GETH.BLOCK.TRANSACTIONS",
 		Value:     txs,
 	}
 
 	log.Printf("%+v", tfTd)
-	return tfTd, nil
+	return []models.TransitData{tfTd}, nil
 }
 
 func Test_Pipe_OPBlockToTransactions(t *testing.T) {
-	ctx := context.Background()
-	defer ctx.Done()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	ts := time.Date(1969, time.April, 1, 4, 20, 0, 0, time.Local)
 
 	// Setup component dependencies
-	testID := xid.New()
+	testID := 0x666
 	outputChan := make(chan models.TransitData)
 	inputChan := make(chan models.TransitData)
 
@@ -103,4 +102,5 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 	for i := 0; i < len(actualTxs); i++ {
 		assert.Equal(t, actualTxs[i], expectedTxs[i])
 	}
+
 }
