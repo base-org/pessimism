@@ -28,7 +28,7 @@ type GethBlockODef struct {
 // NewGethBlockOracle ... Initializer
 func NewGethBlockOracle(ctx context.Context,
 	ot pipeline.OracleType, cfg *config.OracleConfig) (pipeline.Component, error) {
-	od := &GethBlockODef{cfg: cfg, currHeight: big.NewInt(int64(*cfg.StartHeight))}
+	od := &GethBlockODef{cfg: cfg, currHeight: nil}
 
 	return pipeline.NewOracle(ctx, ot, od)
 }

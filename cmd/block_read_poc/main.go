@@ -50,7 +50,10 @@ func main() {
 
 	inputChan := make(chan models.TransitData)
 
-	createTxPipe := initPipe(appCtx, inputChan)
+	createTxPipe, err := initPipe(appCtx, inputChan)
+	if err != nil {
+		panic(err)
+	}
 
 	register, err := registry.GetRegister(registry.GethBlock)
 	if err != nil {

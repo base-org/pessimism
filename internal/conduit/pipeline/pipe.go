@@ -15,8 +15,6 @@ func WithRouter(router *OutputRouter) PipeOption {
 	}
 }
 
-type PipeConstructorFunc = func(ctx context.Context, inputChan chan models.TransitData) Component
-
 // TransformFunc ... Generic transformation function
 type TranformFunc func(data models.TransitData) ([]models.TransitData, error)
 
@@ -33,6 +31,7 @@ type Pipe struct {
 	*OutputRouter
 }
 
+// NewPipe ... Initializer
 func NewPipe(ctx context.Context, tform TranformFunc,
 	inputChan chan models.TransitData, opts ...PipeOption) (Component, error) {
 	log.Print("Constructing new component pipe ")
@@ -56,10 +55,14 @@ func NewPipe(ctx context.Context, tform TranformFunc,
 	return pipe, nil
 }
 
+// Type ... Returns component type
 func (p *Pipe) Type() models.ComponentType {
 	return models.Pipe
 }
 
+// EventLoop ... Driver loop for component that actively subscribes
+// to an input channel where transit data is read, transformed, and transitte
+// to downstream components
 func (p *Pipe) EventLoop() error {
 	for {
 		select {

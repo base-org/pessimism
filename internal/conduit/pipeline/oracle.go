@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/base-org/pessimism/internal/conduit/models"
-	"github.com/base-org/pessimism/internal/config"
 )
 
 // OracleType ...
@@ -24,9 +23,6 @@ type OracleDefinition interface {
 	BackTestRoutine(ctx context.Context, componentChan chan models.TransitData) error
 	ReadRoutine(ctx context.Context, componentChan chan models.TransitData) error
 }
-
-// OracleConstructor ... Type declaration for what a registry oracle constructor function must adhere to
-type OracleConstructor = func(ctx context.Context, ot OracleType, cfg *config.OracleConfig) (Component, error)
 
 // OracleOption ...
 type OracleOption = func(*Oracle)
