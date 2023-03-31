@@ -67,7 +67,7 @@ func main() {
 
 	go func() {
 		if routineErr := createTxPipe.EventLoop(); routineErr != nil {
-			log.Printf("Error recieved from oracle event loop %e", err)
+			log.Printf("Error received from oracle event loop %e", err)
 		}
 	}()
 
@@ -91,7 +91,7 @@ func main() {
 
 	go func() {
 		if routineErr := l1Oracle.EventLoop(); routineErr != nil {
-			log.Printf("Error recieved from oracle event loop %e", err)
+			log.Printf("Error received from oracle event loop %e", err)
 		}
 	}()
 
