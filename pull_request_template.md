@@ -1,4 +1,4 @@
-<!-- If your PR fixes an open issue, use `Closes #999` to link your PR with the issue. #999 stands for the issue number you are fixing -->
+<!-- If your PR fixes an open issue, use `Closes #NNN` to link your PR with the issue, replacing `#NNN` with the issue number you are fixing -->
 
 ## Fixes Issue
 
