@@ -2,7 +2,7 @@
 
 ## Fixes Issue
 
-<!-- Example: Closes #61 -->
+<!-- Example: Closes #NNN -->
 
 ## Changes proposed
 
