@@ -10,7 +10,7 @@ type TransitData struct {
 	Timestamp time.Time
 
 	Type  RegisterType
-	Value interface{}
+	Value any
 }
 
 type TransitChannel = chan TransitData
