@@ -1,4 +1,3 @@
-// noinspection
 package registry
 
 import (
@@ -11,8 +10,6 @@ const (
 	GethBlock        models.RegisterType = "GETH_BLOCK"
 	ContractCreateTX models.RegisterType = "CONTRACT_CREATE_TX"
 )
-
-// TODO - Add dependency inference logic
 
 var (
 	gethBlockReg = &DataRegister{

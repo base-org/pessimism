@@ -6,11 +6,6 @@ import (
 	"github.com/base-org/pessimism/internal/conduit/models"
 )
 
-const (
-	alreadyExistsErr = "%d already exists within component router mapping"
-	notFoundErr      = "no key %d exists within component router mapping"
-)
-
 type RouterOption func(*OutputRouter) error
 
 func WithDirective(componentID int, outChan chan models.TransitData) RouterOption {
@@ -19,6 +14,8 @@ func WithDirective(componentID int, outChan chan models.TransitData) RouterOptio
 	}
 }
 
+// OutputRouter ... Used as a lookup for components to know where to send output data to
+// Adding and removing directives in the equivalent of adding an edge between two nodes using standard graph theory
 type OutputRouter struct {
 	outChans map[int]chan models.TransitData
 }
@@ -57,7 +54,7 @@ func (router *OutputRouter) TransitOutputs(dataSlice []models.TransitData) {
 // AddDirective ... Inserts a new output directive given an ID and channel; fail on key collision
 func (router *OutputRouter) AddDirective(componentID int, outChan chan models.TransitData) error {
 	if _, found := router.outChans[componentID]; found {
-		return fmt.Errorf(alreadyExistsErr, componentID)
+		return fmt.Errorf(dirAlreadyExistsErr, componentID)
 	}
 
 	router.outChans[componentID] = outChan
@@ -67,7 +64,7 @@ func (router *OutputRouter) AddDirective(componentID int, outChan chan models.Tr
 // RemoveDirective ... Removes an output directive given an ID; fail if no key found
 func (router *OutputRouter) RemoveDirective(componentID int) error {
 	if _, found := router.outChans[componentID]; !found {
-		return fmt.Errorf(notFoundErr, componentID)
+		return fmt.Errorf(dirNotFoundErr, componentID)
 	}
 
 	delete(router.outChans, componentID)

@@ -19,7 +19,7 @@ func WithRouter(router *OutputRouter) PipeOption {
 type TranformFunc func(data models.TransitData) ([]models.TransitData, error)
 
 // Pipe ... Component used to represent any arbitrary computation; pipes must always read from an existing component
-// E.G, (ORACLE || CONVEYOR || PIPE) --> PIPE
+// E.G, (ORACLE || CONVEYOR || PIPE) -> PIPE
 
 type Pipe struct {
 	ctx   context.Context

@@ -59,7 +59,7 @@ func Test_Add_Remove_Directive(t *testing.T) {
 				err := router.AddDirective(id, outChan)
 
 				assert.Error(t, err, "Ensuring that no error is generated when adding new directive")
-				assert.Equal(t, err.Error(), fmt.Sprintf(alreadyExistsErr, 0x420), "Ensuring that returned error is a not found type")
+				assert.Equal(t, err.Error(), fmt.Sprintf(dirAlreadyExistsErr, 0x420), "Ensuring that returned error is a not found type")
 			},
 		},
 		{
@@ -102,7 +102,7 @@ func Test_Add_Remove_Directive(t *testing.T) {
 				err := router.RemoveDirective(0x69)
 
 				assert.Error(t, err, "Ensuring that an error is thrown when trying to remove a non-existent directive")
-				assert.Equal(t, err.Error(), fmt.Sprintf(notFoundErr, 0x69))
+				assert.Equal(t, err.Error(), fmt.Sprintf(dirNotFoundErr, 0x69))
 			},
 		},
 	}

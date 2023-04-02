@@ -7,16 +7,6 @@ import (
 	"github.com/base-org/pessimism/internal/conduit/models"
 )
 
-// OracleType ...
-type OracleType = string
-
-const (
-	// BackTestOracle ... Represents an oracle used for backtesting some invariant
-	BacktestOracle OracleType = "backtest"
-	// LiveOracle ... Represents an oracle used for powering some live invariant
-	LiveOracle OracleType = "live"
-)
-
 // OracleDefinition ... Provides a generalized interface for developers to bind their own functionality to
 type OracleDefinition interface {
 	ConfigureRoutine() error

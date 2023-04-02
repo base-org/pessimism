@@ -1,7 +1,5 @@
 package pipeline
 
-// TODO - Clean up and better testing labels
-
 import (
 	"context"
 	"fmt"
