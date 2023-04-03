@@ -51,7 +51,7 @@ The best way to see a feature added, however, is to submit a pull request.
 
 * Ensure that your code is well-documented and meets the project's coding standards.
 
-* Provide a reference the issue you worked on and provide a brief description of the
+* Provide a reference to the issue you worked on and provide a brief description of the
   changes you made.
 
 * Submit your pull request!
