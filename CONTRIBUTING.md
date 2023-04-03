@@ -9,6 +9,16 @@ Coinbase projects.
 
 [code-of-conduct]: https://github.com/coinbase/code-of-conduct
 
+## Before You Start
+
+Ensure that you have read and understand the project's README file and the 
+contribution guidelines. Search the issues tracker to see if the issue you
+want to work on has already been reported or if someone is already working
+on it. If you find an existing issue that you would like to work on, request
+to be assigned to the issue. If you cannot find an existing issue that matches
+what you want to work on, create a new issue and wait for it to be assigned to 
+you before starting work on it.
+
 ## Bug Reports
 
 * Ensure your issue [has not already been reported][1]. It may already be fixed!
@@ -39,7 +49,22 @@ The best way to see a feature added, however, is to submit a pull request.
 * Add tests for your feature. You should be able to look at other tests for
   examples. If you're unsure, don't hesitate to [open an issue][1] and ask!
 
+* Ensure that your code is well-documented and meets the project's coding standards.
+
+* Provide a reference to the issue you worked on and provide a brief description of the
+  changes you made.
+
 * Submit your pull request!
+
+## Contributing to an Existing Issue
+
+If you have been assigned an issue, please confirm that the issue is still open 
+and has not already been resolved. If you have any questions about the issue,
+please ask on the issue thread before starting work on it. Once you are assigned
+to an issue, you can start working on a solution for it. Please note that it
+is important to communicate regularly with the project maintainers and update
+them on your progress. If you are no longer able to work on an issue, please 
+let us know as soon as possible so we can reassign it.
 
 ## Support Requests
 
