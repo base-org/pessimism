@@ -15,7 +15,7 @@ Ensure that you have read and understand the project's README file and the
 contribution guidelines. Search the issues tracker to see if the issue you
 want to work on has already been reported or if someone is already working
 on it. If you find an existing issue that you would like to work on, request
-to be assigned to the issue.If you cannot find an existing issue that matches
+to be assigned to the issue. If you cannot find an existing issue that matches
 what you want to work on, create a new issue and wait for it to be assigned to 
 you before starting work on it.
 
