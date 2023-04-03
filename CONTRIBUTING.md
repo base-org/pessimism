@@ -59,7 +59,7 @@ The best way to see a feature added, however, is to submit a pull request.
 ## Contributing to an Existing Issue
 
 If you have been assigned an issue, please confirm that the issue is still open 
-and has not already been resolved.If you have any questions about the issue,
+and has not already been resolved. If you have any questions about the issue,
 please ask on the issue thread before starting work on it. Once you are assigned
 to an issue, you can start working on a solution for it. Please note that it
 is important to communicate regularly with the project maintainers and update
