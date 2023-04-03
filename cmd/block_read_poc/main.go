@@ -5,10 +5,10 @@ import (
 	"log"
 	"sync"
 
-	"github.com/base-org/pessimism/internal/conduit/models"
-	"github.com/base-org/pessimism/internal/conduit/pipeline"
-	"github.com/base-org/pessimism/internal/conduit/registry"
 	"github.com/base-org/pessimism/internal/config"
+	"github.com/base-org/pessimism/internal/etl/pipeline"
+	"github.com/base-org/pessimism/internal/models"
+	"github.com/base-org/pessimism/internal/registry"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 

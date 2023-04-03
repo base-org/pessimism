@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/base-org/pessimism/internal/conduit/models"
+	"github.com/base-org/pessimism/internal/models"
 	"github.com/stretchr/testify/assert"
 )
 

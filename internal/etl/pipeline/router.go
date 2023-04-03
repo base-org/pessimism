@@ -3,7 +3,7 @@ package pipeline
 import (
 	"fmt"
 
-	"github.com/base-org/pessimism/internal/conduit/models"
+	"github.com/base-org/pessimism/internal/models"
 )
 
 type RouterOption func(*OutputRouter) error

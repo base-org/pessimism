@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/base-org/pessimism/internal/models"
 	"github.com/joho/godotenv"
 
 	"os"
@@ -15,6 +16,13 @@ type FilePath string
 type Config struct {
 	L1RpcEndpoint string
 	L2RpcEndpoint string
+}
+
+// RegisterPipelineConfig ... Configuration passed through to a register pipeline constructor
+type RegisterPipelineConfig struct {
+	DataType     models.RegisterType
+	PipelineType models.PipelineType
+	OracleCfg    *OracleConfig
 }
 
 // OracleConfig ... Configuration passed through to an oracle component constructor

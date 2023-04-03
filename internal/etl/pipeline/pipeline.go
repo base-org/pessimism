@@ -1,7 +1,7 @@
 package pipeline
 
 import (
-	"github.com/base-org/pessimism/internal/conduit/models"
+	"github.com/base-org/pessimism/internal/models"
 )
 
 // Component ... Generalized interface that all pipeline components must adhere to
@@ -12,5 +12,6 @@ type Component interface {
 
 	// EventLoop ... Component driver function; spun up as separate go routine
 	EventLoop() error
+	ID() int
 	Type() models.ComponentType
 }

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/base-org/pessimism/internal/conduit/models"
-	"github.com/base-org/pessimism/internal/conduit/pipeline"
+	"github.com/base-org/pessimism/internal/etl/pipeline"
+	"github.com/base-org/pessimism/internal/models"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 

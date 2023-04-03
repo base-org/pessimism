@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/base-org/pessimism/internal/conduit/models"
+	"github.com/base-org/pessimism/internal/models"
 )
 
 // OracleDefinition ... Provides a generalized interface for developers to bind their own functionality to

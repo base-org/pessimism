@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/base-org/pessimism/internal/conduit/models"
+	"github.com/base-org/pessimism/internal/models"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"

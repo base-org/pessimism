@@ -3,7 +3,7 @@ package registry
 import (
 	"fmt"
 
-	"github.com/base-org/pessimism/internal/conduit/models"
+	"github.com/base-org/pessimism/internal/models"
 )
 
 const (

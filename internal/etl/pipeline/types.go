@@ -3,8 +3,8 @@ package pipeline
 import (
 	"context"
 
-	"github.com/base-org/pessimism/internal/conduit/models"
 	"github.com/base-org/pessimism/internal/config"
+	"github.com/base-org/pessimism/internal/models"
 )
 
 // OracleType ...
@@ -15,6 +15,8 @@ const (
 	BacktestOracle OracleType = "backtest"
 	// LiveOracle ... Represents an oracle used for powering some live invariant
 	LiveOracle OracleType = "live"
+	// UnknownOracle ... Represents an unknown oracle type
+	UnknownOracle OracleType = "unknown"
 )
 
 // OutputRouter specific errors

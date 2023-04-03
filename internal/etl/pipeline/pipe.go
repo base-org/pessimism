@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/base-org/pessimism/internal/conduit/models"
+	"github.com/base-org/pessimism/internal/models"
 )
 
 type PipeOption func(*Pipe)
