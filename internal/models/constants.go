@@ -1,18 +1,18 @@
 package models
 
 // ComponentType
-type ComponentType int
+type ComponentType string
 
 const (
-	Oracle   ComponentType = 0
-	Pipe     ComponentType = 1
-	Conveyor ComponentType = 2
+	Oracle   ComponentType = "Oracle"
+	Pipe     ComponentType = "Pipe"
+	Conveyor ComponentType = "Conveyor"
 )
 
-type PipelineType = int
+type PipelineType = string
 
 const (
-	Backtest PipelineType = 0
-	LiveTest PipelineType = 1
-	MockTest PipelineType = 2
+	Backtest PipelineType = "Backtest"
+	Live     PipelineType = "Live"
+	MockTest PipelineType = "MockTest"
 )

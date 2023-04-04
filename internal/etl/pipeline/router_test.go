@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/base-org/pessimism/internal/models"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,22 +15,22 @@ func Test_Add_Remove_Directive(t *testing.T) {
 		name        string
 		description string
 
-		constructionLogic func() *OutputRouter
-		testLogic         func(*testing.T, *OutputRouter)
+		constructionLogic func() *router
+		testLogic         func(*testing.T, *router)
 	}{
 
 		{
 			name:        "Successful Multi Add Test",
 			description: "When multiple directives are passed to AddDirective function, they should successfully be added to the router mapping",
 
-			constructionLogic: func() *OutputRouter {
-				router, _ := NewOutputRouter()
+			constructionLogic: func() *router {
+				router, _ := newRouter()
 				return router
 			},
 
-			testLogic: func(t *testing.T, router *OutputRouter) {
+			testLogic: func(t *testing.T, router *router) {
 
-				for _, id := range []int{0x420, 0x42, 0x69, 0x666} {
+				for _, id := range []models.ComponentID{uuid.MustParse("0x420"), uuid.MustParse("0x42"), uuid.MustParse("0x69"), uuid.MustParse("0x666")} {
 					outChan := make(chan models.TransitData)
 					err := router.AddDirective(id, outChan)
 
@@ -44,17 +45,17 @@ func Test_Add_Remove_Directive(t *testing.T) {
 			name:        "Failed Add Test",
 			description: "When existing directive is passed to AddDirective function it should fail to be added to the router mapping",
 
-			constructionLogic: func() *OutputRouter {
-				id := 0x420
+			constructionLogic: func() *router {
+				id := uuid.MustParse("0x420")
 				outChan := make(chan models.TransitData)
 
-				router, _ := NewOutputRouter()
+				router, _ := newRouter()
 				_ = router.AddDirective(id, outChan)
 				return router
 			},
 
-			testLogic: func(t *testing.T, router *OutputRouter) {
-				id := 0x420
+			testLogic: func(t *testing.T, router *router) {
+				id := uuid.MustParse("0x420")
 				outChan := make(chan models.TransitData)
 				err := router.AddDirective(id, outChan)
 
@@ -66,40 +67,40 @@ func Test_Add_Remove_Directive(t *testing.T) {
 			name:        "Successful Remove Test",
 			description: "When existing directive is passed to RemoveDirective function, it should be removed from mapping",
 
-			constructionLogic: func() *OutputRouter {
-				id := 0x420
+			constructionLogic: func() *router {
+				id := uuid.MustParse("0x420")
 				outChan := make(chan models.TransitData)
 
-				router, _ := NewOutputRouter()
+				router, _ := newRouter()
 				_ = router.AddDirective(id, outChan)
 				return router
 			},
 
-			testLogic: func(t *testing.T, router *OutputRouter) {
+			testLogic: func(t *testing.T, router *router) {
 
-				err := router.RemoveDirective(0x420)
+				err := router.RemoveDirective(uuid.MustParse("0x420"))
 
 				assert.NoError(t, err, "Ensuring that no error is thrown when removing an existing directive")
 
-				_, exists := router.outChans[0x420]
+				_, exists := router.outChans[uuid.MustParse("0x420")]
 				assert.False(t, exists, "Ensuring that key is removed from mapping")
 			},
 		}, {
 			name:        "Failed Remove Test",
 			description: "When non-existing directive key is passed to RemoveDirective function, an error should be returned",
 
-			constructionLogic: func() *OutputRouter {
-				id := 0x420
+			constructionLogic: func() *router {
+				id := uuid.MustParse("0x420")
 				outChan := make(chan models.TransitData)
 
-				router, _ := NewOutputRouter()
+				router, _ := newRouter()
 				_ = router.AddDirective(id, outChan)
 				return router
 			},
 
-			testLogic: func(t *testing.T, router *OutputRouter) {
+			testLogic: func(t *testing.T, router *router) {
 
-				err := router.RemoveDirective(0x69)
+				err := router.RemoveDirective(uuid.MustParse("0x69"))
 
 				assert.Error(t, err, "Ensuring that an error is thrown when trying to remove a non-existent directive")
 				assert.Equal(t, err.Error(), fmt.Sprintf(dirNotFoundErr, 0x69))
@@ -117,27 +118,27 @@ func Test_Add_Remove_Directive(t *testing.T) {
 }
 
 func Test_Transit_Output(t *testing.T) {
-	testRouter, _ := NewOutputRouter()
+	testRouter, _ := newRouter()
 
 	var directives = []struct {
 		channel chan models.TransitData
-		id      int
+		id      models.ComponentID
 	}{
 		{
 			channel: make(chan models.TransitData, 1),
-			id:      0x420,
+			id:      uuid.MustParse("0x42"),
 		},
 		{
 			channel: make(chan models.TransitData, 1),
-			id:      0x42,
+			id:      uuid.MustParse("0x42"),
 		},
 		{
 			channel: make(chan models.TransitData, 1),
-			id:      0x69,
+			id:      uuid.MustParse("0x69"),
 		},
 		{
 			channel: make(chan models.TransitData, 1),
-			id:      0x666,
+			id:      uuid.MustParse("0x666"),
 		},
 	}
 
@@ -157,7 +158,7 @@ func Test_Transit_Output(t *testing.T) {
 	for _, directive := range directives {
 		actualOutput := <-directive.channel
 
-		assert.Equal(t, actualOutput, expectedOutput, "Ensuring transited data is actually returned on channels used by OutputRouter")
+		assert.Equal(t, actualOutput, expectedOutput, "Ensuring transited data is actually returned on channels used by Router")
 	}
 
 }

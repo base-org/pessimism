@@ -30,7 +30,6 @@ func extractContractCreateTxs(td models.TransitData) ([]models.TransitData, erro
 	return nilTxs, nil
 }
 
-func NewCreateContractTxPipe(ctx context.Context,
-	inputChan chan models.TransitData) (pipeline.Component, error) {
-	return pipeline.NewPipe(ctx, extractContractCreateTxs, inputChan)
+func NewCreateContractTxPipe(ctx context.Context) (pipeline.Component, error) {
+	return pipeline.NewPipe(ctx, extractContractCreateTxs)
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -41,18 +42,18 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 	ts := time.Date(1969, time.April, 1, 4, 20, 0, 0, time.Local)
 
 	// Setup component dependencies
-	testID := 0x666
-	outputChan := make(chan models.TransitData)
-	inputChan := make(chan models.TransitData)
+	testID := uuid.MustParse("0x666")
 
-	router, err := NewOutputRouter(
+	outputChan := make(chan models.TransitData)
+
+	router, err := newRouter(
 		WithDirective(testID, outputChan),
 	)
 
 	assert.NoError(t, err, "Ensuring router constructor returned no error")
 
 	// Construct test component
-	testPipe, err := NewPipe(ctx, tranformBlockToTxSlice, inputChan, WithRouter(router))
+	testPipe, err := NewPipe(ctx, tranformBlockToTxSlice, WithRouter(router))
 
 	assert.NoError(t, err, "Ensuring pipe constructor returned no error")
 
@@ -94,7 +95,9 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 
 	}()
 
-	inputChan <- inputData
+	entryChans := testPipe.EntryPoints()
+
+	entryChans[0] <- inputData
 
 	// Wait for pipe to transform block data into a transaction slice
 	wg.Wait()

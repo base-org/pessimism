@@ -3,71 +3,38 @@ package registry
 import (
 	"context"
 	"fmt"
-	"strconv"
+	"log"
+	"sync"
 
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/models"
 )
 
-func ToOracleType(pt models.PipelineType) (pipeline.OracleType, error) {
-	switch pt {
-	case models.Backtest:
-		return pipeline.BacktestOracle, nil
-
-	case models.LiveTest:
-		return pipeline.LiveOracle, nil
-
-	case models.MockTest:
-		return pipeline.UnknownOracle, fmt.Errorf("Conveyor component has yet to be implemented")
-
-	default:
-		return pipeline.UnknownOracle, fmt.Errorf("Unsupported type provided")
-
-	}
-}
-
 type RegisterPipeline struct {
 	ctx        context.Context
-	components pipeline.Component
+	components []pipeline.Component
 	dataType   models.RegisterType
-	pipeChans  []models.TransitChannel
 }
 
 func NewRegisterPipeline(ctx context.Context, cfg *config.RegisterPipelineConfig) (*RegisterPipeline, error) {
+	log.Printf("Constructing register pipeline for %s", cfg.DataType)
+
 	register, err := GetRegister(cfg.DataType)
 	if err != nil {
 		return nil, err
 	}
 
-	rp := &RegisterPipeline{pipeChans: make([]chan models.TransitData, 0)}
+	components := make([]pipeline.Component, 0)
 
-	lastComponent, err := rp.inferComponent(ctx, cfg, register)
-	if err != nil {
-		return nil, err
-	}
+	for _, register := range append([]*DataRegister{register}, register.Dependencies...) {
 
-	components := make(pipeline.Component, 0)
-
-	compID, err := strconv.Atoi(string(register.DataType))
-	if err != nil {
-		return nil, err
-	}
-
-	components[compID] = lastComponent
-
-	for _, depRegister := range register.Dependencies {
-
-		depComponent, err := rp.inferComponent(ctx, cfg, depRegister)
-		if err != nil {
-			return nil, err
-		}
-		compID, err := strconv.Atoi(string(register.DataType))
+		component, err := inferComponent(ctx, cfg, register)
 		if err != nil {
 			return nil, err
 		}
 
-		components[compID] = depComponent
+		components = append(components, component)
 	}
 
 	return &RegisterPipeline{
@@ -77,49 +44,75 @@ func NewRegisterPipeline(ctx context.Context, cfg *config.RegisterPipelineConfig
 	}, nil
 }
 
-func (rp *RegisterPipeline) RunPipeline() {
-	pipeIndex := 0
+func (rp *RegisterPipeline) RunPipeline(wg *sync.WaitGroup) error {
 
-	for compID, component := range rp.components {
+	for index, component := range rp.components {
 		if component.Type() == models.Pipe {
-			ch := rp.pipeChans[pipeIndex]
-			compID := append
+			// Assumptions
+			// 1 - Pipe component node always has a previous node in the DAG sequence
+			// If not an index out of bounds exception would occur
+
+			entryChan := component.EntryPoints()[0]
+
+			err := rp.components[index+1].AddDirective(component.ID(), entryChan)
+			if err != nil {
+
+			}
+
 		}
 
 	}
 
+	for _, component := range rp.components {
+		wg.Add(1)
+
+		go func(c pipeline.Component, wg *sync.WaitGroup) {
+			log.Printf("Starting event loop for component: %s", c)
+
+			defer wg.Done()
+
+			if err := c.EventLoop(); err != nil {
+				log.Printf("Got error from event loop: %s", err.Error())
+			}
+
+		}(component, wg)
+	}
+
+	return nil
+
 }
 
-func (rp *RegisterPipeline) inferComponent(ctx context.Context, cfg *config.RegisterPipelineConfig, register *DataRegister) (pipeline.Component, error) {
+func inferComponent(ctx context.Context, cfg *config.RegisterPipelineConfig, register *DataRegister) (pipeline.Component, error) {
+	log.Printf("Constructing %s component for register %s", register.ComponentType, register.DataType)
 
 	switch register.ComponentType {
 	case models.Oracle:
-		init, success := register.ComponentConstructor.(pipeline.OracleConstructor)
+		init, success := register.ComponentConstructor.(pipeline.OracleConstructorFunc)
 		if !success {
 			return nil, fmt.Errorf("Could not cast constructor to oracle constructor type")
 		}
 
-		ot, err := ToOracleType(cfg.PipelineType)
-		if err != nil {
-			return nil, err
-		}
-
 		// NOTE ... We assume at most 1 oracle per register pipeline
-		return init(ctx, ot, cfg.OracleCfg)
+		return init(ctx, cfg.PipelineType, cfg.OracleCfg)
 
 	case models.Pipe:
 		init, success := register.ComponentConstructor.(pipeline.PipeConstructorFunc)
 		if !success {
 			return nil, fmt.Errorf("Could not cast constructor to pipe constructor type")
 		}
-		ch := models.NewTransitChannel()
-		rp.pipeChans = append(rp.pipeChans, ch)
-		return init(ctx, ch)
+
+		return init(ctx)
 
 	case models.Conveyor:
 		return nil, fmt.Errorf("Conveyor component has yet to be implemented")
 
 	default:
-		return nil, fmt.Errorf("Unknown Component type provided")
+		return nil, fmt.Errorf("Unknown component type provided")
 	}
+}
+
+func (rp *RegisterPipeline) AddDirective(componentID models.ComponentID, outChan chan models.TransitData) error {
+	lastComponent := rp.components[0]
+	log.Printf("Adding directive for component %s %s", lastComponent.ID(), lastComponent.Type())
+	return lastComponent.AddDirective(componentID, outChan)
 }

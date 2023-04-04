@@ -6,24 +6,24 @@ import (
 	"github.com/base-org/pessimism/internal/models"
 )
 
-type RouterOption func(*OutputRouter) error
+type routerOption func(*router) error
 
-func WithDirective(componentID int, outChan chan models.TransitData) RouterOption {
-	return func(r *OutputRouter) error {
+func WithDirective(componentID models.ComponentID, outChan chan models.TransitData) routerOption {
+	return func(r *router) error {
 		return r.AddDirective(componentID, outChan)
 	}
 }
 
-// OutputRouter ... Used as a lookup for components to know where to send output data to
+// Router ... Used as a lookup for components to know where to send output data to and where to read data from
 // Adding and removing directives in the equivalent of adding an edge between two nodes using standard graph theory
-type OutputRouter struct {
-	outChans map[int]chan models.TransitData
+type router struct {
+	outChans map[models.ComponentID]chan models.TransitData
 }
 
-// NewOutputRouter ... Initializer
-func NewOutputRouter(opts ...RouterOption) (*OutputRouter, error) {
-	router := &OutputRouter{
-		make(map[int]chan models.TransitData),
+// newRouter ... Initializer
+func newRouter(opts ...routerOption) (*router, error) {
+	router := &router{
+		outChans: make(map[models.ComponentID]chan models.TransitData),
 	}
 
 	for _, opt := range opts {
@@ -36,23 +36,33 @@ func NewOutputRouter(opts ...RouterOption) (*OutputRouter, error) {
 }
 
 // TransitOutput ... Sends single piece of transitData to all innner mapping value channels
-func (router *OutputRouter) TransitOutput(data models.TransitData) {
+func (router *router) TransitOutput(data models.TransitData) error {
+	if len(router.outChans) == 0 {
+		return fmt.Errorf("Received transit request with 0 out channels to write to")
+	}
+
 	// NOTE - Consider introducing a fail safe timeout to ensure that freezing on clogged chanel buffers is recognized
 	for _, channel := range router.outChans {
 		channel <- data
 	}
+
+	return nil
 }
 
 // TransitOutput ... Sends slice of transitData to all innner mapping value channels
-func (router *OutputRouter) TransitOutputs(dataSlice []models.TransitData) {
+func (router *router) TransitOutputs(dataSlice []models.TransitData) error {
 	// NOTE - Consider introducing a fail safe timeout to ensure that freezing on clogged chanel buffers is recognized
 	for _, data := range dataSlice {
-		router.TransitOutput(data)
+		if err := router.TransitOutput(data); err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
 // AddDirective ... Inserts a new output directive given an ID and channel; fail on key collision
-func (router *OutputRouter) AddDirective(componentID int, outChan chan models.TransitData) error {
+func (router *router) AddDirective(componentID models.ComponentID, outChan chan models.TransitData) error {
 	if _, found := router.outChans[componentID]; found {
 		return fmt.Errorf(dirAlreadyExistsErr, componentID)
 	}
@@ -62,7 +72,7 @@ func (router *OutputRouter) AddDirective(componentID int, outChan chan models.Tr
 }
 
 // RemoveDirective ... Removes an output directive given an ID; fail if no key found
-func (router *OutputRouter) RemoveDirective(componentID int) error {
+func (router *router) RemoveDirective(componentID models.ComponentID) error {
 	if _, found := router.outChans[componentID]; !found {
 		return fmt.Errorf(dirNotFoundErr, componentID)
 	}

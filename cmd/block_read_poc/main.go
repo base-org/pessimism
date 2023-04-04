@@ -6,10 +6,10 @@ import (
 	"sync"
 
 	"github.com/base-org/pessimism/internal/config"
-	"github.com/base-org/pessimism/internal/etl/pipeline"
+	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/models"
-	"github.com/base-org/pessimism/internal/registry"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/google/uuid"
 )
 
 const (
@@ -37,74 +37,42 @@ func main() {
 		StartHeight: nil,
 		EndHeight:   nil}
 
-	// 1. Configure blackhole tx pipe component
-	createRegister, err := registry.GetRegister(registry.ContractCreateTX)
+	registerCfg := &config.RegisterPipelineConfig{
+		DataType:     registry.ContractCreateTX,
+		PipelineType: models.Live,
+		OracleCfg:    l1OracleCfg,
+	}
+
+	registerPipeline, err := registry.NewRegisterPipeline(appCtx, registerCfg)
 	if err != nil {
 		panic(err)
 	}
 
-	initPipe, success := createRegister.ComponentConstructor.(pipeline.PipeConstructorFunc)
-	if !success {
-		panic("Could not read component constructor Pipe constructor type")
-	}
+	wg := &sync.WaitGroup{}
 
-	inputChan := make(chan models.TransitData)
-
-	createTxPipe, err := initPipe(appCtx, inputChan)
+	err = registerPipeline.RunPipeline(wg)
 	if err != nil {
 		panic(err)
 	}
 
-	register, err := registry.GetRegister(registry.GethBlock)
-	if err != nil {
+	outChan := models.NewTransitChannel()
+
+	if err := registerPipeline.AddDirective(uuid.New(), outChan); err != nil {
 		panic(err)
 	}
 
-	init, success := register.ComponentConstructor.(pipeline.OracleConstructor)
-	if !success {
-		panic("Could not read constructor value")
-	}
+	log.Printf("Reading on register pipeline's data output channel for contract creation transactions on some layer 1 EVM chain")
 
-	go func() {
-		if routineErr := createTxPipe.EventLoop(); routineErr != nil {
-			log.Printf("Error received from oracle event loop %e", err)
-		}
-	}()
-
-	l1Oracle, err := init(appCtx, pipeline.LiveOracle, l1OracleCfg)
-	if err != nil {
-		panic(err)
-	}
-
-	if err := l1Oracle.AddDirective(interChanID, inputChan); err != nil {
-		panic(err)
-	}
-
-	outputChan := make(chan models.TransitData)
-
-	if err := createTxPipe.AddDirective(outChanID, outputChan); err != nil {
-		panic(err)
-	}
-
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-
-	go func() {
-		if routineErr := l1Oracle.EventLoop(); routineErr != nil {
-			log.Printf("Error received from oracle event loop %e", err)
-		}
-	}()
-
-	for td := range outputChan {
+	for td := range outChan {
 		log.Printf("===============================================")
-		log.Printf("Received Contract creation Transaction %+v", td)
+		log.Printf("Received Contract Creation (CREATE) Transaction %+v", td)
 		log.Printf("===============================================")
 
-		parsedTx, success := td.Value.(types.Transaction)
+		parsedTx, success := td.Value.(*types.Transaction)
 		if !success {
 			log.Printf("Could not parse transaction value")
+		} else {
+			log.Printf("As parsed transaction %+v", parsedTx)
 		}
-
-		log.Printf("As parsed transaction %+v", parsedTx)
 	}
 }

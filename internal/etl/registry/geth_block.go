@@ -27,7 +27,7 @@ type GethBlockODef struct {
 
 // NewGethBlockOracle ... Initializer
 func NewGethBlockOracle(ctx context.Context,
-	ot pipeline.OracleType, cfg *config.OracleConfig) (pipeline.Component, error) {
+	ot models.PipelineType, cfg *config.OracleConfig) (pipeline.Component, error) {
 	od := &GethBlockODef{cfg: cfg, currHeight: nil}
 
 	return pipeline.NewOracle(ctx, ot, od)
@@ -80,8 +80,11 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 				continue
 			}
 
+			log.Printf("%d", height)
+
 			// TODO - Add support for database persistence
 
+			log.Printf("Writing to component channel")
 			componentChan <- models.TransitData{
 				Timestamp: time.Now(),
 				Type:      GethBlock,

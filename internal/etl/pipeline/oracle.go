@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/base-org/pessimism/internal/models"
+	"github.com/google/uuid"
 )
 
 // OracleDefinition ... Provides a generalized interface for developers to bind their own functionality to
@@ -14,41 +15,41 @@ type OracleDefinition interface {
 	ReadRoutine(ctx context.Context, componentChan chan models.TransitData) error
 }
 
-// OracleOption ...
-type OracleOption = func(*Oracle)
-
 // Oracle ... Component used to represent a data source reader; E.g, Eth block indexing, interval API polling
 type Oracle struct {
 	ctx context.Context
+	id  models.ComponentID
 
-	od OracleDefinition
-	ot OracleType
+	definition    OracleDefinition
+	oracleType    models.PipelineType
+	oracleChannel chan models.TransitData
 
-	*OutputRouter
-}
-
-// Type ... Returns the pipeline component type
-func (o *Oracle) Type() models.ComponentType {
-	return models.Oracle
+	*metaData
 }
 
 // NewOracle ... Initializer
-func NewOracle(ctx context.Context, ot OracleType,
-	od OracleDefinition, opts ...OracleOption) (Component, error) {
-	router, err := NewOutputRouter()
+func NewOracle(ctx context.Context, pt models.PipelineType,
+	od OracleDefinition, opts ...ComponentOption) (Component, error) {
+	router, err := newRouter()
 	if err != nil {
 		return nil, err
 	}
 
 	o := &Oracle{
-		ctx:          ctx,
-		od:           od,
-		ot:           ot,
-		OutputRouter: router,
+		ctx:           ctx,
+		definition:    od,
+		oracleType:    pt,
+		oracleChannel: models.NewTransitChannel(),
+
+		metaData: &metaData{
+			id:     uuid.New(),
+			cType:  models.Oracle,
+			router: router,
+		},
 	}
 
 	for _, opt := range opts {
-		opt(o)
+		opt(o.metaData)
 	}
 
 	if cfgErr := od.ConfigureRoutine(); cfgErr != nil {
@@ -61,25 +62,30 @@ func NewOracle(ctx context.Context, ot OracleType,
 // EventLoop ... Component loop that actively waits and transits register data
 // from a channel that the definition's read routine writes to
 func (o *Oracle) EventLoop() error {
-	oracleChannel := make(chan models.TransitData)
 
+	log.Printf("Starting oracle event loop")
 	// Spawn read routine process
 	// TODO - Consider higher order concurrency injection; ie waitgroup, routine management
-	go func() {
-		if err := o.od.ReadRoutine(o.ctx, oracleChannel); err != nil {
+	go func(ch chan models.TransitData) {
+		if err := o.definition.ReadRoutine(o.ctx, ch); err != nil {
 			log.Printf("Received error from read routine %s", err.Error())
 		}
-	}()
+	}(o.oracleChannel)
 
 	for {
 		select {
-		case registerData := <-oracleChannel:
-			o.OutputRouter.TransitOutput(registerData)
+		case registerData := <-o.oracleChannel:
+			log.Printf("Received oracle data")
+			o.router.TransitOutput(registerData)
 
 		case <-o.ctx.Done():
-			close(oracleChannel)
+			close(o.oracleChannel)
 
 			return nil
 		}
 	}
+}
+
+func (o *Oracle) EntryPoints() []chan models.TransitData {
+	return []chan models.TransitData{o.oracleChannel}
 }
