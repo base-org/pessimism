@@ -3,15 +3,14 @@
 ## Fixes Issue
 
 <!-- Example: Closes #NNN -->
-
+Fixes #
 ## Changes proposed
 
 <!-- List all the proposed changes in your PR -->
+<!-- Add the screenshots of the changes below if applicable -->
 
 
-## Screenshots
-
-<!-- Add all the screenshots which support your changes -->
+### Screenshots (Optional)
 
 ## Note to reviewers
 
