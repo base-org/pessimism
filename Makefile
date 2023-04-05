@@ -10,6 +10,8 @@ GREEN = \033[0;32m
 BLUE = \033[0;34m
 COLOR_END = \033[0;39m
 
+TEST_LIMIT = 10s
+
 build-app:
 	@echo "$(BLUE)» building application binary... $(COLOR_END)"
 	@CGO_ENABLED=0 go build -a -tags netgo -o bin/$(APP_NAME) ./cmd/pessimism/
@@ -20,12 +22,12 @@ run-app:
 
 .PHONY: test
 test:
-	@ go test ./... -v
+	@ go test ./... -v -timeout $(TEST_LIMIT)
 
 .PHONY: lint
 lint:
 	@echo "$(GREEN) Linting repository Go code...$(COLOR_END)"
-	@if ! command -v golangc-lint &> /dev/null; \
+	@if ! command -v golangci-lint &> /dev/null; \
 	then \
     	echo "golangci-lint command could not be found...."; \
 		echo "\nTo install, please run $(GREEN)  $(GET_LINT_CMD) $(COLOR_END)"; \

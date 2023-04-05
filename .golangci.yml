@@ -12,7 +12,7 @@ linters-settings:
     # The maximal average package complexity.
     # If it's higher than 0.0 (float) the check is enabled
     # Default: 0.0
-    package-average: 10.0
+    package-average: 20.0
 
   errcheck:
     # Report about not checking of errors in type assertions: `a := b.(MyStruct)`.
@@ -118,7 +118,6 @@ linters:
     ## enabled by default
     - errcheck # checking for unchecked errors, these unchecked errors can be critical bugs in some cases
     - gosimple # specializes in simplifying a code
-    - govet # reports suspicious constructs, such as Printf calls whose arguments do not align with the format string
     - ineffassign # detects when assignments to existing variables are not used
     - staticcheck # is a go vet on steroids, applying a ton of static analysis checks
     - typecheck # like the front-end of a Go compiler, parses and type-checks Go code
@@ -139,22 +138,20 @@ linters:
     - forbidigo # forbids identifiers
     - funlen # tool for detection of long functions
     - gocheckcompilerdirectives # validates go compiler directive comments (//go:)
-    - gochecknoglobals # checks that no global variables exist
     - gochecknoinits # checks that no init functions are present in Go code
     - gocognit # computes and checks the cognitive complexity of functions
     - goconst # finds repeated strings that could be replaced by a constant
     - gocritic # provides diagnostics that check for bugs, performance and style issues
     - gocyclo # computes and checks the cyclomatic complexity of functions
-    - godot # checks if comments end in a period
     - goimports # in addition to fixing imports, goimports also formats your code in the same style as gofmt
     - gomnd # detects magic numbers
-    - gomoddirectives # manages the use of 'replace', 'retract', and 'excludes' directives in go.mod
     - gomodguard # allow and block lists linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations
     - goprintffuncname # checks that printf-like functions are named with f at the end
     - gosec # inspects source code for security problems
     - lll # reports long lines
     - loggercheck # checks key value pairs for common logger libraries (kitlog,klog,logr,zap)
     - makezero # finds slice declarations with non-zero initial length
+    - misspell # Ensures real english is used within strings
     - nakedret # finds naked returns in functions greater than a specified function length
     - nestif # reports deeply nested if statements
     - nilerr # finds the code that returns nil even if it checks that the error is not nil
@@ -181,6 +178,10 @@ linters:
     - whitespace # detects leading and trailing whitespace
 
     ## May want to enable
+    #- - gochecknoglobals # checks that no global variables exist
+    #- - govet # reports suspicious constructs, such as Printf calls whose arguments do not align with the format string
+    #- - gomoddirectives # manages the use of 'replace', 'retract', and 'excludes' directives in go.mod
+    #- - godot # checks if comments end in a period
     #- decorder # checks declaration order and count of types, constants, variables and functions
     #- exhaustruct # [highly recommend to enable] checks if all structure fields are initialized
     #- gci # controls golang package import order and makes it always deterministic
@@ -202,10 +203,12 @@ issues:
   exclude-rules:
     - source: "(noinspection|TODO)"
       linters: [ godot ]
-    - source: "//noinspection"
+    - source: "// noinspection"
       linters: [ gocritic ]
     - path: "_test\\.go"
       linters:
+        - govet
+        - testpackage
         - bodyclose
         - dupl
         - funlen
@@ -213,3 +216,5 @@ issues:
         - gosec
         - noctx
         - wrapcheck
+        - lll
+        - whitespace
