@@ -1,4 +1,4 @@
-package pipeline
+package component
 
 import (
 	"context"
@@ -9,8 +9,10 @@ import (
 
 // Router specific errors
 const (
-	dirAlreadyExistsErr = "%d directive key already exists within component router mapping"
-	dirNotFoundErr      = "no directive key %d exists within component router mapping"
+	dirAlreadyExistsErr = "%s directive key already exists within component router mapping"
+	dirNotFoundErr      = "no directive key %s exists within component router mapping"
+
+	transitErr = "[%s][%s] Received transit error: %s"
 )
 
 // Generalized component constructor types

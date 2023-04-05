@@ -1,4 +1,4 @@
-package pipeline
+package component
 
 import (
 	"fmt"
@@ -18,7 +18,6 @@ func Test_Add_Remove_Directive(t *testing.T) {
 		constructionLogic func() *router
 		testLogic         func(*testing.T, *router)
 	}{
-
 		{
 			name:        "Successful Multi Add Test",
 			description: "When multiple directives are passed to AddDirective function, they should successfully be added to the router mapping",
@@ -30,7 +29,11 @@ func Test_Add_Remove_Directive(t *testing.T) {
 
 			testLogic: func(t *testing.T, router *router) {
 
-				for _, id := range []models.ComponentID{uuid.MustParse("0x420"), uuid.MustParse("0x42"), uuid.MustParse("0x69"), uuid.MustParse("0x666")} {
+				for _, id := range []models.ComponentID{
+					uuid.MustParse("42059037-9599-48e7-b8f2-48393c019135"),
+					uuid.MustParse("69359037-9599-48e7-b8f2-48393c019135"),
+					uuid.MustParse("61259037-9599-48e7-b8f2-48393c019135"),
+					uuid.MustParse("66666666-9599-48e7-b8f2-48393c019135")} {
 					outChan := make(chan models.TransitData)
 					err := router.AddDirective(id, outChan)
 
@@ -46,7 +49,7 @@ func Test_Add_Remove_Directive(t *testing.T) {
 			description: "When existing directive is passed to AddDirective function it should fail to be added to the router mapping",
 
 			constructionLogic: func() *router {
-				id := uuid.MustParse("0x420")
+				id := uuid.MustParse("99999999-9599-48e7-b8f2-48393c019135")
 				outChan := make(chan models.TransitData)
 
 				router, _ := newRouter()
@@ -55,12 +58,12 @@ func Test_Add_Remove_Directive(t *testing.T) {
 			},
 
 			testLogic: func(t *testing.T, router *router) {
-				id := uuid.MustParse("0x420")
+				id := uuid.MustParse("99999999-9599-48e7-b8f2-48393c019135")
 				outChan := make(chan models.TransitData)
 				err := router.AddDirective(id, outChan)
 
-				assert.Error(t, err, "Ensuring that no error is generated when adding new directive")
-				assert.Equal(t, err.Error(), fmt.Sprintf(dirAlreadyExistsErr, 0x420), "Ensuring that returned error is a not found type")
+				assert.Error(t, err, "Error was not generated when adding conflicting directives with same ID")
+				assert.Equal(t, err.Error(), fmt.Sprintf(dirAlreadyExistsErr, "99999999-9599-48e7-b8f2-48393c019135"), "Ensuring that returned error is a not found type")
 			},
 		},
 		{
@@ -68,7 +71,7 @@ func Test_Add_Remove_Directive(t *testing.T) {
 			description: "When existing directive is passed to RemoveDirective function, it should be removed from mapping",
 
 			constructionLogic: func() *router {
-				id := uuid.MustParse("0x420")
+				id := uuid.MustParse("69359037-9599-48e7-b8f2-48393c019135")
 				outChan := make(chan models.TransitData)
 
 				router, _ := newRouter()
@@ -78,11 +81,11 @@ func Test_Add_Remove_Directive(t *testing.T) {
 
 			testLogic: func(t *testing.T, router *router) {
 
-				err := router.RemoveDirective(uuid.MustParse("0x420"))
+				err := router.RemoveDirective(uuid.MustParse("69359037-9599-48e7-b8f2-48393c019135"))
 
 				assert.NoError(t, err, "Ensuring that no error is thrown when removing an existing directive")
 
-				_, exists := router.outChans[uuid.MustParse("0x420")]
+				_, exists := router.outChans[uuid.MustParse("69359037-9599-48e7-b8f2-48393c019135")]
 				assert.False(t, exists, "Ensuring that key is removed from mapping")
 			},
 		}, {
@@ -90,7 +93,7 @@ func Test_Add_Remove_Directive(t *testing.T) {
 			description: "When non-existing directive key is passed to RemoveDirective function, an error should be returned",
 
 			constructionLogic: func() *router {
-				id := uuid.MustParse("0x420")
+				id := uuid.MustParse("69359037-9599-48e7-b8f2-48393c019135")
 				outChan := make(chan models.TransitData)
 
 				router, _ := newRouter()
@@ -100,10 +103,10 @@ func Test_Add_Remove_Directive(t *testing.T) {
 
 			testLogic: func(t *testing.T, router *router) {
 
-				err := router.RemoveDirective(uuid.MustParse("0x69"))
+				err := router.RemoveDirective(uuid.MustParse("61259037-9599-48e7-b8f2-48393c019135"))
 
 				assert.Error(t, err, "Ensuring that an error is thrown when trying to remove a non-existent directive")
-				assert.Equal(t, err.Error(), fmt.Sprintf(dirNotFoundErr, 0x69))
+				assert.Equal(t, err.Error(), fmt.Sprintf(dirNotFoundErr, "61259037-9599-48e7-b8f2-48393c019135"))
 			},
 		},
 	}
@@ -126,19 +129,19 @@ func Test_Transit_Output(t *testing.T) {
 	}{
 		{
 			channel: make(chan models.TransitData, 1),
-			id:      uuid.MustParse("0x42"),
+			id:      uuid.MustParse("69359037-9599-48e7-b8f2-48393c019135"),
 		},
 		{
 			channel: make(chan models.TransitData, 1),
-			id:      uuid.MustParse("0x42"),
+			id:      uuid.MustParse("62359037-9599-48e7-b8f2-48393c019135"),
 		},
 		{
 			channel: make(chan models.TransitData, 1),
-			id:      uuid.MustParse("0x69"),
+			id:      uuid.MustParse("61259037-9599-48e7-b8f2-48393c019135"),
 		},
 		{
 			channel: make(chan models.TransitData, 1),
-			id:      uuid.MustParse("0x666"),
+			id:      uuid.MustParse("66659037-9599-48e7-b8f2-48393c019135"),
 		},
 	}
 
@@ -153,7 +156,8 @@ func Test_Transit_Output(t *testing.T) {
 		Value:     0x42069,
 	}
 
-	testRouter.TransitOutput(expectedOutput)
+	err := testRouter.TransitOutput(expectedOutput)
+	assert.NoError(t, err, "Receieved error when trying to transit output")
 
 	for _, directive := range directives {
 		actualOutput := <-directive.channel

@@ -6,15 +6,11 @@ import (
 	"sync"
 
 	"github.com/base-org/pessimism/internal/config"
+	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/models"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/google/uuid"
-)
-
-const (
-	outChanID   = 0x420
-	interChanID = 0x42
 )
 
 func main() {
@@ -43,7 +39,7 @@ func main() {
 		OracleCfg:    l1OracleCfg,
 	}
 
-	registerPipeline, err := registry.NewRegisterPipeline(appCtx, registerCfg)
+	registerPipeline, err := pipeline.NewRegisterPipeline(appCtx, registerCfg)
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +57,9 @@ func main() {
 		panic(err)
 	}
 
-	log.Printf("Reading on register pipeline's data output channel for contract creation transactions on some layer 1 EVM chain")
+	log.Printf("===============================================")
+	log.Printf("Reading layer 1 EVM blockchain for live ")
+	log.Printf("===============================================")
 
 	for td := range outChan {
 		log.Printf("===============================================")

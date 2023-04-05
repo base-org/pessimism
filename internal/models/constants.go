@@ -14,5 +14,5 @@ type PipelineType = string
 const (
 	Backtest PipelineType = "Backtest"
 	Live     PipelineType = "Live"
-	MockTest PipelineType = "MockTest"
+	MockTest PipelineType = "Mocktest"
 )

@@ -1,4 +1,4 @@
-package pipeline
+package component
 
 import (
 	"fmt"
@@ -6,9 +6,9 @@ import (
 	"github.com/base-org/pessimism/internal/models"
 )
 
-type routerOption func(*router) error
+type RouterOption func(*router) error
 
-func WithDirective(componentID models.ComponentID, outChan chan models.TransitData) routerOption {
+func WithDirective(componentID models.ComponentID, outChan chan models.TransitData) RouterOption {
 	return func(r *router) error {
 		return r.AddDirective(componentID, outChan)
 	}
@@ -21,7 +21,7 @@ type router struct {
 }
 
 // newRouter ... Initializer
-func newRouter(opts ...routerOption) (*router, error) {
+func newRouter(opts ...RouterOption) (*router, error) {
 	router := &router{
 		outChans: make(map[models.ComponentID]chan models.TransitData),
 	}
@@ -38,7 +38,7 @@ func newRouter(opts ...routerOption) (*router, error) {
 // TransitOutput ... Sends single piece of transitData to all innner mapping value channels
 func (router *router) TransitOutput(data models.TransitData) error {
 	if len(router.outChans) == 0 {
-		return fmt.Errorf("Received transit request with 0 out channels to write to")
+		return fmt.Errorf("received transit request with 0 out channels to write to")
 	}
 
 	// NOTE - Consider introducing a fail safe timeout to ensure that freezing on clogged chanel buffers is recognized

@@ -1,4 +1,4 @@
-package pipeline
+package component
 
 import (
 	"github.com/base-org/pessimism/internal/models"
@@ -35,15 +35,15 @@ func (meta *metaData) Type() models.ComponentType {
 	return meta.cType
 }
 
-type ComponentOption = func(*metaData)
+type Option = func(*metaData)
 
-func WithRouter(router *router) ComponentOption {
+func WithRouter(router *router) Option {
 	return func(meta *metaData) {
 		meta.router = router
 	}
 }
 
-func WithID(id models.ComponentID) ComponentOption {
+func WithID(id models.ComponentID) Option {
 	return func(meta *metaData) {
 		meta.id = id
 	}

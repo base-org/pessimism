@@ -1,4 +1,4 @@
-package registry
+package pipeline
 
 import (
 	"context"
@@ -7,28 +7,28 @@ import (
 	"sync"
 
 	"github.com/base-org/pessimism/internal/config"
-	"github.com/base-org/pessimism/internal/etl/pipeline"
+	"github.com/base-org/pessimism/internal/etl/component"
+	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/models"
 )
 
 type RegisterPipeline struct {
 	ctx        context.Context
-	components []pipeline.Component
+	components []component.Component
 	dataType   models.RegisterType
 }
 
 func NewRegisterPipeline(ctx context.Context, cfg *config.RegisterPipelineConfig) (*RegisterPipeline, error) {
 	log.Printf("Constructing register pipeline for %s", cfg.DataType)
 
-	register, err := GetRegister(cfg.DataType)
+	register, err := registry.GetRegister(cfg.DataType)
 	if err != nil {
 		return nil, err
 	}
 
-	components := make([]pipeline.Component, 0)
+	components := make([]component.Component, 0)
 
-	for _, register := range append([]*DataRegister{register}, register.Dependencies...) {
-
+	for _, register := range append([]*registry.DataRegister{register}, register.Dependencies...) {
 		component, err := inferComponent(ctx, cfg, register)
 		if err != nil {
 			return nil, err
@@ -45,7 +45,6 @@ func NewRegisterPipeline(ctx context.Context, cfg *config.RegisterPipelineConfig
 }
 
 func (rp *RegisterPipeline) RunPipeline(wg *sync.WaitGroup) error {
-
 	for index, component := range rp.components {
 		if component.Type() == models.Pipe {
 			// Assumptions
@@ -56,17 +55,15 @@ func (rp *RegisterPipeline) RunPipeline(wg *sync.WaitGroup) error {
 
 			err := rp.components[index+1].AddDirective(component.ID(), entryChan)
 			if err != nil {
-
+				return err
 			}
-
 		}
-
 	}
 
-	for _, component := range rp.components {
+	for _, comp := range rp.components {
 		wg.Add(1)
 
-		go func(c pipeline.Component, wg *sync.WaitGroup) {
+		go func(c component.Component, wg *sync.WaitGroup) {
 			log.Printf("Starting event loop for component: %s", c)
 
 			defer wg.Done()
@@ -74,40 +71,39 @@ func (rp *RegisterPipeline) RunPipeline(wg *sync.WaitGroup) error {
 			if err := c.EventLoop(); err != nil {
 				log.Printf("Got error from event loop: %s", err.Error())
 			}
-
-		}(component, wg)
+		}(comp, wg)
 	}
 
 	return nil
-
 }
 
-func inferComponent(ctx context.Context, cfg *config.RegisterPipelineConfig, register *DataRegister) (pipeline.Component, error) {
+func inferComponent(ctx context.Context, cfg *config.RegisterPipelineConfig,
+	register *registry.DataRegister) (component.Component, error) {
 	log.Printf("Constructing %s component for register %s", register.ComponentType, register.DataType)
 
 	switch register.ComponentType {
 	case models.Oracle:
-		init, success := register.ComponentConstructor.(pipeline.OracleConstructorFunc)
+		init, success := register.ComponentConstructor.(component.OracleConstructorFunc)
 		if !success {
-			return nil, fmt.Errorf("Could not cast constructor to oracle constructor type")
+			return nil, fmt.Errorf("could not cast constructor to oracle constructor type")
 		}
 
 		// NOTE ... We assume at most 1 oracle per register pipeline
 		return init(ctx, cfg.PipelineType, cfg.OracleCfg)
 
 	case models.Pipe:
-		init, success := register.ComponentConstructor.(pipeline.PipeConstructorFunc)
+		init, success := register.ComponentConstructor.(component.PipeConstructorFunc)
 		if !success {
-			return nil, fmt.Errorf("Could not cast constructor to pipe constructor type")
+			return nil, fmt.Errorf("could not cast constructor to pipe constructor type")
 		}
 
 		return init(ctx)
 
 	case models.Conveyor:
-		return nil, fmt.Errorf("Conveyor component has yet to be implemented")
+		return nil, fmt.Errorf("conveyor component has yet to be implemented")
 
 	default:
-		return nil, fmt.Errorf("Unknown component type provided")
+		return nil, fmt.Errorf("unknown component type provided")
 	}
 }
 

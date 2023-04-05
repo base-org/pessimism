@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/base-org/pessimism/internal/etl/pipeline"
+	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/models"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -30,6 +30,6 @@ func extractContractCreateTxs(td models.TransitData) ([]models.TransitData, erro
 	return nilTxs, nil
 }
 
-func NewCreateContractTxPipe(ctx context.Context) (pipeline.Component, error) {
-	return pipeline.NewPipe(ctx, extractContractCreateTxs)
+func NewCreateContractTxPipe(ctx context.Context) (component.Component, error) {
+	return component.NewPipe(ctx, extractContractCreateTxs)
 }

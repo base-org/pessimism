@@ -1,4 +1,4 @@
-package pipeline
+package component
 
 import (
 	"context"
@@ -42,7 +42,7 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 	ts := time.Date(1969, time.April, 1, 4, 20, 0, 0, time.Local)
 
 	// Setup component dependencies
-	testID := uuid.MustParse("0x666")
+	testID := uuid.MustParse("69359037-9599-48e7-b8f2-48393c019135")
 
 	outputChan := make(chan models.TransitData)
 

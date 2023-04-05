@@ -1,4 +1,4 @@
-package pipeline
+package component
 
 import (
 	"context"
@@ -27,7 +27,7 @@ type Pipe struct {
 }
 
 // NewPipe ... Initializer
-func NewPipe(ctx context.Context, tform TranformFunc, opts ...ComponentOption) (Component, error) {
+func NewPipe(ctx context.Context, tform TranformFunc, opts ...Option) (Component, error) {
 	log.Print("Constructing new component pipe ")
 
 	router, err := newRouter()
@@ -62,7 +62,6 @@ func (p *Pipe) EventLoop() error {
 		select {
 		// Input has been fed to the component
 		case inputData := <-p.inputChan:
-			log.Printf("Got input data")
 			outputData, err := p.tform(inputData)
 			if err != nil {
 				// TODO - Introduce prometheus call here
@@ -71,8 +70,9 @@ func (p *Pipe) EventLoop() error {
 				continue
 			}
 
-			log.Printf("Transiting output")
-			p.router.TransitOutputs(outputData)
+			if err := p.router.TransitOutputs(outputData); err != nil {
+				log.Printf(transitErr, p.id, p.cType, err.Error())
+			}
 
 		// Manager is telling us to shutdown
 		case <-p.ctx.Done():

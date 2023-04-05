@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/base-org/pessimism/internal/config"
-	"github.com/base-org/pessimism/internal/etl/pipeline"
+	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/models"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -27,10 +27,10 @@ type GethBlockODef struct {
 
 // NewGethBlockOracle ... Initializer
 func NewGethBlockOracle(ctx context.Context,
-	ot models.PipelineType, cfg *config.OracleConfig) (pipeline.Component, error) {
+	ot models.PipelineType, cfg *config.OracleConfig) (component.Component, error) {
 	od := &GethBlockODef{cfg: cfg, currHeight: nil}
 
-	return pipeline.NewOracle(ctx, ot, od)
+	return component.NewOracle(ctx, ot, od)
 }
 
 func (oracle *GethBlockODef) ConfigureRoutine() error {
