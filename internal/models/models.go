@@ -2,13 +2,9 @@ package models
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type RegisterType string
-
-type ComponentID = uuid.UUID
 
 type TransitData struct {
 	Timestamp time.Time

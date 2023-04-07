@@ -35,6 +35,10 @@ func tranformBlockToTxSlice(td models.TransitData) ([]models.TransitData, error)
 	return []models.TransitData{tfTd}, nil
 }
 
+const (
+	txSlice models.RegisterType = "TX_SLICE"
+)
+
 func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -46,14 +50,10 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 
 	outputChan := make(chan models.TransitData)
 
-	router, err := newRouter(
-		WithDirective(testID, outputChan),
-	)
-
-	assert.NoError(t, err, "Ensuring router constructor returned no error")
-
 	// Construct test component
-	testPipe, err := NewPipe(ctx, tranformBlockToTxSlice, WithRouter(router))
+	testPipe, err := NewPipe(ctx, tranformBlockToTxSlice, txSlice)
+
+	testPipe.AddDirective(testID, outputChan)
 
 	assert.NoError(t, err, "Ensuring pipe constructor returned no error")
 
@@ -95,9 +95,10 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 
 	}()
 
-	entryChans := testPipe.EntryPoints()
+	entryChan, err := testPipe.GetEntryPoint("GETH.BLOCK")
+	assert.NoError(t, err)
 
-	entryChans[0] <- inputData
+	entryChan <- inputData
 
 	// Wait for pipe to transform block data into a transaction slice
 	wg.Wait()

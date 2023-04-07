@@ -8,7 +8,7 @@ import (
 
 type RouterOption func(*router) error
 
-func WithDirective(componentID models.ComponentID, outChan chan models.TransitData) RouterOption {
+func WithDirective(componentID models.ID, outChan chan models.TransitData) RouterOption {
 	return func(r *router) error {
 		return r.AddDirective(componentID, outChan)
 	}
@@ -17,13 +17,13 @@ func WithDirective(componentID models.ComponentID, outChan chan models.TransitDa
 // Router ... Used as a lookup for components to know where to send output data to and where to read data from
 // Adding and removing directives in the equivalent of adding an edge between two nodes using standard graph theory
 type router struct {
-	outChans map[models.ComponentID]chan models.TransitData
+	outChans map[models.ID]chan models.TransitData
 }
 
 // newRouter ... Initializer
 func newRouter(opts ...RouterOption) (*router, error) {
 	router := &router{
-		outChans: make(map[models.ComponentID]chan models.TransitData),
+		outChans: make(map[models.ID]chan models.TransitData),
 	}
 
 	for _, opt := range opts {
@@ -62,7 +62,7 @@ func (router *router) TransitOutputs(dataSlice []models.TransitData) error {
 }
 
 // AddDirective ... Inserts a new output directive given an ID and channel; fail on key collision
-func (router *router) AddDirective(componentID models.ComponentID, outChan chan models.TransitData) error {
+func (router *router) AddDirective(componentID models.ID, outChan chan models.TransitData) error {
 	if _, found := router.outChans[componentID]; found {
 		return fmt.Errorf(dirAlreadyExistsErr, componentID)
 	}
@@ -72,7 +72,7 @@ func (router *router) AddDirective(componentID models.ComponentID, outChan chan 
 }
 
 // RemoveDirective ... Removes an output directive given an ID; fail if no key found
-func (router *router) RemoveDirective(componentID models.ComponentID) error {
+func (router *router) RemoveDirective(componentID models.ID) error {
 	if _, found := router.outChans[componentID]; !found {
 		return fmt.Errorf(dirNotFoundErr, componentID)
 	}

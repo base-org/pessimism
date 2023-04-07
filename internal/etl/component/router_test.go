@@ -29,7 +29,7 @@ func Test_Add_Remove_Directive(t *testing.T) {
 
 			testLogic: func(t *testing.T, router *router) {
 
-				for _, id := range []models.ComponentID{
+				for _, id := range []models.ID{
 					uuid.MustParse("42059037-9599-48e7-b8f2-48393c019135"),
 					uuid.MustParse("69359037-9599-48e7-b8f2-48393c019135"),
 					uuid.MustParse("61259037-9599-48e7-b8f2-48393c019135"),
@@ -125,7 +125,7 @@ func Test_Transit_Output(t *testing.T) {
 
 	var directives = []struct {
 		channel chan models.TransitData
-		id      models.ComponentID
+		id      models.ID
 	}{
 		{
 			channel: make(chan models.TransitData, 1),

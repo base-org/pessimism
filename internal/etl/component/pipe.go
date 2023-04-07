@@ -16,19 +16,19 @@ type TranformFunc func(data models.TransitData) ([]models.TransitData, error)
 
 type Pipe struct {
 	ctx context.Context
-	id  models.ComponentID
+	id  models.ID
 
-	tform TranformFunc
-
-	// Channel that a pipe is subscribed to for new data events
-	inputChan chan models.TransitData
+	inType models.RegisterType
+	tform  TranformFunc
 
 	*metaData
 }
 
 // NewPipe ... Initializer
-func NewPipe(ctx context.Context, tform TranformFunc, opts ...Option) (Component, error) {
+func NewPipe(ctx context.Context, tform TranformFunc, inType models.RegisterType, opts ...Option) (Component, error) {
 	log.Print("Constructing new component pipe ")
+
+	// TODO - Validate inTypes size
 
 	router, err := newRouter()
 	if err != nil {
@@ -36,16 +36,21 @@ func NewPipe(ctx context.Context, tform TranformFunc, opts ...Option) (Component
 	}
 
 	pipe := &Pipe{
-		ctx:       ctx,
-		tform:     tform,
-		inputChan: models.NewTransitChannel(),
+		ctx:    ctx,
+		tform:  tform,
+		inType: inType,
 
 		metaData: &metaData{
-			id:     uuid.New(),
-			cType:  models.Pipe,
-			router: router,
+			id:      uuid.New(),
+			cType:   models.Pipe,
+			router:  router,
+			ingress: newIngress(),
+			state:   Inactive,
 		},
 	}
+
+	log.Printf("Creating entry point for %s", inType)
+	pipe.CreateEntryPoint(inType)
 
 	for _, opt := range opts {
 		opt(pipe.metaData)
@@ -58,10 +63,14 @@ func NewPipe(ctx context.Context, tform TranformFunc, opts ...Option) (Component
 // to an input channel where transit data is read, transformed, and transitte
 // to downstream components
 func (p *Pipe) EventLoop() error {
+	inChan, err := p.GetEntryPoint(p.inType)
+	if err != nil {
+		return err
+	}
+
 	for {
 		select {
-		// Input has been fed to the component
-		case inputData := <-p.inputChan:
+		case inputData := <-inChan:
 			outputData, err := p.tform(inputData)
 			if err != nil {
 				// TODO - Introduce prometheus call here
@@ -79,8 +88,4 @@ func (p *Pipe) EventLoop() error {
 			return nil
 		}
 	}
-}
-
-func (p *Pipe) EntryPoints() []chan models.TransitData {
-	return []chan models.TransitData{p.inputChan}
 }

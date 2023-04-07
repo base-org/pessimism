@@ -32,6 +32,11 @@ type OracleConfig struct {
 	EndHeight   *int
 }
 
+// // PipelineConfig ... Configuration passed through to a pipeline constructor
+// type PipeLineConfig struct {
+
+// }
+
 // NewConfig ... Initializer
 func NewConfig(fileName FilePath) *Config {
 	if err := godotenv.Load(string(fileName)); err != nil {

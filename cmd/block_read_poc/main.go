@@ -3,14 +3,12 @@ package main
 import (
 	"context"
 	"log"
-	"sync"
 
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/models"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/google/uuid"
 )
 
 func main() {
@@ -21,13 +19,12 @@ func main() {
 		A) Prove that the Oracle and Pipe components operate as expected and are able to channel data between each other
 		B) Reason about component construction to better understand how to automate register pipeline creation
 		C) Demonstrate a lightweight MVP for the system
-
 	*/
 
 	appCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	cfg := config.NewConfig("config.env")
+	cfg := config.NewConfig("../../config.env")
 	l1OracleCfg := &config.OracleConfig{
 		RPCEndpoint: cfg.L1RpcEndpoint,
 		StartHeight: nil,
@@ -39,26 +36,26 @@ func main() {
 		OracleCfg:    l1OracleCfg,
 	}
 
-	registerPipeline, err := pipeline.NewRegisterPipeline(appCtx, registerCfg)
+	pipeLineDAG := pipeline.NewDAG()
+
+	pID, err := pipeLineDAG.CreateRegisterPipeline(appCtx, registerCfg)
 	if err != nil {
 		panic(err)
 	}
 
-	wg := &sync.WaitGroup{}
-
-	err = registerPipeline.RunPipeline(wg)
+	err = pipeLineDAG.RunPipeline(pID)
 	if err != nil {
 		panic(err)
 	}
 
 	outChan := models.NewTransitChannel()
 
-	if err := registerPipeline.AddDirective(uuid.New(), outChan); err != nil {
+	if err := pipeLineDAG.AddPipelineDirective(pID, models.NilID(), outChan); err != nil {
 		panic(err)
 	}
 
 	log.Printf("===============================================")
-	log.Printf("Reading layer 1 EVM blockchain for live ")
+	log.Printf("Reading layer 1 EVM blockchain for live contract creation txs")
 	log.Printf("===============================================")
 
 	for td := range outChan {

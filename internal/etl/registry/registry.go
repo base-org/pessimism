@@ -9,6 +9,7 @@ import (
 const (
 	GethBlock        models.RegisterType = "GETH_BLOCK"
 	ContractCreateTX models.RegisterType = "CONTRACT_CREATE_TX"
+	BlackholeTX      models.RegisterType = "BLACK_HOLE_TX"
 )
 
 var (
@@ -23,6 +24,13 @@ var (
 		DataType:             ContractCreateTX,
 		ComponentType:        models.Pipe,
 		ComponentConstructor: NewCreateContractTxPipe,
+		Dependencies:         []*DataRegister{gethBlockReg},
+	}
+
+	blackHoleTxReg = &DataRegister{
+		DataType:             BlackholeTX,
+		ComponentType:        models.Pipe,
+		ComponentConstructor: NewBlackHoleTxPipe,
 		Dependencies:         []*DataRegister{gethBlockReg},
 	}
 )

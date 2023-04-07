@@ -18,7 +18,7 @@ type OracleDefinition interface {
 // Oracle ... Component used to represent a data source reader; E.g, Eth block indexing, interval API polling
 type Oracle struct {
 	ctx context.Context
-	id  models.ComponentID
+	id  models.ID
 
 	definition    OracleDefinition
 	oracleType    models.PipelineType
@@ -42,9 +42,11 @@ func NewOracle(ctx context.Context, pt models.PipelineType,
 		oracleChannel: models.NewTransitChannel(),
 
 		metaData: &metaData{
-			id:     uuid.New(),
-			cType:  models.Oracle,
-			router: router,
+			id:      uuid.New(),
+			cType:   models.Oracle,
+			router:  router,
+			ingress: newIngress(),
+			state:   Inactive,
 		},
 	}
 

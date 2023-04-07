@@ -27,10 +27,10 @@ type GethBlockODef struct {
 
 // NewGethBlockOracle ... Initializer
 func NewGethBlockOracle(ctx context.Context,
-	ot models.PipelineType, cfg *config.OracleConfig) (component.Component, error) {
+	ot models.PipelineType, cfg *config.OracleConfig, opts ...component.Option) (component.Component, error) {
 	od := &GethBlockODef{cfg: cfg, currHeight: nil}
 
-	return component.NewOracle(ctx, ot, od)
+	return component.NewOracle(ctx, ot, od, opts...)
 }
 
 func (oracle *GethBlockODef) ConfigureRoutine() error {
@@ -70,13 +70,13 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			height := oracle.currHeight
 			header, err := oracle.client.HeaderByNumber(ctx, height)
 			if err != nil {
-				// log.Printf("Header fetching error: %s", err.Error())
+				log.Printf("Header fetching error: %s", err.Error())
 				continue
 			}
 
 			block, err := oracle.client.BlockByNumber(ctx, header.Number)
 			if err != nil {
-				// log.Printf("Error fetching block @ height %d: %s", height, err)
+				log.Printf("Error fetching block @ height %d: %s", height, err)
 				continue
 			}
 

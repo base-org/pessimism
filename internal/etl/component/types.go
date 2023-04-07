@@ -18,8 +18,8 @@ const (
 // Generalized component constructor types
 type (
 	// OracleConstructorFunc ... Type declaration that a registry oracle component constructor must adhere to
-	OracleConstructorFunc = func(context.Context, models.PipelineType, *config.OracleConfig) (Component, error)
+	OracleConstructorFunc = func(context.Context, models.PipelineType, *config.OracleConfig, ...Option) (Component, error)
 
 	// PipeConstructorFunc ... Type declaration that a registry pipe component constructor must adhere to
-	PipeConstructorFunc = func(context.Context) (Component, error)
+	PipeConstructorFunc = func(context.Context, ...Option) (Component, error)
 )

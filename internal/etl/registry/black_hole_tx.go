@@ -6,20 +6,25 @@ import (
 
 	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/models"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func extractContractCreateTxs(td models.TransitData) ([]models.TransitData, error) {
+func extractBlackHoleTxs(td models.TransitData) ([]models.TransitData, error) {
 	asBlock, success := td.Value.(types.Block)
 	if !success {
 		return []models.TransitData{}, fmt.Errorf("could not convert to block")
 	}
 
-	nilTxs := make([]models.TransitData, 0)
+	blackHoleTxs := make([]models.TransitData, 0)
 
 	for _, tx := range asBlock.Transactions() {
 		if tx.To() == nil {
-			nilTxs = append(nilTxs, models.TransitData{
+			continue
+		}
+
+		if *tx.To() == common.HexToAddress("0x0") {
+			blackHoleTxs = append(blackHoleTxs, models.TransitData{
 				Timestamp: td.Timestamp,
 				Type:      ContractCreateTX,
 				Value:     tx,
@@ -27,9 +32,9 @@ func extractContractCreateTxs(td models.TransitData) ([]models.TransitData, erro
 		}
 	}
 
-	return nilTxs, nil
+	return blackHoleTxs, nil
 }
 
-func NewCreateContractTxPipe(ctx context.Context, opts ...component.Option) (component.Component, error) {
-	return component.NewPipe(ctx, extractContractCreateTxs, ContractCreateTX, opts...)
+func NewBlackHoleTxPipe(ctx context.Context, opts ...component.Option) (component.Component, error) {
+	return component.NewPipe(ctx, extractContractCreateTxs, BlackholeTX, opts...)
 }

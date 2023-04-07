@@ -4,9 +4,9 @@ package models
 type ComponentType string
 
 const (
-	Oracle   ComponentType = "Oracle"
-	Pipe     ComponentType = "Pipe"
-	Conveyor ComponentType = "Conveyor"
+	Oracle     ComponentType = "Oracle"
+	Pipe       ComponentType = "Pipe"
+	Aggregator ComponentType = "Aggregator"
 )
 
 type PipelineType = string
