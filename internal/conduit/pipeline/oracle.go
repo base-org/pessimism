@@ -2,14 +2,15 @@ package pipeline
 
 import (
 	"context"
-	"log"
 
 	"github.com/base-org/pessimism/internal/conduit/models"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
+	"go.uber.org/zap"
 )
 
 // OracleDefinition ... Provides a generalized interface for developers to bind their own functionality to
 type OracleDefinition interface {
-	ConfigureRoutine() error
+	ConfigureRoutine(ctx context.Context) error
 	BackTestRoutine(ctx context.Context, componentChan chan models.TransitData) error
 	ReadRoutine(ctx context.Context, componentChan chan models.TransitData) error
 }
@@ -51,7 +52,7 @@ func NewOracle(ctx context.Context, ot OracleType,
 		opt(o)
 	}
 
-	if cfgErr := od.ConfigureRoutine(); cfgErr != nil {
+	if cfgErr := od.ConfigureRoutine(ctx); cfgErr != nil {
 		return nil, cfgErr
 	}
 
@@ -61,13 +62,14 @@ func NewOracle(ctx context.Context, ot OracleType,
 // EventLoop ... Component loop that actively waits and transits register data
 // from a channel that the definition's read routine writes to
 func (o *Oracle) EventLoop() error {
+	log := ctxzap.Extract(o.ctx)
 	oracleChannel := make(chan models.TransitData)
 
 	// Spawn read routine process
 	// TODO - Consider higher order concurrency injection; ie waitgroup, routine management
 	go func() {
 		if err := o.od.ReadRoutine(o.ctx, oracleChannel); err != nil {
-			log.Printf("Received error from read routine %s", err.Error())
+			log.Error("Received error from read routine", zap.Error(err))
 		}
 	}()
 

@@ -1,10 +1,11 @@
 package config
 
 import (
-	"fmt"
-	"log"
+	"context"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 
 	"os"
 )
@@ -25,24 +26,25 @@ type OracleConfig struct {
 }
 
 // NewConfig ... Initializer
-func NewConfig(fileName FilePath) *Config {
+func NewConfig(ctx context.Context, fileName FilePath) *Config {
+	logger := ctxzap.Extract(ctx)
 	if err := godotenv.Load(string(fileName)); err != nil {
-		log.Printf("Config file not found for file name: %s", fileName)
-		panic(err)
+		logger.Fatal("config file not found for file", zap.String("fileName", string(fileName)))
 	}
 
 	return &Config{
-		L1RpcEndpoint: getEnv("L1_RPC_ENDPOINT"),
-		L2RpcEndpoint: getEnv("L2_RPC_ENDPOINT"),
+		L1RpcEndpoint: getEnv(ctx, "L1_RPC_ENDPOINT"),
+		L2RpcEndpoint: getEnv(ctx, "L2_RPC_ENDPOINT"),
 	}
 }
 
 // getEnv ... Reads env var from process environment, panics if not found
-func getEnv(name string) string {
+func getEnv(ctx context.Context, name string) string {
+	logger := ctxzap.Extract(ctx)
 	envVar := os.Getenv(name)
 	// Not found
 	if envVar == "" {
-		panic(fmt.Sprintf("Could not find env var for %s", name))
+		logger.Fatal("could not find env var given name", zap.String("name", name))
 	}
 
 	return envVar
