@@ -7,7 +7,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/etl"
+	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -32,19 +32,19 @@ func main() {
 		StartHeight: nil,
 		EndHeight:   nil}
 
-	registerCfg1 := &config.RegisterPipelineConfig{
+	registerCfg1 := &config.PipelineConfig{
 		DataType:     core.ContractCreateTX,
 		PipelineType: core.Live,
 		OracleCfg:    l1OracleCfg,
 	}
 
-	registerCfg2 := &config.RegisterPipelineConfig{
+	registerCfg2 := &config.PipelineConfig{
 		DataType:     core.BlackholeTX,
 		PipelineType: core.Live,
 		OracleCfg:    l1OracleCfg,
 	}
 
-	etlManager := etl.NewManager(appCtx)
+	etlManager := pipeline.NewManager(appCtx)
 
 	pID, err := etlManager.CreateRegisterPipeline(appCtx, registerCfg1)
 	if err != nil {

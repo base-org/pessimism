@@ -48,7 +48,7 @@ func NewPipe(ctx context.Context, tform TranformFunc, inType core.RegisterType, 
 		},
 	}
 
-	if err := pipe.createEntryPoint(outType); err != nil {
+	if err := pipe.createEntryPoint(inType); err != nil {
 		return nil, err
 	}
 

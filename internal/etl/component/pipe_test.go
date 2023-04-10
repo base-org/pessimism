@@ -78,7 +78,7 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 
 	inputData := core.TransitData{
 		Timestamp: ts,
-		Type:      2,
+		Type:      gethBlock,
 		Value:     block,
 	}
 	var outputData core.TransitData
@@ -96,7 +96,7 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 
 	}()
 
-	entryChan, err := testPipe.GetEntryPoint(2)
+	entryChan, err := testPipe.GetEntryPoint(gethBlock)
 	assert.NoError(t, err)
 
 	entryChan <- inputData

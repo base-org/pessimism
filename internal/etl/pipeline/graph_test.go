@@ -51,6 +51,84 @@ func Test_Graph(t *testing.T) {
 			},
 		},
 		{
+			name:        "Failed Cyclic Edge Addition",
+			function:    "addEdge",
+			description: "When an edge between two components already exists (A->B), then an inversed edge (B->A) should not be possible",
+
+			constructionLogic: func() *cGraph {
+				g := newGraph()
+
+				comp1, err := registry.NewMockOracle(context.Background(), core.GethBlock)
+				if err != nil {
+					panic(err)
+				}
+
+				if err = g.addComponent(testID1, comp1); err != nil {
+					panic(err)
+				}
+
+				comp2, err := registry.NewCreateContractTxPipe(context.Background(), component.WithID(testID1))
+				if err != nil {
+					panic(err)
+				}
+
+				if err = g.addComponent(testID2, comp2); err != nil {
+					panic(err)
+				}
+
+				if err = g.addEdge(testID1, testID2); err != nil {
+					panic(err)
+				}
+
+				return g
+			},
+
+			testLogic: func(t *testing.T, g *cGraph) {
+				err := g.addEdge(testID2, testID1)
+				assert.Error(t, err)
+
+			},
+		},
+		{
+			name:        "Failed Duplicate Edge Addition",
+			function:    "addEdge",
+			description: "When a unique edge exists between two components (A->B), a new edge should not be possible",
+
+			constructionLogic: func() *cGraph {
+				g := newGraph()
+
+				comp1, err := registry.NewMockOracle(context.Background(), core.GethBlock)
+				if err != nil {
+					panic(err)
+				}
+
+				if err = g.addComponent(testID1, comp1); err != nil {
+					panic(err)
+				}
+
+				comp2, err := registry.NewCreateContractTxPipe(context.Background(), component.WithID(testID1))
+				if err != nil {
+					panic(err)
+				}
+
+				if err = g.addComponent(testID2, comp2); err != nil {
+					panic(err)
+				}
+
+				if err = g.addEdge(testID1, testID2); err != nil {
+					panic(err)
+				}
+
+				return g
+			},
+
+			testLogic: func(t *testing.T, g *cGraph) {
+				err := g.addEdge(testID1, testID2)
+				assert.Error(t, err)
+
+			},
+		},
+		{
 			name:        "Successful Edge Addition",
 			function:    "addEdge",
 			description: "When two components are inserted, an edge should be possible between them",
@@ -82,9 +160,10 @@ func Test_Graph(t *testing.T) {
 			testLogic: func(t *testing.T, g *cGraph) {
 				comp1, _ := g.getComponent(testID1)
 
-				assert.NoError(t, g.addEdge(testID2, testID2))
+				err := g.addEdge(testID1, testID2)
+				assert.NoError(t, err)
 
-				err := comp1.AddDirective(testID2, core.NewTransitChannel())
+				err = comp1.AddDirective(testID2, core.NewTransitChannel())
 				assert.Error(t, err, "Error should be returned when trying to add existing directive of component2 to component1")
 
 				assert.True(t, strings.Contains(err.Error(), "directive key already exists within component router mapping"))

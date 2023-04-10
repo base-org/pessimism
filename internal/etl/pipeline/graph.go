@@ -65,16 +65,12 @@ func (graph *cGraph) addEdge(cID1, cID2 core.ComponentID) error {
 		return fmt.Errorf("Edge already exists from (%s) to (%s)", cID1.String(), cID2.String())
 	}
 
-	// Cycle detection case
-	if _, exists := entry2.edges[entry1.comp.ID()]; exists {
-		return fmt.Errorf("Edge already exists from (%s) to (%s); no cycles allowed", cID2.String(), cID1.String())
-	}
-
 	entryChan, err := entry2.comp.GetEntryPoint(entry1.outType)
 	if err != nil {
 		return err
 	}
 
+	log.Printf("Adding directive between (%s) -> (%s)", cID1.String(), cID2.String())
 	if err := entry1.comp.AddDirective(cID2, entryChan); err != nil {
 		return err
 	}
