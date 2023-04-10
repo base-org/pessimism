@@ -8,15 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/base-org/pessimism/internal/models"
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
-func tranformBlockToTxSlice(td models.TransitData) ([]models.TransitData, error) {
+func tranformBlockToTxSlice(td core.TransitData) ([]core.TransitData, error) {
 
 	parsedBlock, success := td.Value.(types.Block)
 	if !success {
@@ -25,18 +24,20 @@ func tranformBlockToTxSlice(td models.TransitData) ([]models.TransitData, error)
 
 	txs := parsedBlock.Transactions()
 
-	tfTd := models.TransitData{
+	tfTd := core.TransitData{
 		Timestamp: td.Timestamp,
-		Type:      "GETH.BLOCK.TRANSACTIONS",
+		Type:      txSlice,
 		Value:     txs,
 	}
 
 	log.Printf("%+v", tfTd)
-	return []models.TransitData{tfTd}, nil
+	return []core.TransitData{tfTd}, nil
 }
 
 const (
-	txSlice models.RegisterType = "TX_SLICE"
+	txSlice core.RegisterType = 100
+
+	gethBlock core.RegisterType = 69
 )
 
 func Test_Pipe_OPBlockToTransactions(t *testing.T) {
@@ -46,12 +47,12 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 	ts := time.Date(1969, time.April, 1, 4, 20, 0, 0, time.Local)
 
 	// Setup component dependencies
-	testID := uuid.MustParse("69359037-9599-48e7-b8f2-48393c019135")
+	testID := core.MakeComponentID(6, 9, 6, 9)
 
-	outputChan := make(chan models.TransitData)
+	outputChan := make(chan core.TransitData)
 
 	// Construct test component
-	testPipe, err := NewPipe(ctx, tranformBlockToTxSlice, txSlice)
+	testPipe, err := NewPipe(ctx, tranformBlockToTxSlice, gethBlock, txSlice)
 
 	testPipe.AddDirective(testID, outputChan)
 
@@ -75,12 +76,12 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 
 	wg := sync.WaitGroup{}
 
-	inputData := models.TransitData{
+	inputData := core.TransitData{
 		Timestamp: ts,
-		Type:      "GETH.BLOCK",
+		Type:      2,
 		Value:     block,
 	}
-	var outputData models.TransitData
+	var outputData core.TransitData
 
 	// Spawn listener routine that reads for output from testPipe
 	wg.Add(1)
@@ -95,7 +96,7 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 
 	}()
 
-	entryChan, err := testPipe.GetEntryPoint("GETH.BLOCK")
+	entryChan, err := testPipe.GetEntryPoint(2)
 	assert.NoError(t, err)
 
 	entryChan <- inputData

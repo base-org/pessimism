@@ -3,31 +3,28 @@ package component
 import (
 	"context"
 	"log"
+	"sync"
 
-	"github.com/base-org/pessimism/internal/models"
-	"github.com/google/uuid"
+	"github.com/base-org/pessimism/internal/core"
 )
 
 // TransformFunc ... Generic transformation function
-type TranformFunc func(data models.TransitData) ([]models.TransitData, error)
+type TranformFunc func(data core.TransitData) ([]core.TransitData, error)
 
 // Pipe ... Component used to represent any arbitrary computation; pipes must always read from an existing component
 // E.G, (ORACLE || CONVEYOR || PIPE) -> PIPE
 
 type Pipe struct {
-	ctx context.Context
-	id  models.ID
+	ctx    context.Context
+	inType core.RegisterType
 
-	inType models.RegisterType
-	tform  TranformFunc
+	tform TranformFunc
 
 	*metaData
 }
 
 // NewPipe ... Initializer
-func NewPipe(ctx context.Context, tform TranformFunc, inType models.RegisterType, opts ...Option) (Component, error) {
-	log.Print("Constructing new component pipe ")
-
+func NewPipe(ctx context.Context, tform TranformFunc, inType core.RegisterType, outType core.RegisterType, opts ...Option) (Component, error) {
 	// TODO - Validate inTypes size
 
 	router, err := newRouter()
@@ -41,21 +38,25 @@ func NewPipe(ctx context.Context, tform TranformFunc, inType models.RegisterType
 		inType: inType,
 
 		metaData: &metaData{
-			id:      uuid.New(),
-			cType:   models.Pipe,
+			id:      core.NilCompID(),
+			cType:   core.Pipe,
 			router:  router,
 			ingress: newIngress(),
 			state:   Inactive,
+			output:  outType,
+			RWMutex: &sync.RWMutex{},
 		},
 	}
 
-	log.Printf("Creating entry point for %s", inType)
-	pipe.CreateEntryPoint(inType)
+	if err := pipe.createEntryPoint(outType); err != nil {
+		return nil, err
+	}
 
 	for _, opt := range opts {
 		opt(pipe.metaData)
 	}
 
+	log.Printf("[%s] Constructed component", pipe.metaData.id.String())
 	return pipe, nil
 }
 
@@ -63,12 +64,18 @@ func NewPipe(ctx context.Context, tform TranformFunc, inType models.RegisterType
 // to an input channel where transit data is read, transformed, and transitte
 // to downstream components
 func (p *Pipe) EventLoop() error {
+	p.RWMutex.Lock()
+	defer p.RWMutex.Unlock()
+	log.Printf("[%s][%s] Starting event loop", p.id, p.cType)
+
+	p.metaData.state = Live
 	inChan, err := p.GetEntryPoint(p.inType)
 	if err != nil {
 		return err
 	}
 
 	for {
+
 		select {
 		case inputData := <-inChan:
 			outputData, err := p.tform(inputData)
@@ -77,6 +84,10 @@ func (p *Pipe) EventLoop() error {
 				// TODO - Introduce go standard logger (I,E. zap) debug call
 				log.Printf("%e", err)
 				continue
+			}
+
+			if len(outputData) > 0 {
+				log.Printf("[%s][%s] Received output data: %s", p.id, p.cType, outputData[0].Type)
 			}
 
 			if err := p.router.TransitOutputs(outputData); err != nil {

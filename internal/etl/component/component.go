@@ -1,55 +1,42 @@
 package component
 
 import (
-	"github.com/base-org/pessimism/internal/models"
-)
+	"sync"
 
-type ActivityState = string
-
-const (
-	Inactive   = "inactive"
-	Live       = "live"
-	Terminated = "terminated"
+	"github.com/base-org/pessimism/internal/core"
 )
 
 // Component ... Generalized interface that all pipeline components must adhere to
 type Component interface {
 	// Routing functionality for downstream inter-component communication
 	// Polymorphically extended from Router struct within
-	AddDirective(models.ID, chan models.TransitData) error
-	RemoveDirective(models.ID) error
-	ID() models.ID
-	Type() models.ComponentType
+	AddDirective(core.ComponentID, chan core.TransitData) error
+	RemoveDirective(core.ComponentID) error
+	ID() core.ComponentID
+	Type() core.ComponentType
 
 	// EventLoop ... Component driver function; spun up as separate go routine
 	EventLoop() error
 
 	// GetEntryPoint ... Returns component entrypoint channel for some register type value
-	GetEntryPoint(rt models.RegisterType) (chan models.TransitData, error)
+	GetEntryPoint(rt core.RegisterType) (chan core.TransitData, error)
 
-	CreateEntryPoint(rt models.RegisterType) error
 	// OutputType ... Returns component output data type
-	OutputType() models.RegisterType
+	OutputType() core.RegisterType
 
-	SetActivityState(s ActivityState)
 	GetActivityState() ActivityState
 }
 
 // metaData ... Generalized component agnostic struct that stores component metadata and routing state
 type metaData struct {
-	id     models.ID
-	cType  models.ComponentType
-	output models.RegisterType
+	id     core.ComponentID
+	cType  core.ComponentType
+	output core.RegisterType
 	state  ActivityState
 
 	*ingress
 	*router
-}
-
-// ID ... Returns
-func (meta *metaData) SetActivityState(s ActivityState) {
-	// NOTE - As of now anyone can set an arbitrary unverified state
-	meta.state = s
+	*sync.RWMutex
 }
 
 // ID ... Returns
@@ -58,23 +45,23 @@ func (meta *metaData) GetActivityState() ActivityState {
 }
 
 // ID ... Returns
-func (meta *metaData) ID() models.ID {
+func (meta *metaData) ID() core.ComponentID {
 	return meta.id
 }
 
 // Type ...
-func (meta *metaData) Type() models.ComponentType {
+func (meta *metaData) Type() core.ComponentType {
 	return meta.cType
 }
 
 // OutputType ...
-func (meta *metaData) OutputType() models.RegisterType {
+func (meta *metaData) OutputType() core.RegisterType {
 	return meta.output
 }
 
 type Option = func(*metaData)
 
-func WithID(id models.ID) Option {
+func WithID(id core.ComponentID) Option {
 	return func(meta *metaData) {
 		meta.id = id
 	}

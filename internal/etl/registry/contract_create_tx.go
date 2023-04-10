@@ -4,24 +4,24 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
-	"github.com/base-org/pessimism/internal/models"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func extractContractCreateTxs(td models.TransitData) ([]models.TransitData, error) {
+func extractContractCreateTxs(td core.TransitData) ([]core.TransitData, error) {
 	asBlock, success := td.Value.(types.Block)
 	if !success {
-		return []models.TransitData{}, fmt.Errorf("could not convert to block")
+		return []core.TransitData{}, fmt.Errorf("could not convert to block")
 	}
 
-	nilTxs := make([]models.TransitData, 0)
+	nilTxs := make([]core.TransitData, 0)
 
 	for _, tx := range asBlock.Transactions() {
 		if tx.To() == nil {
-			nilTxs = append(nilTxs, models.TransitData{
+			nilTxs = append(nilTxs, core.TransitData{
 				Timestamp: td.Timestamp,
-				Type:      ContractCreateTX,
+				Type:      core.ContractCreateTX,
 				Value:     tx,
 			})
 		}
@@ -31,5 +31,5 @@ func extractContractCreateTxs(td models.TransitData) ([]models.TransitData, erro
 }
 
 func NewCreateContractTxPipe(ctx context.Context, opts ...component.Option) (component.Component, error) {
-	return component.NewPipe(ctx, extractContractCreateTxs, ContractCreateTX, opts...)
+	return component.NewPipe(ctx, extractContractCreateTxs, core.GethBlock, core.ContractCreateTX, opts...)
 }

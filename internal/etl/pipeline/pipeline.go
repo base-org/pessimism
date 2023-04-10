@@ -2,12 +2,11 @@ package pipeline
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"sync"
 
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
-	"github.com/base-org/pessimism/internal/models"
 )
 
 /*
@@ -17,56 +16,63 @@ import (
 
 */
 
-type PipeLineState = string
+type PipeLine interface {
+	// EventLoop ... Pipeline driver function; spun up as separate go routine
+	ID() core.PipelineID
+	EventLoop() error
+	RunPipeline(wg *sync.WaitGroup) error
+	AddDirective(cID core.ComponentID, outChan chan core.TransitData) error
+	String() string
+}
 
-const (
-	Booting PipeLineState = "booting"
-	Syncing PipeLineState = "syncing"
-	Active  PipeLineState = "active"
-	Crashed PipeLineState = "crashed"
-)
+type Option = func(*pipeLine)
 
 type pipeLine struct {
 	ctx context.Context
-	id  models.ID
+	id  core.PipelineID
 
-	pState PipeLineState
-	pType  models.PipelineType
+	aState ActivityState
+	pType  core.PipelineType
 
 	components []component.Component
 }
 
-func generatePipelineID(comps ...component.Component) (models.ID, error) {
-	ids := make([]string, len(comps))
+func NewPipeLine(id core.PipelineID, comps []component.Component, opts ...Option) (*pipeLine, error) {
 
-	for i, comp := range comps {
-		ids[i] = fmt.Sprintf("%+v", comp.ID())
-	}
-
-	id := models.Strings2ID(ids...)
-
-	return id, nil
-}
-
-func newPipeLine(id models.ID, comps ...component.Component) (*pipeLine, error) {
-
-	return &pipeLine{
+	pl := &pipeLine{
 		id:         id,
 		components: comps,
-		pState:     Booting,
-	}, nil
+		aState:     Booting,
+	}
+
+	for _, opt := range opts {
+		opt(pl)
+	}
+
+	return pl, nil
+}
+
+func (pl *pipeLine) ID() core.PipelineID {
+	return pl.id
+}
+
+func (pl *pipeLine) AddDirective(cID core.ComponentID, outChan chan core.TransitData) error {
+	comp := pl.components[0]
+	log.Printf("Adding output directive between components (%s) --> (%s)", comp.ID().String(), cID.String())
+
+	return comp.AddDirective(cID, outChan)
 }
 
 func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 	for _, comp := range pl.components {
-		if comp.GetActivityState() != component.Inactive {
-			continue
-		}
 
 		wg.Add(1)
 
 		go func(c component.Component, wg *sync.WaitGroup) {
-			log.Printf("Starting event loop for component: %s", c.ID())
+			log.Printf("Attempting to run component (%s) with activity state = %s", c.ID().String(), c.GetActivityState())
+			if c.GetActivityState() != component.Inactive {
+				return
+			}
 
 			defer wg.Done()
 
@@ -77,4 +83,34 @@ func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 	}
 
 	return nil
+}
+
+func (pl *pipeLine) String() string {
+	str := ""
+
+	for i := len(pl.components) - 1; i >= 0; i-- {
+		comp := pl.components[i]
+		str += "(" + comp.ID().String() + ")"
+		if i != 0 {
+			str += "->"
+		}
+	}
+
+	return str
+}
+
+func (pl *pipeLine) EventLoop() error {
+	// TODO - Add component sampling logic
+	// I.E, Components in a pipeline should be checked for activity state changes
+	// Critical for understanding when things like "syncing" or backfilling have completed for some
+	// live invariant pipeline
+
+	for {
+		select {
+		case <-pl.ctx.Done():
+			return nil
+
+		}
+
+	}
 }

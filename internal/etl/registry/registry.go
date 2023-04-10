@@ -3,53 +3,42 @@ package registry
 import (
 	"fmt"
 
-	"github.com/base-org/pessimism/internal/models"
-)
-
-const (
-	GethBlock        models.RegisterType = "GETH_BLOCK"
-	ContractCreateTX models.RegisterType = "CONTRACT_CREATE_TX"
-	BlackholeTX      models.RegisterType = "BLACK_HOLE_TX"
+	"github.com/base-org/pessimism/internal/core"
 )
 
 var (
-	gethBlockReg = &DataRegister{
-		DataType:             GethBlock,
-		ComponentType:        models.Oracle,
+	gethBlockReg = &core.DataRegister{
+		DataType:             core.GethBlock,
+		ComponentType:        core.Oracle,
 		ComponentConstructor: NewGethBlockOracle,
-		Dependencies:         make([]*DataRegister, 0),
+		Dependencies:         make([]*core.DataRegister, 0),
 	}
 
-	contractCreateTXReg = &DataRegister{
-		DataType:             ContractCreateTX,
-		ComponentType:        models.Pipe,
+	contractCreateTXReg = &core.DataRegister{
+		DataType:             core.ContractCreateTX,
+		ComponentType:        core.Pipe,
 		ComponentConstructor: NewCreateContractTxPipe,
-		Dependencies:         []*DataRegister{gethBlockReg},
+		Dependencies:         []*core.DataRegister{gethBlockReg},
 	}
 
-	blackHoleTxReg = &DataRegister{
-		DataType:             BlackholeTX,
-		ComponentType:        models.Pipe,
+	blackHoleTxReg = &core.DataRegister{
+		DataType:             core.BlackholeTX,
+		ComponentType:        core.Pipe,
 		ComponentConstructor: NewBlackHoleTxPipe,
-		Dependencies:         []*DataRegister{gethBlockReg},
+		Dependencies:         []*core.DataRegister{gethBlockReg},
 	}
 )
 
-type DataRegister struct {
-	DataType             models.RegisterType
-	ComponentType        models.ComponentType
-	ComponentConstructor interface{}
-	// TODO - Introduce dependency management logic
-	Dependencies []*DataRegister
-}
-
-func GetRegister(rt models.RegisterType) (*DataRegister, error) {
+func GetRegister(rt core.RegisterType) (*core.DataRegister, error) {
 	switch rt {
-	case GethBlock:
+	case core.GethBlock:
 		return gethBlockReg, nil
 
-	case ContractCreateTX:
+	case core.ContractCreateTX:
 		return contractCreateTXReg, nil
+
+	case core.BlackholeTX:
+		return blackHoleTxReg, nil
 
 	default:
 		return nil, fmt.Errorf("no register could be found for type: %s", rt)

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/base-org/pessimism/internal/config"
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
-	"github.com/base-org/pessimism/internal/models"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
@@ -27,10 +27,10 @@ type GethBlockODef struct {
 
 // NewGethBlockOracle ... Initializer
 func NewGethBlockOracle(ctx context.Context,
-	ot models.PipelineType, cfg *config.OracleConfig, opts ...component.Option) (component.Component, error) {
+	ot core.PipelineType, cfg *config.OracleConfig, opts ...component.Option) (component.Component, error) {
 	od := &GethBlockODef{cfg: cfg, currHeight: nil}
 
-	return component.NewOracle(ctx, ot, od, opts...)
+	return component.NewOracle(ctx, ot, core.GethBlock, od, opts...)
 }
 
 func (oracle *GethBlockODef) ConfigureRoutine() error {
@@ -46,7 +46,7 @@ func (oracle *GethBlockODef) ConfigureRoutine() error {
 }
 
 // BackTestRoutine ...
-func (oracle *GethBlockODef) BackTestRoutine(_ context.Context, _ chan models.TransitData) error {
+func (oracle *GethBlockODef) BackTestRoutine(_ context.Context, _ chan core.TransitData) error {
 	// TODO - implement
 
 	return nil
@@ -55,7 +55,7 @@ func (oracle *GethBlockODef) BackTestRoutine(_ context.Context, _ chan models.Tr
 // ReadRoutine ... Sequentially polls go-ethereum compatible execution
 // client using monotonic block height variable for block metadata
 // & writes block metadata to output listener components
-func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan models.TransitData) error {
+func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan core.TransitData) error {
 	// NOTE - This poller logic is really bad and doesn't
 	//        currently compensate for a lot of edge cases, some of the obvious being:
 	// 1 - Client timeouts/failures; ie embed retry logic
@@ -85,9 +85,9 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			// TODO - Add support for database persistence
 
 			log.Printf("Writing to component channel")
-			componentChan <- models.TransitData{
+			componentChan <- core.TransitData{
 				Timestamp: time.Now(),
-				Type:      GethBlock,
+				Type:      core.GethBlock,
 				Value:     *block,
 			}
 
