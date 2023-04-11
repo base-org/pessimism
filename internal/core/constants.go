@@ -19,7 +19,6 @@ func (ct ComponentType) String() string {
 
 	case Aggregator:
 		return "aggregator"
-
 	}
 
 	return "unknown"
@@ -43,7 +42,6 @@ func (pt PipelineType) String() string {
 
 	case MockTest:
 		return "mocktest"
-
 	}
 
 	return "unknown"

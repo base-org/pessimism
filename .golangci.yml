@@ -204,9 +204,12 @@ issues:
     - source: "(noinspection|TODO)"
       linters: [ godot ]
     - source: "// noinspection"
-      linters: [ gocritic ]
+      linters:
+        - gocritic
+        - unparam
     - path: "_test\\.go"
       linters:
+        - gocognit
         - govet
         - testpackage
         - bodyclose

@@ -11,6 +11,10 @@ const (
 	Layer2
 )
 
+const (
+	UnknownType string = "unknown"
+)
+
 func (n Network) String() string {
 	switch n {
 	case Layer1:
@@ -20,7 +24,7 @@ func (n Network) String() string {
 		return "layer2"
 	}
 
-	return "unknown"
+	return UnknownType
 }
 
 type TransitData struct {

@@ -40,7 +40,7 @@ const (
 
 // Ingress specific errors
 const (
-	entryAlreadyExistsErr = "Entrypoint already exists for %s"
+	entryAlreadyExistsErr = "entrypoint already exists for %s"
 	entryNotFoundErr      = "entrypoint not found for %s"
 )
 

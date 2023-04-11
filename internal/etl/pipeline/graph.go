@@ -8,12 +8,15 @@ import (
 	"github.com/base-org/pessimism/internal/etl/component"
 )
 
+// componentEntry ... Used to store critical component graph entry data
 type componentEntry struct {
 	comp    component.Component
 	edges   map[core.ComponentID]interface{}
 	outType core.RegisterType
 }
 
+// newEntry ... Intitializer for graph node entry; stores critical routing information
+// & component metadata
 func newEntry(c component.Component, rt core.RegisterType) *componentEntry {
 	return &componentEntry{
 		comp:    c,
@@ -27,42 +30,55 @@ type cGraph struct {
 	edgeMap map[core.ComponentID]*componentEntry
 }
 
+// newGraph ... Initializer
 func newGraph() *cGraph {
 	return &cGraph{
 		edgeMap: make(map[core.ComponentID]*componentEntry, 0),
 	}
 }
 
+// componentExists ... Returns true if component node already exists for ID, false otherwise
 func (graph *cGraph) componentExists(cID core.ComponentID) bool {
 	_, exists := graph.edgeMap[cID]
 	return exists
 }
 
+// getComponent ... Returns a component entry for some component ID
 func (graph *cGraph) getComponent(cID core.ComponentID) (component.Component, error) {
 	if graph.componentExists(cID) {
 		return graph.edgeMap[cID].comp, nil
 	}
 
-	return nil, fmt.Errorf("Component with ID %s does not exist within pipeline graph", cID)
+	return nil, fmt.Errorf("component with ID %s does not exist within pipeline graph", cID)
 }
 
-// AddEdge ... Adds edge between two preconstructed constructed component nodes
+/*
+NOTE - There is no check to ensure that a cyclic edge is being added, meaning
+	a caller could create an edge between B->A assuming edge A->B already exists.
+	This would contradict the acyclic assumption of a DAG but is fortunatetly
+	cirumnavigated since all components declare entrypoint register dependencies,
+	meaning that component could only be susceptible to bipartite connectivity
+	in the circumstance where a component declares inversal input->output of an
+	existing component.
+*/
+
+// addEdge ... Adds edge between two preconstructed constructed component nodes
 func (graph *cGraph) addEdge(cID1, cID2 core.ComponentID) error {
 	entry1, found := graph.edgeMap[cID1]
 	if !found {
-		return fmt.Errorf("Could not find a valid component in mapping for cID: %s", cID1.String())
+		return fmt.Errorf("could not find a valid component in mapping for cID: %s", cID1.String())
 	}
 
 	entry2, found := graph.edgeMap[cID2]
 	if !found {
-		return fmt.Errorf("Could not find a valid component in mapping for cID: %s", cID2.String())
+		return fmt.Errorf("could not find a valid component in mapping for cID: %s", cID2.String())
 	}
 
-	log.Printf("Creating entrypoint for %s in component %s", entry1.outType, entry2.comp.ID().String())
+	log.Printf("creating entrypoint for %s in component %s", entry1.outType, entry2.comp.ID().String())
 
-	// Edge already exists case
+	// Edge already exists case edgecase (No pun)
 	if _, exists := entry1.edges[entry2.comp.ID()]; exists {
-		return fmt.Errorf("Edge already exists from (%s) to (%s)", cID1.String(), cID2.String())
+		return fmt.Errorf("edge already exists from (%s) to (%s)", cID1.String(), cID2.String())
 	}
 
 	entryChan, err := entry2.comp.GetEntryPoint(entry1.outType)
@@ -70,7 +86,7 @@ func (graph *cGraph) addEdge(cID1, cID2 core.ComponentID) error {
 		return err
 	}
 
-	log.Printf("Adding directive between (%s) -> (%s)", cID1.String(), cID2.String())
+	log.Printf("adding directive between (%s) -> (%s)", cID1.String(), cID2.String())
 	if err := entry1.comp.AddDirective(cID2, entryChan); err != nil {
 		return err
 	}
@@ -81,15 +97,20 @@ func (graph *cGraph) addEdge(cID1, cID2 core.ComponentID) error {
 	return nil
 }
 
-func (graph *cGraph) removeEdge(cID1, cID2 core.ComponentID) error {
-	// TODO
+// removeEdge ... Removes an edge from the graph
+func (graph *cGraph) removeEdge(_, _ core.ComponentID) error { //nolint:unused // will be implemented soon
 	return nil
 }
 
-func (graph *cGraph) addComponent(cID core.ComponentID, comp component.Component) error {
+// removeComponent ... Removes a component from the graph
+func (graph *cGraph) removeComponent(_ core.ComponentID) error { //nolint:unused // will be implemented soon
+	return nil
+}
 
+// addComponent ... Adds component node entry to graph
+func (graph *cGraph) addComponent(cID core.ComponentID, comp component.Component) error {
 	if _, exists := graph.edgeMap[cID]; exists {
-		return fmt.Errorf("Component with ID %s already exists", cID)
+		return fmt.Errorf("component with ID %s already exists", cID)
 	}
 
 	graph.edgeMap[cID] = newEntry(comp, comp.OutputType())
@@ -97,19 +118,21 @@ func (graph *cGraph) addComponent(cID core.ComponentID, comp component.Component
 	return nil
 }
 
-func (graph *cGraph) string() string {
-	str := ""
+// edges ...  Returns a lightweight representation of all graph edges between component IDs
+func (graph *cGraph) edges() map[core.ComponentID][]core.ComponentID { //nolint:unused // will be implemented soon
+	lightMap := make(map[core.ComponentID][]core.ComponentID, len(graph.edgeMap))
 
-	for key, entry := range graph.edgeMap {
-		var slice string = "["
+	for cID, cEntry := range graph.edgeMap {
+		cEdges := make([]core.ComponentID, len(cEntry.edges))
 
-		for edge := range entry.edges {
-			slice += edge.String() + ", "
+		i := 0
+		for edge := range cEntry.edges {
+			cEdges[i] = edge
+			i++
 		}
 
-		slice += "]"
-
-		str += fmt.Sprintf("%s -> %s", key.String(), slice)
+		lightMap[cID] = cEdges
 	}
-	return str
+
+	return lightMap
 }

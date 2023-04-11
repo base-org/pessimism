@@ -12,8 +12,9 @@ import (
 /*
  Edge cases:
  1 - Synchronization required for a pipeline from some starting block height
- 2 - Live config is passed through to a register pipeline config that requires a backfill
-
+ 2 - Live config is passed through to a register pipeline config that requires a backfill,
+ 	resulting in component collision within the DAG.
+ 3 -
 */
 
 type PipeLine interface {
@@ -22,7 +23,6 @@ type PipeLine interface {
 	EventLoop() error
 	RunPipeline(wg *sync.WaitGroup) error
 	AddDirective(cID core.ComponentID, outChan chan core.TransitData) error
-	String() string
 }
 
 type Option = func(*pipeLine)
@@ -32,13 +32,12 @@ type pipeLine struct {
 	id  core.PipelineID
 
 	aState ActivityState
-	pType  core.PipelineType
+	pType  core.PipelineType //nolint:unused // will be implemented soon
 
 	components []component.Component
 }
 
-func NewPipeLine(id core.PipelineID, comps []component.Component, opts ...Option) (*pipeLine, error) {
-
+func NewPipeLine(id core.PipelineID, comps []component.Component, opts ...Option) (PipeLine, error) {
 	pl := &pipeLine{
 		id:         id,
 		components: comps,
@@ -65,7 +64,6 @@ func (pl *pipeLine) AddDirective(cID core.ComponentID, outChan chan core.Transit
 
 func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 	for _, comp := range pl.components {
-
 		wg.Add(1)
 
 		go func(c component.Component, wg *sync.WaitGroup) {
@@ -105,12 +103,10 @@ func (pl *pipeLine) EventLoop() error {
 	// Critical for understanding when things like "syncing" or backfilling have completed for some
 	// live invariant pipeline
 
-	for {
+	for { //nolint:gosimple // will soon be extended to other go channels
 		select {
 		case <-pl.ctx.Done():
 			return nil
-
 		}
-
 	}
 }

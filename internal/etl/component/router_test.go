@@ -105,7 +105,7 @@ func Test_Add_Remove_Directive(t *testing.T) {
 				err := router.RemoveDirective(core.MakeComponentID(69, 69, 69, 69))
 
 				assert.Error(t, err, "Ensuring that an error is thrown when trying to remove a non-existent directive")
-				assert.Equal(t, err.Error(), fmt.Sprintf(dirNotFoundErr, core.MakeComponentID(1, 54, 43, 32).String()))
+				assert.Equal(t, err.Error(), fmt.Sprintf(dirNotFoundErr, core.MakeComponentID(69, 69, 69, 69).String()))
 			},
 		},
 	}
@@ -128,7 +128,7 @@ func Test_Transit_Output(t *testing.T) {
 	}{
 		{
 			channel: make(chan core.TransitData, 1),
-			id:      core.MakeComponentID(1, 54, 43, 32),
+			id:      core.MakeComponentID(3, 54, 43, 32),
 		},
 		{
 			channel: make(chan core.TransitData, 1),

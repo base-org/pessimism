@@ -18,7 +18,7 @@ func MakeComponentID(pt PipelineType, ct ComponentType, rt RegisterType, n Netwo
 func (cID ComponentID) String() string {
 	return fmt.Sprintf("%s:%s:%s:%s",
 		Network(cID[0]).String(),
-		PipelineType(cID[0]).String(),
+		PipelineType(cID[1]).String(),
 		ComponentType(cID[2]).String(),
 		RegisterType(cID[3]).String(),
 	)

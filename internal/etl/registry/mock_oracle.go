@@ -7,21 +7,23 @@ import (
 	"github.com/base-org/pessimism/internal/etl/component"
 )
 
-type mockGethBlockDefinition struct {
+type mockOracleDefinition struct {
 }
 
-func (md *mockGethBlockDefinition) ConfigureRoutine() error {
+func (md *mockOracleDefinition) ConfigureRoutine() error {
 	return nil
 }
-func (md *mockGethBlockDefinition) BackTestRoutine(ctx context.Context, componentChan chan core.TransitData) error {
+func (md *mockOracleDefinition) BackTestRoutine(_ context.Context, _ chan core.TransitData) error {
 	return nil
 }
-func (md *mockGethBlockDefinition) ReadRoutine(ctx context.Context, componentChan chan core.TransitData) error {
+func (md *mockOracleDefinition) ReadRoutine(_ context.Context, _ chan core.TransitData) error {
 	return nil
 }
 
+// NewMockOracle ... Takes in a register type that specifies the mocked output type
+// Useful for testing inter-component connectivity and higher level component management abstractions
 func NewMockOracle(ctx context.Context, ot core.RegisterType) (component.Component, error) {
-	od := &mockGethBlockDefinition{}
+	od := &mockOracleDefinition{}
 
 	return component.NewOracle(ctx, 0, ot, od)
 }

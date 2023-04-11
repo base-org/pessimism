@@ -32,13 +32,13 @@ func main() {
 		StartHeight: nil,
 		EndHeight:   nil}
 
-	registerCfg1 := &config.PipelineConfig{
+	pipelineCfg1 := &config.PipelineConfig{
 		DataType:     core.ContractCreateTX,
 		PipelineType: core.Live,
 		OracleCfg:    l1OracleCfg,
 	}
 
-	registerCfg2 := &config.PipelineConfig{
+	pipelineCfg2 := &config.PipelineConfig{
 		DataType:     core.BlackholeTX,
 		PipelineType: core.Live,
 		OracleCfg:    l1OracleCfg,
@@ -46,12 +46,12 @@ func main() {
 
 	etlManager := pipeline.NewManager(appCtx)
 
-	pID, err := etlManager.CreateRegisterPipeline(appCtx, registerCfg1)
+	pID, err := etlManager.CreateRegisterPipeline(appCtx, pipelineCfg1)
 	if err != nil {
 		panic(err)
 	}
 
-	pID2, err := etlManager.CreateRegisterPipeline(appCtx, registerCfg2)
+	pID2, err := etlManager.CreateRegisterPipeline(appCtx, pipelineCfg2)
 	if err != nil {
 		panic(err)
 	}
@@ -82,9 +82,7 @@ func main() {
 	log.Printf("===============================================")
 
 	for td := range outChan {
-
-		switch td.Type {
-
+		switch td.Type { //nolint:exhaustive // checks for all transit data types are unnecessary here
 		case core.ContractCreateTX:
 			log.Printf("===============================================")
 			log.Printf("Received Contract Creation (CREATE) Transaction %+v", td)
@@ -96,7 +94,6 @@ func main() {
 			} else {
 				log.Printf("As parsed transaction %+v", parsedTx)
 			}
-			break
 
 		case core.BlackholeTX:
 			log.Printf("===============================================")
@@ -109,7 +106,6 @@ func main() {
 			} else {
 				log.Printf("As parsed transaction %+v", parsedTx)
 			}
-			break
 		}
 	}
 }

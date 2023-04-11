@@ -21,7 +21,7 @@ type router struct {
 }
 
 // newRouter ... Initializer
-func newRouter(opts ...RouterOption) (*router, error) {
+func newRouter(opts ...RouterOption) (*router, error) { // noinspection
 	router := &router{
 		outChans: make(map[core.ComponentID]chan core.TransitData),
 	}

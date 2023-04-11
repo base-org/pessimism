@@ -40,5 +40,5 @@ func extractBlackHoleTxs(td core.TransitData) ([]core.TransitData, error) {
 }
 
 func NewBlackHoleTxPipe(ctx context.Context, opts ...component.Option) (component.Component, error) {
-	return component.NewPipe(ctx, extractContractCreateTxs, core.GethBlock, core.BlackholeTX, opts...)
+	return component.NewPipe(ctx, extractBlackHoleTxs, core.GethBlock, core.BlackholeTX, opts...)
 }

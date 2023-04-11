@@ -24,7 +24,8 @@ type Pipe struct {
 }
 
 // NewPipe ... Initializer
-func NewPipe(ctx context.Context, tform TranformFunc, inType core.RegisterType, outType core.RegisterType, opts ...Option) (Component, error) {
+func NewPipe(ctx context.Context, tform TranformFunc, inType core.RegisterType,
+	outType core.RegisterType, opts ...Option) (Component, error) {
 	// TODO - Validate inTypes size
 
 	router, err := newRouter()
@@ -75,7 +76,6 @@ func (p *Pipe) EventLoop() error {
 	}
 
 	for {
-
 		select {
 		case inputData := <-inChan:
 			outputData, err := p.tform(inputData)

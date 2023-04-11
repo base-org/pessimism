@@ -31,10 +31,7 @@ func Test_Graph(t *testing.T) {
 			function:    "addComponent",
 			description: "When a component is added to the graph, it should persist as an elongated value within the graph's internal edge mapping",
 
-			constructionLogic: func() *cGraph {
-				return newGraph()
-			},
-
+			constructionLogic: newGraph,
 			testLogic: func(t *testing.T, g *cGraph) {
 				testID := core.MakeComponentID(69, 69, 69, 69)
 
@@ -45,7 +42,7 @@ func Test_Graph(t *testing.T) {
 				assert.NoError(t, err, "Component addition should resolve to Nil")
 
 				nodeEntry := g.edgeMap[testID]
-				assert.Equal(t, nodeEntry.edges, map[core.ComponentID]interface{}(map[core.ComponentID]interface{}{}), "No edges should exist for component entry")
+				assert.Equal(t, nodeEntry.edges, make(map[core.ComponentID]interface{}, 0), "No edges should exist for component entry")
 				assert.Equal(t, nodeEntry.outType, component.OutputType(), "Output types should match")
 				assert.Equal(t, nodeEntry.comp.ID(), testID, "IDs should match for component entry")
 			},

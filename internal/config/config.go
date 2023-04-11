@@ -28,7 +28,7 @@ func (c *Config) GetEndpointForNetwork(n core.Network) (string, error) {
 		return c.L2RpcEndpoint, nil
 	}
 
-	return "", fmt.Errorf("Could not find endpoint for network: %s", n.String())
+	return "", fmt.Errorf("could not find endpoint for network: %s", n.String())
 }
 
 // PipelineConfig ... Configuration passed through to a pipeline constructor

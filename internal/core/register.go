@@ -11,22 +11,21 @@ const (
 func (rt RegisterType) String() string {
 	switch rt {
 	case GethBlock:
-		return "GETH_BLOCK"
+		return "geth.block"
 
 	case ContractCreateTX:
-		return "CONTRACT_CREATE_TX"
+		return "contract.create.tx"
 
 	case BlackholeTX:
-		return "BLACKHOLE_TX"
+		return "blackhole.tx"
 	}
 
-	return "unknown"
+	return UnknownType
 }
 
 type DataRegister struct {
 	DataType             RegisterType
 	ComponentType        ComponentType
 	ComponentConstructor interface{}
-	// TODO - Introduce dependency management logic
-	Dependencies []*DataRegister
+	Dependencies         []*DataRegister
 }
