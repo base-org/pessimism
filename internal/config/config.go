@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"log"
+	"math/big"
 
 	"github.com/joho/godotenv"
 
@@ -20,8 +21,8 @@ type Config struct {
 // OracleConfig ... Configuration passed through to an oracle component constructor
 type OracleConfig struct {
 	RPCEndpoint string
-	StartHeight *int
-	EndHeight   *int
+	StartHeight *big.Int
+	EndHeight   *big.Int
 }
 
 // NewConfig ... Initializer
