@@ -82,9 +82,8 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context,
 				}
 
 				if i == oracle.cfg.NumOfRetries {
-					log.Printf("All retries exhausted. Block at height %d will be skipped", height)
+					log.Printf("All retries exhausted. Block at height %d will be skipped", height.Int64())
 				}
-
 			}
 
 			// means the above retries failed
