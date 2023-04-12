@@ -8,3 +8,9 @@ const (
 	Pipe     ComponentType = 1
 	Conveyor ComponentType = 2
 )
+
+type Timeouts int
+
+const (
+	EthClientTimeout Timeouts = 20 // in seconds
+)

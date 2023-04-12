@@ -13,4 +13,5 @@ type Component interface {
 	// EventLoop ... Component driver function; spun up as separate go routine
 	EventLoop() error
 	Type() models.ComponentType
+	Close()
 }

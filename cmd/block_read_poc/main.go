@@ -33,9 +33,10 @@ func main() {
 
 	cfg := config.NewConfig("config.env")
 	l1OracleCfg := &config.OracleConfig{
-		RPCEndpoint: cfg.L1RpcEndpoint,
-		StartHeight: nil,
-		EndHeight:   nil}
+		RPCEndpoint:  cfg.L1RpcEndpoint,
+		StartHeight:  nil,
+		NumOfRetries: 3,
+		EndHeight:    nil}
 
 	// 1. Configure blackhole tx pipe component
 	createRegister, err := registry.GetRegister(registry.ContractCreateTX)

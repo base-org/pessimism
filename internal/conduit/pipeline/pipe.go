@@ -60,6 +60,9 @@ func (p *Pipe) Type() models.ComponentType {
 	return models.Pipe
 }
 
+func (p *Pipe) Close() {
+}
+
 // EventLoop ... Driver loop for component that actively subscribes
 // to an input channel where transit data is read, transformed, and transitte
 // to downstream components

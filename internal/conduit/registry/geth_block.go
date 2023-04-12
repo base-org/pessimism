@@ -2,6 +2,7 @@ package registry
 
 import (
 	"context"
+	"errors"
 	"github.com/ethereum/go-ethereum/core/types"
 	"log"
 	"math/big"
@@ -29,7 +30,6 @@ type GethBlockODef struct {
 func NewGethBlockOracle(ctx context.Context,
 	ot pipeline.OracleType, cfg *config.OracleConfig) (pipeline.Component, error) {
 	od := &GethBlockODef{cfg: cfg, currHeight: nil}
-
 	return pipeline.NewOracle(ctx, ot, od)
 }
 
@@ -50,10 +50,90 @@ func (oracle *GethBlockODef) ConfigureRoutine() error {
 }
 
 // BackTestRoutine ...
-func (oracle *GethBlockODef) BackTestRoutine(_ context.Context, _ chan models.TransitData) error {
-	// TODO - implement
+func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context,
+	componentChan chan models.TransitData, startHeight big.Int, endHeight big.Int) error {
 
-	return nil
+	if endHeight.Cmp(&startHeight) < 0 {
+		return errors.New("start height cannot be more than the end height")
+	}
+
+	ticker := time.NewTicker(pollInterval * time.Millisecond)
+	height := startHeight
+
+	for {
+		select {
+		case <-ticker.C:
+
+			// retry for specified number of times.
+			// Not an exponent backoff, but a simpler method which retries sooner
+			var header *types.Header
+			var err error
+
+			// TODO: potentially break this functions off with the right context.
+			for i := 1; i <= oracle.cfg.NumOfRetries; i++ {
+				if i != 1 {
+					log.Printf("Header Retry number: %d", i)
+					time.Sleep(time.Duration(i) * time.Second)
+				}
+
+				header, err = oracle.client.HeaderByNumber(ctx, &height)
+				if err != nil {
+					log.Printf("Header fetching error: %s", err.Error())
+				}
+
+				if i == oracle.cfg.NumOfRetries {
+					log.Printf("All retries exhausted. Block at height %d will be skipped", height)
+				}
+
+			}
+
+			// means the above retries failed
+			if header == nil {
+				continue
+			}
+
+			var block *types.Block
+
+			// TODO: potentially break this functions off with the right context.
+			for i := 1; i <= oracle.cfg.NumOfRetries; i++ {
+				if i != 1 {
+					log.Printf("Block Retry number: %d", i)
+					time.Sleep(time.Duration(i) * time.Second)
+				}
+
+				block, err = oracle.client.BlockByNumber(ctx, header.Number)
+				if err != nil {
+					log.Printf("Block fetching error: %s", err.Error())
+				}
+
+				if i == oracle.cfg.NumOfRetries {
+					log.Printf("All retries exhausted. Block at height %d will be skipped", height.Int64())
+				}
+			}
+
+			// means the above retries failed
+			if block == nil {
+				continue
+			}
+
+			// TODO - Add support for database persistence
+			componentChan <- models.TransitData{
+				Timestamp: time.Now(),
+				Type:      GethBlock,
+				Value:     *block,
+			}
+
+			if height.Cmp(&endHeight) == 0 {
+				log.Printf("Completed backtest routine.")
+				return nil
+			}
+
+			height.Add(&height, big.NewInt(1))
+
+		case <-ctx.Done():
+			return nil
+		}
+	}
 }
 
 // ReadRoutine ... Sequentially polls go-ethereum compatible execution
@@ -63,7 +143,6 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 	// NOTE - Might need improvements in future as the project takes shape.
 
 	ticker := time.NewTicker(pollInterval * time.Millisecond)
-
 	for {
 		select {
 		case <-ticker.C:
@@ -151,17 +230,18 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 				Value:     *block,
 			}
 
-			if height != nil {
-				height.Add(height, big.NewInt(1))
-			} else {
-				height = header.Number
-			}
-
-			oracle.currHeight = height
-
+			// check has to be done here to include the end height block
 			if oracle.cfg.EndHeight != nil && height == oracle.cfg.EndHeight {
 				return nil
 			}
+
+			if height != nil {
+				height.Add(height, big.NewInt(1))
+			} else {
+				height.Add(header.Number, big.NewInt(1))
+			}
+
+			oracle.currHeight = height
 
 		case <-ctx.Done():
 			return nil

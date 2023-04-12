@@ -3,6 +3,8 @@ package pipeline
 import (
 	"context"
 	"log"
+	"math/big"
+	"sync"
 
 	"github.com/base-org/pessimism/internal/conduit/models"
 )
@@ -10,7 +12,7 @@ import (
 // OracleDefinition ... Provides a generalized interface for developers to bind their own functionality to
 type OracleDefinition interface {
 	ConfigureRoutine() error
-	BackTestRoutine(ctx context.Context, componentChan chan models.TransitData) error
+	BackTestRoutine(ctx context.Context, componentChan chan models.TransitData, startHeight big.Int, endHeight big.Int) error
 	ReadRoutine(ctx context.Context, componentChan chan models.TransitData) error
 }
 
@@ -21,8 +23,9 @@ type OracleOption = func(*Oracle)
 type Oracle struct {
 	ctx context.Context
 
-	od OracleDefinition
-	ot OracleType
+	od        OracleDefinition
+	ot        OracleType
+	waitGroup *sync.WaitGroup
 
 	*OutputRouter
 }
@@ -44,6 +47,7 @@ func NewOracle(ctx context.Context, ot OracleType,
 		ctx:          ctx,
 		od:           od,
 		ot:           ot,
+		waitGroup:    &sync.WaitGroup{},
 		OutputRouter: router,
 	}
 
@@ -58,14 +62,21 @@ func NewOracle(ctx context.Context, ot OracleType,
 	return o, nil
 }
 
+func (o *Oracle) Close() {
+	log.Printf("Waiting for oracle goroutines to be done.")
+	o.waitGroup.Wait()
+	log.Printf("Oracle goroutines have exited.")
+}
+
 // EventLoop ... Component loop that actively waits and transits register data
 // from a channel that the definition's read routine writes to
 func (o *Oracle) EventLoop() error {
 	oracleChannel := make(chan models.TransitData)
 
 	// Spawn read routine process
-	// TODO - Consider higher order concurrency injection; ie waitgroup, routine management
+	o.waitGroup.Add(1)
 	go func() {
+		defer o.waitGroup.Done()
 		if err := o.od.ReadRoutine(o.ctx, oracleChannel); err != nil {
 			log.Printf("Received error from read routine %s", err.Error())
 		}
@@ -78,7 +89,6 @@ func (o *Oracle) EventLoop() error {
 
 		case <-o.ctx.Done():
 			close(oracleChannel)
-
 			return nil
 		}
 	}
