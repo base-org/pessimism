@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
+	"log"
 	"sync"
 
-	"github.com/base-org/pessimism/cmd/block_read_poc/utils"
 	"github.com/base-org/pessimism/internal/conduit/models"
 	"github.com/base-org/pessimism/internal/conduit/pipeline"
 	"github.com/base-org/pessimism/internal/conduit/registry"
 	"github.com/base-org/pessimism/internal/config"
+	"github.com/base-org/pessimism/internal/logger"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"go.uber.org/zap"
@@ -30,19 +31,20 @@ func main() {
 
 	*/
 
-	logger, err := utils.NewLogger()
-	if err != nil {
-		panic(err)
-	}
-
 	appCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	cfg := config.NewConfig(appCtx, "config.env")
+
+	logger, err := logger.InitLogger(cfg)
+	if err != nil {
+		log.Fatal("could not initialize logger")
+	}
 
 	appCtx = ctxzap.ToContext(appCtx, logger)
 
 	logger.Info("pessimism boot up")
 
-	cfg := config.NewConfig(appCtx, "config.env")
 	l1OracleCfg := &config.OracleConfig{
 		RPCEndpoint: cfg.L1RpcEndpoint,
 		StartHeight: nil,
