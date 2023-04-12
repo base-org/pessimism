@@ -2,6 +2,7 @@ package registry
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/core/types"
 	"log"
 	"math/big"
 	"time"
@@ -20,8 +21,7 @@ const (
 type GethBlockODef struct {
 	cfg *config.OracleConfig
 	// TODO - Bind this to an interface and mock so that this logic can be tested
-	client *ethclient.Client
-
+	client     *ethclient.Client
 	currHeight *big.Int
 }
 
@@ -34,9 +34,13 @@ func NewGethBlockOracle(ctx context.Context,
 }
 
 func (oracle *GethBlockODef) ConfigureRoutine() error {
-	// TODO - Introduce starting block parameter
 	log.Print("Setting up GETH Block client")
-	client, err := ethclient.Dial(oracle.cfg.RPCEndpoint)
+
+	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
+		time.Second*time.Duration(models.EthClientTimeout))
+	defer ctxCancel()
+
+	client, err := ethclient.DialContext(ctxTimeout, oracle.cfg.RPCEndpoint)
 	if err != nil {
 		return err
 	}
@@ -56,32 +60,91 @@ func (oracle *GethBlockODef) BackTestRoutine(_ context.Context, _ chan models.Tr
 // client using monotonic block height variable for block metadata
 // & writes block metadata to output listener components
 func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan models.TransitData) error {
-	// NOTE - This poller logic is really bad and doesn't
-	//        currently compensate for a lot of edge cases, some of the obvious being:
-	// 1 - Client timeouts/failures; ie embed retry logic
-	// 2 - Only reads most recent headers and doesn't take a starting block # - DONE
-	// 3 - No optionality support for an ending block
+	// NOTE - Might need improvements in future as the project takes shape.
 
 	ticker := time.NewTicker(pollInterval * time.Millisecond)
 
 	for {
 		select {
 		case <-ticker.C:
-			height := oracle.currHeight
-			header, err := oracle.client.HeaderByNumber(ctx, height)
-			if err != nil {
-				// log.Printf("Header fetching error: %s", err.Error())
+
+			// How this works:
+			// Check if current height is nil, if it is, then check if starting height is provided:
+			// 1. if start height is provided, use that number as the current height
+			// 2. if not, then sending nil as current height means use the latest
+			// if current height is not nil, skip all above steps and continue iterating.
+			// At the end, if the end height is specified and not nil, if its met, it returns once done.
+			// Start Height and End Height is inclusive in fetching blocks.
+
+			var height *big.Int
+
+			if oracle.currHeight == nil {
+				log.Printf("Current Height is nil, looking for starting height")
+				if oracle.cfg.StartHeight != nil {
+					log.Printf("StartHeight found to be: %d, using that value.", oracle.cfg.StartHeight)
+					height = oracle.cfg.StartHeight
+				} else {
+					log.Printf("Starting Height is nil, using latest block as starting point.")
+					height = nil
+				}
+			} else {
+				height = oracle.currHeight
+				log.Printf("Currently processing height: %d", height)
+			}
+
+			// retry for specified number of times.
+			// Not an exponent backoff, but a simpler method which retries sooner
+			var header *types.Header
+			var err error
+
+			// TODO: potentially break this functions off with the right context.
+			for i := 1; i <= oracle.cfg.NumOfRetries; i++ {
+				if i != 1 {
+					log.Printf("Header Retry number: %d", i)
+					time.Sleep(time.Duration(i) * time.Second)
+				}
+
+				header, err = oracle.client.HeaderByNumber(ctx, height)
+				if err != nil {
+					log.Printf("Header fetching error: %s", err.Error())
+				}
+
+				if i == oracle.cfg.NumOfRetries {
+					log.Printf("All retries exhausted. Block at height %d will be skipped", height)
+				}
+
+			}
+
+			// means the above retries failed
+			if header == nil {
 				continue
 			}
 
-			block, err := oracle.client.BlockByNumber(ctx, header.Number)
-			if err != nil {
-				// log.Printf("Error fetching block @ height %d: %s", height, err)
+			var block *types.Block
+
+			// TODO: potentially break this functions off with the right context.
+			for i := 1; i <= oracle.cfg.NumOfRetries; i++ {
+				if i != 1 {
+					log.Printf("Block Retry number: %d", i)
+					time.Sleep(time.Duration(i) * time.Second)
+				}
+
+				block, err = oracle.client.BlockByNumber(ctx, header.Number)
+				if err != nil {
+					log.Printf("Block fetching error: %s", err.Error())
+				}
+
+				if i == oracle.cfg.NumOfRetries {
+					log.Printf("All retries exhausted. Block at height %d will be skipped", height)
+				}
+			}
+
+			// means the above retries failed
+			if block == nil {
 				continue
 			}
 
 			// TODO - Add support for database persistence
-
 			componentChan <- models.TransitData{
 				Timestamp: time.Now(),
 				Type:      GethBlock,
@@ -89,13 +152,16 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			}
 
 			if height != nil {
-				// height += 1
 				height.Add(height, big.NewInt(1))
 			} else {
 				height = header.Number
 			}
 
 			oracle.currHeight = height
+
+			if oracle.cfg.EndHeight != nil && height == oracle.cfg.EndHeight {
+				return nil
+			}
 
 		case <-ctx.Done():
 			return nil

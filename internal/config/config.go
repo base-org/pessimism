@@ -20,9 +20,10 @@ type Config struct {
 
 // OracleConfig ... Configuration passed through to an oracle component constructor
 type OracleConfig struct {
-	RPCEndpoint string
-	StartHeight *big.Int
-	EndHeight   *big.Int
+	RPCEndpoint  string
+	StartHeight  *big.Int
+	EndHeight    *big.Int
+	NumOfRetries int
 }
 
 // NewConfig ... Initializer
