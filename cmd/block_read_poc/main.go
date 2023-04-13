@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"sync"
 
 	"github.com/base-org/pessimism/internal/conduit/models"
@@ -38,7 +37,7 @@ func main() {
 
 	logger, err := logger.InitLoggerFromConfig(cfg.LoggerConfig)
 	if err != nil {
-		log.Fatal("could not initialize logger")
+		panic("could not initialize logger")
 	}
 
 	appCtx = ctxzap.ToContext(appCtx, logger)
