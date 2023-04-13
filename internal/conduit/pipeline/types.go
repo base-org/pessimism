@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"context"
+	"github.com/base-org/pessimism/internal/client"
 
 	"github.com/base-org/pessimism/internal/conduit/models"
 	"github.com/base-org/pessimism/internal/config"
@@ -27,7 +28,7 @@ const (
 type (
 	// OracleConstructor ... Type declaration that a registry oracle component constructor must adhere to
 	OracleConstructor = func(ctx context.Context, ot OracleType, cfg *config.OracleConfig,
-		clientNew EthClientInterface) (Component, error)
+		client client.EthClientInterface) (Component, error)
 
 	// PipeConstructorFunc ... Type declaration that a registry pipe component constructor must adhere to
 	PipeConstructorFunc = func(ctx context.Context, inputChan chan models.TransitData) (Component, error)
