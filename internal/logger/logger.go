@@ -1,67 +1,71 @@
 package logger
 
 import (
-	"fmt"
-
-	"github.com/base-org/pessimism/internal/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-// InitLogger .. initializes logger from config
-func InitLogger(cfg *config.Config) (*zap.Logger, error) {
-	if !cfg.LoggerUseDefault {
-		return zap.Config{
-			Level:             StringToAtomicLevel(cfg.LoggerLevel),
-			Development:       cfg.Environment == config.Development,
-			DisableCaller:     cfg.LoggerDisableCaller,
-			DisableStacktrace: cfg.LoggerDisableStacktrace,
-			// Sampling not set
-			Encoding: cfg.LoggerEncoding,
-			EncoderConfig: zapcore.EncoderConfig{
-				MessageKey:    cfg.LoggerEncoderMessageKey,
-				LevelKey:      cfg.LoggerEncoderLevelKey,
-				TimeKey:       cfg.LoggerEncoderTimeKey,
-				NameKey:       cfg.LoggerEncoderNameKey,
-				CallerKey:     cfg.LoggerEncoderCallerKey,
-				FunctionKey:   cfg.LoggerEncoderFunctionKey,
-				StacktraceKey: cfg.LoggerEncoderStacktraceKey,
-				LineEnding:    cfg.LoggerEncoderLineEnding,
+type LoggerConfig struct {
+	UseCustom               bool
+	Level                   int
+	IsProduction            bool
+	DisableCaller           bool
+	DisableStacktrace       bool
+	Encoding                string
+	OutputPaths             []string
+	ErrorOutputPaths        []string
+	EncoderTimeKey          string
+	EncoderLevelKey         string
+	EncoderNameKey          string
+	EncoderCallerKey        string
+	EncoderFunctionKey      string
+	EncoderMessageKey       string
+	EncoderStacktraceKey    string
+	EncoderSkipLineEnding   bool
+	EncoderLineEnding       string
+	EncoderConsoleSeparator string
+}
 
+// InitLoggerFromConfig .. initializes logger from config
+func InitLoggerFromConfig(cfg *LoggerConfig) (*zap.Logger, error) {
+	if cfg.UseCustom {
+		return zap.Config{
+			Level:             zap.NewAtomicLevelAt(zapcore.Level(cfg.Level)),
+			Development:       !cfg.IsProduction,
+			DisableCaller:     cfg.DisableCaller,
+			DisableStacktrace: cfg.DisableStacktrace,
+			// Sampling not set
+			Encoding: cfg.Encoding,
+			EncoderConfig: zapcore.EncoderConfig{
+				//set by config
+				MessageKey:       cfg.EncoderMessageKey,
+				LevelKey:         cfg.EncoderLevelKey,
+				TimeKey:          cfg.EncoderTimeKey,
+				NameKey:          cfg.EncoderNameKey,
+				CallerKey:        cfg.EncoderCallerKey,
+				FunctionKey:      cfg.EncoderFunctionKey,
+				StacktraceKey:    cfg.EncoderStacktraceKey,
+				SkipLineEnding:   cfg.EncoderSkipLineEnding,
+				LineEnding:       cfg.EncoderLineEnding,
+				ConsoleSeparator: cfg.EncoderConsoleSeparator,
+
+				// unset by config
 				EncodeLevel:  zapcore.CapitalColorLevelEncoder,
 				EncodeTime:   zapcore.ISO8601TimeEncoder,
 				EncodeCaller: zapcore.ShortCallerEncoder,
+
+				// not included
+				// EncodeDuration: ...
+				// EncodeName: ...
+				// NewReflectedEncoder: ...
 			},
-			OutputPaths:      cfg.LoggerOutputPaths,
-			ErrorOutputPaths: cfg.LoggerErrorOutputPaths,
+			OutputPaths:      cfg.OutputPaths,
+			ErrorOutputPaths: cfg.ErrorOutputPaths,
 			// InitialFields not set
 		}.Build()
-	} else if cfg.Environment == config.Production {
+	} else if cfg.IsProduction {
 		return zap.NewProductionConfig().Build()
-	} else if cfg.Environment == config.Local || cfg.Environment == config.Development {
+	} else {
 		return zap.NewDevelopmentConfig().Build()
-	}
-	return nil, fmt.Errorf("logger not defined")
-}
-
-// StringToAtomicLevel ... converts strings to zap levels
-func StringToAtomicLevel(level string) zap.AtomicLevel {
-	switch level {
-	case "debug":
-		return zap.NewAtomicLevelAt(zap.DebugLevel)
-	case "info":
-		return zap.NewAtomicLevelAt(zap.InfoLevel)
-	case "warn":
-		return zap.NewAtomicLevelAt(zap.WarnLevel)
-	case "error":
-		return zap.NewAtomicLevelAt(zap.ErrorLevel)
-	case "dpanic":
-		return zap.NewAtomicLevelAt(zap.DPanicLevel)
-	case "panic":
-		return zap.NewAtomicLevelAt(zap.PanicLevel)
-	case "fatal":
-		return zap.NewAtomicLevelAt(zap.FatalLevel)
-	default:
-		panic(fmt.Sprintf("error getting log level for zap logger; given: %s, expected: debug,info,warn,error,dpanic,panic,fatal", level))
 	}
 }
