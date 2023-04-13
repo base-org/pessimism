@@ -49,31 +49,34 @@ func NewConfig(fileName FilePath) *Config {
 		L2RpcEndpoint: getEnvStr("L2_RPC_ENDPOINT"),
 
 		Environment: Env(getEnvStr("ENV")),
-	}
 
-	config.LoggerConfig = &logger.Config{
-		UseCustom:         getEnvBool("LOGGER_USE_CUSTOM"),
-		Level:             getEnvInt("LOGGER_LEVEL"),
-		IsProduction:      config.Environment == Production,
-		DisableCaller:     getEnvBool("LOGGER_DISABLE_CALLER"),
-		DisableStacktrace: getEnvBool("LOGGER_DISABLE_STACKTRACE"),
-		Encoding:          getEnvStr("LOGGER_ENCODING"),
-		OutputPaths:       getEnvSlice("LOGGER_OUTPUT_PATHS"),
-		ErrorOutputPaths:  getEnvSlice("LOGGER_ERROR_OUTPUT_PATHS"),
-
-		EncoderTimeKey:          getEnvStr("LOGGER_ENCODER_TIME_KEY"),
-		EncoderLevelKey:         getEnvStr("LOGGER_ENCODER_LEVEL_KEY"),
-		EncoderNameKey:          getEnvStr("LOGGER_ENCODER_NAME_KEY"),
-		EncoderCallerKey:        getEnvStr("LOGGER_ENCODER_CALLER_KEY"),
-		EncoderFunctionKey:      getEnvStr("LOGGER_ENCODER_FUNCTION_KEY"),
-		EncoderMessageKey:       getEnvStr("LOGGER_ENCODER_MESSAGE_KEY"),
-		EncoderStacktraceKey:    getEnvStr("LOGGER_ENCODER_STACKTRACE_KEY"),
-		EncoderSkipLineEnding:   getEnvBool("LOGGER_ENCODER_SKIP_LINE_ENDING"),
-		EncoderLineEnding:       getEnvStr("LOGGER_ENCODER_LINE_ENDING"),
-		EncoderConsoleSeparator: getEnvStr("LOGGER_ENCODER_CONSOLE_SEPARATOR"),
+		LoggerConfig: &logger.Config{
+			UseCustom:         getEnvBool("LOGGER_USE_CUSTOM"),
+			Level:             getEnvInt("LOGGER_LEVEL"),
+			DisableCaller:     getEnvBool("LOGGER_DISABLE_CALLER"),
+			DisableStacktrace: getEnvBool("LOGGER_DISABLE_STACKTRACE"),
+			Encoding:          getEnvStr("LOGGER_ENCODING"),
+			OutputPaths:       getEnvSlice("LOGGER_OUTPUT_PATHS"),
+			ErrorOutputPaths:  getEnvSlice("LOGGER_ERROR_OUTPUT_PATHS"),
+		},
 	}
 
 	return config
+}
+
+// IsProduction ... Returns true if the env is production
+func (cfg *Config) IsProduction() bool {
+	return cfg.Environment == Production
+}
+
+// IsDevelopment ... Returns true if the env is development
+func (cfg *Config) IsDevelopment() bool {
+	return cfg.Environment == Development
+}
+
+// IsLocal ... Returns true if the env is local
+func (cfg *Config) IsLocal() bool {
+	return cfg.Environment == Local
 }
 
 // getEnvStr ... Reads env var from process environment, panics if not found
@@ -88,28 +91,26 @@ func getEnvStr(key string) string {
 	return envVar
 }
 
-// getEnvBool .. Reads env vars and converts to booleans, panics if incorrect input
+// getEnvBool ... Reads env vars and converts to booleans
 func getEnvBool(key string) bool {
 	if val := getEnvStr(key); val == "1" {
 		return true
-	} else if val == "0" {
-		return false
 	} else {
-		log.Fatalf("env val is not boolean (0 or 1); got: %s=%s", key, val)
+		return false
 	}
-	return false
 }
 
-// getEnvSlice .. Reads env vars and converts to string slice
+// getEnvSlice ... Reads env vars and converts to string slice
 func getEnvSlice(key string) []string {
 	return strings.Split(getEnvStr(key), ",")
 }
 
+// getEnvInt ... Reads env vars and converts to int
 func getEnvInt(key string) int {
 	val := getEnvStr(key)
 	intRep, err := strconv.Atoi(val)
 	if err != nil {
-		log.Fatalf("env val is not int; got: %s=%s", key, val)
+		log.Fatalf("env val is not int; got: %s=%s; err: %s", key, val, err.Error())
 	}
 	return intRep
 }

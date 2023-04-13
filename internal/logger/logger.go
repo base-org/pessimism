@@ -5,68 +5,42 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+// LoggerConfig ... Configuration passed through to the logger constructor
 type Config struct {
-	UseCustom               bool
-	Level                   int
-	IsProduction            bool
-	DisableCaller           bool
-	DisableStacktrace       bool
-	Encoding                string
-	OutputPaths             []string
-	ErrorOutputPaths        []string
-	EncoderTimeKey          string
-	EncoderLevelKey         string
-	EncoderNameKey          string
-	EncoderCallerKey        string
-	EncoderFunctionKey      string
-	EncoderMessageKey       string
-	EncoderStacktraceKey    string
-	EncoderSkipLineEnding   bool
-	EncoderLineEnding       string
-	EncoderConsoleSeparator string
+	UseCustom         bool
+	Level             int
+	DisableCaller     bool
+	DisableStacktrace bool
+	Encoding          string
+	OutputPaths       []string
+	ErrorOutputPaths  []string
 }
 
-// InitLoggerFromConfig .. initializes logger from config
-func (cfg *Config) InitLoggerFromConfig() (*zap.Logger, error) {
-	switch {
-	case cfg.UseCustom:
-		return zap.Config{
-			Level:             zap.NewAtomicLevelAt(zapcore.Level(cfg.Level)),
-			Development:       !cfg.IsProduction,
-			DisableCaller:     cfg.DisableCaller,
-			DisableStacktrace: cfg.DisableStacktrace,
-			// Sampling not set
-			Encoding: cfg.Encoding,
-			EncoderConfig: zapcore.EncoderConfig{
-				// set by config
-				MessageKey:       cfg.EncoderMessageKey,
-				LevelKey:         cfg.EncoderLevelKey,
-				TimeKey:          cfg.EncoderTimeKey,
-				NameKey:          cfg.EncoderNameKey,
-				CallerKey:        cfg.EncoderCallerKey,
-				FunctionKey:      cfg.EncoderFunctionKey,
-				StacktraceKey:    cfg.EncoderStacktraceKey,
-				SkipLineEnding:   cfg.EncoderSkipLineEnding,
-				LineEnding:       cfg.EncoderLineEnding,
-				ConsoleSeparator: cfg.EncoderConsoleSeparator,
+// NewLogger ... initializes logger from config
+func NewLogger(cfg *Config, isProduction bool) (*zap.Logger, error) {
+	var zapCfg zap.Config
 
-				// unset by config
-				EncodeLevel:  zapcore.CapitalColorLevelEncoder,
-				EncodeTime:   zapcore.ISO8601TimeEncoder,
-				EncodeCaller: zapcore.ShortCallerEncoder,
-
-				// not included
-				// EncodeDuration: ...
-				// EncodeName: ...
-				// NewReflectedEncoder: ...
-			},
-			OutputPaths:      cfg.OutputPaths,
-			ErrorOutputPaths: cfg.ErrorOutputPaths,
-			// InitialFields not set
-		}.Build()
-	case cfg.IsProduction:
-		return zap.NewProductionConfig().Build()
-	default:
-		return zap.NewDevelopmentConfig().Build()
+	if isProduction {
+		zapCfg = zap.NewProductionConfig()
+	} else {
+		zapCfg = zap.NewDevelopmentConfig()
 	}
+
+	if cfg.UseCustom {
+		zapCfg.Level = zap.NewAtomicLevelAt(zapcore.Level(cfg.Level))
+		zapCfg.DisableCaller = cfg.DisableCaller
+		zapCfg.DisableStacktrace = cfg.DisableStacktrace
+		// Sampling not defined in cfg
+		zapCfg.Encoding = cfg.Encoding
+		// EncoderConfig not defined in cfg
+		zapCfg.OutputPaths = cfg.OutputPaths
+		zapCfg.ErrorOutputPaths = cfg.ErrorOutputPaths
+		// InitialFields not defined in cfg
+	}
+
+	zapCfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	zapCfg.EncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
+	zapCfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	return zapCfg.Build()
 }
