@@ -16,6 +16,7 @@ type FilePath string
 type Config struct {
 	L1RpcEndpoint string
 	L2RpcEndpoint string
+	NumOfRetries  int
 }
 
 // OracleConfig ... Configuration passed through to an oracle component constructor

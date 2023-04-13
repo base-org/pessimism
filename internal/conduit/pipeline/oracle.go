@@ -12,7 +12,8 @@ import (
 // OracleDefinition ... Provides a generalized interface for developers to bind their own functionality to
 type OracleDefinition interface {
 	ConfigureRoutine() error
-	BackTestRoutine(ctx context.Context, componentChan chan models.TransitData, startHeight big.Int, endHeight big.Int) error
+	BackTestRoutine(ctx context.Context, componentChan chan models.TransitData, startHeight *big.Int,
+		endHeight *big.Int) error
 	ReadRoutine(ctx context.Context, componentChan chan models.TransitData) error
 }
 

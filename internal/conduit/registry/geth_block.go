@@ -11,7 +11,6 @@ import (
 	"github.com/base-org/pessimism/internal/conduit/models"
 	"github.com/base-org/pessimism/internal/conduit/pipeline"
 	"github.com/base-org/pessimism/internal/config"
-	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 const (
@@ -20,16 +19,15 @@ const (
 
 // GethBlockODef ...GethBlock register oracle definition used to drive oracle component
 type GethBlockODef struct {
-	cfg *config.OracleConfig
-	// TODO - Bind this to an interface and mock so that this logic can be tested
-	client     *ethclient.Client
-	currHeight *big.Int
+	cfg             *config.OracleConfig
+	clientInterface pipeline.EthClientInterface
+	currHeight      *big.Int
 }
 
 // NewGethBlockOracle ... Initializer
 func NewGethBlockOracle(ctx context.Context,
-	ot pipeline.OracleType, cfg *config.OracleConfig) (pipeline.Component, error) {
-	od := &GethBlockODef{cfg: cfg, currHeight: nil}
+	ot pipeline.OracleType, cfg *config.OracleConfig, clientNew pipeline.EthClientInterface) (pipeline.Component, error) {
+	od := &GethBlockODef{cfg: cfg, currHeight: nil, clientInterface: clientNew}
 	return pipeline.NewOracle(ctx, ot, od)
 }
 
@@ -40,20 +38,20 @@ func (oracle *GethBlockODef) ConfigureRoutine() error {
 		time.Second*time.Duration(models.EthClientTimeout))
 	defer ctxCancel()
 
-	client, err := ethclient.DialContext(ctxTimeout, oracle.cfg.RPCEndpoint)
+	err := oracle.clientInterface.DialContext(ctxTimeout, oracle.cfg.RPCEndpoint)
+
 	if err != nil {
 		return err
 	}
 
-	oracle.client = client
 	return nil
 }
 
 // BackTestRoutine ...
 func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context,
-	componentChan chan models.TransitData, startHeight big.Int, endHeight big.Int) error {
+	componentChan chan models.TransitData, startHeight *big.Int, endHeight *big.Int) error {
 
-	if endHeight.Cmp(&startHeight) < 0 {
+	if endHeight.Cmp(startHeight) < 0 {
 		return errors.New("start height cannot be more than the end height")
 	}
 
@@ -70,15 +68,17 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context,
 			var err error
 
 			// TODO: potentially break this functions off with the right context.
-			for i := 1; i <= oracle.cfg.NumOfRetries; i++ {
-				if i != 1 {
+			for i := 0; i <= oracle.cfg.NumOfRetries; i++ {
+				if i != 0 {
 					log.Printf("Header Retry number: %d", i)
 					time.Sleep(time.Duration(i) * time.Second)
 				}
 
-				header, err = oracle.client.HeaderByNumber(ctx, &height)
+				header, err = oracle.clientInterface.HeaderByNumber(ctx, height)
 				if err != nil {
 					log.Printf("Header fetching error: %s", err.Error())
+				} else {
+					break
 				}
 
 				if i == oracle.cfg.NumOfRetries {
@@ -86,7 +86,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context,
 				}
 			}
 
-			// means the above retries failed
+			// means the above retries failed, and keep trying
 			if header == nil {
 				continue
 			}
@@ -94,15 +94,17 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context,
 			var block *types.Block
 
 			// TODO: potentially break this functions off with the right context.
-			for i := 1; i <= oracle.cfg.NumOfRetries; i++ {
-				if i != 1 {
+			for i := 0; i <= oracle.cfg.NumOfRetries; i++ {
+				if i != 0 {
 					log.Printf("Block Retry number: %d", i)
 					time.Sleep(time.Duration(i) * time.Second)
 				}
 
-				block, err = oracle.client.BlockByNumber(ctx, header.Number)
+				block, err = oracle.clientInterface.BlockByNumber(ctx, header.Number)
 				if err != nil {
 					log.Printf("Block fetching error: %s", err.Error())
+				} else {
+					break
 				}
 
 				if i == oracle.cfg.NumOfRetries {
@@ -122,12 +124,12 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context,
 				Value:     *block,
 			}
 
-			if height.Cmp(&endHeight) == 0 {
+			if height.Cmp(endHeight) == 0 {
 				log.Printf("Completed backtest routine.")
 				return nil
 			}
 
-			height.Add(&height, big.NewInt(1))
+			height.Add(height, big.NewInt(1))
 
 		case <-ctx.Done():
 			return nil
@@ -140,6 +142,14 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context,
 // & writes block metadata to output listener components
 func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan models.TransitData) error {
 	// NOTE - Might need improvements in future as the project takes shape.
+
+	if oracle.cfg.EndHeight != nil && oracle.cfg.StartHeight == nil {
+		return errors.New("cannot start with latest block height with end height configured")
+	}
+
+	if oracle.cfg.EndHeight.Cmp(oracle.cfg.StartHeight) < 0 {
+		return errors.New("start height cannot be more than the end height")
+	}
 
 	ticker := time.NewTicker(pollInterval * time.Millisecond)
 	for {
@@ -176,15 +186,17 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			var err error
 
 			// TODO: potentially break this functions off with the right context.
-			for i := 1; i <= oracle.cfg.NumOfRetries; i++ {
-				if i != 1 {
+			for i := 0; i <= oracle.cfg.NumOfRetries; i++ {
+				if i != 0 {
 					log.Printf("Header Retry number: %d", i)
 					time.Sleep(time.Duration(i) * time.Second)
 				}
 
-				header, err = oracle.client.HeaderByNumber(ctx, height)
+				header, err = oracle.clientInterface.HeaderByNumber(ctx, height)
 				if err != nil {
 					log.Printf("Header fetching error: %s", err.Error())
+				} else {
+					break
 				}
 
 				if i == oracle.cfg.NumOfRetries {
@@ -201,15 +213,17 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			var block *types.Block
 
 			// TODO: potentially break this functions off with the right context.
-			for i := 1; i <= oracle.cfg.NumOfRetries; i++ {
-				if i != 1 {
+			for i := 0; i <= oracle.cfg.NumOfRetries; i++ {
+				if i != 0 {
 					log.Printf("Block Retry number: %d", i)
 					time.Sleep(time.Duration(i) * time.Second)
 				}
 
-				block, err = oracle.client.BlockByNumber(ctx, header.Number)
+				block, err = oracle.clientInterface.BlockByNumber(ctx, header.Number)
 				if err != nil {
 					log.Printf("Block fetching error: %s", err.Error())
+				} else {
+					break
 				}
 
 				if i == oracle.cfg.NumOfRetries {
@@ -230,13 +244,14 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			}
 
 			// check has to be done here to include the end height block
-			if oracle.cfg.EndHeight != nil && height == oracle.cfg.EndHeight {
+			if oracle.cfg.EndHeight != nil && height.Cmp(oracle.cfg.EndHeight) == 0 {
 				return nil
 			}
 
 			if height != nil {
 				height.Add(height, big.NewInt(1))
 			} else {
+				height = &big.Int{}
 				height.Add(header.Number, big.NewInt(1))
 			}
 
