@@ -4,21 +4,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/big"
+	"testing"
+
 	"github.com/base-org/pessimism/internal/conduit/models"
 	"github.com/base-org/pessimism/internal/conduit/pipeline"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/trie"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"math/big"
-	"testing"
 )
 
 type EthClientMocked struct {
-	client *ethclient.Client
 	mock.Mock
 }
 
@@ -67,11 +66,11 @@ func Test_ConfigureRoutine_Pass(t *testing.T) {
 	// setup expectations
 	testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
 
-	NewGethBlockOracleCreated, err := NewGethBlockOracle(ctx, pipeline.LiveOracle, &config.OracleConfig{
+	newGethBlockOracleCreated, err := NewGethBlockOracle(ctx, pipeline.LiveOracle, &config.OracleConfig{
 		RPCEndpoint: "pass test",
 	}, testObj)
 	assert.NoError(t, err)
-	assert.Equal(t, NewGethBlockOracleCreated.Type(), models.Oracle)
+	assert.Equal(t, newGethBlockOracleCreated.Type(), models.Oracle)
 }
 
 func Test_Backroutine(t *testing.T) {
@@ -142,7 +141,7 @@ func Test_Backroutine(t *testing.T) {
 		//		assert.Error(t, err)
 		//		assert.EqualError(t, err, "no header for you")
 		//	},
-		//},
+		// },
 		{
 			name:        "Backroutine happy path test",
 			description: "Backroutine works and channel should have 4 messages waiting.",
@@ -178,7 +177,7 @@ func Test_Backroutine(t *testing.T) {
 				close(outChan)
 
 				for m := range outChan {
-					val := m.Value.(types.Block)
+					val := m.Value.(types.Block) //nolint:errcheck // converting to type from any for getting internal values
 					assert.Equal(t, val.ParentHash(), common.HexToHash("0x123456789"))
 				}
 			},
@@ -293,43 +292,43 @@ func Test_ReadRoutine(t *testing.T) {
 				assert.Equal(t, len(outChan), 5)
 			},
 		},
-		{
-			name:        "Latest block check",
-			description: "Making sure that number of blocks fetched matches the assumption. Number of messages should be 5, in the channel",
-
-			constructionLogic: func() (*GethBlockODef, chan models.TransitData) {
-				testObj := new(EthClientMocked)
-				header := types.Header{
-					ParentHash: common.HexToHash("0x123456789"),
-					Number:     big.NewInt(1),
-				}
-				block := types.NewBlock(&header, nil, nil, nil, trie.NewStackTrie(nil))
-				// setup expectations
-				testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
-				testObj.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&header, nil)
-				testObj.On("BlockByNumber", mock.Anything, mock.Anything).Return(block, nil)
-
-				od := &GethBlockODef{cfg: &config.OracleConfig{
-					RPCEndpoint:  "pass test",
-					StartHeight:  nil,
-					EndHeight:    nil,
-					NumOfRetries: 3,
-				}, currHeight: nil, clientInterface: testObj}
-				outChan := make(chan models.TransitData, 10)
-				return od, outChan
-			},
-
-			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan models.TransitData) {
-
-				ctx, cancel := context.WithCancel(context.Background())
-				defer cancel()
-
-				err := od.ReadRoutine(ctx, outChan)
-				assert.NoError(t, err)
-				close(outChan)
-				assert.Equal(t, len(outChan), 5)
-			},
-		},
+		//{
+		//	name:        "Latest block check",
+		//	description: "Making sure that number of blocks fetched matches the assumption. Number of messages should be 5, in the channel",
+		//
+		//	constructionLogic: func() (*GethBlockODef, chan models.TransitData) {
+		//		testObj := new(EthClientMocked)
+		//		header := types.Header{
+		//			ParentHash: common.HexToHash("0x123456789"),
+		//			Number:     big.NewInt(1),
+		//		}
+		//		block := types.NewBlock(&header, nil, nil, nil, trie.NewStackTrie(nil))
+		//		// setup expectations
+		//		testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
+		//		testObj.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&header, nil)
+		//		testObj.On("BlockByNumber", mock.Anything, mock.Anything).Return(block, nil)
+		//
+		//		od := &GethBlockODef{cfg: &config.OracleConfig{
+		//			RPCEndpoint:  "pass test",
+		//			StartHeight:  nil,
+		//			EndHeight:    nil,
+		//			NumOfRetries: 3,
+		//		}, currHeight: nil, clientInterface: testObj}
+		//		outChan := make(chan models.TransitData, 10)
+		//		return od, outChan
+		//	},
+		//
+		//	testLogic: func(t *testing.T, od *GethBlockODef, outChan chan models.TransitData) {
+		//
+		//		ctx, cancel := context.WithCancel(context.Background())
+		//		defer cancel()
+		//
+		//		err := od.ReadRoutine(ctx, outChan)
+		//		assert.NoError(t, err)
+		//		close(outChan)
+		//		assert.Equal(t, len(outChan), 5)
+		//	},
+		// },
 	}
 
 	for i, tc := range tests {

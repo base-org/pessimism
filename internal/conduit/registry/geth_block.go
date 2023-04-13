@@ -3,10 +3,11 @@ package registry
 import (
 	"context"
 	"errors"
-	"github.com/ethereum/go-ethereum/core/types"
 	"log"
 	"math/big"
 	"time"
+
+	"github.com/ethereum/go-ethereum/core/types"
 
 	"github.com/base-org/pessimism/internal/conduit/models"
 	"github.com/base-org/pessimism/internal/conduit/pipeline"
@@ -48,9 +49,8 @@ func (oracle *GethBlockODef) ConfigureRoutine() error {
 }
 
 // BackTestRoutine ...
-func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context,
-	componentChan chan models.TransitData, startHeight *big.Int, endHeight *big.Int) error {
-
+func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan chan models.TransitData,
+	startHeight *big.Int, endHeight *big.Int) error {
 	if endHeight.Cmp(startHeight) < 0 {
 		return errors.New("start height cannot be more than the end height")
 	}
@@ -62,55 +62,14 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context,
 		select {
 		case <-ticker.C:
 
-			// retry for specified number of times.
-			// Not an exponent backoff, but a simpler method which retries sooner
-			var header *types.Header
-			var err error
-
-			// TODO: potentially break this functions off with the right context.
-			for i := 0; i <= oracle.cfg.NumOfRetries; i++ {
-				if i != 0 {
-					log.Printf("Header Retry number: %d", i)
-					time.Sleep(time.Duration(i) * time.Second)
-				}
-
-				header, err = oracle.clientInterface.HeaderByNumber(ctx, height)
-				if err != nil {
-					log.Printf("Header fetching error: %s", err.Error())
-				} else {
-					break
-				}
-
-				if i == oracle.cfg.NumOfRetries {
-					log.Printf("All retries exhausted. Block at height %d will be skipped", height.Int64())
-				}
-			}
+			header := oracle.fetchHeaderWithRetry(ctx, height)
 
 			// means the above retries failed, and keep trying
 			if header == nil {
 				continue
 			}
 
-			var block *types.Block
-
-			// TODO: potentially break this functions off with the right context.
-			for i := 0; i <= oracle.cfg.NumOfRetries; i++ {
-				if i != 0 {
-					log.Printf("Block Retry number: %d", i)
-					time.Sleep(time.Duration(i) * time.Second)
-				}
-
-				block, err = oracle.clientInterface.BlockByNumber(ctx, header.Number)
-				if err != nil {
-					log.Printf("Block fetching error: %s", err.Error())
-				} else {
-					break
-				}
-
-				if i == oracle.cfg.NumOfRetries {
-					log.Printf("All retries exhausted. Block at height %d will be skipped", height.Int64())
-				}
-			}
+			block := oracle.fetchHeaderWithRetry(ctx, header.Number)
 
 			// means the above retries failed
 			if block == nil {
@@ -135,6 +94,70 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context,
 			return nil
 		}
 	}
+}
+
+func (oracle *GethBlockODef) getHeightToProcess() *big.Int {
+	if oracle.currHeight == nil {
+		log.Printf("Current Height is nil, looking for starting height")
+		if oracle.cfg.StartHeight != nil {
+			log.Printf("StartHeight found to be: %d, using that value.", oracle.cfg.StartHeight)
+			return oracle.cfg.StartHeight
+		}
+
+		log.Printf("Starting Height is nil, using latest block as starting point.")
+		return nil
+	}
+
+	log.Printf("Currently processing height: %d", oracle.currHeight)
+	return oracle.currHeight
+}
+
+// fetchHeaderWithRetry ... retry for specified number of times.
+// Not an exponent backoff, but a simpler method which retries sooner
+func (oracle *GethBlockODef) fetchHeaderWithRetry(ctx context.Context, height *big.Int) *types.Header {
+	for i := 0; i <= oracle.cfg.NumOfRetries; i++ {
+		if i != 0 {
+			log.Printf("Header Retry number: %d", i)
+			time.Sleep(time.Duration(i) * time.Second)
+		}
+
+		header, err := oracle.clientInterface.HeaderByNumber(ctx, height)
+		if err != nil {
+			log.Printf("Header fetching error: %s", err.Error())
+		} else {
+			return header
+		}
+
+		if i == oracle.cfg.NumOfRetries {
+			log.Printf("All retries exhausted. Block at height %d will be skipped", height)
+			return nil
+		}
+	}
+	return nil
+}
+
+// fetchBlockWithRetry ... retry for specified number of times.
+// Not an exponent backoff, but a simpler method which retries sooner
+func (oracle *GethBlockODef) fetchBlockWithRetry(ctx context.Context, headerNumber *big.Int) *types.Block {
+	for i := 0; i <= oracle.cfg.NumOfRetries; i++ {
+		if i != 0 {
+			log.Printf("Block Retry number: %d", i)
+			time.Sleep(time.Duration(i) * time.Second)
+		}
+
+		block, err := oracle.clientInterface.BlockByNumber(ctx, headerNumber)
+		if err != nil {
+			log.Printf("Block fetching error: %s", err.Error())
+		} else {
+			return block
+		}
+
+		if i == oracle.cfg.NumOfRetries {
+			log.Printf("All retries exhausted. Block at height %d will be skipped", headerNumber)
+			return nil
+		}
+	}
+	return nil
 }
 
 // ReadRoutine ... Sequentially polls go-ethereum compatible execution
@@ -164,72 +187,17 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			// At the end, if the end height is specified and not nil, if its met, it returns once done.
 			// Start Height and End Height is inclusive in fetching blocks.
 
-			var height *big.Int
-
-			if oracle.currHeight == nil {
-				log.Printf("Current Height is nil, looking for starting height")
-				if oracle.cfg.StartHeight != nil {
-					log.Printf("StartHeight found to be: %d, using that value.", oracle.cfg.StartHeight)
-					height = oracle.cfg.StartHeight
-				} else {
-					log.Printf("Starting Height is nil, using latest block as starting point.")
-					height = nil
-				}
-			} else {
-				height = oracle.currHeight
-				log.Printf("Currently processing height: %d", height)
-			}
-
-			// retry for specified number of times.
-			// Not an exponent backoff, but a simpler method which retries sooner
-			var header *types.Header
-			var err error
+			height := oracle.getHeightToProcess()
 
 			// TODO: potentially break this functions off with the right context.
-			for i := 0; i <= oracle.cfg.NumOfRetries; i++ {
-				if i != 0 {
-					log.Printf("Header Retry number: %d", i)
-					time.Sleep(time.Duration(i) * time.Second)
-				}
-
-				header, err = oracle.clientInterface.HeaderByNumber(ctx, height)
-				if err != nil {
-					log.Printf("Header fetching error: %s", err.Error())
-				} else {
-					break
-				}
-
-				if i == oracle.cfg.NumOfRetries {
-					log.Printf("All retries exhausted. Block at height %d will be skipped", height)
-				}
-
-			}
+			header := oracle.fetchHeaderWithRetry(ctx, height)
 
 			// means the above retries failed
 			if header == nil {
 				continue
 			}
 
-			var block *types.Block
-
-			// TODO: potentially break this functions off with the right context.
-			for i := 0; i <= oracle.cfg.NumOfRetries; i++ {
-				if i != 0 {
-					log.Printf("Block Retry number: %d", i)
-					time.Sleep(time.Duration(i) * time.Second)
-				}
-
-				block, err = oracle.clientInterface.BlockByNumber(ctx, header.Number)
-				if err != nil {
-					log.Printf("Block fetching error: %s", err.Error())
-				} else {
-					break
-				}
-
-				if i == oracle.cfg.NumOfRetries {
-					log.Printf("All retries exhausted. Block at height %d will be skipped", height)
-				}
-			}
+			block := oracle.fetchBlockWithRetry(ctx, header.Number)
 
 			// means the above retries failed
 			if block == nil {

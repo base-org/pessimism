@@ -35,7 +35,7 @@ func main() {
 	l1OracleCfg := &config.OracleConfig{
 		RPCEndpoint:  cfg.L1RpcEndpoint,
 		StartHeight:  nil,
-		NumOfRetries: 3,
+		NumOfRetries: cfg.NumOfRetries,
 		EndHeight:    nil}
 
 	// 1. Configure blackhole tx pipe component
@@ -72,7 +72,8 @@ func main() {
 		}
 	}()
 
-	l1Oracle, err := init(appCtx, pipeline.LiveOracle, l1OracleCfg)
+	ethClient := pipeline.EthClient{}
+	l1Oracle, err := init(appCtx, pipeline.LiveOracle, l1OracleCfg, &ethClient)
 	if err != nil {
 		panic(err)
 	}

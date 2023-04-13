@@ -26,7 +26,8 @@ const (
 // Generalized component constructor types
 type (
 	// OracleConstructor ... Type declaration that a registry oracle component constructor must adhere to
-	OracleConstructor = func(ctx context.Context, ot OracleType, cfg *config.OracleConfig) (Component, error)
+	OracleConstructor = func(ctx context.Context, ot OracleType, cfg *config.OracleConfig,
+		clientNew EthClientInterface) (Component, error)
 
 	// PipeConstructorFunc ... Type declaration that a registry pipe component constructor must adhere to
 	PipeConstructorFunc = func(ctx context.Context, inputChan chan models.TransitData) (Component, error)
