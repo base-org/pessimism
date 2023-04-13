@@ -69,7 +69,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 				continue
 			}
 
-			block := oracle.fetchHeaderWithRetry(ctx, header.Number)
+			block := oracle.fetchBlockWithRetry(ctx, header.Number)
 
 			// means the above retries failed
 			if block == nil {
