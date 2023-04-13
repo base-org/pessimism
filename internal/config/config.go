@@ -95,9 +95,8 @@ func getEnvStr(key string) string {
 func getEnvBool(key string) bool {
 	if val := getEnvStr(key); val == "1" {
 		return true
-	} else {
-		return false
 	}
+	return false
 }
 
 // getEnvSlice ... Reads env vars and converts to string slice
