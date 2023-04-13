@@ -27,7 +27,7 @@ type Config struct {
 }
 
 // InitLoggerFromConfig .. initializes logger from config
-func InitLoggerFromConfig(cfg *Config) (*zap.Logger, error) {
+func (cfg *Config) InitLoggerFromConfig() (*zap.Logger, error) {
 	switch {
 	case cfg.UseCustom:
 		return zap.Config{

@@ -8,7 +8,6 @@ import (
 	"github.com/base-org/pessimism/internal/conduit/pipeline"
 	"github.com/base-org/pessimism/internal/conduit/registry"
 	"github.com/base-org/pessimism/internal/config"
-	"github.com/base-org/pessimism/internal/logger"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"go.uber.org/zap"
@@ -35,7 +34,7 @@ func main() {
 
 	cfg := config.NewConfig("config.env")
 
-	logger, err := logger.InitLoggerFromConfig(cfg.LoggerConfig)
+	logger, err := cfg.LoggerConfig.InitLoggerFromConfig()
 	if err != nil {
 		panic("could not initialize logger")
 	}
