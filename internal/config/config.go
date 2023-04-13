@@ -90,12 +90,13 @@ func getEnvStr(key string) string {
 
 // getEnvBool .. Reads env vars and converts to booleans, panics if incorrect input
 func getEnvBool(key string) bool {
-	if key := getEnvStr(key); key == "1" {
+	if val := getEnvStr(key); val == "1" {
 		return true
-	} else if key == "0" {
+	} else if val == "0" {
 		return false
+	} else {
+		log.Fatalf("env val is not boolean (0 or 1); got: %s=%s", key, val)
 	}
-	log.Fatalf("env var given key: %s is not boolean (1 or 0)", key)
 	return false
 }
 
@@ -105,10 +106,10 @@ func getEnvSlice(key string) []string {
 }
 
 func getEnvInt(key string) int {
-	intRep, err := strconv.Atoi(getEnvStr(key))
+	val := getEnvStr(key)
+	intRep, err := strconv.Atoi(val)
 	if err != nil {
-		panic(err)
+		log.Fatalf("env val is not int; got: %s=%s", key, val)
 	}
-
 	return intRep
 }
