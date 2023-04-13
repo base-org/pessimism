@@ -28,7 +28,7 @@ type Config struct {
 
 	Environment Env
 
-	LoggerConfig *logger.LoggerConfig
+	LoggerConfig *logger.Config
 }
 
 // OracleConfig ... Configuration passed through to an oracle component constructor
@@ -51,7 +51,7 @@ func NewConfig(fileName FilePath) *Config {
 		Environment: Env(getEnvStr("ENV")),
 	}
 
-	config.LoggerConfig = &logger.LoggerConfig{
+	config.LoggerConfig = &logger.Config{
 		UseCustom:         getEnvBool("LOGGER_USE_CUSTOM"),
 		Level:             getEnvInt("LOGGER_LEVEL"),
 		IsProduction:      config.Environment == Production,

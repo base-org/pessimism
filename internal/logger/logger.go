@@ -5,7 +5,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-type LoggerConfig struct {
+type Config struct {
 	UseCustom               bool
 	Level                   int
 	IsProduction            bool
@@ -27,8 +27,9 @@ type LoggerConfig struct {
 }
 
 // InitLoggerFromConfig .. initializes logger from config
-func InitLoggerFromConfig(cfg *LoggerConfig) (*zap.Logger, error) {
-	if cfg.UseCustom {
+func InitLoggerFromConfig(cfg *Config) (*zap.Logger, error) {
+	switch {
+	case cfg.UseCustom:
 		return zap.Config{
 			Level:             zap.NewAtomicLevelAt(zapcore.Level(cfg.Level)),
 			Development:       !cfg.IsProduction,
@@ -37,7 +38,7 @@ func InitLoggerFromConfig(cfg *LoggerConfig) (*zap.Logger, error) {
 			// Sampling not set
 			Encoding: cfg.Encoding,
 			EncoderConfig: zapcore.EncoderConfig{
-				//set by config
+				// set by config
 				MessageKey:       cfg.EncoderMessageKey,
 				LevelKey:         cfg.EncoderLevelKey,
 				TimeKey:          cfg.EncoderTimeKey,
@@ -63,9 +64,9 @@ func InitLoggerFromConfig(cfg *LoggerConfig) (*zap.Logger, error) {
 			ErrorOutputPaths: cfg.ErrorOutputPaths,
 			// InitialFields not set
 		}.Build()
-	} else if cfg.IsProduction {
+	case cfg.IsProduction:
 		return zap.NewProductionConfig().Build()
-	} else {
+	default:
 		return zap.NewDevelopmentConfig().Build()
 	}
 }
