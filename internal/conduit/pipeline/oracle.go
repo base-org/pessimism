@@ -63,7 +63,8 @@ func NewOracle(ctx context.Context, ot OracleType,
 
 	return o, nil
 }
-// TODO (#22) : Add closure logic to all component types 
+
+// TODO (#22) : Add closure logic to all component types
 func (o *Oracle) Close() {
 	log := ctxzap.Extract(o.ctx)
 	log.Info("Waiting for oracle goroutines to be done.")

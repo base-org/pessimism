@@ -86,7 +86,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 
 			headerAsInterface, err := oracle.fetchData(ctx, height, models.FetchHeader)
 			headerAsserted, headerAssertedOk := headerAsInterface.(*types.Header)
-			// means the above retries failed
+
 			if err != nil || !headerAssertedOk {
 				log.Error("problem fetching or asserting header", zap.NamedError("headerFetch", err),
 					zap.Bool("headerAsserted", headerAssertedOk))
@@ -186,7 +186,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 
 			headerAsInterface, err := oracle.fetchData(ctx, height, models.FetchHeader)
 			headerAsserted, headerAssertedOk := headerAsInterface.(*types.Header)
-			// means the above retries failed
+
 			if err != nil || !headerAssertedOk {
 				log.Error("problem fetching or asserting header", zap.NamedError("headerFetch", err),
 					zap.Bool("headerAsserted", headerAssertedOk))
