@@ -3,11 +3,12 @@ package config
 import (
 	"fmt"
 	"log"
+	"math/big"
 	"strconv"
 	"strings"
 
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/logger"
+	"github.com/base-org/pessimism/internal/logging"
 	"github.com/joho/godotenv"
 
 	"os"
@@ -28,10 +29,8 @@ const (
 type Config struct {
 	L1RpcEndpoint string
 	L2RpcEndpoint string
-
-	Environment Env
-
-	LoggerConfig *logger.Config
+	Environment   Env
+	LoggerConfig  *logging.Config
 }
 
 func (c *Config) GetEndpointForNetwork(n core.Network) (string, error) {
@@ -48,9 +47,10 @@ func (c *Config) GetEndpointForNetwork(n core.Network) (string, error) {
 
 // OracleConfig ... Configuration passed through to an oracle component constructor
 type OracleConfig struct {
-	RPCEndpoint string
-	StartHeight *int
-	EndHeight   *int
+	RPCEndpoint  string
+	StartHeight  *big.Int
+	EndHeight    *big.Int
+	NumOfRetries int
 }
 
 // PipelineConfig ... Configuration passed through to a pipeline constructor
@@ -81,7 +81,7 @@ func NewConfig(fileName FilePath) *Config {
 
 		Environment: Env(getEnvStr("ENV")),
 
-		LoggerConfig: &logger.Config{
+		LoggerConfig: &logging.Config{
 			UseCustom:         getEnvBool("LOGGER_USE_CUSTOM"),
 			Level:             getEnvInt("LOGGER_LEVEL"),
 			DisableCaller:     getEnvBool("LOGGER_DISABLE_CALLER"),

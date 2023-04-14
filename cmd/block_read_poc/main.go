@@ -7,11 +7,8 @@ import (
 
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/etl/pipeline"
-	"github.com/base-org/pessimism/internal/logger"
+	"github.com/base-org/pessimism/internal/logging"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
-	"go.uber.org/zap"
 )
 
 func main() {
@@ -32,14 +29,9 @@ func main() {
 
 	cfg := config.NewConfig("config.env")
 
-	logger, err := logger.NewLogger(cfg.LoggerConfig, cfg.IsProduction())
-	if err != nil {
-		panic("could not initialize logger")
-	}
+	logging.NewLogger(cfg.LoggerConfig, cfg.IsProduction())
 
-	appCtx = ctxzap.ToContext(appCtx, logger)
-
-	logger.Info("pessimism boot up")
+	logging.NoContext().Info("pessimism boot up")
 
 	l1OracleCfg := &config.OracleConfig{
 		RPCEndpoint: cfg.L1RpcEndpoint,
@@ -53,21 +45,8 @@ func main() {
 	}
 
 	pipelineCfg2 := &config.PipelineConfig{
-		DataType:     core.BlackholeTX,
-		PipelineType: core.Live,
-		OracleCfg:    l1OracleCfg,
-	}
-
-	etlManager := pipeline.NewManager(appCtx)
-
-	pID, err := etlManager.CreateRegisterPipeline(appCtx, pipelineCfg1)
-	if err != nil {
-		logger.Fatal("error during pipe initialization", zap.Error(err))
-	}
-
-	pID2, err := etlManager.CreateRegisterPipeline(appCtx, pipelineCfg2)
-	if err != nil {
-		logger.Fatal("error getting register", zap.String("type", string(registry.GethBlock)), zap.Error(err))
+		DataType:  core.BlackholeTX,
+		OracleCfg: l1OracleCfg,
 	}
 
 	outChan := core.NewTransitChannel()
