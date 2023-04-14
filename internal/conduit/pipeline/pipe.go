@@ -2,9 +2,10 @@ package pipeline
 
 import (
 	"context"
-	"log"
 
 	"github.com/base-org/pessimism/internal/conduit/models"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
+	"go.uber.org/zap"
 )
 
 type PipeOption func(*Pipe)
@@ -34,7 +35,8 @@ type Pipe struct {
 // NewPipe ... Initializer
 func NewPipe(ctx context.Context, tform TranformFunc,
 	inputChan chan models.TransitData, opts ...PipeOption) (Component, error) {
-	log.Print("Constructing new component pipe ")
+	log := ctxzap.Extract(ctx)
+	log.Info("Constructing new component pipe")
 
 	router, err := NewOutputRouter()
 	if err != nil {
@@ -64,20 +66,21 @@ func (p *Pipe) Type() models.ComponentType {
 // to an input channel where transit data is read, transformed, and transitte
 // to downstream components
 func (p *Pipe) EventLoop() error {
+	log := ctxzap.Extract(p.ctx)
 	for {
 		select {
 		// Input has been fed to the component
 		case inputData := <-p.inputChan:
-			log.Printf("Got input data")
+			log.Info("Got input data")
 			outputData, err := p.tform(inputData)
 			if err != nil {
 				// TODO - Introduce prometheus call here
 				// TODO - Introduce go standard logger (I,E. zap) debug call
-				log.Printf("%e", err)
+				log.Error("error transforming", zap.Error(err))
 				continue
 			}
 
-			log.Printf("Transiting output")
+			log.Info("Transiting output")
 			p.OutputRouter.TransitOutputs(outputData)
 
 		// Manager is telling us to shutdown
