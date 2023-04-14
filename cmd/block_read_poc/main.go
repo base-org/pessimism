@@ -5,6 +5,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/conduit/models"
 	"github.com/base-org/pessimism/internal/conduit/pipeline"
 	"github.com/base-org/pessimism/internal/conduit/registry"
@@ -72,7 +73,7 @@ func main() {
 		}
 	}()
 
-	ethClient := pipeline.EthClient{}
+	ethClient := client.EthClient{}
 	l1Oracle, err := init(appCtx, pipeline.LiveOracle, l1OracleCfg, &ethClient)
 	if err != nil {
 		panic(err)

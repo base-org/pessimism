@@ -9,6 +9,13 @@ const (
 	Conveyor ComponentType = 2
 )
 
+type FetchType int
+
+const (
+	FetchHeader FetchType = 0
+	FetchBlock  FetchType = 1
+)
+
 type Timeouts int
 
 const (

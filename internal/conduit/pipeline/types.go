@@ -2,8 +2,8 @@ package pipeline
 
 import (
 	"context"
-	"github.com/base-org/pessimism/internal/client"
 
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/conduit/models"
 	"github.com/base-org/pessimism/internal/config"
 )
