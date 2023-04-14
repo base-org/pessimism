@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
+// TODO (#20) : Introduce optional Retry-able EthClient
 type EthClient struct {
 	client *ethclient.Client
 }
