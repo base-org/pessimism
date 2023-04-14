@@ -15,7 +15,7 @@ func WithDirective(componentID int, outChan chan models.TransitData) RouterOptio
 }
 
 // OutputRouter ... Used as a lookup for components to know where to send output data to
-// Adding and removing directives in the equivalent of adding an edge between two nodes using standard graph theory
+// Adding and removing directives is the equivalent of adding an edge between two nodes using standard graph theory
 type OutputRouter struct {
 	outChans map[int]chan models.TransitData
 }
@@ -35,17 +35,17 @@ func NewOutputRouter(opts ...RouterOption) (*OutputRouter, error) {
 	return router, nil
 }
 
-// TransitOutput ... Sends single piece of transitData to all innner mapping value channels
+// TransitOutput ... Sends single piece of transitData to all inner mapping value channels
 func (router *OutputRouter) TransitOutput(data models.TransitData) {
-	// NOTE - Consider introducing a fail safe timeout to ensure that freezing on clogged chanel buffers is recognized
+	// NOTE - Consider introducing a fail-safe timeout to ensure that freezing on clogged chanel buffers is recognized
 	for _, channel := range router.outChans {
 		channel <- data
 	}
 }
 
-// TransitOutput ... Sends slice of transitData to all innner mapping value channels
+// TransitOutputs ... Sends slice of transitData to all inner mapping value channels
 func (router *OutputRouter) TransitOutputs(dataSlice []models.TransitData) {
-	// NOTE - Consider introducing a fail safe timeout to ensure that freezing on clogged chanel buffers is recognized
+	// NOTE - Consider introducing a fail-safe timeout to ensure that freezing on clogged chanel buffers is recognized
 	for _, data := range dataSlice {
 		router.TransitOutput(data)
 	}

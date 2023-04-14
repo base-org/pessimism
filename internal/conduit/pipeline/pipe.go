@@ -62,6 +62,9 @@ func (p *Pipe) Type() models.ComponentType {
 	return models.Pipe
 }
 
+func (p *Pipe) Close() {
+}
+
 // EventLoop ... Driver loop for component that actively subscribes
 // to an input channel where transit data is read, transformed, and transitte
 // to downstream components
@@ -75,7 +78,7 @@ func (p *Pipe) EventLoop() error {
 			outputData, err := p.tform(inputData)
 			if err != nil {
 				// TODO - Introduce prometheus call here
-				// TODO - Introduce go standard logger (I,E. zap) debug call
+				// TODO - Introduce go standard logging (I,E. zap) debug call
 				log.Error("error transforming", zap.Error(err))
 				continue
 			}

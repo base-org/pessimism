@@ -4,13 +4,13 @@ import (
 	"context"
 	"sync"
 
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/conduit/models"
 	"github.com/base-org/pessimism/internal/conduit/pipeline"
 	"github.com/base-org/pessimism/internal/conduit/registry"
 	"github.com/base-org/pessimism/internal/config"
-	"github.com/base-org/pessimism/internal/logger"
+	"github.com/base-org/pessimism/internal/logging"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	"go.uber.org/zap"
 )
 
@@ -35,14 +35,9 @@ func main() {
 
 	cfg := config.NewConfig("config.env")
 
-	logger, err := logger.NewLogger(cfg.LoggerConfig, cfg.IsProduction())
-	if err != nil {
-		panic("could not initialize logger")
-	}
+	logging.NewLogger(cfg.LoggerConfig, cfg.IsProduction())
 
-	appCtx = ctxzap.ToContext(appCtx, logger)
-
-	logger.Info("pessimism boot up")
+	logging.NoContext().Info("pessimism boot up")
 
 	l1OracleCfg := &config.OracleConfig{
 		RPCEndpoint: cfg.L1RpcEndpoint,
@@ -52,50 +47,51 @@ func main() {
 	// 1. Configure blackhole tx pipe component
 	createRegister, err := registry.GetRegister(registry.ContractCreateTX)
 	if err != nil {
-		logger.Fatal("error creating register", zap.Error(err))
+		logging.NoContext().Fatal("error creating register", zap.Error(err))
 	}
 
 	initPipe, success := createRegister.ComponentConstructor.(pipeline.PipeConstructorFunc)
 	if !success {
-		logger.Fatal("could not read component constructor Pipe constructor type")
+		logging.NoContext().Fatal("could not read component constructor Pipe constructor type")
 	}
 
 	inputChan := make(chan models.TransitData)
 
 	createTxPipe, err := initPipe(appCtx, inputChan)
 	if err != nil {
-		logger.Fatal("error during pipe initialization", zap.Error(err))
+		logging.NoContext().Fatal("error during pipe initialization", zap.Error(err))
 	}
 
 	register, err := registry.GetRegister(registry.GethBlock)
 	if err != nil {
-		logger.Fatal("error getting register", zap.String("type", string(registry.GethBlock)), zap.Error(err))
+		logging.NoContext().Fatal("error getting register", zap.String("type", string(registry.GethBlock)), zap.Error(err))
 	}
 
 	init, success := register.ComponentConstructor.(pipeline.OracleConstructor)
 	if !success {
-		logger.Fatal("Could not read constructor value")
+		logging.NoContext().Fatal("Could not read constructor value")
 	}
 
 	go func() {
 		if routineErr := createTxPipe.EventLoop(); routineErr != nil {
-			logger.Error("Error received from oracle event loop", zap.Error(routineErr))
+			logging.NoContext().Error("Error received from oracle event loop", zap.Error(routineErr))
 		}
 	}()
 
-	l1Oracle, err := init(appCtx, pipeline.LiveOracle, l1OracleCfg)
+	ethClient := client.EthClient{}
+	l1Oracle, err := init(appCtx, pipeline.LiveOracle, l1OracleCfg, &ethClient)
 	if err != nil {
-		logger.Fatal("error initializing oracle", zap.Error(err))
+		logging.NoContext().Fatal("error initializing oracle", zap.Error(err))
 	}
 
 	if err := l1Oracle.AddDirective(interChanID, inputChan); err != nil {
-		logger.Fatal("error adding directive", zap.Int("interChanID", interChanID), zap.Error(err))
+		logging.NoContext().Fatal("error adding directive", zap.Int("interChanID", interChanID), zap.Error(err))
 	}
 
 	outputChan := make(chan models.TransitData)
 
 	if err := createTxPipe.AddDirective(outChanID, outputChan); err != nil {
-		logger.Fatal("error adding directive", zap.Int("outChanID", outChanID), zap.Error(err))
+		logging.NoContext().Fatal("error adding directive", zap.Int("outChanID", outChanID), zap.Error(err))
 	}
 
 	wg := sync.WaitGroup{}
@@ -103,18 +99,18 @@ func main() {
 
 	go func() {
 		if routineErr := l1Oracle.EventLoop(); routineErr != nil {
-			logger.Error("Error received from oracle event loop", zap.Error(routineErr))
+			logging.NoContext().Error("Error received from oracle event loop", zap.Error(routineErr))
 		}
 	}()
 
 	for td := range outputChan {
-		logger.Info("Received Contract creation Transaction", zap.Any("transitData", td))
+		logging.NoContext().Info("Received Contract creation Transaction", zap.Any("transitData", td))
 
 		parsedTx, success := td.Value.(types.Transaction)
 		if !success {
-			logger.Error("Could not parse transaction value")
+			logging.NoContext().Error("Could not parse transaction value")
 		}
 
-		logger.Info("As parsed transaction", zap.Any("parsedTX", parsedTx))
+		logging.NoContext().Info("As parsed transaction", zap.Any("parsedTX", parsedTx))
 	}
 }

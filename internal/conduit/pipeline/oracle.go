@@ -2,16 +2,19 @@ package pipeline
 
 import (
 	"context"
+	"math/big"
+	"sync"
 
 	"github.com/base-org/pessimism/internal/conduit/models"
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
+	"github.com/base-org/pessimism/internal/logging"
 	"go.uber.org/zap"
 )
 
 // OracleDefinition ... Provides a generalized interface for developers to bind their own functionality to
 type OracleDefinition interface {
-	ConfigureRoutine(ctx context.Context) error
-	BackTestRoutine(ctx context.Context, componentChan chan models.TransitData) error
+	ConfigureRoutine() error
+	BackTestRoutine(ctx context.Context, componentChan chan models.TransitData, startHeight *big.Int,
+		endHeight *big.Int) error
 	ReadRoutine(ctx context.Context, componentChan chan models.TransitData) error
 }
 
@@ -22,8 +25,9 @@ type OracleOption = func(*Oracle)
 type Oracle struct {
 	ctx context.Context
 
-	od OracleDefinition
-	ot OracleType
+	od        OracleDefinition
+	ot        OracleType
+	waitGroup *sync.WaitGroup
 
 	*OutputRouter
 }
@@ -45,6 +49,7 @@ func NewOracle(ctx context.Context, ot OracleType,
 		ctx:          ctx,
 		od:           od,
 		ot:           ot,
+		waitGroup:    &sync.WaitGroup{},
 		OutputRouter: router,
 	}
 
@@ -52,24 +57,33 @@ func NewOracle(ctx context.Context, ot OracleType,
 		opt(o)
 	}
 
-	if cfgErr := od.ConfigureRoutine(ctx); cfgErr != nil {
+	if cfgErr := od.ConfigureRoutine(); cfgErr != nil {
 		return nil, cfgErr
 	}
 
 	return o, nil
 }
 
+// TODO (#22) : Add closure logic to all component types
+
+// Close ... This function is called at the end when processes related to oracle need to shut down
+func (o *Oracle) Close() {
+	logging.WithContext(o.ctx).Info("Waiting for oracle goroutines to be done.")
+	o.waitGroup.Wait()
+	logging.WithContext(o.ctx).Info("Oracle goroutines have exited.")
+}
+
 // EventLoop ... Component loop that actively waits and transits register data
 // from a channel that the definition's read routine writes to
 func (o *Oracle) EventLoop() error {
-	log := ctxzap.Extract(o.ctx)
 	oracleChannel := make(chan models.TransitData)
 
 	// Spawn read routine process
-	// TODO - Consider higher order concurrency injection; ie waitgroup, routine management
+	o.waitGroup.Add(1)
 	go func() {
+		defer o.waitGroup.Done()
 		if err := o.od.ReadRoutine(o.ctx, oracleChannel); err != nil {
-			log.Error("Received error from read routine", zap.Error(err))
+			logging.WithContext(o.ctx).Error("Received error from read routine", zap.Error(err))
 		}
 	}()
 
@@ -80,7 +94,6 @@ func (o *Oracle) EventLoop() error {
 
 		case <-o.ctx.Done():
 			close(oracleChannel)
-
 			return nil
 		}
 	}
