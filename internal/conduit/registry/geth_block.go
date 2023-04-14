@@ -88,8 +88,8 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 			headerAsserted, headerAssertedOk := headerAsInterface.(*types.Header)
 			// means the above retries failed
 			if err != nil || !headerAssertedOk {
-				log.Error("problem fetching header", zap.Error(err))
-
+				log.Error("problem fetching or asserting header", zap.NamedError("headerFetch", err),
+					zap.Bool("headerAsserted", headerAssertedOk))
 				continue
 			}
 
@@ -97,7 +97,8 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 			blockAsserted, blockAssertedOk := blockAsInterface.(*types.Block)
 
 			if err != nil || !blockAssertedOk {
-				log.Error("problem fetching block", zap.Error(err))
+				log.Error("problem fetching or asserting block", zap.NamedError("blockFetch", err),
+					zap.Bool("blockAsserted", blockAssertedOk))
 				continue
 			}
 
@@ -187,7 +188,8 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			headerAsserted, headerAssertedOk := headerAsInterface.(*types.Header)
 			// means the above retries failed
 			if err != nil || !headerAssertedOk {
-				log.Error("problem fetching header", zap.Error(err))
+				log.Error("problem fetching or asserting header", zap.NamedError("headerFetch", err),
+					zap.Bool("headerAsserted", headerAssertedOk))
 				continue
 			}
 
@@ -195,7 +197,8 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			blockAsserted, blockAssertedOk := blockAsInterface.(*types.Block)
 
 			if err != nil || !blockAssertedOk {
-				log.Error("problem fetching block %v", zap.Error(err))
+				log.Error("problem fetching or asserting block", zap.NamedError("blockFetch", err),
+					zap.Bool("blockAsserted", blockAssertedOk))
 				continue
 			}
 
