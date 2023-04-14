@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/base-org/pessimism/internal/logger"
+	"github.com/base-org/pessimism/internal/logging"
 	"github.com/joho/godotenv"
 
 	"os"
@@ -27,7 +27,7 @@ type Config struct {
 	L1RpcEndpoint string
 	L2RpcEndpoint string
 	Environment   Env
-	LoggerConfig  *logger.Config
+	LoggerConfig  *logging.Config
 }
 
 // OracleConfig ... Configuration passed through to an oracle component constructor
@@ -50,7 +50,7 @@ func NewConfig(fileName FilePath) *Config {
 
 		Environment: Env(getEnvStr("ENV")),
 
-		LoggerConfig: &logger.Config{
+		LoggerConfig: &logging.Config{
 			UseCustom:         getEnvBool("LOGGER_USE_CUSTOM"),
 			Level:             getEnvInt("LOGGER_LEVEL"),
 			DisableCaller:     getEnvBool("LOGGER_DISABLE_CALLER"),
