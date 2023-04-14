@@ -3,7 +3,6 @@ package registry
 import (
 	"context"
 	"errors"
-	"go.uber.org/zap"
 	"math/big"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
+	"go.uber.org/zap"
 )
 
 const (
