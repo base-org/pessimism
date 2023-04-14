@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/base-org/pessimism/internal/conduit/models"
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
+	"github.com/base-org/pessimism/internal/logging"
 	"go.uber.org/zap"
 )
 
@@ -65,17 +65,17 @@ func NewOracle(ctx context.Context, ot OracleType,
 }
 
 // TODO (#22) : Add closure logic to all component types
+
+// Close ... This function is called at the end when processes related to oracle need to shut down
 func (o *Oracle) Close() {
-	log := ctxzap.Extract(o.ctx)
-	log.Info("Waiting for oracle goroutines to be done.")
+	logging.WithContext(o.ctx).Info("Waiting for oracle goroutines to be done.")
 	o.waitGroup.Wait()
-	log.Info("Oracle goroutines have exited.")
+	logging.WithContext(o.ctx).Info("Oracle goroutines have exited.")
 }
 
 // EventLoop ... Component loop that actively waits and transits register data
 // from a channel that the definition's read routine writes to
 func (o *Oracle) EventLoop() error {
-	log := ctxzap.Extract(o.ctx)
 	oracleChannel := make(chan models.TransitData)
 
 	// Spawn read routine process
@@ -83,7 +83,7 @@ func (o *Oracle) EventLoop() error {
 	go func() {
 		defer o.waitGroup.Done()
 		if err := o.od.ReadRoutine(o.ctx, oracleChannel); err != nil {
-			log.Error("Received error from read routine", zap.Error(err))
+			logging.WithContext(o.ctx).Error("Received error from read routine", zap.Error(err))
 		}
 	}()
 

@@ -10,6 +10,7 @@ import (
 	"github.com/base-org/pessimism/internal/conduit/models"
 	"github.com/base-org/pessimism/internal/conduit/pipeline"
 	"github.com/base-org/pessimism/internal/config"
+	"github.com/base-org/pessimism/internal/logging"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/trie"
@@ -42,6 +43,7 @@ func (ec *EthClientMocked) BlockByNumber(ctx context.Context, number *big.Int) (
 func Test_ConfigureRoutine_Error(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
+	logging.NewLogger(nil, false)
 	defer cancel()
 
 	testObj := new(EthClientMocked)
@@ -59,6 +61,7 @@ func Test_ConfigureRoutine_Error(t *testing.T) {
 func Test_ConfigureRoutine_Pass(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
+	logging.NewLogger(nil, false)
 	defer cancel()
 
 	testObj := new(EthClientMocked)
@@ -76,6 +79,7 @@ func Test_ConfigureRoutine_Pass(t *testing.T) {
 func Test_GetCurrentHeightFromNetwork(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
+	logging.NewLogger(nil, false)
 	defer cancel()
 
 	testObj := new(EthClientMocked)
@@ -99,6 +103,7 @@ func Test_GetCurrentHeightFromNetwork(t *testing.T) {
 func Test_GetHeightToProcess(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
+	logging.NewLogger(nil, false)
 	defer cancel()
 	testObj := new(EthClientMocked)
 	testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
@@ -125,6 +130,7 @@ func Test_GetHeightToProcess(t *testing.T) {
 }
 
 func Test_Backroutine(t *testing.T) {
+	logging.NewLogger(nil, false)
 	var tests = []struct {
 		name        string
 		description string
@@ -282,6 +288,7 @@ func Test_Backroutine(t *testing.T) {
 }
 
 func Test_ReadRoutine(t *testing.T) {
+	logging.NewLogger(nil, false)
 	var tests = []struct {
 		name        string
 		description string
