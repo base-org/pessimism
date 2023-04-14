@@ -8,53 +8,54 @@ import (
 
 // Component ... Generalized interface that all pipeline components must adhere to
 type Component interface {
-	// Routing functionality for downstream inter-component communication
-	// Polymorphically extended from Router struct within
-	AddDirective(core.ComponentID, chan core.TransitData) error
-	RemoveDirective(core.ComponentID) error
+	AddEgress(core.ComponentID, chan core.TransitData) error
+	RemoveEgress(core.ComponentID) error
+
 	ID() core.ComponentID
 	Type() core.ComponentType
 
 	// EventLoop ... Component driver function; spun up as separate go routine
 	EventLoop() error
 
-	// GetEntryPoint ... Returns component entrypoint channel for some register type value
-	GetEntryPoint(rt core.RegisterType) (chan core.TransitData, error)
+	// GetIngress ... Returns component ingress channel for some register type value
+	GetIngress(rt core.RegisterType) (chan core.TransitData, error)
 
 	// OutputType ... Returns component output data type
 	OutputType() core.RegisterType
 
-	GetActivityState() ActivityState
+	// TODO(#24): Add Internal Component Activity State Tracking
+	ActivityState() ActivityState
 }
 
-// metaData ... Generalized component agnostic struct that stores component metadata and routing state
+// metaData ... Component-agnostic agnostic struct that stores component metadata and routing state
 type metaData struct {
 	id     core.ComponentID
 	cType  core.ComponentType
 	output core.RegisterType
 	state  ActivityState
 
-	*ingress
-	*router
+	*ingressHandler
+	*egressHandler
+
 	*sync.RWMutex
 }
 
-// ID ... Returns
-func (meta *metaData) GetActivityState() ActivityState {
+// ActivityState ... Returns component current activity state
+func (meta *metaData) ActivityState() ActivityState {
 	return meta.state
 }
 
-// ID ... Returns
+// ID ... Returns component's ComponentID
 func (meta *metaData) ID() core.ComponentID {
 	return meta.id
 }
 
-// Type ...
+// Type ... Returns component's type
 func (meta *metaData) Type() core.ComponentType {
 	return meta.cType
 }
 
-// OutputType ...
+// OutputType ... Returns component's data output type
 func (meta *metaData) OutputType() core.RegisterType {
 	return meta.output
 }

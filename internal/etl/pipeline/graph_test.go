@@ -29,7 +29,7 @@ func Test_Graph(t *testing.T) {
 		{
 			name:        "Successful Component Node Insertion",
 			function:    "addComponent",
-			description: "When a component is added to the graph, it should persist as an elongated value within the graph's internal edge mapping",
+			description: "When a component is added to the graph, it should persist within the graph's edge mapping",
 
 			constructionLogic: newGraph,
 			testLogic: func(t *testing.T, g *cGraph) {
@@ -50,7 +50,7 @@ func Test_Graph(t *testing.T) {
 		{
 			name:        "Failed Cyclic Edge Addition",
 			function:    "addEdge",
-			description: "When an edge between two components already exists (A->B), then an inversed edge (B->A) should not be possible",
+			description: "When an edge between two components already exists (A->B), then an inverted edge (B->A) should not be possible",
 
 			constructionLogic: func() *cGraph {
 				g := newGraph()
@@ -160,7 +160,7 @@ func Test_Graph(t *testing.T) {
 				err := g.addEdge(testID1, testID2)
 				assert.NoError(t, err)
 
-				err = comp1.AddDirective(testID2, core.NewTransitChannel())
+				err = comp1.AddEgress(testID2, core.NewTransitChannel())
 				assert.Error(t, err, "Error should be returned when trying to add existing directive of component2 to component1")
 
 				assert.True(t, strings.Contains(err.Error(), "directive key already exists within component router mapping"))

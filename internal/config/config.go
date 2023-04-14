@@ -13,7 +13,7 @@ import (
 type FilePath string
 
 // Config ... Application level configuration defined by `FilePath` value
-// TODO - Consider changing to environment config
+// TODO - Consider renaming to "environment config"
 type Config struct {
 	L1RpcEndpoint string
 	L2RpcEndpoint string
@@ -31,19 +31,19 @@ func (c *Config) GetEndpointForNetwork(n core.Network) (string, error) {
 	return "", fmt.Errorf("could not find endpoint for network: %s", n.String())
 }
 
+// OracleConfig ... Configuration passed through to an oracle component constructor
+type OracleConfig struct {
+	RPCEndpoint string
+	StartHeight *int
+	EndHeight   *int
+}
+
 // PipelineConfig ... Configuration passed through to a pipeline constructor
 type PipelineConfig struct {
 	Network      core.Network
 	DataType     core.RegisterType
 	PipelineType core.PipelineType
 	OracleCfg    *OracleConfig
-}
-
-// OracleConfig ... Configuration passed through to an oracle component constructor
-type OracleConfig struct {
-	RPCEndpoint string
-	StartHeight *int
-	EndHeight   *int
 }
 
 func (oc *OracleConfig) Backfill() bool {

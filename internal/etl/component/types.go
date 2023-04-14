@@ -30,18 +30,18 @@ func (as ActivityState) String() string {
 	return "unknown"
 }
 
-// Router specific errors
+// EgressHandler specific errors
 const (
-	dirAlreadyExistsErr = "%s directive key already exists within component router mapping"
-	dirNotFoundErr      = "no directive key %s exists within component router mapping"
+	egressAlreadyExistsErr = "%s egress key already exists within component router mapping"
+	egressNotFoundErr      = "no egress key %s exists within component router mapping"
 
 	transitErr = "[%s][%s] Received transit error: %s"
 )
 
-// Ingress specific errors
+// IngressHandler specific errors
 const (
-	entryAlreadyExistsErr = "entrypoint already exists for %s"
-	entryNotFoundErr      = "entrypoint not found for %s"
+	ingressAlreadyExistsErr = "ingress already exists for %s"
+	ingressNotFoundErr      = "ingress not found for %s"
 )
 
 // Generalized component constructor types

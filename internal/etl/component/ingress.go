@@ -6,31 +6,31 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
-type ingress struct {
-	entryPoints map[core.RegisterType]chan core.TransitData
+type ingressHandler struct {
+	ingreses map[core.RegisterType]chan core.TransitData
 }
 
-func newIngress() *ingress {
-	return &ingress{
-		entryPoints: make(map[core.RegisterType]chan core.TransitData),
+func newIngressHandler() *ingressHandler {
+	return &ingressHandler{
+		ingreses: make(map[core.RegisterType]chan core.TransitData),
 	}
 }
 
-func (in *ingress) GetEntryPoint(rt core.RegisterType) (chan core.TransitData, error) {
-	val, found := in.entryPoints[rt]
+func (ih *ingressHandler) GetIngress(rt core.RegisterType) (chan core.TransitData, error) {
+	val, found := ih.ingreses[rt]
 	if !found {
-		return nil, fmt.Errorf(entryNotFoundErr, rt.String())
+		return nil, fmt.Errorf(ingressNotFoundErr, rt.String())
 	}
 
 	return val, nil
 }
 
-func (in *ingress) createEntryPoint(rt core.RegisterType) error {
-	if _, found := in.entryPoints[rt]; found {
-		return fmt.Errorf(entryAlreadyExistsErr, rt.String())
+func (ih *ingressHandler) createIngress(rt core.RegisterType) error {
+	if _, found := ih.ingreses[rt]; found {
+		return fmt.Errorf(ingressAlreadyExistsErr, rt.String())
 	}
 
-	in.entryPoints[rt] = make(chan core.TransitData)
+	ih.ingreses[rt] = core.NewTransitChannel()
 
 	return nil
 }

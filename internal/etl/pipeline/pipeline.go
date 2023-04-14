@@ -59,7 +59,7 @@ func (pl *pipeLine) AddDirective(cID core.ComponentID, outChan chan core.Transit
 	comp := pl.components[0]
 	log.Printf("Adding output directive between components (%s) --> (%s)", comp.ID().String(), cID.String())
 
-	return comp.AddDirective(cID, outChan)
+	return comp.AddEgress(cID, outChan)
 }
 
 func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
@@ -67,8 +67,8 @@ func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 		wg.Add(1)
 
 		go func(c component.Component, wg *sync.WaitGroup) {
-			log.Printf("Attempting to run component (%s) with activity state = %s", c.ID().String(), c.GetActivityState())
-			if c.GetActivityState() != component.Inactive {
+			log.Printf("Attempting to run component (%s) with activity state = %s", c.ID().String(), c.ActivityState())
+			if c.ActivityState() != component.Inactive {
 				return
 			}
 

@@ -81,13 +81,13 @@ func (graph *cGraph) addEdge(cID1, cID2 core.ComponentID) error {
 		return fmt.Errorf("edge already exists from (%s) to (%s)", cID1.String(), cID2.String())
 	}
 
-	entryChan, err := entry2.comp.GetEntryPoint(entry1.outType)
+	entryChan, err := entry2.comp.GetIngress(entry1.outType)
 	if err != nil {
 		return err
 	}
 
 	log.Printf("adding directive between (%s) -> (%s)", cID1.String(), cID2.String())
-	if err := entry1.comp.AddDirective(cID2, entryChan); err != nil {
+	if err := entry1.comp.AddEgress(cID2, entryChan); err != nil {
 		return err
 	}
 
@@ -97,11 +97,13 @@ func (graph *cGraph) addEdge(cID1, cID2 core.ComponentID) error {
 	return nil
 }
 
+// TODO(#23): Manager DAG Component Removal Support
 // removeEdge ... Removes an edge from the graph
 func (graph *cGraph) removeEdge(_, _ core.ComponentID) error { //nolint:unused // will be implemented soon
 	return nil
 }
 
+// TODO(#23): Manager DAG Component Removal Support
 // removeComponent ... Removes a component from the graph
 func (graph *cGraph) removeComponent(_ core.ComponentID) error { //nolint:unused // will be implemented soon
 	return nil
@@ -118,9 +120,9 @@ func (graph *cGraph) addComponent(cID core.ComponentID, comp component.Component
 	return nil
 }
 
-// edges ...  Returns a lightweight representation of all graph edges between component IDs
-func (graph *cGraph) edges() map[core.ComponentID][]core.ComponentID { //nolint:unused // will be implemented soon
-	lightMap := make(map[core.ComponentID][]core.ComponentID, len(graph.edgeMap))
+// edges ...  Returns a representation of all graph edges between component IDs
+func (graph *cGraph) edges() map[core.ComponentID][]core.ComponentID { //nolint:unused // downstream needs to be tested soon // needs tests as well
+	idMap := make(map[core.ComponentID][]core.ComponentID, len(graph.edgeMap))
 
 	for cID, cEntry := range graph.edgeMap {
 		cEdges := make([]core.ComponentID, len(cEntry.edges))
@@ -131,8 +133,8 @@ func (graph *cGraph) edges() map[core.ComponentID][]core.ComponentID { //nolint:
 			i++
 		}
 
-		lightMap[cID] = cEdges
+		idMap[cID] = cEdges
 	}
 
-	return lightMap
+	return idMap
 }

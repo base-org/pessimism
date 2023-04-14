@@ -13,13 +13,14 @@ import (
 
 func main() {
 	/*
-		This a simple experimental POC showcasing a pipeline DAG with two register pipelines:
-							->
-		(Geth Block Node) -^
-
+		This a simple experimental POC showcasing a pipeline DAG with two register pipelines that use overlapping components:
+							-> (C1)(Contract Create TX Pipe)
+		(C0)(Geth Block Node) --
+							-> (C3)(Blackhole Address Tx Pipe)
 		This is done to:
 		A) Prove that the Oracle and Pipe components operate as expected and are able to channel data between each other
-		B) Reason about component construction to better understand how to automate register pipeline creation
+		B) Showcase a minimal example of the Pipeline DAG that can leverage overlapping register components to avoid duplication
+		   when necessary
 		C) Demonstrate a lightweight MVP for the system
 	*/
 

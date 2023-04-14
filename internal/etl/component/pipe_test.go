@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func tranformBlockToTxSlice(td core.TransitData) ([]core.TransitData, error) {
+func transformBlockToTxSlice(td core.TransitData) ([]core.TransitData, error) {
 
 	parsedBlock, success := td.Value.(types.Block)
 	if !success {
@@ -52,10 +52,10 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 	outputChan := make(chan core.TransitData)
 
 	// Construct test component
-	testPipe, err := NewPipe(ctx, tranformBlockToTxSlice, gethBlock, txSlice)
+	testPipe, err := NewPipe(ctx, transformBlockToTxSlice, gethBlock, txSlice)
 	assert.NoError(t, err)
 
-	err = testPipe.AddDirective(testID, outputChan)
+	err = testPipe.AddEgress(testID, outputChan)
 	assert.NoError(t, err)
 
 	// Encoded value taken from https://github.com/ethereum/go-ethereum/blob/master/core/types/block_test.go#L36
@@ -96,7 +96,7 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 
 	}()
 
-	entryChan, err := testPipe.GetEntryPoint(gethBlock)
+	entryChan, err := testPipe.GetIngress(gethBlock)
 	assert.NoError(t, err)
 
 	entryChan <- inputData

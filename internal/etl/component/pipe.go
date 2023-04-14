@@ -9,29 +9,24 @@ import (
 )
 
 // TransformFunc ... Generic transformation function
-type TranformFunc func(data core.TransitData) ([]core.TransitData, error)
+type TransformFunc func(data core.TransitData) ([]core.TransitData, error)
 
-// Pipe ... Component used to represent any arbitrary computation; pipes must always read from an existing component
-// E.G, (ORACLE || CONVEYOR || PIPE) -> PIPE
+// Pipe ... Component used to represent any arbitrary computation; pipes must can read from all component types
+// E.G. (ORACLE || CONVEYOR || PIPE) -> PIPE
 
 type Pipe struct {
 	ctx    context.Context
 	inType core.RegisterType
 
-	tform TranformFunc
+	tform TransformFunc
 
 	*metaData
 }
 
 // NewPipe ... Initializer
-func NewPipe(ctx context.Context, tform TranformFunc, inType core.RegisterType,
+func NewPipe(ctx context.Context, tform TransformFunc, inType core.RegisterType,
 	outType core.RegisterType, opts ...Option) (Component, error) {
 	// TODO - Validate inTypes size
-
-	router, err := newRouter()
-	if err != nil {
-		return nil, err
-	}
 
 	pipe := &Pipe{
 		ctx:    ctx,
@@ -39,17 +34,17 @@ func NewPipe(ctx context.Context, tform TranformFunc, inType core.RegisterType,
 		inType: inType,
 
 		metaData: &metaData{
-			id:      core.NilCompID(),
-			cType:   core.Pipe,
-			router:  router,
-			ingress: newIngress(),
-			state:   Inactive,
-			output:  outType,
-			RWMutex: &sync.RWMutex{},
+			id:             core.NilCompID(),
+			cType:          core.Pipe,
+			egressHandler:  newEgressHandler(),
+			ingressHandler: newIngressHandler(),
+			state:          Inactive,
+			output:         outType,
+			RWMutex:        &sync.RWMutex{},
 		},
 	}
 
-	if err := pipe.createEntryPoint(inType); err != nil {
+	if err := pipe.createIngress(inType); err != nil {
 		return nil, err
 	}
 
@@ -70,7 +65,7 @@ func (p *Pipe) EventLoop() error {
 	log.Printf("[%s][%s] Starting event loop", p.id, p.cType)
 
 	p.metaData.state = Live
-	inChan, err := p.GetEntryPoint(p.inType)
+	inChan, err := p.GetIngress(p.inType)
 	if err != nil {
 		return err
 	}
@@ -90,7 +85,7 @@ func (p *Pipe) EventLoop() error {
 				log.Printf("[%s][%s] Received output data: %s", p.id, p.cType, outputData[0].Type)
 			}
 
-			if err := p.router.TransitOutputs(outputData); err != nil {
+			if err := p.egressHandler.TransitOutputs(outputData); err != nil {
 				log.Printf(transitErr, p.id, p.cType, err.Error())
 			}
 

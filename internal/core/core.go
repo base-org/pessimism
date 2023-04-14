@@ -4,29 +4,8 @@ import (
 	"time"
 )
 
-type Network uint8
-
-const (
-	Layer1 = iota + 1
-	Layer2
-)
-
-const (
-	UnknownType string = "unknown"
-)
-
-func (n Network) String() string {
-	switch n {
-	case Layer1:
-		return "layer1"
-
-	case Layer2:
-		return "layer2"
-	}
-
-	return UnknownType
-}
-
+// TransitData ... Standardized type used for data inter-communication
+// between all ETL components and Risk Engine
 type TransitData struct {
 	Timestamp time.Time
 

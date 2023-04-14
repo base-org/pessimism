@@ -29,10 +29,6 @@ type Oracle struct {
 // NewOracle ... Initializer
 func NewOracle(ctx context.Context, pt core.PipelineType, outType core.RegisterType,
 	od OracleDefinition, opts ...Option) (Component, error) {
-	router, err := newRouter()
-	if err != nil {
-		return nil, err
-	}
 
 	o := &Oracle{
 		ctx:           ctx,
@@ -41,13 +37,13 @@ func NewOracle(ctx context.Context, pt core.PipelineType, outType core.RegisterT
 		oracleChannel: core.NewTransitChannel(),
 
 		metaData: &metaData{
-			id:      core.NilCompID(),
-			cType:   core.Oracle,
-			router:  router,
-			ingress: newIngress(),
-			state:   Inactive,
-			output:  outType,
-			RWMutex: &sync.RWMutex{},
+			id:             core.NilCompID(),
+			cType:          core.Oracle,
+			egressHandler:  newEgressHandler(),
+			ingressHandler: newIngressHandler(),
+			state:          Inactive,
+			output:         outType,
+			RWMutex:        &sync.RWMutex{},
 		},
 	}
 
@@ -83,7 +79,7 @@ func (o *Oracle) EventLoop() error {
 		select {
 		case registerData := <-o.oracleChannel:
 			log.Printf("")
-			if err := o.router.TransitOutput(registerData); err != nil {
+			if err := o.egressHandler.TransitOutput(registerData); err != nil {
 				log.Printf(transitErr, o.id, o.cType, err.Error())
 			}
 
