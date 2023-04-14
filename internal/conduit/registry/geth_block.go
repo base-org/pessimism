@@ -11,7 +11,6 @@ import (
 	"github.com/base-org/pessimism/internal/conduit/pipeline"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 )
 
@@ -34,12 +33,12 @@ func NewGethBlockOracle(ctx context.Context,
 }
 
 func (oracle *GethBlockODef) ConfigureRoutine() error {
-	log := ctxzap.Extract(ctx)
-	log.Info("Setting up GETH Block client")
-
 	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
 		time.Second*time.Duration(models.EthClientTimeout))
 	defer ctxCancel()
+
+	log := ctxzap.Extract(ctxTimeout)
+	log.Info("Setting up GETH Block client")
 
 	err := oracle.client.DialContext(ctxTimeout, oracle.cfg.RPCEndpoint)
 

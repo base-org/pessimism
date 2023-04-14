@@ -57,7 +57,7 @@ func NewOracle(ctx context.Context, ot OracleType,
 		opt(o)
 	}
 
-	if cfgErr := od.ConfigureRoutine(ctx); cfgErr != nil {
+	if cfgErr := od.ConfigureRoutine(); cfgErr != nil {
 		return nil, cfgErr
 	}
 
@@ -65,9 +65,10 @@ func NewOracle(ctx context.Context, ot OracleType,
 }
 
 func (o *Oracle) Close() {
-	log.Printf("Waiting for oracle goroutines to be done.")
+	log := ctxzap.Extract(o.ctx)
+	log.Info("Waiting for oracle goroutines to be done.")
 	o.waitGroup.Wait()
-	log.Printf("Oracle goroutines have exited.")
+	log.Info("Oracle goroutines have exited.")
 }
 
 // EventLoop ... Component loop that actively waits and transits register data
