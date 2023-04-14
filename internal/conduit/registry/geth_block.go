@@ -19,6 +19,7 @@ const (
 	pollInterval = 200
 )
 
+// TODO(#21): Verify config validity during Oracle construction
 // GethBlockODef ...GethBlock register oracle definition used to drive oracle component
 type GethBlockODef struct {
 	cfg        *config.OracleConfig
