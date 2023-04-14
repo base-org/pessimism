@@ -98,6 +98,8 @@ func Test_GetCurrentHeightFromNetwork(t *testing.T) {
 
 func Test_GetHeightToProcess(t *testing.T) {
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	testObj := new(EthClientMocked)
 	testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
 	header := types.Header{
@@ -111,15 +113,15 @@ func Test_GetHeightToProcess(t *testing.T) {
 		NumOfRetries: 3,
 	}, currHeight: big.NewInt(123), client: testObj}
 
-	assert.Equal(t, od.getHeightToProcess(), big.NewInt(123))
+	assert.Equal(t, od.getHeightToProcess(ctx), big.NewInt(123))
 
 	od.currHeight = nil
 	od.cfg.StartHeight = big.NewInt(123)
-	assert.Equal(t, od.getHeightToProcess(), big.NewInt(123))
+	assert.Equal(t, od.getHeightToProcess(ctx), big.NewInt(123))
 
 	od.currHeight = nil
 	od.cfg.StartHeight = nil
-	assert.Nil(t, od.getHeightToProcess())
+	assert.Nil(t, od.getHeightToProcess(ctx))
 }
 
 func Test_Backroutine(t *testing.T) {

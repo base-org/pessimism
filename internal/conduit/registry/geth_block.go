@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"errors"
+	"go.uber.org/zap"
 	"math/big"
 	"time"
 
@@ -50,10 +51,12 @@ func (oracle *GethBlockODef) ConfigureRoutine() error {
 
 // getCurrentHeightFromNetwork ... Gets the current height of the network and will not quit until found
 func (oracle *GethBlockODef) getCurrentHeightFromNetwork(ctx context.Context) *types.Header {
+	log := ctxzap.Extract(ctx)
+
 	for {
 		header, err := oracle.client.HeaderByNumber(ctx, nil)
 		if err != nil {
-			// fmt.Printf("problem fetching current height from network", err)
+			log.Error("problem fetching current height from network", zap.Error(err))
 			continue
 		}
 		return header
@@ -63,6 +66,7 @@ func (oracle *GethBlockODef) getCurrentHeightFromNetwork(ctx context.Context) *t
 // BackTestRoutine ...
 func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan chan models.TransitData,
 	startHeight *big.Int, endHeight *big.Int) error {
+	log := ctxzap.Extract(ctx)
 	if endHeight.Cmp(startHeight) < 0 {
 		return errors.New("start height cannot be more than the end height")
 	}
@@ -84,7 +88,8 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 			headerAsserted, headerAssertedOk := headerAsInterface.(*types.Header)
 			// means the above retries failed
 			if err != nil || !headerAssertedOk {
-				// fmt.Println("problem fetching header", err)
+				log.Error("problem fetching header", zap.Error(err))
+
 				continue
 			}
 
@@ -92,7 +97,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 			blockAsserted, blockAssertedOk := blockAsInterface.(*types.Block)
 
 			if err != nil || !blockAssertedOk {
-				// fmt.Print("problem fetching block", err)
+				log.Error("problem fetching block", zap.Error(err))
 				continue
 			}
 
@@ -104,7 +109,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 			}
 
 			if height.Cmp(endHeight) == 0 {
-				// log.Printf("Completed backtest routine.")
+				log.Info("Completed back-test routine.")
 				return nil
 			}
 
@@ -124,19 +129,18 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 //	if current height is not nil, skip all above steps and continue iterating.
 //	At the end, if the end height is specified and not nil, if its met, it returns once done.
 //	Start Height and End Height is inclusive in fetching blocks.
-func (oracle *GethBlockODef) getHeightToProcess() *big.Int {
+func (oracle *GethBlockODef) getHeightToProcess(ctx context.Context) *big.Int {
+	log := ctxzap.Extract(ctx)
 	if oracle.currHeight == nil {
-		// log.Printf("Current Height is nil, looking for starting height")
+		log.Info("Current Height is nil, looking for starting height")
 		if oracle.cfg.StartHeight != nil {
-			// log.Printf("StartHeight found to be: %d, using that value.", oracle.cfg.StartHeight)
+			log.Info("StartHeight found to be: %d, using that value.", zap.Int64("StartHeight",
+				oracle.cfg.StartHeight.Int64()))
 			return oracle.cfg.StartHeight
 		}
-
-		// log.Printf("Starting Height is nil, using latest block as starting point.")
+		log.Info("Starting Height is nil, using latest block as starting point.")
 		return nil
 	}
-
-	// log.Printf("Currently processing height: %d", oracle.currHeight)
 	return oracle.currHeight
 }
 
@@ -155,6 +159,7 @@ func (oracle *GethBlockODef) fetchData(ctx context.Context, height *big.Int,
 // & writes block metadata to output listener components
 func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan models.TransitData) error {
 	// NOTE - Might need improvements in future as the project takes shape.
+	log := ctxzap.Extract(ctx)
 
 	if oracle.cfg.EndHeight != nil && oracle.cfg.StartHeight == nil {
 		return errors.New("cannot start with latest block height with end height configured")
@@ -176,13 +181,13 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 		select {
 		case <-ticker.C:
 
-			height := oracle.getHeightToProcess()
+			height := oracle.getHeightToProcess(ctx)
 
 			headerAsInterface, err := oracle.fetchData(ctx, height, models.FetchHeader)
 			headerAsserted, headerAssertedOk := headerAsInterface.(*types.Header)
 			// means the above retries failed
 			if err != nil || !headerAssertedOk {
-				// fmt.Print("problem fetching header", err)
+				log.Error("problem fetching header", zap.Error(err))
 				continue
 			}
 
@@ -190,7 +195,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			blockAsserted, blockAssertedOk := blockAsInterface.(*types.Block)
 
 			if err != nil || !blockAssertedOk {
-				// fmt.Printf("problem fetching block %v", err)
+				log.Error("problem fetching block %v", zap.Error(err))
 				continue
 			}
 
