@@ -3,7 +3,6 @@ package registry
 import (
 	"context"
 	"errors"
-	"log"
 	"math/big"
 	"time"
 
@@ -12,6 +11,8 @@ import (
 	"github.com/base-org/pessimism/internal/conduit/pipeline"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 )
 
 const (
@@ -33,7 +34,8 @@ func NewGethBlockOracle(ctx context.Context,
 }
 
 func (oracle *GethBlockODef) ConfigureRoutine() error {
-	log.Print("Setting up GETH Block client")
+	log := ctxzap.Extract(ctx)
+	log.Info("Setting up GETH Block client")
 
 	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
 		time.Second*time.Duration(models.EthClientTimeout))
