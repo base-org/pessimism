@@ -19,8 +19,8 @@ func newEgressHandler() *egressHandler {
 	}
 }
 
-// TransitOutput ... Sends single piece of transitData to all innner mapping value channels
-func (eh *egressHandler) TransitOutput(td core.TransitData) error {
+// Send ... Sends single piece of transitData to all innner mapping value channels
+func (eh *egressHandler) Send(td core.TransitData) error {
 	if len(eh.egresses) == 0 {
 		return fmt.Errorf("received transit request with 0 out channels to write to")
 	}
@@ -33,11 +33,11 @@ func (eh *egressHandler) TransitOutput(td core.TransitData) error {
 	return nil
 }
 
-// TransitOutput ... Sends slice of transitData to all innner mapping value channels
-func (eh *egressHandler) TransitOutputs(dataSlice []core.TransitData) error {
+// SendBatch ... Sends slice of transitData to all innner mapping value channels
+func (eh *egressHandler) SendBatch(dataSlice []core.TransitData) error {
 	// NOTE - Consider introducing a fail safe timeout to ensure that freezing on clogged chanel buffers is recognized
 	for _, data := range dataSlice {
-		if err := eh.TransitOutput(data); err != nil {
+		if err := eh.Send(data); err != nil {
 			return err
 		}
 	}
@@ -55,12 +55,13 @@ func (eh *egressHandler) AddEgress(componentID core.ComponentID, outChan chan co
 	return nil
 }
 
-// RemoveEGress ... Removes an egress given an ID; fail if no key found
-func (egress *egressHandler) RemoveEgress(componentID core.ComponentID) error {
-	if _, found := egress.egresses[componentID]; !found {
+// RemoveEgress ... Removes an egress given an ID; fail if no key found
+func (eh *egressHandler) RemoveEgress(componentID core.ComponentID) error {
+	if _, found := eh.egresses[componentID]; !found {
 		return fmt.Errorf(egressNotFoundErr, componentID.String())
 	}
 
-	delete(egress.egresses, componentID)
+	delete(eh.egresses, componentID)
+
 	return nil
 }

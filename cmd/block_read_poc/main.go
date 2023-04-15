@@ -7,6 +7,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -14,9 +15,9 @@ import (
 func main() {
 	/*
 		This a simple experimental POC showcasing a pipeline DAG with two register pipelines that use overlapping components:
-							-> (C1)(Contract Create TX Pipe)
+							    -> (C1)(Contract Create TX Pipe)
 		(C0)(Geth Block Node) --
-							-> (C3)(Blackhole Address Tx Pipe)
+							    -> (C3)(Blackhole Address Tx Pipe)
 		This is done to:
 		A) Prove that the Oracle and Pipe components operate as expected and are able to channel data between each other
 		B) Showcase a minimal example of the Pipeline DAG that can leverage overlapping register components to avoid duplication
@@ -49,6 +50,18 @@ func main() {
 		OracleCfg: l1OracleCfg,
 	}
 
+	etlManager := pipeline.NewManager(appCtx)
+
+	pID, err := etlManager.CreateRegisterPipeline(appCtx, pipelineCfg1)
+	if err != nil {
+		panic(err)
+	}
+
+	pID2, err := etlManager.CreateRegisterPipeline(appCtx, pipelineCfg2)
+	if err != nil {
+		panic(err)
+	}
+
 	outChan := core.NewTransitChannel()
 
 	if err := etlManager.AddPipelineDirective(pID, core.NilCompID(), outChan); err != nil {
@@ -59,14 +72,13 @@ func main() {
 		panic(err)
 	}
 
-	err = etlManager.RunPipeline(pID)
-	if err != nil {
+	if err := etlManager.RunPipeline(pID); err != nil {
 		panic(err)
 	}
+
 	time.Sleep(time.Second * 1)
 
-	err = etlManager.RunPipeline(pID2)
-	if err != nil {
+	if err := etlManager.RunPipeline(pID2); err != nil {
 		panic(err)
 	}
 

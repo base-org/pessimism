@@ -20,8 +20,8 @@ type Env string
 
 const (
 	Development Env = "development"
-	Production  Env = "production"
-	Local       Env = "local"
+	Production      = "production"
+	Local           = "local"
 )
 
 // Config ... Application level configuration defined by `FilePath` value

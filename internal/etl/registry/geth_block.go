@@ -10,14 +10,14 @@ import (
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/etl/pipeline"
+	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 )
 
 const (
-	pollInterval = 200
+	pollInterval = 1000
 )
 
 // TODO(#21): Verify config validity during Oracle construction
@@ -29,10 +29,13 @@ type GethBlockODef struct {
 }
 
 // NewGethBlockOracle ... Initializer
-func NewGethBlockOracle(ctx context.Context,
-	ot pipeline.OracleType, cfg *config.OracleConfig, client client.EthClientInterface) (pipeline.Component, error) {
+func NewGethBlockOracle(ctx context.Context, ot core.PipelineType,
+	cfg *config.OracleConfig, opts ...component.Option) (component.Component, error) {
+
+	client := client.NewEthClient()
+
 	od := &GethBlockODef{cfg: cfg, currHeight: nil, client: client}
-	return pipeline.NewOracle(ctx, ot, od)
+	return component.NewOracle(ctx, ot, core.GethBlock, od, opts...)
 }
 
 func (oracle *GethBlockODef) ConfigureRoutine() error {
@@ -167,11 +170,11 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 	}
 
 	// Now fetching current height from the network
-	currentHeader := oracle.getCurrentHeightFromNetwork(ctx)
+	// currentHeader := oracle.getCurrentHeightFromNetwork(ctx)
 
-	if oracle.cfg.StartHeight.Cmp(currentHeader.Number) == 1 {
-		return errors.New("start height cannot be more than the latest height from network")
-	}
+	// if oracle.cfg.StartHeight.Cmp(currentHeader.Number) == 1 {
+	// 	return errors.New("start height cannot be more than the latest height from network")
+	// }
 
 	ticker := time.NewTicker(pollInterval * time.Millisecond)
 	for {

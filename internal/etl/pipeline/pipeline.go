@@ -18,8 +18,8 @@ import (
 */
 
 type PipeLine interface {
-	// EventLoop ... Pipeline driver function; spun up as separate go routine
 	ID() core.PipelineID
+	// EventLoop ... Pipeline driver function; spun up as separate go routine
 	EventLoop() error
 	RunPipeline(wg *sync.WaitGroup) error
 	AddDirective(cID core.ComponentID, outChan chan core.TransitData) error

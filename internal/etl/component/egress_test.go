@@ -164,7 +164,7 @@ func Test_Transit_Output(t *testing.T) {
 		Value:     0x42069,
 	}
 
-	err := testHandler.TransitOutput(expectedOutput)
+	err := testHandler.Send(expectedOutput)
 	assert.NoError(t, err, "Receieved error when trying to transit output")
 
 	for _, egress := range egresses {

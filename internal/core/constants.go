@@ -72,3 +72,16 @@ func (pt PipelineType) String() string {
 
 	return UnknownType
 }
+
+type FetchType int
+
+const (
+	FetchHeader FetchType = 0
+	FetchBlock  FetchType = 1
+)
+
+type Timeouts int
+
+const (
+	EthClientTimeout Timeouts = 20 // in seconds
+)

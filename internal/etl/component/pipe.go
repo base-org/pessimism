@@ -6,6 +6,8 @@ import (
 	"sync"
 
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/logging"
+	"go.uber.org/zap"
 )
 
 // TransformFunc ... Generic transformation function
@@ -56,13 +58,16 @@ func NewPipe(ctx context.Context, tform TransformFunc, inType core.RegisterType,
 	return pipe, nil
 }
 
+func (p *Pipe) Close() {
+}
+
 // EventLoop ... Driver loop for component that actively subscribes
 // to an input channel where transit data is read, transformed, and transitte
 // to downstream components
 func (p *Pipe) EventLoop() error {
-	p.RWMutex.Lock()
-	defer p.RWMutex.Unlock()
-	log.Printf("[%s][%s] Starting event loop", p.id, p.cType)
+	logging.WithContext(p.ctx).Info("Starting event loop",
+		zap.String("ID", p.id.String()),
+	)
 
 	p.metaData.state = Live
 	inChan, err := p.GetIngress(p.inType)
@@ -85,7 +90,10 @@ func (p *Pipe) EventLoop() error {
 				log.Printf("[%s][%s] Received output data: %s", p.id, p.cType, outputData[0].Type)
 			}
 
-			if err := p.egressHandler.TransitOutputs(outputData); err != nil {
+			logging.WithContext(p.ctx).Debug("Sending data batch",
+				zap.String("From", p.id.String()))
+
+			if err := p.egressHandler.SendBatch(outputData); err != nil {
 				log.Printf(transitErr, p.id, p.cType, err.Error())
 			}
 

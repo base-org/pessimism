@@ -1,5 +1,4 @@
 package component
 
-type Aggregator struct {
-	// TODO - Implemement me
-}
+// TODO(#12): No Aggregation Component Support
+type Aggregator struct{}

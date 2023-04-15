@@ -2,16 +2,20 @@ package component
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"math/big"
 	"sync"
 
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/logging"
+	"go.uber.org/zap"
 )
 
 // OracleDefinition ... Provides a generalized interface for developers to bind their own functionality to
 type OracleDefinition interface {
 	ConfigureRoutine() error
-	BackTestRoutine(ctx context.Context, componentChan chan core.TransitData) error
+	BackTestRoutine(ctx context.Context, componentChan chan core.TransitData, startHeight *big.Int, endHeight *big.Int) error
 	ReadRoutine(ctx context.Context, componentChan chan core.TransitData) error
 }
 
@@ -23,18 +27,20 @@ type Oracle struct {
 	oracleType    core.PipelineType
 	oracleChannel chan core.TransitData
 
+	wg *sync.WaitGroup
+
 	*metaData
 }
 
 // NewOracle ... Initializer
 func NewOracle(ctx context.Context, pt core.PipelineType, outType core.RegisterType,
 	od OracleDefinition, opts ...Option) (Component, error) {
-
 	o := &Oracle{
 		ctx:           ctx,
 		definition:    od,
 		oracleType:    pt,
 		oracleChannel: core.NewTransitChannel(),
+		wg:            &sync.WaitGroup{},
 
 		metaData: &metaData{
 			id:             core.NilCompID(),
@@ -47,6 +53,10 @@ func NewOracle(ctx context.Context, pt core.PipelineType, outType core.RegisterT
 		},
 	}
 
+	if od == nil {
+		return nil, fmt.Errorf("Received nil value for OracleDefinition")
+	}
+
 	for _, opt := range opts {
 		opt(o.metaData)
 	}
@@ -55,32 +65,45 @@ func NewOracle(ctx context.Context, pt core.PipelineType, outType core.RegisterT
 		return nil, cfgErr
 	}
 
-	log.Printf("[%s] Constructed component", o.metaData.id.String())
+	logging.WithContext(ctx).Info("Constructed component",
+		zap.String("ID", o.metaData.id.String()))
+
 	return o, nil
+}
+
+// TODO (#22) : Add closure logic to all component types
+
+// Close ... This function is called at the end when processes related to oracle need to shut down
+func (o *Oracle) Close() {
+	logging.WithContext(o.ctx).Info("Waiting for oracle goroutines to be done.")
+	o.wg.Wait()
+	logging.WithContext(o.ctx).Info("Oracle goroutines have exited.")
 }
 
 // EventLoop ... Component loop that actively waits and transits register data
 // from a channel that the definition's read routine writes to
 func (o *Oracle) EventLoop() error {
-	o.RWMutex.Lock()
-	defer o.RWMutex.Unlock()
 	// TODO - Introduce backfill check so that state can be "syncing"
 	o.state = Live
 	log.Printf("[%s][%s] Starting event loop", o.id, o.cType)
-	// Spawn read routine process
-	// TODO - Consider higher order concurrency injection; ie waitgroup, routine management
-	go func(ch chan core.TransitData) {
-		if err := o.definition.ReadRoutine(o.ctx, ch); err != nil {
-			log.Printf("[%s][%s] Received error from read routine %s", o.id, o.cType, err.Error())
+
+	o.wg.Add(1)
+	go func() {
+		defer o.wg.Done()
+		if err := o.definition.ReadRoutine(o.ctx, o.oracleChannel); err != nil {
+			logging.WithContext(o.ctx).Error("Received error from read routine", zap.Error(err))
 		}
-	}(o.oracleChannel)
+	}()
 
 	for {
 		select {
 		case registerData := <-o.oracleChannel:
-			log.Printf("")
-			if err := o.egressHandler.TransitOutput(registerData); err != nil {
-				log.Printf(transitErr, o.id, o.cType, err.Error())
+			logging.WithContext(o.ctx).Debug("Sending data",
+				zap.String("From", o.id.String()))
+
+			if err := o.egressHandler.Send(registerData); err != nil {
+				logging.WithContext(o.ctx).Error(
+					fmt.Sprintf(transitErr, o.id, o.cType, err.Error()))
 			}
 
 		case <-o.ctx.Done():
