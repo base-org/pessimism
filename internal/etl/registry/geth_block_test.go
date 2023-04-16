@@ -10,35 +10,13 @@ import (
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/mock_client"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/trie"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
+	gomock "github.com/golang/mock/gomock"
 )
-
-// TODO(#26): Use Go Mock
-type EthClientMocked struct {
-	mock.Mock
-}
-
-func (ec *EthClientMocked) DialContext(ctx context.Context, rawURL string) error {
-	args := ec.Called(ctx, rawURL)
-	return args.Error(0)
-}
-
-func (ec *EthClientMocked) HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error) {
-	args := ec.Called(ctx, number)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*types.Header), args.Error(1)
-}
-
-func (ec *EthClientMocked) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
-	args := ec.Called(ctx, number)
-	return args.Get(0).(*types.Block), args.Error(1)
-}
 
 func Test_ConfigureRoutine_Error(t *testing.T) {
 
@@ -46,10 +24,16 @@ func Test_ConfigureRoutine_Error(t *testing.T) {
 	logging.NewLogger(nil, false)
 	defer cancel()
 
-	testObj := new(EthClientMocked)
+	// setup mock
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	testObj := mock_client.NewMockEthClientInterface(ctrl)
 
 	// setup expectations
-	testObj.On("DialContext", mock.Anything, "error handle test").Return(errors.New("error handle test"))
+	testObj.
+		EXPECT().
+		DialContext(gomock.Any(), "error handle test").
+		Return(errors.New("error handle test"))
 
 	testOdef := NewGethBlockODef(&config.OracleConfig{
 		RPCEndpoint: "error handle test"},
@@ -67,10 +51,16 @@ func Test_ConfigureRoutine_Pass(t *testing.T) {
 	logging.NewLogger(nil, false)
 	defer cancel()
 
-	testObj := new(EthClientMocked)
+	// setup mock
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	testObj := mock_client.NewMockEthClientInterface(ctrl)
 
 	// setup expectations
-	testObj.On("DialContext", mock.Anything, "error handle test").Return(nil)
+	testObj.
+		EXPECT().
+		DialContext(gomock.Any(), gomock.Eq("error handle test")).
+		Return(nil)
 
 	testOdef := NewGethBlockODef(&config.OracleConfig{
 		RPCEndpoint: "error handle test"},
@@ -87,15 +77,20 @@ func Test_GetCurrentHeightFromNetwork(t *testing.T) {
 	logging.NewLogger(nil, false)
 	defer cancel()
 
-	testObj := new(EthClientMocked)
+	// setup mock
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	testObj := mock_client.NewMockEthClientInterface(ctrl)
 
-	// setup expectations
-	testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
 	header := types.Header{
 		ParentHash: common.HexToHash("0x123456789"),
 		Number:     big.NewInt(5),
 	}
-	testObj.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&header, nil)
+	// setup expectations
+	testObj.
+		EXPECT().
+		HeaderByNumber(gomock.Any(), gomock.Any()).
+		Return(&header, nil)
 
 	od := &GethBlockODef{cfg: &config.OracleConfig{
 		RPCEndpoint:  "pass test",
@@ -110,13 +105,28 @@ func Test_GetHeightToProcess(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	logging.NewLogger(nil, false)
 	defer cancel()
-	testObj := new(EthClientMocked)
-	testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
+
+	// setup mock
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	testObj := mock_client.NewMockEthClientInterface(ctrl)
+
+	// setup expectations
+	testObj.
+		EXPECT().
+		DialContext(gomock.Any(), gomock.Eq("pass test")).
+		Return(nil).
+		AnyTimes()
+
 	header := types.Header{
 		ParentHash: common.HexToHash("0x123456789"),
 		Number:     big.NewInt(5),
 	}
-	testObj.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&header, nil)
+	testObj.
+		EXPECT().
+		HeaderByNumber(gomock.Any(), gomock.Any()).
+		Return(&header, nil).
+		AnyTimes()
 
 	od := &GethBlockODef{cfg: &config.OracleConfig{
 		RPCEndpoint:  "pass test",
@@ -149,14 +159,26 @@ func Test_Backroutine(t *testing.T) {
 			description: "Check if network height check is less than starting height",
 
 			constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
-				testObj := new(EthClientMocked)
+				// setup mock
+				ctrl := gomock.NewController(t)
+				defer ctrl.Finish()
+				testObj := mock_client.NewMockEthClientInterface(ctrl)
+
 				header := types.Header{
 					ParentHash: common.HexToHash("0x123456789"),
 					Number:     big.NewInt(5),
 				}
 				// setup expectations
-				testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
-				testObj.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&header, nil)
+				testObj.
+					EXPECT().
+					DialContext(gomock.Any(), gomock.Eq("pass test")).
+					Return(nil).
+					AnyTimes()
+				testObj.
+					EXPECT().
+					HeaderByNumber(gomock.Any(), gomock.Any()).
+					Return(&header, nil).
+					AnyTimes()
 
 				od := &GethBlockODef{cfg: &config.OracleConfig{
 					RPCEndpoint:  "pass test",
@@ -183,10 +205,17 @@ func Test_Backroutine(t *testing.T) {
 			description: "Ending height cannot be less than the Starting height",
 
 			constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
-				testObj := new(EthClientMocked)
+				// setup mock
+				ctrl := gomock.NewController(t)
+				defer ctrl.Finish()
+				testObj := mock_client.NewMockEthClientInterface(ctrl)
 
 				// setup expectations
-				testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
+				testObj.
+					EXPECT().
+					DialContext(gomock.Any(), gomock.Eq("pass test")).
+					Return(nil).
+					AnyTimes()
 
 				od := &GethBlockODef{cfg: &config.OracleConfig{
 					RPCEndpoint:  "pass test",
@@ -245,16 +274,32 @@ func Test_Backroutine(t *testing.T) {
 			description: "Backroutine works and channel should have 4 messages waiting.",
 
 			constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
-				testObj := new(EthClientMocked)
+				// setup mock
+				ctrl := gomock.NewController(t)
+				defer ctrl.Finish()
+				testObj := mock_client.NewMockEthClientInterface(ctrl)
+
 				header := types.Header{
 					ParentHash: common.HexToHash("0x123456789"),
 					Number:     big.NewInt(7),
 				}
 				block := types.NewBlock(&header, nil, nil, nil, trie.NewStackTrie(nil))
 				// setup expectations
-				testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
-				testObj.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&header, nil)
-				testObj.On("BlockByNumber", mock.Anything, mock.Anything).Return(block, nil)
+				testObj.
+					EXPECT().
+					DialContext(gomock.Any(), gomock.Eq("pass test")).
+					Return(nil).
+					AnyTimes()
+				testObj.
+					EXPECT().
+					HeaderByNumber(gomock.Any(), gomock.Any()).
+					Return(&header, nil).
+					AnyTimes()
+				testObj.
+					EXPECT().
+					BlockByNumber(gomock.Any(), gomock.Any()).
+					Return(block, nil).
+					AnyTimes()
 
 				od := &GethBlockODef{cfg: &config.OracleConfig{
 					RPCEndpoint:  "pass test",
@@ -301,50 +346,23 @@ func Test_ReadRoutine(t *testing.T) {
 		constructionLogic func() (*GethBlockODef, chan core.TransitData)
 		testLogic         func(*testing.T, *GethBlockODef, chan core.TransitData)
 	}{
-
-		// {
-		// 	name:        "Current network height check",
-		// 	description: "Check if network height check is less than starting height",
-
-		// 	constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
-		// 		testObj := new(EthClientMocked)
-		// 		header := types.Header{
-		// 			ParentHash: common.HexToHash("0x123456789"),
-		// 			Number:     big.NewInt(5),
-		// 		}
-		// 		// setup expectations
-		// 		testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
-		// 		testObj.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&header, nil)
-
-		// 		od := &GethBlockODef{cfg: &config.OracleConfig{
-		// 			RPCEndpoint:  "pass test",
-		// 			StartHeight:  big.NewInt(7),
-		// 			EndHeight:    big.NewInt(10),
-		// 			NumOfRetries: 3,
-		// 		}, currHeight: nil, client: testObj}
-
-		// 		outChan := make(chan core.TransitData)
-
-		// 		return od, outChan
-		// 	},
-
-		// 	testLogic: func(t *testing.T, od *GethBlockODef, outChan chan core.TransitData) {
-
-		// 		ctx, cancel := context.WithCancel(context.Background())
-		// 		defer cancel()
-
-		// 		err := od.ReadRoutine(ctx, outChan)
-		// 		assert.Error(t, err)
-		// 		assert.EqualError(t, err, "start height cannot be more than the latest height from network")
-		// 	},
-		// },
 		{
 			name:        "Successful Height check 1",
 			description: "Ending height cannot be less than the Starting height",
 
 			constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
-				testObj := new(EthClientMocked)
-				testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
+				// setup mock
+				ctrl := gomock.NewController(t)
+				defer ctrl.Finish()
+				testObj := mock_client.NewMockEthClientInterface(ctrl)
+
+				// setup expectations
+				testObj.
+					EXPECT().
+					DialContext(gomock.Any(), gomock.Eq("pass test")).
+					Return(nil).
+					AnyTimes()
+
 				od := &GethBlockODef{cfg: &config.OracleConfig{
 					RPCEndpoint:  "pass test",
 					StartHeight:  big.NewInt(2),
@@ -354,7 +372,6 @@ func Test_ReadRoutine(t *testing.T) {
 				outChan := make(chan core.TransitData)
 				return od, outChan
 			},
-
 			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan core.TransitData) {
 
 				ctx, cancel := context.WithCancel(context.Background())
@@ -370,17 +387,27 @@ func Test_ReadRoutine(t *testing.T) {
 			description: "Cannot have start height nil, i.e, latest block and end height configured",
 
 			constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
-				testObj := new(EthClientMocked)
-				testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
-				od := &GethBlockODef{cfg: &config.OracleConfig{
-					RPCEndpoint:  "pass test",
-					StartHeight:  nil,
-					EndHeight:    big.NewInt(1),
-					NumOfRetries: 3,
-				}, currHeight: nil, client: testObj}
-				outChan := make(chan core.TransitData)
-				return od, outChan
-			},
+				// setup mock
+				ctrl := gomock.NewController(t)
+				defer ctrl.Finish()
+				testObj := mock_client.NewMockEthClientInterface(ctrl)
+
+				// setup expectations
+				testObj.
+					EXPECT().
+					DialContext(gomock.Any(), gomock.Eq("pass test")).
+					Return(nil).
+					AnyTimes()
+
+					od := &GethBlockODef{cfg: &config.OracleConfig{
+						RPCEndpoint:  "pass test",
+						StartHeight:  nil,
+						EndHeight:    big.NewInt(1),
+						NumOfRetries: 3,
+					}, currHeight: nil, client: testObj}
+					outChan := make(chan core.TransitData)
+					return od, outChan
+		},
 
 			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan core.TransitData) {
 
@@ -393,20 +420,35 @@ func Test_ReadRoutine(t *testing.T) {
 			},
 		},
 		{
-			name:        "Number of executions",
 			description: "Making sure that number of blocks fetched matches the assumption. Number of messages should be 5, in the channel",
 
 			constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
-				testObj := new(EthClientMocked)
+				// setup mock
+				ctrl := gomock.NewController(t)
+				defer ctrl.Finish()
+				testObj := mock_client.NewMockEthClientInterface(ctrl)
+
 				header := types.Header{
 					ParentHash: common.HexToHash("0x123456789"),
 					Number:     big.NewInt(7),
 				}
 				block := types.NewBlock(&header, nil, nil, nil, trie.NewStackTrie(nil))
 				// setup expectations
-				testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
-				testObj.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&header, nil)
-				testObj.On("BlockByNumber", mock.Anything, mock.Anything).Return(block, nil)
+				testObj.
+					EXPECT().
+					DialContext(gomock.Any(), "pass test").
+					Return(nil).
+					AnyTimes()
+				testObj.
+					EXPECT().
+					HeaderByNumber(gomock.Any(), gomock.Any()).
+					Return(&header, nil).
+					AnyTimes()
+				testObj.
+					EXPECT().
+					BlockByNumber(gomock.Any(), gomock.Any()).
+					Return(block, nil).
+					AnyTimes()
 
 				od := &GethBlockODef{cfg: &config.OracleConfig{
 					RPCEndpoint:  "pass test",
