@@ -20,8 +20,8 @@ func main() {
 							    -> (C3)(Blackhole Address Tx Pipe)
 		This is done to:
 		A) Prove that the Oracle and Pipe components operate as expected and are able to channel data between each other
-		B) Showcase a minimal example of the Pipeline DAG that can leverage overlapping register components to avoid duplication
-		   when necessary
+		B) Showcase a minimal example of the Pipeline DAG that can leverage overlapping register components to avoid
+			duplication when necessary
 		C) Demonstrate a lightweight MVP for the system
 	*/
 

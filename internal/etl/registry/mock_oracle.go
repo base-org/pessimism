@@ -14,7 +14,8 @@ type mockOracleDefinition struct {
 func (md *mockOracleDefinition) ConfigureRoutine() error {
 	return nil
 }
-func (md *mockOracleDefinition) BackTestRoutine(_ context.Context, _ chan core.TransitData, _ *big.Int, _ *big.Int) error {
+func (md *mockOracleDefinition) BackTestRoutine(_ context.Context, _ chan core.TransitData,
+	_ *big.Int, _ *big.Int) error {
 	return nil
 }
 

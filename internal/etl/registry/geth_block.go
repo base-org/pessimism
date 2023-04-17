@@ -28,13 +28,21 @@ type GethBlockODef struct {
 	currHeight *big.Int
 }
 
-// NewGethBlockOracle ... Initializer
+// NewGethBlockODef ... Initializer for geth.block oracle definition
+func NewGethBlockODef(cfg *config.OracleConfig, client client.EthClientInterface, h *big.Int) *GethBlockODef {
+	return &GethBlockODef{
+		cfg:        cfg,
+		client:     client,
+		currHeight: h,
+	}
+}
+
+// NewGethBlockOracle ... Initializer for geth.block oracle component
 func NewGethBlockOracle(ctx context.Context, ot core.PipelineType,
 	cfg *config.OracleConfig, opts ...component.Option) (component.Component, error) {
-
 	client := client.NewEthClient()
+	od := NewGethBlockODef(cfg, client, nil)
 
-	od := &GethBlockODef{cfg: cfg, currHeight: nil, client: client}
 	return component.NewOracle(ctx, ot, core.GethBlock, od, opts...)
 }
 

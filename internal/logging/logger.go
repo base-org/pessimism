@@ -11,7 +11,7 @@ type loggerKeyType int
 
 const loggerKey loggerKeyType = iota
 
-var logger *zap.Logger
+var logger *zap.Logger = zap.NewNop()
 
 // Config ... Configuration passed through to the logging constructor
 type Config struct {

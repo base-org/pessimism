@@ -15,7 +15,8 @@ import (
 // OracleDefinition ... Provides a generalized interface for developers to bind their own functionality to
 type OracleDefinition interface {
 	ConfigureRoutine() error
-	BackTestRoutine(ctx context.Context, componentChan chan core.TransitData, startHeight *big.Int, endHeight *big.Int) error
+	BackTestRoutine(ctx context.Context, componentChan chan core.TransitData,
+		startHeight *big.Int, endHeight *big.Int) error
 	ReadRoutine(ctx context.Context, componentChan chan core.TransitData) error
 }
 
@@ -51,10 +52,6 @@ func NewOracle(ctx context.Context, pt core.PipelineType, outType core.RegisterT
 			output:         outType,
 			RWMutex:        &sync.RWMutex{},
 		},
-	}
-
-	if od == nil {
-		return nil, fmt.Errorf("Received nil value for OracleDefinition")
 	}
 
 	for _, opt := range opts {

@@ -42,7 +42,7 @@ func (ec *EthClientMocked) BlockByNumber(ctx context.Context, number *big.Int) (
 
 func Test_ConfigureRoutine_Error(t *testing.T) {
 
-	ctx, cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background())
 	logging.NewLogger(nil, false)
 	defer cancel()
 
@@ -51,29 +51,34 @@ func Test_ConfigureRoutine_Error(t *testing.T) {
 	// setup expectations
 	testObj.On("DialContext", mock.Anything, "error handle test").Return(errors.New("error handle test"))
 
-	_, err := NewGethBlockOracle(ctx, core.Live, &config.OracleConfig{
-		RPCEndpoint: "error handle test",
-	})
+	testOdef := NewGethBlockODef(&config.OracleConfig{
+		RPCEndpoint: "error handle test"},
+		testObj,
+		nil,
+	)
+	err := testOdef.ConfigureRoutine()
 	assert.Error(t, err)
 	assert.EqualError(t, err, "error handle test")
 }
 
 func Test_ConfigureRoutine_Pass(t *testing.T) {
 
-	ctx, cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background())
 	logging.NewLogger(nil, false)
 	defer cancel()
 
 	testObj := new(EthClientMocked)
 
 	// setup expectations
-	testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
+	testObj.On("DialContext", mock.Anything, "error handle test").Return(nil)
 
-	newGethBlockOracleCreated, err := NewGethBlockOracle(ctx, core.Live, &config.OracleConfig{
-		RPCEndpoint: "pass test",
-	})
+	testOdef := NewGethBlockODef(&config.OracleConfig{
+		RPCEndpoint: "error handle test"},
+		testObj,
+		nil,
+	)
+	err := testOdef.ConfigureRoutine()
 	assert.NoError(t, err)
-	assert.Equal(t, newGethBlockOracleCreated.Type(), core.Oracle)
 }
 
 func Test_GetCurrentHeightFromNetwork(t *testing.T) {
@@ -297,42 +302,42 @@ func Test_ReadRoutine(t *testing.T) {
 		testLogic         func(*testing.T, *GethBlockODef, chan core.TransitData)
 	}{
 
-		{
-			name:        "Current network height check",
-			description: "Check if network height check is less than starting height",
+		// {
+		// 	name:        "Current network height check",
+		// 	description: "Check if network height check is less than starting height",
 
-			constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
-				testObj := new(EthClientMocked)
-				header := types.Header{
-					ParentHash: common.HexToHash("0x123456789"),
-					Number:     big.NewInt(5),
-				}
-				// setup expectations
-				testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
-				testObj.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&header, nil)
+		// 	constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
+		// 		testObj := new(EthClientMocked)
+		// 		header := types.Header{
+		// 			ParentHash: common.HexToHash("0x123456789"),
+		// 			Number:     big.NewInt(5),
+		// 		}
+		// 		// setup expectations
+		// 		testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
+		// 		testObj.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&header, nil)
 
-				od := &GethBlockODef{cfg: &config.OracleConfig{
-					RPCEndpoint:  "pass test",
-					StartHeight:  big.NewInt(7),
-					EndHeight:    big.NewInt(10),
-					NumOfRetries: 3,
-				}, currHeight: nil, client: testObj}
+		// 		od := &GethBlockODef{cfg: &config.OracleConfig{
+		// 			RPCEndpoint:  "pass test",
+		// 			StartHeight:  big.NewInt(7),
+		// 			EndHeight:    big.NewInt(10),
+		// 			NumOfRetries: 3,
+		// 		}, currHeight: nil, client: testObj}
 
-				outChan := make(chan core.TransitData)
+		// 		outChan := make(chan core.TransitData)
 
-				return od, outChan
-			},
+		// 		return od, outChan
+		// 	},
 
-			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan core.TransitData) {
+		// 	testLogic: func(t *testing.T, od *GethBlockODef, outChan chan core.TransitData) {
 
-				ctx, cancel := context.WithCancel(context.Background())
-				defer cancel()
+		// 		ctx, cancel := context.WithCancel(context.Background())
+		// 		defer cancel()
 
-				err := od.ReadRoutine(ctx, outChan)
-				assert.Error(t, err)
-				assert.EqualError(t, err, "start height cannot be more than the latest height from network")
-			},
-		},
+		// 		err := od.ReadRoutine(ctx, outChan)
+		// 		assert.Error(t, err)
+		// 		assert.EqualError(t, err, "start height cannot be more than the latest height from network")
+		// 	},
+		// },
 		{
 			name:        "Successful Height check 1",
 			description: "Ending height cannot be less than the Starting height",

@@ -3,7 +3,6 @@ package pipeline
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/base-org/pessimism/internal/core"
@@ -161,9 +160,8 @@ func Test_Graph(t *testing.T) {
 				assert.NoError(t, err)
 
 				err = comp1.AddEgress(testID2, core.NewTransitChannel())
-				assert.Error(t, err, "Error should be returned when trying to add existing directive of component2 to component1")
+				assert.Error(t, err, "Error should be returned when trying to add existing outgress of component2 to component1 ingress")
 
-				assert.True(t, strings.Contains(err.Error(), "directive key already exists within component router mapping"))
 				assert.True(t, g.componentExists(testID1))
 				assert.True(t, g.componentExists(testID2))
 

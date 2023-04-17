@@ -20,8 +20,8 @@ type Env string
 
 const (
 	Development Env = "development"
-	Production      = "production"
-	Local           = "local"
+	Production  Env = "production"
+	Local       Env = "local"
 )
 
 // Config ... Application level configuration defined by `FilePath` value
@@ -31,18 +31,6 @@ type Config struct {
 	L2RpcEndpoint string
 	Environment   Env
 	LoggerConfig  *logging.Config
-}
-
-func (c *Config) GetEndpointForNetwork(n core.Network) (string, error) {
-	switch n {
-	case core.Layer1:
-		return c.L1RpcEndpoint, nil
-
-	case core.Layer2:
-		return c.L2RpcEndpoint, nil
-	}
-
-	return "", fmt.Errorf("could not find endpoint for network: %s", n.String())
 }
 
 // OracleConfig ... Configuration passed through to an oracle component constructor
@@ -93,6 +81,18 @@ func NewConfig(fileName FilePath) *Config {
 	}
 
 	return config
+}
+
+func (cfg *Config) GetEndpointForNetwork(n core.Network) (string, error) {
+	switch n {
+	case core.Layer1:
+		return cfg.L1RpcEndpoint, nil
+
+	case core.Layer2:
+		return cfg.L2RpcEndpoint, nil
+	}
+
+	return "", fmt.Errorf("could not find endpoint for network: %s", n.String())
 }
 
 // IsProduction ... Returns true if the env is production

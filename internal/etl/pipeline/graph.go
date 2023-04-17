@@ -121,7 +121,7 @@ func (graph *cGraph) addComponent(cID core.ComponentID, comp component.Component
 }
 
 // edges ...  Returns a representation of all graph edges between component IDs
-func (graph *cGraph) edges() map[core.ComponentID][]core.ComponentID { //nolint:unused // downstream needs to be tested soon // needs tests as well
+func (graph *cGraph) edges() map[core.ComponentID][]core.ComponentID { //nolint:unused // will be used soon
 	idMap := make(map[core.ComponentID][]core.ComponentID, len(graph.edgeMap))
 
 	for cID, cEntry := range graph.edgeMap {
