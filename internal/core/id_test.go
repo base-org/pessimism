@@ -20,12 +20,12 @@ func Test_Component_ID(t *testing.T) {
 }
 
 func Test_Pipeline_ID(t *testing.T) {
-	expectedID := PipelineID([9]byte{0, 0, 0, 0, 0, 0, 0, 0, 0})
-	actualID := MakePipelineID(0, ComponentID{0, 0, 0, 0}, ComponentID{0, 0, 0, 0})
+	expectedID := PipelineID([9]byte{1, 2, 3, 4, 1, 2, 3, 4, 0})
+	actualID := MakePipelineID(1, ComponentID{2, 3, 4, 1}, ComponentID{2, 3, 4, 0})
 
 	assert.Equal(t, expectedID, actualID)
 
-	expectedStr := "unknown::unknown:unknown:unknown:unknown::unknown:unknown:unknown:unknown"
+	expectedStr := "backtest::layer2:mocktest:unknown:geth.block::layer2:mocktest:unknown:unknown"
 	actualStr := actualID.String()
 
 	assert.Equal(t, expectedStr, actualStr)
