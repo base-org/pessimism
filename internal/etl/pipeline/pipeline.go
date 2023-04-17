@@ -14,7 +14,6 @@ import (
  1 - Synchronization required for a pipeline from some starting block height
  2 - Live config is passed through to a register pipeline config that requires a backfill,
  	resulting in component collision within the DAG.
- 3 -
 */
 
 type PipeLine interface {
@@ -98,6 +97,7 @@ func (pl *pipeLine) String() string {
 }
 
 func (pl *pipeLine) EventLoop() error {
+	// TODO(#29): No Pipeline Driver Functionality
 	// TODO - Add component sampling logic
 	// I.E, Components in a pipeline should be checked for activity state changes
 	// Critical for understanding when things like "syncing" or backfilling have completed for some

@@ -27,7 +27,6 @@ func main() {
 
 	appCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	cfg := config.NewConfig("config.env")
 
 	logging.NewLogger(cfg.LoggerConfig, cfg.IsProduction())
@@ -40,14 +39,17 @@ func main() {
 		EndHeight:   nil}
 
 	pipelineCfg1 := &config.PipelineConfig{
+		Network:      core.Layer1,
 		DataType:     core.ContractCreateTX,
 		PipelineType: core.Live,
 		OracleCfg:    l1OracleCfg,
 	}
 
 	pipelineCfg2 := &config.PipelineConfig{
-		DataType:  core.BlackholeTX,
-		OracleCfg: l1OracleCfg,
+		Network:      core.Layer1,
+		DataType:     core.BlackholeTX,
+		PipelineType: core.Live,
+		OracleCfg:    l1OracleCfg,
 	}
 
 	etlManager := pipeline.NewManager(appCtx)

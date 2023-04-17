@@ -2,7 +2,6 @@ package component
 
 import (
 	"context"
-	"log"
 	"sync"
 
 	"github.com/base-org/pessimism/internal/core"
@@ -54,10 +53,10 @@ func NewPipe(ctx context.Context, tform TransformFunc, inType core.RegisterType,
 		opt(pipe.metaData)
 	}
 
-	log.Printf("[%s] Constructed component", pipe.metaData.id.String())
 	return pipe, nil
 }
 
+// TODO(#22): Add closure logic to all component types
 func (p *Pipe) Close() {
 }
 
@@ -65,7 +64,9 @@ func (p *Pipe) Close() {
 // to an input channel where transit data is read, transformed, and transitte
 // to downstream components
 func (p *Pipe) EventLoop() error {
-	logging.WithContext(p.ctx).Info("Starting event loop",
+	logger := logging.WithContext(p.ctx)
+
+	logger.Info("Starting event loop",
 		zap.String("ID", p.id.String()),
 	)
 
@@ -81,20 +82,25 @@ func (p *Pipe) EventLoop() error {
 			outputData, err := p.tform(inputData)
 			if err != nil {
 				// TODO - Introduce prometheus call here
-				// TODO - Introduce go standard logger (I,E. zap) debug call
-				log.Printf("%e", err)
+				logger.Error(err.Error(), zap.String("ID", p.id.String()))
 				continue
 			}
 
-			if len(outputData) > 0 {
-				log.Printf("[%s][%s] Received output data: %s", p.id, p.cType, outputData[0].Type)
+			if length := len(outputData); length > 0 {
+				logger.Debug("Received output data",
+					zap.String("ID", p.id.String()),
+					zap.Int("Length", length))
+			} else {
+				logger.Debug("Received output data of length 0")
+				continue
 			}
 
-			logging.WithContext(p.ctx).Debug("Sending data batch",
-				zap.String("From", p.id.String()))
+			logger.Debug("Sending data batch",
+				zap.String("ID", p.id.String()),
+				zap.String("Type", p.OutputType().String()))
 
 			if err := p.egressHandler.SendBatch(outputData); err != nil {
-				log.Printf(transitErr, p.id, p.cType, err.Error())
+				logger.Error(transitErr, zap.String("ID", p.id.String()))
 			}
 
 		// Manager is telling us to shutdown

@@ -62,6 +62,7 @@ NOTE - There is no check to ensure that a cyclic edge is being added, meaning
 	existing component.
 */
 
+// TODO(#30): Pipeline Collisions Occur When They Shouldn't
 // addEdge ... Adds edge between two preconstructed constructed component nodes
 func (graph *cGraph) addEdge(cID1, cID2 core.ComponentID) error {
 	entry1, found := graph.edgeMap[cID1]

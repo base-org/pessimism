@@ -2,8 +2,6 @@ package component
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"math/big"
 	"sync"
 
@@ -80,27 +78,32 @@ func (o *Oracle) Close() {
 // EventLoop ... Component loop that actively waits and transits register data
 // from a channel that the definition's read routine writes to
 func (o *Oracle) EventLoop() error {
-	// TODO - Introduce backfill check so that state can be "syncing"
+	// TODO(#24) - Add Internal Component Activity State Tracking
+
+	logger := logging.WithContext(o.ctx)
+
 	o.state = Live
-	log.Printf("[%s][%s] Starting event loop", o.id, o.cType)
+	logger.Debug("Starting component event loop",
+		zap.String("ID", o.id.String()))
 
 	o.wg.Add(1)
 	go func() {
 		defer o.wg.Done()
 		if err := o.definition.ReadRoutine(o.ctx, o.oracleChannel); err != nil {
-			logging.WithContext(o.ctx).Error("Received error from read routine", zap.Error(err))
+			logger.Error("Received error from read routine",
+				zap.String("ID", o.id.String()),
+				zap.Error(err))
 		}
 	}()
 
 	for {
 		select {
 		case registerData := <-o.oracleChannel:
-			logging.WithContext(o.ctx).Debug("Sending data",
-				zap.String("From", o.id.String()))
+			logger.Debug("Sending data",
+				zap.String("ID", o.id.String()))
 
 			if err := o.egressHandler.Send(registerData); err != nil {
-				logging.WithContext(o.ctx).Error(
-					fmt.Sprintf(transitErr, o.id, o.cType, err.Error()))
+				logger.Error(transitErr, zap.String("ID", o.id.String()))
 			}
 
 		case <-o.ctx.Done():

@@ -11,6 +11,7 @@ type loggerKeyType int
 
 const loggerKey loggerKeyType = iota
 
+// NOTE - Logger is set to Nop as default to avoid redundant testing
 var logger *zap.Logger = zap.NewNop()
 
 // Config ... Configuration passed through to the logging constructor

@@ -3,7 +3,6 @@ package registry
 import (
 	"context"
 	"errors"
-	"log"
 	"math/big"
 	"time"
 
@@ -163,19 +162,24 @@ func (oracle *GethBlockODef) fetchData(ctx context.Context, height *big.Int,
 	return oracle.client.BlockByNumber(ctx, height)
 }
 
+func validHeightParams(start, end *big.Int) error {
+	if end != nil && start == nil {
+		return errors.New("cannot start with latest block height with end height configured")
+	}
+
+	if end != nil && start != nil &&
+		end.Cmp(start) < 0 {
+		return errors.New("start height cannot be more than the end height")
+	}
+
+	return nil
+}
+
 // ReadRoutine ... Sequentially polls go-ethereum compatible execution
 // client using monotonic block height variable for block metadata
 // & writes block metadata to output listener components
 func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan core.TransitData) error {
 	// NOTE - Might need improvements in future as the project takes shape.
-
-	if oracle.cfg.EndHeight != nil && oracle.cfg.StartHeight == nil {
-		return errors.New("cannot start with latest block height with end height configured")
-	}
-
-	if oracle.cfg.EndHeight.Cmp(oracle.cfg.StartHeight) < 0 {
-		return errors.New("start height cannot be more than the end height")
-	}
 
 	// Now fetching current height from the network
 	// currentHeader := oracle.getCurrentHeightFromNetwork(ctx)
@@ -183,6 +187,10 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 	// if oracle.cfg.StartHeight.Cmp(currentHeader.Number) == 1 {
 	// 	return errors.New("start height cannot be more than the latest height from network")
 	// }
+
+	if err := validHeightParams(oracle.cfg.StartHeight, oracle.cfg.EndHeight); err != nil {
+		return err
+	}
 
 	ticker := time.NewTicker(pollInterval * time.Millisecond)
 	for {
@@ -208,8 +216,6 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 					zap.Bool("blockAsserted", blockAssertedOk))
 				continue
 			}
-
-			log.Printf("%d", height)
 
 			// TODO - Add support for database persistence
 			componentChan <- core.TransitData{

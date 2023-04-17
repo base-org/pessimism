@@ -26,3 +26,7 @@ func (as ActivityState) String() string {
 
 	return "unknown"
 }
+
+const (
+	couldNotCastErr = "could not cast component initializer function to %s constructor type"
+)

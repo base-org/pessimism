@@ -35,7 +35,7 @@ const (
 	egressAlreadyExistsErr = "%s egress key already exists within component router mapping"
 	egressNotFoundErr      = "no egress key %s exists within component router mapping"
 
-	transitErr = "[%s][%s] Received transit error: %s"
+	transitErr = "received transit error: %s"
 )
 
 // IngressHandler specific errors

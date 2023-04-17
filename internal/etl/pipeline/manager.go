@@ -10,6 +10,8 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/etl/registry"
+	"github.com/base-org/pessimism/internal/logging"
+	"go.uber.org/zap"
 )
 
 type Manager struct {
@@ -31,7 +33,7 @@ func NewManager(ctx context.Context) *Manager {
 
 func (manager *Manager) CreateRegisterPipeline(ctx context.Context,
 	cfg *config.PipelineConfig) (core.PipelineID, error) {
-	log.Printf("constructing register pipeline for %s", cfg.DataType)
+	logger := logging.WithContext(manager.ctx)
 
 	register, err := registry.GetRegister(cfg.DataType)
 	if err != nil {
@@ -40,7 +42,6 @@ func (manager *Manager) CreateRegisterPipeline(ctx context.Context,
 
 	components := make([]component.Component, 0)
 	registers := append([]*core.DataRegister{register}, register.Dependencies...)
-	log.Printf("%+v", registers)
 
 	prevID := core.NilCompID()
 	lastReg := registers[len(registers)-1]
@@ -49,9 +50,13 @@ func (manager *Manager) CreateRegisterPipeline(ctx context.Context,
 	cID2 := core.MakeComponentID(cfg.PipelineType, lastReg.ComponentType, lastReg.DataType, cfg.Network)
 	pID := core.MakePipelineID(cfg.PipelineType, cID1, cID2)
 
+	logger.Debug("constructing register pipeline",
+		zap.String("ID", pID.String()))
+
 	for i, register := range registers {
 		// NOTE - This doesn't consider the circumstance where
 		// a requested pipeline already exists but requires some backfill to run
+		// TODO(#30): Pipeline Collisions Occur When They Shouldn't
 		cID := core.MakeComponentID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
 		if err != nil {
 			return core.NilPipelineID(), err
@@ -88,7 +93,6 @@ func (manager *Manager) CreateRegisterPipeline(ctx context.Context,
 	}
 
 	manager.pipeLines[pID] = pipeLine
-	// TODO - Update pipeline entries with component entry struct within componentMap
 
 	return pID, nil
 }
@@ -121,7 +125,7 @@ func inferComponent(ctx context.Context, cfg *config.PipelineConfig, id core.Com
 	case core.Oracle:
 		init, success := register.ComponentConstructor.(component.OracleConstructorFunc)
 		if !success {
-			return nil, fmt.Errorf("could not cast constructor to oracle constructor type")
+			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Oracle.String()))
 		}
 
 		// NOTE ... We assume at most 1 oracle per register pipeline
@@ -130,7 +134,7 @@ func inferComponent(ctx context.Context, cfg *config.PipelineConfig, id core.Com
 	case core.Pipe:
 		init, success := register.ComponentConstructor.(component.PipeConstructorFunc)
 		if !success {
-			return nil, fmt.Errorf("could not cast constructor to pipe constructor type")
+			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Pipe.String()))
 		}
 
 		return init(ctx, component.WithID(id))
