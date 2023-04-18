@@ -81,7 +81,7 @@ func (p *Pipe) EventLoop() error {
 		case inputData := <-inChan:
 			outputData, err := p.tform(inputData)
 			if err != nil {
-				// TODO - Introduce metrics service (`prometheus`) cal
+				// TODO - Introduce metrics service (`prometheus`) call
 				logger.Error(err.Error(), zap.String("ID", p.id.String()))
 				continue
 			}
