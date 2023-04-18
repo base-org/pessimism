@@ -1,11 +1,13 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"math/big"
 	"strconv"
 	"strings"
 
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/joho/godotenv"
 
@@ -23,6 +25,7 @@ const (
 )
 
 // Config ... Application level configuration defined by `FilePath` value
+// TODO - Consider renaming to "environment config"
 type Config struct {
 	L1RpcEndpoint string
 	L2RpcEndpoint string
@@ -36,6 +39,22 @@ type OracleConfig struct {
 	StartHeight  *big.Int
 	EndHeight    *big.Int
 	NumOfRetries int
+}
+
+// PipelineConfig ... Configuration passed through to a pipeline constructor
+type PipelineConfig struct {
+	Network      core.Network
+	DataType     core.RegisterType
+	PipelineType core.PipelineType
+	OracleCfg    *OracleConfig
+}
+
+func (oc *OracleConfig) Backfill() bool {
+	return oc.StartHeight != nil
+}
+
+func (oc *OracleConfig) Backtest() bool {
+	return oc.EndHeight != nil
 }
 
 // NewConfig ... Initializer
@@ -62,6 +81,18 @@ func NewConfig(fileName FilePath) *Config {
 	}
 
 	return config
+}
+
+func (cfg *Config) GetEndpointForNetwork(n core.Network) (string, error) {
+	switch n {
+	case core.Layer1:
+		return cfg.L1RpcEndpoint, nil
+
+	case core.Layer2:
+		return cfg.L2RpcEndpoint, nil
+	}
+
+	return "", fmt.Errorf("could not find endpoint for network: %s", n.String())
 }
 
 // IsProduction ... Returns true if the env is production

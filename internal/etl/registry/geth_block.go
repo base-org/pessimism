@@ -7,16 +7,16 @@ import (
 	"time"
 
 	"github.com/base-org/pessimism/internal/client"
-	"github.com/base-org/pessimism/internal/conduit/models"
-	"github.com/base-org/pessimism/internal/conduit/pipeline"
 	"github.com/base-org/pessimism/internal/config"
+	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 )
 
 const (
-	pollInterval = 200
+	pollInterval = 1000
 )
 
 // TODO(#21): Verify config validity during Oracle construction
@@ -27,16 +27,27 @@ type GethBlockODef struct {
 	currHeight *big.Int
 }
 
-// NewGethBlockOracle ... Initializer
-func NewGethBlockOracle(ctx context.Context,
-	ot pipeline.OracleType, cfg *config.OracleConfig, client client.EthClientInterface) (pipeline.Component, error) {
-	od := &GethBlockODef{cfg: cfg, currHeight: nil, client: client}
-	return pipeline.NewOracle(ctx, ot, od)
+// NewGethBlockODef ... Initializer for geth.block oracle definition
+func NewGethBlockODef(cfg *config.OracleConfig, client client.EthClientInterface, h *big.Int) *GethBlockODef {
+	return &GethBlockODef{
+		cfg:        cfg,
+		client:     client,
+		currHeight: h,
+	}
+}
+
+// NewGethBlockOracle ... Initializer for geth.block oracle component
+func NewGethBlockOracle(ctx context.Context, ot core.PipelineType,
+	cfg *config.OracleConfig, opts ...component.Option) (component.Component, error) {
+	client := client.NewEthClient()
+	od := NewGethBlockODef(cfg, client, nil)
+
+	return component.NewOracle(ctx, ot, core.GethBlock, od, opts...)
 }
 
 func (oracle *GethBlockODef) ConfigureRoutine() error {
 	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
-		time.Second*time.Duration(models.EthClientTimeout))
+		time.Second*time.Duration(core.EthClientTimeout))
 	defer ctxCancel()
 
 	logging.WithContext(ctxTimeout).Info("Setting up GETH Block client")
@@ -62,7 +73,7 @@ func (oracle *GethBlockODef) getCurrentHeightFromNetwork(ctx context.Context) *t
 }
 
 // BackTestRoutine ...
-func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan chan models.TransitData,
+func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan chan core.TransitData,
 	startHeight *big.Int, endHeight *big.Int) error {
 	if endHeight.Cmp(startHeight) < 0 {
 		return errors.New("start height cannot be more than the end height")
@@ -81,7 +92,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 		select {
 		case <-ticker.C:
 
-			headerAsInterface, err := oracle.fetchData(ctx, height, models.FetchHeader)
+			headerAsInterface, err := oracle.fetchData(ctx, height, core.FetchHeader)
 			headerAsserted, headerAssertedOk := headerAsInterface.(*types.Header)
 
 			if err != nil || !headerAssertedOk {
@@ -90,7 +101,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 				continue
 			}
 
-			blockAsInterface, err := oracle.fetchData(ctx, headerAsserted.Number, models.FetchBlock)
+			blockAsInterface, err := oracle.fetchData(ctx, headerAsserted.Number, core.FetchBlock)
 			blockAsserted, blockAssertedOk := blockAsInterface.(*types.Block)
 
 			if err != nil || !blockAssertedOk {
@@ -100,9 +111,9 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 			}
 
 			// TODO - Add support for database persistence
-			componentChan <- models.TransitData{
+			componentChan <- core.TransitData{
 				Timestamp: time.Now(),
-				Type:      GethBlock,
+				Type:      core.GethBlock,
 				Value:     *blockAsserted,
 			}
 
@@ -144,32 +155,41 @@ func (oracle *GethBlockODef) getHeightToProcess(ctx context.Context) *big.Int {
 // fetchHeaderWithRetry ... retry for specified number of times.
 // Not an exponent backoff, but a simpler method which retries sooner
 func (oracle *GethBlockODef) fetchData(ctx context.Context, height *big.Int,
-	fetchType models.FetchType) (interface{}, error) {
-	if fetchType == models.FetchHeader {
+	fetchType core.FetchType) (interface{}, error) {
+	if fetchType == core.FetchHeader {
 		return oracle.client.HeaderByNumber(ctx, height)
 	}
 	return oracle.client.BlockByNumber(ctx, height)
 }
 
-// ReadRoutine ... Sequentially polls go-ethereum compatible execution
-// client using monotonic block height variable for block metadata
-// & writes block metadata to output listener components
-func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan models.TransitData) error {
-	// NOTE - Might need improvements in future as the project takes shape.
-
-	if oracle.cfg.EndHeight != nil && oracle.cfg.StartHeight == nil {
+func validHeightParams(start, end *big.Int) error {
+	if end != nil && start == nil {
 		return errors.New("cannot start with latest block height with end height configured")
 	}
 
-	if oracle.cfg.EndHeight.Cmp(oracle.cfg.StartHeight) < 0 {
+	if end != nil && start != nil &&
+		end.Cmp(start) < 0 {
 		return errors.New("start height cannot be more than the end height")
 	}
 
-	// Now fetching current height from the network
-	currentHeader := oracle.getCurrentHeightFromNetwork(ctx)
+	return nil
+}
 
-	if oracle.cfg.StartHeight.Cmp(currentHeader.Number) == 1 {
-		return errors.New("start height cannot be more than the latest height from network")
+// ReadRoutine ... Sequentially polls go-ethereum compatible execution
+// client using monotonic block height variable for block metadata
+// & writes block metadata to output listener components
+func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan core.TransitData) error {
+	// NOTE - Might need improvements in future as the project takes shape.
+
+	// Now fetching current height from the network
+	// currentHeader := oracle.getCurrentHeightFromNetwork(ctx)
+
+	// if oracle.cfg.StartHeight.Cmp(currentHeader.Number) == 1 {
+	// 	return errors.New("start height cannot be more than the latest height from network")
+	// }
+
+	if err := validHeightParams(oracle.cfg.StartHeight, oracle.cfg.EndHeight); err != nil {
+		return err
 	}
 
 	ticker := time.NewTicker(pollInterval * time.Millisecond)
@@ -179,7 +199,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 
 			height := oracle.getHeightToProcess(ctx)
 
-			headerAsInterface, err := oracle.fetchData(ctx, height, models.FetchHeader)
+			headerAsInterface, err := oracle.fetchData(ctx, height, core.FetchHeader)
 			headerAsserted, headerAssertedOk := headerAsInterface.(*types.Header)
 
 			if err != nil || !headerAssertedOk {
@@ -188,7 +208,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 				continue
 			}
 
-			blockAsInterface, err := oracle.fetchData(ctx, headerAsserted.Number, models.FetchBlock)
+			blockAsInterface, err := oracle.fetchData(ctx, headerAsserted.Number, core.FetchBlock)
 			blockAsserted, blockAssertedOk := blockAsInterface.(*types.Block)
 
 			if err != nil || !blockAssertedOk {
@@ -198,9 +218,9 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			}
 
 			// TODO - Add support for database persistence
-			componentChan <- models.TransitData{
+			componentChan <- core.TransitData{
 				Timestamp: time.Now(),
-				Type:      GethBlock,
+				Type:      core.GethBlock,
 				Value:     *blockAsserted,
 			}
 

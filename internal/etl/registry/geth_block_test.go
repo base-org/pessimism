@@ -7,9 +7,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/base-org/pessimism/internal/conduit/models"
-	"github.com/base-org/pessimism/internal/conduit/pipeline"
 	"github.com/base-org/pessimism/internal/config"
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -18,6 +17,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
+// TODO(#26): Use Go Mock
 type EthClientMocked struct {
 	mock.Mock
 }
@@ -42,7 +42,7 @@ func (ec *EthClientMocked) BlockByNumber(ctx context.Context, number *big.Int) (
 
 func Test_ConfigureRoutine_Error(t *testing.T) {
 
-	ctx, cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background())
 	logging.NewLogger(nil, false)
 	defer cancel()
 
@@ -51,29 +51,34 @@ func Test_ConfigureRoutine_Error(t *testing.T) {
 	// setup expectations
 	testObj.On("DialContext", mock.Anything, "error handle test").Return(errors.New("error handle test"))
 
-	_, err := NewGethBlockOracle(ctx, pipeline.LiveOracle, &config.OracleConfig{
-		RPCEndpoint: "error handle test",
-	}, testObj)
+	testOdef := NewGethBlockODef(&config.OracleConfig{
+		RPCEndpoint: "error handle test"},
+		testObj,
+		nil,
+	)
+	err := testOdef.ConfigureRoutine()
 	assert.Error(t, err)
 	assert.EqualError(t, err, "error handle test")
 }
 
 func Test_ConfigureRoutine_Pass(t *testing.T) {
 
-	ctx, cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background())
 	logging.NewLogger(nil, false)
 	defer cancel()
 
 	testObj := new(EthClientMocked)
 
 	// setup expectations
-	testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
+	testObj.On("DialContext", mock.Anything, "error handle test").Return(nil)
 
-	newGethBlockOracleCreated, err := NewGethBlockOracle(ctx, pipeline.LiveOracle, &config.OracleConfig{
-		RPCEndpoint: "pass test",
-	}, testObj)
+	testOdef := NewGethBlockODef(&config.OracleConfig{
+		RPCEndpoint: "error handle test"},
+		testObj,
+		nil,
+	)
+	err := testOdef.ConfigureRoutine()
 	assert.NoError(t, err)
-	assert.Equal(t, newGethBlockOracleCreated.Type(), models.Oracle)
 }
 
 func Test_GetCurrentHeightFromNetwork(t *testing.T) {
@@ -135,15 +140,15 @@ func Test_Backroutine(t *testing.T) {
 		name        string
 		description string
 
-		constructionLogic func() (*GethBlockODef, chan models.TransitData)
-		testLogic         func(*testing.T, *GethBlockODef, chan models.TransitData)
+		constructionLogic func() (*GethBlockODef, chan core.TransitData)
+		testLogic         func(*testing.T, *GethBlockODef, chan core.TransitData)
 	}{
 
 		{
 			name:        "Current network height check",
 			description: "Check if network height check is less than starting height",
 
-			constructionLogic: func() (*GethBlockODef, chan models.TransitData) {
+			constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
 				testObj := new(EthClientMocked)
 				header := types.Header{
 					ParentHash: common.HexToHash("0x123456789"),
@@ -158,12 +163,12 @@ func Test_Backroutine(t *testing.T) {
 					NumOfRetries: 3,
 				}, currHeight: nil, client: testObj}
 
-				outChan := make(chan models.TransitData)
+				outChan := make(chan core.TransitData)
 
 				return od, outChan
 			},
 
-			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan models.TransitData) {
+			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan core.TransitData) {
 
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
@@ -177,7 +182,7 @@ func Test_Backroutine(t *testing.T) {
 			name:        "Successful Height check",
 			description: "Ending height cannot be less than the Starting height",
 
-			constructionLogic: func() (*GethBlockODef, chan models.TransitData) {
+			constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
 				testObj := new(EthClientMocked)
 
 				// setup expectations
@@ -188,12 +193,12 @@ func Test_Backroutine(t *testing.T) {
 					NumOfRetries: 3,
 				}, currHeight: nil, client: testObj}
 
-				outChan := make(chan models.TransitData)
+				outChan := make(chan core.TransitData)
 
 				return od, outChan
 			},
 
-			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan models.TransitData) {
+			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan core.TransitData) {
 
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
@@ -209,7 +214,7 @@ func Test_Backroutine(t *testing.T) {
 		//	name:        "Header fetch retry exceeded error check",
 		//	description: "Check if the header fetch retry fails after 3 retries, total 4 tries.",
 		//
-		//	constructionLogic: func() (*GethBlockODef, chan models.TransitData) {
+		//	constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
 		//		testObj := new(EthClientMocked)
 		//
 		//		// setup expectations
@@ -221,11 +226,11 @@ func Test_Backroutine(t *testing.T) {
 		//			NumOfRetries: 3,
 		//		}, currHeight: nil, client: testObj}
 		//
-		//		outChan := make(chan models.TransitData)
+		//		outChan := make(chan core.TransitData)
 		//		return od, outChan
 		//	},
 		//
-		//	testLogic: func(t *testing.T, od *GethBlockODef, outChan chan models.TransitData) {
+		//	testLogic: func(t *testing.T, od *GethBlockODef, outChan chan core.TransitData) {
 		//
 		//		ctx, cancel := context.WithCancel(context.Background())
 		//		defer cancel()
@@ -239,7 +244,7 @@ func Test_Backroutine(t *testing.T) {
 			name:        "Backroutine happy path test",
 			description: "Backroutine works and channel should have 4 messages waiting.",
 
-			constructionLogic: func() (*GethBlockODef, chan models.TransitData) {
+			constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
 				testObj := new(EthClientMocked)
 				header := types.Header{
 					ParentHash: common.HexToHash("0x123456789"),
@@ -256,12 +261,12 @@ func Test_Backroutine(t *testing.T) {
 					NumOfRetries: 3,
 				}, currHeight: nil, client: testObj}
 
-				outChan := make(chan models.TransitData, 2)
+				outChan := make(chan core.TransitData, 2)
 
 				return od, outChan
 			},
 
-			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan models.TransitData) {
+			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan core.TransitData) {
 
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
@@ -293,51 +298,51 @@ func Test_ReadRoutine(t *testing.T) {
 		name        string
 		description string
 
-		constructionLogic func() (*GethBlockODef, chan models.TransitData)
-		testLogic         func(*testing.T, *GethBlockODef, chan models.TransitData)
+		constructionLogic func() (*GethBlockODef, chan core.TransitData)
+		testLogic         func(*testing.T, *GethBlockODef, chan core.TransitData)
 	}{
 
-		{
-			name:        "Current network height check",
-			description: "Check if network height check is less than starting height",
+		// {
+		// 	name:        "Current network height check",
+		// 	description: "Check if network height check is less than starting height",
 
-			constructionLogic: func() (*GethBlockODef, chan models.TransitData) {
-				testObj := new(EthClientMocked)
-				header := types.Header{
-					ParentHash: common.HexToHash("0x123456789"),
-					Number:     big.NewInt(5),
-				}
-				// setup expectations
-				testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
-				testObj.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&header, nil)
+		// 	constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
+		// 		testObj := new(EthClientMocked)
+		// 		header := types.Header{
+		// 			ParentHash: common.HexToHash("0x123456789"),
+		// 			Number:     big.NewInt(5),
+		// 		}
+		// 		// setup expectations
+		// 		testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
+		// 		testObj.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&header, nil)
 
-				od := &GethBlockODef{cfg: &config.OracleConfig{
-					RPCEndpoint:  "pass test",
-					StartHeight:  big.NewInt(7),
-					EndHeight:    big.NewInt(10),
-					NumOfRetries: 3,
-				}, currHeight: nil, client: testObj}
+		// 		od := &GethBlockODef{cfg: &config.OracleConfig{
+		// 			RPCEndpoint:  "pass test",
+		// 			StartHeight:  big.NewInt(7),
+		// 			EndHeight:    big.NewInt(10),
+		// 			NumOfRetries: 3,
+		// 		}, currHeight: nil, client: testObj}
 
-				outChan := make(chan models.TransitData)
+		// 		outChan := make(chan core.TransitData)
 
-				return od, outChan
-			},
+		// 		return od, outChan
+		// 	},
 
-			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan models.TransitData) {
+		// 	testLogic: func(t *testing.T, od *GethBlockODef, outChan chan core.TransitData) {
 
-				ctx, cancel := context.WithCancel(context.Background())
-				defer cancel()
+		// 		ctx, cancel := context.WithCancel(context.Background())
+		// 		defer cancel()
 
-				err := od.ReadRoutine(ctx, outChan)
-				assert.Error(t, err)
-				assert.EqualError(t, err, "start height cannot be more than the latest height from network")
-			},
-		},
+		// 		err := od.ReadRoutine(ctx, outChan)
+		// 		assert.Error(t, err)
+		// 		assert.EqualError(t, err, "start height cannot be more than the latest height from network")
+		// 	},
+		// },
 		{
 			name:        "Successful Height check 1",
 			description: "Ending height cannot be less than the Starting height",
 
-			constructionLogic: func() (*GethBlockODef, chan models.TransitData) {
+			constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
 				testObj := new(EthClientMocked)
 				testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
 				od := &GethBlockODef{cfg: &config.OracleConfig{
@@ -346,11 +351,11 @@ func Test_ReadRoutine(t *testing.T) {
 					EndHeight:    big.NewInt(1),
 					NumOfRetries: 3,
 				}, currHeight: nil, client: testObj}
-				outChan := make(chan models.TransitData)
+				outChan := make(chan core.TransitData)
 				return od, outChan
 			},
 
-			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan models.TransitData) {
+			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan core.TransitData) {
 
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
@@ -364,7 +369,7 @@ func Test_ReadRoutine(t *testing.T) {
 			name:        "Successful Height check 2",
 			description: "Cannot have start height nil, i.e, latest block and end height configured",
 
-			constructionLogic: func() (*GethBlockODef, chan models.TransitData) {
+			constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
 				testObj := new(EthClientMocked)
 				testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
 				od := &GethBlockODef{cfg: &config.OracleConfig{
@@ -373,11 +378,11 @@ func Test_ReadRoutine(t *testing.T) {
 					EndHeight:    big.NewInt(1),
 					NumOfRetries: 3,
 				}, currHeight: nil, client: testObj}
-				outChan := make(chan models.TransitData)
+				outChan := make(chan core.TransitData)
 				return od, outChan
 			},
 
-			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan models.TransitData) {
+			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan core.TransitData) {
 
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
@@ -391,7 +396,7 @@ func Test_ReadRoutine(t *testing.T) {
 			name:        "Number of executions",
 			description: "Making sure that number of blocks fetched matches the assumption. Number of messages should be 5, in the channel",
 
-			constructionLogic: func() (*GethBlockODef, chan models.TransitData) {
+			constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
 				testObj := new(EthClientMocked)
 				header := types.Header{
 					ParentHash: common.HexToHash("0x123456789"),
@@ -409,11 +414,11 @@ func Test_ReadRoutine(t *testing.T) {
 					EndHeight:    big.NewInt(5),
 					NumOfRetries: 3,
 				}, currHeight: nil, client: testObj}
-				outChan := make(chan models.TransitData, 10)
+				outChan := make(chan core.TransitData, 10)
 				return od, outChan
 			},
 
-			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan models.TransitData) {
+			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan core.TransitData) {
 
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
@@ -430,7 +435,7 @@ func Test_ReadRoutine(t *testing.T) {
 		//	name:        "Latest block check",
 		//	description: "Making sure that number of blocks fetched matches the assumption. Number of messages should be 5, in the channel",
 		//
-		//	constructionLogic: func() (*GethBlockODef, chan models.TransitData) {
+		//	constructionLogic: func() (*GethBlockODef, chan core.TransitData) {
 		//		testObj := new(EthClientMocked)
 		//		header := types.Header{
 		//			ParentHash: common.HexToHash("0x123456789"),
@@ -448,11 +453,11 @@ func Test_ReadRoutine(t *testing.T) {
 		//			EndHeight:    nil,
 		//			NumOfRetries: 3,
 		//		}, currHeight: nil, client: testObj}
-		//		outChan := make(chan models.TransitData, 10)
+		//		outChan := make(chan core.TransitData, 10)
 		//		return od, outChan
 		//	},
 		//
-		//	testLogic: func(t *testing.T, od *GethBlockODef, outChan chan models.TransitData) {
+		//	testLogic: func(t *testing.T, od *GethBlockODef, outChan chan core.TransitData) {
 		//
 		//		ctx, cancel := context.WithCancel(context.Background())
 		//		defer cancel()

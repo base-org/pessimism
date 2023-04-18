@@ -2,37 +2,31 @@ package main
 
 import (
 	"context"
-	"sync"
+	"log"
+	"time"
 
-	"github.com/base-org/pessimism/internal/client"
-	"github.com/base-org/pessimism/internal/conduit/models"
-	"github.com/base-org/pessimism/internal/conduit/pipeline"
-	"github.com/base-org/pessimism/internal/conduit/registry"
 	"github.com/base-org/pessimism/internal/config"
+	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/ethereum/go-ethereum/core/types"
-	"go.uber.org/zap"
-)
-
-const (
-	outChanID   = 0x420
-	interChanID = 0x42
 )
 
 func main() {
 	/*
-		This a simple experimental POC showcasing an implicit CONTRACT_CREATE_TX register pipeline
-
+		This a simple experimental POC showcasing a pipeline DAG with two register pipelines that use overlapping components:
+							    -> (C1)(Contract Create TX Pipe)
+		(C0)(Geth Block Node) --
+							    -> (C3)(Blackhole Address Tx Pipe)
 		This is done to:
 		A) Prove that the Oracle and Pipe components operate as expected and are able to channel data between each other
-		B) Reason about component construction to better understand how to automate register pipeline creation
+		B) Showcase a minimal example of the Pipeline DAG that can leverage overlapping register components to avoid
+			duplication when necessary
 		C) Demonstrate a lightweight MVP for the system
-
 	*/
 
 	appCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
 	cfg := config.NewConfig("config.env")
 
 	logging.NewLogger(cfg.LoggerConfig, cfg.IsProduction())
@@ -44,73 +38,81 @@ func main() {
 		StartHeight: nil,
 		EndHeight:   nil}
 
-	// 1. Configure blackhole tx pipe component
-	createRegister, err := registry.GetRegister(registry.ContractCreateTX)
+	pipelineCfg1 := &config.PipelineConfig{
+		Network:      core.Layer1,
+		DataType:     core.ContractCreateTX,
+		PipelineType: core.Live,
+		OracleCfg:    l1OracleCfg,
+	}
+
+	pipelineCfg2 := &config.PipelineConfig{
+		Network:      core.Layer1,
+		DataType:     core.BlackholeTX,
+		PipelineType: core.Live,
+		OracleCfg:    l1OracleCfg,
+	}
+
+	etlManager := pipeline.NewManager(appCtx)
+
+	pID, err := etlManager.CreateRegisterPipeline(appCtx, pipelineCfg1)
 	if err != nil {
-		logging.NoContext().Fatal("error creating register", zap.Error(err))
+		panic(err)
 	}
 
-	initPipe, success := createRegister.ComponentConstructor.(pipeline.PipeConstructorFunc)
-	if !success {
-		logging.NoContext().Fatal("could not read component constructor Pipe constructor type")
-	}
-
-	inputChan := make(chan models.TransitData)
-
-	createTxPipe, err := initPipe(appCtx, inputChan)
+	pID2, err := etlManager.CreateRegisterPipeline(appCtx, pipelineCfg2)
 	if err != nil {
-		logging.NoContext().Fatal("error during pipe initialization", zap.Error(err))
+		panic(err)
 	}
 
-	register, err := registry.GetRegister(registry.GethBlock)
-	if err != nil {
-		logging.NoContext().Fatal("error getting register", zap.String("type", string(registry.GethBlock)), zap.Error(err))
+	outChan := core.NewTransitChannel()
+
+	if err := etlManager.AddPipelineDirective(pID, core.NilCompID(), outChan); err != nil {
+		panic(err)
 	}
 
-	init, success := register.ComponentConstructor.(pipeline.OracleConstructor)
-	if !success {
-		logging.NoContext().Fatal("Could not read constructor value")
+	if err := etlManager.AddPipelineDirective(pID2, core.NilCompID(), outChan); err != nil {
+		panic(err)
 	}
 
-	go func() {
-		if routineErr := createTxPipe.EventLoop(); routineErr != nil {
-			logging.NoContext().Error("Error received from oracle event loop", zap.Error(routineErr))
+	if err := etlManager.RunPipeline(pID); err != nil {
+		panic(err)
+	}
+
+	time.Sleep(time.Second * 1)
+
+	if err := etlManager.RunPipeline(pID2); err != nil {
+		panic(err)
+	}
+
+	log.Printf("===============================================")
+	log.Printf("Reading layer 1 EVM blockchain for live contract creation txs")
+	log.Printf("===============================================")
+
+	for td := range outChan {
+		switch td.Type { //nolint:exhaustive // checks for all transit data types are unnecessary here
+		case core.ContractCreateTX:
+			log.Printf("===============================================")
+			log.Printf("Received Contract Creation (CREATE) Transaction %+v", td)
+			log.Printf("===============================================")
+
+			parsedTx, success := td.Value.(*types.Transaction)
+			if !success {
+				log.Printf("Could not parse transaction value")
+			} else {
+				log.Printf("As parsed transaction %+v", parsedTx)
+			}
+
+		case core.BlackholeTX:
+			log.Printf("===============================================")
+			log.Printf("Received Blackhole (NULL) Transaction %+v", td)
+			log.Printf("===============================================")
+
+			parsedTx, success := td.Value.(*types.Transaction)
+			if !success {
+				log.Printf("Could not parse transaction value")
+			} else {
+				log.Printf("As parsed transaction %+v", parsedTx)
+			}
 		}
-	}()
-
-	ethClient := client.EthClient{}
-	l1Oracle, err := init(appCtx, pipeline.LiveOracle, l1OracleCfg, &ethClient)
-	if err != nil {
-		logging.NoContext().Fatal("error initializing oracle", zap.Error(err))
-	}
-
-	if err := l1Oracle.AddDirective(interChanID, inputChan); err != nil {
-		logging.NoContext().Fatal("error adding directive", zap.Int("interChanID", interChanID), zap.Error(err))
-	}
-
-	outputChan := make(chan models.TransitData)
-
-	if err := createTxPipe.AddDirective(outChanID, outputChan); err != nil {
-		logging.NoContext().Fatal("error adding directive", zap.Int("outChanID", outChanID), zap.Error(err))
-	}
-
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-
-	go func() {
-		if routineErr := l1Oracle.EventLoop(); routineErr != nil {
-			logging.NoContext().Error("Error received from oracle event loop", zap.Error(routineErr))
-		}
-	}()
-
-	for td := range outputChan {
-		logging.NoContext().Info("Received Contract creation Transaction", zap.Any("transitData", td))
-
-		parsedTx, success := td.Value.(types.Transaction)
-		if !success {
-			logging.NoContext().Error("Could not parse transaction value")
-		}
-
-		logging.NoContext().Info("As parsed transaction", zap.Any("parsedTX", parsedTx))
 	}
 }
