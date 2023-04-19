@@ -18,20 +18,24 @@ type Manager struct {
 	ctx context.Context
 
 	dag       *cGraph
-	pipeLines map[core.PipelineID]PipeLine
-	wg        *sync.WaitGroup
+	pRegistry *pipeRegistry
+
+	compEventChan chan component.StateChange
+
+	wg *sync.WaitGroup
 }
 
 func NewManager(ctx context.Context) *Manager {
 	return &Manager{
-		ctx:       ctx,
-		dag:       newGraph(),
-		pipeLines: make(map[core.PipelineID]PipeLine, 0),
-		wg:        &sync.WaitGroup{},
+		ctx:           ctx,
+		dag:           newGraph(),
+		pRegistry:     newPipeRegistry(),
+		compEventChan: make(chan component.StateChange),
+		wg:            &sync.WaitGroup{},
 	}
 }
 
-func (manager *Manager) CreateRegisterPipeline(ctx context.Context,
+func (manager *Manager) CreatePipeline(ctx context.Context,
 	cfg *config.PipelineConfig) (core.PipelineID, error) {
 	logger := logging.WithContext(manager.ctx)
 
@@ -50,7 +54,7 @@ func (manager *Manager) CreateRegisterPipeline(ctx context.Context,
 	cID2 := core.MakeComponentID(cfg.PipelineType, lastReg.ComponentType, lastReg.DataType, cfg.Network)
 	pID := core.MakePipelineID(cfg.PipelineType, cID1, cID2)
 
-	logger.Debug("constructing register pipeline",
+	logger.Debug("constructing pipeline",
 		zap.String("ID", pID.String()))
 
 	for i, register := range registers {
@@ -63,7 +67,7 @@ func (manager *Manager) CreateRegisterPipeline(ctx context.Context,
 		}
 
 		if !manager.dag.componentExists(cID) {
-			comp, err := inferComponent(ctx, cfg, cID, register)
+			comp, err := inferComponent(ctx, cfg, cID, register, manager.compEventChan)
 			if err != nil {
 				return core.NilPipelineID(), err
 			}
@@ -92,15 +96,15 @@ func (manager *Manager) CreateRegisterPipeline(ctx context.Context,
 		return core.NilPipelineID(), err
 	}
 
-	manager.pipeLines[pID] = pipeLine
+	manager.pRegistry.addPipeline(pID, pipeLine, cfg.PipelineType)
 
 	return pID, nil
 }
 
-func (manager *Manager) RunPipeline(id core.PipelineID) error {
-	pipeLine, found := manager.pipeLines[id]
-	if !found {
-		return fmt.Errorf("could not find pipeline for id: %s", id)
+func (manager *Manager) RunPipeline(pID core.PipelineID) error {
+	pipeLine, err := manager.pRegistry.getPipeline(pID)
+	if err != nil {
+		return err
 	}
 
 	log.Printf("[%s] Running pipeline", pipeLine.ID().String())
@@ -109,16 +113,36 @@ func (manager *Manager) RunPipeline(id core.PipelineID) error {
 
 func (manager *Manager) AddPipelineDirective(pID core.PipelineID,
 	cID core.ComponentID, outChan chan core.TransitData) error {
-	pipeLine, found := manager.pipeLines[pID]
-	if !found {
-		return fmt.Errorf("could not find pipeline for id: %s", pID)
+	pipeLine, err := manager.pRegistry.getPipeline(pID)
+	if err != nil {
+		return err
 	}
-
 	return pipeLine.AddDirective(cID, outChan)
 }
 
+func (m *Manager) EventLoop(ctx context.Context) {
+	logger := logging.WithContext(ctx)
+
+	for {
+		select {
+		case <-ctx.Done():
+			logger.Info("Received shutdown", zap.String("Abstraction", "etl-manager"))
+
+		case stateChange := <-m.compEventChan:
+			_, err := m.pRegistry.fetchCompPipelineIDs(stateChange.ID)
+			if err != nil {
+				logger.Error("Could not fetch pipeline IDs for comp state change")
+			}
+
+			logger.Info("Received component state change requeset")
+		}
+
+	}
+
+}
+
 func inferComponent(ctx context.Context, cfg *config.PipelineConfig, id core.ComponentID,
-	register *core.DataRegister) (component.Component, error) {
+	register *core.DataRegister, eventCh chan component.StateChange) (component.Component, error) {
 	log.Printf("constructing %s component for register %s", register.ComponentType, register.DataType)
 
 	switch register.ComponentType {
@@ -129,7 +153,8 @@ func inferComponent(ctx context.Context, cfg *config.PipelineConfig, id core.Com
 		}
 
 		// NOTE ... We assume at most 1 oracle per register pipeline
-		return init(ctx, cfg.PipelineType, cfg.OracleCfg, component.WithID(id))
+		return init(ctx, cfg.PipelineType, cfg.OracleCfg,
+			component.WithID(id), component.WithEventChan(eventCh))
 
 	case core.Pipe:
 		init, success := register.ComponentConstructor.(component.PipeConstructorFunc)
@@ -137,7 +162,7 @@ func inferComponent(ctx context.Context, cfg *config.PipelineConfig, id core.Com
 			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Pipe.String()))
 		}
 
-		return init(ctx, component.WithID(id))
+		return init(ctx, component.WithID(id), component.WithEventChan(eventCh))
 
 	case core.Aggregator:
 		return nil, fmt.Errorf("aggregator component has yet to be implemented")

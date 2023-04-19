@@ -29,15 +29,29 @@ type Component interface {
 
 // metaData ... Component-agnostic agnostic struct that stores component metadata and routing state
 type metaData struct {
-	id     core.ComponentID
-	cType  core.ComponentType
-	output core.RegisterType
-	state  ActivityState
+	id        core.ComponentID
+	cType     core.ComponentType
+	output    core.RegisterType
+	state     ActivityState
+	stateChan chan StateChange
 
 	*ingressHandler
 	*egressHandler
 
 	*sync.RWMutex
+}
+
+func newMetaData(ct core.ComponentType, ot core.RegisterType) *metaData {
+	return &metaData{
+		id:             core.NilCompID(),
+		cType:          ct,
+		egressHandler:  newEgressHandler(),
+		ingressHandler: newIngressHandler(),
+		state:          Inactive,
+		stateChan:      make(chan StateChange),
+		output:         ot,
+		RWMutex:        &sync.RWMutex{},
+	}
 }
 
 // ActivityState ... Returns component current activity state
@@ -60,10 +74,29 @@ func (meta *metaData) OutputType() core.RegisterType {
 	return meta.output
 }
 
+// emitStateChange ... Emits a stateChange event to stateChan
+func (meta *metaData) emitStateChange(as ActivityState) {
+	event := StateChange{
+		ID:   meta.id,
+		From: meta.state,
+		To:   as,
+	}
+
+	meta.state = as
+	meta.stateChan <- event
+}
+
+// TODO::Comment
 type Option = func(*metaData)
 
 func WithID(id core.ComponentID) Option {
 	return func(meta *metaData) {
 		meta.id = id
+	}
+}
+
+func WithEventChan(sc chan StateChange) Option {
+	return func(md *metaData) {
+		md.stateChan = sc
 	}
 }

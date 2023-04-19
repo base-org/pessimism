@@ -2,7 +2,6 @@ package component
 
 import (
 	"context"
-	"sync"
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
@@ -34,15 +33,7 @@ func NewPipe(ctx context.Context, tform TransformFunc, inType core.RegisterType,
 		tform:  tform,
 		inType: inType,
 
-		metaData: &metaData{
-			id:             core.NilCompID(),
-			cType:          core.Pipe,
-			egressHandler:  newEgressHandler(),
-			ingressHandler: newIngressHandler(),
-			state:          Inactive,
-			output:         outType,
-			RWMutex:        &sync.RWMutex{},
-		},
+		metaData: newMetaData(core.Pipe, outType),
 	}
 
 	if err := pipe.createIngress(inType); err != nil {
@@ -70,7 +61,8 @@ func (p *Pipe) EventLoop() error {
 		zap.String("ID", p.id.String()),
 	)
 
-	p.metaData.state = Live
+	p.emitStateChange(Live)
+
 	inChan, err := p.GetIngress(p.inType)
 	if err != nil {
 		return err
@@ -105,6 +97,8 @@ func (p *Pipe) EventLoop() error {
 
 		// Manager is telling us to shutdown
 		case <-p.ctx.Done():
+			p.emitStateChange(Terminated)
+
 			return nil
 		}
 	}

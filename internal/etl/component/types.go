@@ -30,6 +30,13 @@ func (as ActivityState) String() string {
 	return "unknown"
 }
 
+type StateChange struct {
+	ID core.ComponentID
+
+	From ActivityState
+	To   ActivityState
+}
+
 // EgressHandler specific errors
 const (
 	egressAlreadyExistsErr = "%s egress key already exists within component router mapping"

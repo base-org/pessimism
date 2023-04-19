@@ -2,6 +2,8 @@ package core
 
 import (
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
 // ComponentID ... Represents a deterministic ID that's assigned
@@ -42,14 +44,28 @@ func (cID ComponentID) String() string {
 	)
 }
 
-type PipelineID [9]byte
+// Type ... Returns component type from component ID
+func (cID ComponentID) Type() ComponentType {
+	return ComponentType(cID[2])
+}
+
+// Used for local lookups to look for active collisions
+type PipelinePID = [9]byte
+
+type PipelineID struct {
+	PID  PipelinePID
+	UUID uuid.UUID
+}
 
 func NilPipelineID() PipelineID {
-	return PipelineID{0}
+	return PipelineID{
+		PID:  PipelinePID{0},
+		UUID: [16]byte{0},
+	}
 }
 
 func MakePipelineID(pt PipelineType, firstCID, lastCID ComponentID) PipelineID {
-	return PipelineID{
+	pID := PipelinePID{
 		byte(pt),
 		firstCID[0],
 		firstCID[1],
@@ -60,14 +76,21 @@ func MakePipelineID(pt PipelineType, firstCID, lastCID ComponentID) PipelineID {
 		lastCID[2],
 		lastCID[3],
 	}
+
+	return PipelineID{
+		PID:  pID,
+		UUID: uuid.New(),
+	}
 }
 
 func (pID PipelineID) String() string {
-	pt := PipelineType(pID[0]).String()
-	cID1 := ComponentID(*(*[4]byte)(pID[1:5])).String()
-	cID2 := ComponentID(*(*[4]byte)(pID[5:9])).String()
+	pid := pID.PID
 
-	return fmt.Sprintf("%s::%s::%s",
-		pt, cID1, cID2,
+	pt := PipelineType(pid[0]).String()
+	cID1 := ComponentID(*(*[4]byte)(pid[1:5])).String()
+	cID2 := ComponentID(*(*[4]byte)(pid[5:9])).String()
+
+	return fmt.Sprintf("%s::%s::%s:::%s",
+		pt, cID1, cID2, pID.UUID.String(),
 	)
 }

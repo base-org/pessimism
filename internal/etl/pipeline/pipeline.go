@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 
@@ -18,9 +19,11 @@ import (
 
 type PipeLine interface {
 	ID() core.PipelineID
+	Components() []component.Component
 	// EventLoop ... Pipeline driver function; spun up as separate go routine
-	EventLoop() error
 	RunPipeline(wg *sync.WaitGroup) error
+	UpdateState(as ActivityState) error
+
 	AddDirective(cID core.ComponentID, outChan chan core.TransitData) error
 }
 
@@ -48,6 +51,10 @@ func NewPipeLine(id core.PipelineID, comps []component.Component, opts ...Option
 	}
 
 	return pl, nil
+}
+
+func (pl *pipeLine) Components() []component.Component {
+	return pl.components
 }
 
 func (pl *pipeLine) ID() core.PipelineID {
@@ -82,6 +89,20 @@ func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 	return nil
 }
 
+// TerminatePipeline ...
+func (pl *pipeLine) TerminatePipeline(wg *sync.WaitGroup) error {
+	return nil
+}
+
+func (pl *pipeLine) UpdateState(as ActivityState) error {
+	if as == pl.aState {
+		return fmt.Errorf("State is already set")
+	}
+
+	pl.aState = as
+	return nil
+}
+
 func (pl *pipeLine) String() string {
 	str := ""
 
@@ -94,19 +115,4 @@ func (pl *pipeLine) String() string {
 	}
 
 	return str
-}
-
-func (pl *pipeLine) EventLoop() error {
-	// TODO(#29): No Pipeline Driver Functionality
-	// TODO - Add component sampling logic
-	// I.E, Components in a pipeline should be checked for activity state changes
-	// Critical for understanding when things like "syncing" or backfilling have completed for some
-	// live invariant pipeline
-
-	for { //nolint:gosimple // will soon be extended to other go channels
-		select {
-		case <-pl.ctx.Done():
-			return nil
-		}
-	}
 }

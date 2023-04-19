@@ -54,12 +54,12 @@ func main() {
 
 	etlManager := pipeline.NewManager(appCtx)
 
-	pID, err := etlManager.CreateRegisterPipeline(appCtx, pipelineCfg1)
+	pID, err := etlManager.CreatePipeline(appCtx, pipelineCfg1)
 	if err != nil {
 		panic(err)
 	}
 
-	pID2, err := etlManager.CreateRegisterPipeline(appCtx, pipelineCfg2)
+	pID2, err := etlManager.CreatePipeline(appCtx, pipelineCfg2)
 	if err != nil {
 		panic(err)
 	}
@@ -83,6 +83,10 @@ func main() {
 	if err := etlManager.RunPipeline(pID2); err != nil {
 		panic(err)
 	}
+
+	go func() {
+		etlManager.EventLoop(appCtx)
+	}()
 
 	log.Printf("===============================================")
 	log.Printf("Reading layer 1 EVM blockchain for live contract creation txs")

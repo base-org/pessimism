@@ -6,6 +6,8 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
+	"github.com/base-org/pessimism/internal/logging"
+	"go.uber.org/zap"
 )
 
 // componentEntry ... Used to store critical component graph entry data
@@ -87,7 +89,9 @@ func (graph *cGraph) addEdge(cID1, cID2 core.ComponentID) error {
 		return err
 	}
 
-	log.Printf("adding directive between (%s) -> (%s)", cID1.String(), cID2.String())
+	logging.NoContext().
+		Debug("Adding edge", zap.String("From", cID1.String()), zap.String("To", cID2.String()))
+
 	if err := entry1.comp.AddEgress(cID2, entryChan); err != nil {
 		return err
 	}
