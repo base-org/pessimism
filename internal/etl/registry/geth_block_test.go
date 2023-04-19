@@ -10,7 +10,7 @@ import (
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
-	"github.com/base-org/pessimism/internal/mock_client"
+	"github.com/base-org/pessimism/internal/mocks"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/trie"
@@ -18,6 +18,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 )
 
+//go:generate mockgen --destination ..\..\mocks\eth_client.go  --package mocks github.com/base-org/pessimism/internal/client EthClientInterface
 func Test_ConfigureRoutine_Error(t *testing.T) {
 
 	_, cancel := context.WithCancel(context.Background())
@@ -27,7 +28,7 @@ func Test_ConfigureRoutine_Error(t *testing.T) {
 	// setup mock
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	testObj := mock_client.NewMockEthClientInterface(ctrl)
+	testObj := mocks.NewMockEthClientInterface(ctrl)
 
 	// setup expectations
 	testObj.
@@ -54,7 +55,7 @@ func Test_ConfigureRoutine_Pass(t *testing.T) {
 	// setup mock
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	testObj := mock_client.NewMockEthClientInterface(ctrl)
+	testObj := mocks.NewMockEthClientInterface(ctrl)
 
 	// setup expectations
 	testObj.
@@ -80,7 +81,7 @@ func Test_GetCurrentHeightFromNetwork(t *testing.T) {
 	// setup mock
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	testObj := mock_client.NewMockEthClientInterface(ctrl)
+	testObj := mocks.NewMockEthClientInterface(ctrl)
 
 	header := types.Header{
 		ParentHash: common.HexToHash("0x123456789"),
@@ -109,7 +110,7 @@ func Test_GetHeightToProcess(t *testing.T) {
 	// setup mock
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	testObj := mock_client.NewMockEthClientInterface(ctrl)
+	testObj := mocks.NewMockEthClientInterface(ctrl)
 
 	// setup expectations
 	testObj.
@@ -162,7 +163,7 @@ func Test_Backroutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mock_client.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClientInterface(ctrl)
 
 				header := types.Header{
 					ParentHash: common.HexToHash("0x123456789"),
@@ -208,7 +209,7 @@ func Test_Backroutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mock_client.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClientInterface(ctrl)
 
 				// setup expectations
 				testObj.
@@ -277,7 +278,7 @@ func Test_Backroutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mock_client.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClientInterface(ctrl)
 
 				header := types.Header{
 					ParentHash: common.HexToHash("0x123456789"),
@@ -346,6 +347,7 @@ func Test_ReadRoutine(t *testing.T) {
 		constructionLogic func() (*GethBlockODef, chan core.TransitData)
 		testLogic         func(*testing.T, *GethBlockODef, chan core.TransitData)
 	}{
+
 		{
 			name:        "Successful Height check 1",
 			description: "Ending height cannot be less than the Starting height",
@@ -354,7 +356,7 @@ func Test_ReadRoutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mock_client.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClientInterface(ctrl)
 
 				// setup expectations
 				testObj.
@@ -390,7 +392,7 @@ func Test_ReadRoutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mock_client.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClientInterface(ctrl)
 
 				// setup expectations
 				testObj.
@@ -426,7 +428,7 @@ func Test_ReadRoutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mock_client.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClientInterface(ctrl)
 
 				header := types.Header{
 					ParentHash: common.HexToHash("0x123456789"),

@@ -22,6 +22,7 @@ run-app:
 
 .PHONY: test
 test:
+	@ go generate ./...
 	@ go test ./... -v -timeout $(TEST_LIMIT)
 
 .PHONY: lint
