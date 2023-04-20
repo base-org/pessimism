@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"time"
 
 	"github.com/base-org/pessimism/internal/config"
@@ -40,7 +39,7 @@ func main() {
 
 	l1OracleCfg := &config.OracleConfig{
 		RPCEndpoint: cfg.L1RpcEndpoint,
-		StartHeight: big.NewInt(17082580),
+		StartHeight: nil,
 		EndHeight:   nil}
 
 	pipelineCfg1 := &config.PipelineConfig{
@@ -112,7 +111,6 @@ func main() {
 			if !success {
 				logger.Error("Could not parse transaction value")
 			} else {
-
 				logger.Info("Received Blackhole (NULL) Transaction", zap.String("tx", fmt.Sprintf("%+v", parsedTx)))
 			}
 		}
