@@ -2,7 +2,8 @@ package main
 
 import (
 	"context"
-	"log"
+	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/base-org/pessimism/internal/config"
@@ -10,8 +11,10 @@ import (
 	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/ethereum/go-ethereum/core/types"
+	"go.uber.org/zap"
 )
 
+// TODO(#34): No Documentation Exists Specifying How to Run & Test Service
 func main() {
 	/*
 		This a simple experimental POC showcasing a pipeline DAG with two register pipelines that use overlapping components:
@@ -31,11 +34,13 @@ func main() {
 
 	logging.NewLogger(cfg.LoggerConfig, cfg.IsProduction())
 
-	logging.NoContext().Info("pessimism boot up")
+	logger := logging.WithContext(appCtx)
+
+	logger.Info("pessimism boot up")
 
 	l1OracleCfg := &config.OracleConfig{
 		RPCEndpoint: cfg.L1RpcEndpoint,
-		StartHeight: nil,
+		StartHeight: big.NewInt(17082580),
 		EndHeight:   nil}
 
 	pipelineCfg1 := &config.PipelineConfig{
@@ -88,34 +93,27 @@ func main() {
 		etlManager.EventLoop(appCtx)
 	}()
 
-	log.Printf("===============================================")
-	log.Printf("Reading layer 1 EVM blockchain for live contract creation txs")
-	log.Printf("===============================================")
+	logger.Info("Reading layer 1 EVM blockchain for live contract creation txs")
 
 	for td := range outChan {
 		switch td.Type { //nolint:exhaustive // checks for all transit data types are unnecessary here
 		case core.ContractCreateTX:
-			log.Printf("===============================================")
-			log.Printf("Received Contract Creation (CREATE) Transaction %+v", td)
-			log.Printf("===============================================")
 
 			parsedTx, success := td.Value.(*types.Transaction)
 			if !success {
-				log.Printf("Could not parse transaction value")
+				logger.Error("Could not parse transaction value")
 			} else {
-				log.Printf("As parsed transaction %+v", parsedTx)
+				logger.Info("Received Contract Creation (CREATE) Transaction", zap.String("tx", fmt.Sprintf("%+v", parsedTx)))
 			}
 
 		case core.BlackholeTX:
-			log.Printf("===============================================")
-			log.Printf("Received Blackhole (NULL) Transaction %+v", td)
-			log.Printf("===============================================")
 
 			parsedTx, success := td.Value.(*types.Transaction)
 			if !success {
-				log.Printf("Could not parse transaction value")
+				logger.Error("Could not parse transaction value")
 			} else {
-				log.Printf("As parsed transaction %+v", parsedTx)
+
+				logger.Info("Received Blackhole (NULL) Transaction", zap.String("tx", fmt.Sprintf("%+v", parsedTx)))
 			}
 		}
 	}

@@ -97,6 +97,9 @@ func (m *Manager) EventLoop(ctx context.Context) {
 			logger.Info("Received shutdown", zap.String("Abstraction", "etl-manager"))
 
 		case stateChange := <-m.compEventChan:
+			// TODO(#35): No ETL Management Procedure Exists
+			// for Handling Component State Changes
+
 			_, err := m.pRegistry.getPipeLineIDs(stateChange.ID)
 			if err != nil {
 				logger.Error("Could not fetch pipeline IDs for comp state change")

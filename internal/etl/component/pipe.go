@@ -79,11 +79,12 @@ func (p *Pipe) EventLoop() error {
 			}
 
 			if length := len(outputData); length > 0 {
-				logger.Debug("Received output data",
+				logger.Debug("Received tranformation output data",
 					zap.String("ID", p.id.String()),
 					zap.Int("Length", length))
 			} else {
-				logger.Debug("Received output data of length 0")
+				logger.Debug("Received output data of length 0",
+					zap.String("ID", p.id.String()))
 				continue
 			}
 
