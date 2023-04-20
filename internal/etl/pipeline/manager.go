@@ -25,6 +25,7 @@ type Manager struct {
 	wg *sync.WaitGroup
 }
 
+// NewManager ... Initializer
 func NewManager(ctx context.Context) *Manager {
 	return &Manager{
 		ctx:           ctx,
@@ -35,19 +36,21 @@ func NewManager(ctx context.Context) *Manager {
 	}
 }
 
-func (manager *Manager) CreatePipeline(ctx context.Context,
-	cfg *config.PipelineConfig) (core.PipelineID, error) {
-	logger := logging.WithContext(manager.ctx)
+// CreateDataPipeline ... Creates an ETL data pipeline provided a pipeline configuration
+func (m *Manager) CreateDataPipeline(cfg *config.PipelineConfig) (core.PipelineID, error) {
+	logger := logging.WithContext(m.ctx)
 
 	register, err := registry.GetRegister(cfg.DataType)
 	if err != nil {
 		return core.NilPipelineID(), err
 	}
 
-	components := make([]component.Component, 0)
 	registers := append([]*core.DataRegister{register}, register.Dependencies...)
+	components, err := m.getComponents(cfg, registers)
+	if err != nil {
+		return core.NilPipelineID(), err
+	}
 
-	prevID := core.NilCompID()
 	lastReg := registers[len(registers)-1]
 
 	cID1 := core.MakeComponentID(cfg.PipelineType, registers[0].ComponentType, registers[0].DataType, cfg.Network)
@@ -57,63 +60,28 @@ func (manager *Manager) CreatePipeline(ctx context.Context,
 	logger.Debug("constructing pipeline",
 		zap.String("ID", pID.String()))
 
-	for i, register := range registers {
-		// NOTE - This doesn't consider the circumstance where
-		// a requested pipeline already exists but requires some backfill to run
-		// TODO(#30): Pipeline Collisions Occur When They Shouldn't
-		cID := core.MakeComponentID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
-		if err != nil {
-			return core.NilPipelineID(), err
-		}
-
-		if !manager.dag.componentExists(cID) {
-			comp, err := inferComponent(ctx, cfg, cID, register, manager.compEventChan)
-			if err != nil {
-				return core.NilPipelineID(), err
-			}
-			if err = manager.dag.addComponent(cID, comp); err != nil {
-				return core.NilPipelineID(), err
-			}
-		}
-
-		component, err := manager.dag.getComponent(cID)
-		if err != nil {
-			return core.NilPipelineID(), err
-		}
-
-		if i != 0 { // IE we've passed the pipeline's last path node; start adding edges
-			if err := manager.dag.addEdge(cID, prevID); err != nil {
-				return core.NilPipelineID(), err
-			}
-		}
-
-		prevID = component.ID()
-		components = append(components, component)
-	}
-
 	pipeLine, err := NewPipeLine(pID, components)
 	if err != nil {
 		return core.NilPipelineID(), err
 	}
-
-	manager.pRegistry.addPipeline(pID, pipeLine, cfg.PipelineType)
+	m.pRegistry.addPipeline(pID, pipeLine)
 
 	return pID, nil
 }
 
-func (manager *Manager) RunPipeline(pID core.PipelineID) error {
-	pipeLine, err := manager.pRegistry.getPipeline(pID)
+func (m *Manager) RunPipeline(pID core.PipelineID) error {
+	pipeLine, err := m.pRegistry.getPipeline(pID)
 	if err != nil {
 		return err
 	}
 
 	log.Printf("[%s] Running pipeline", pipeLine.ID().String())
-	return pipeLine.RunPipeline(manager.wg)
+	return pipeLine.RunPipeline(m.wg)
 }
 
-func (manager *Manager) AddPipelineDirective(pID core.PipelineID,
+func (m *Manager) AddPipelineDirective(pID core.PipelineID,
 	cID core.ComponentID, outChan chan core.TransitData) error {
-	pipeLine, err := manager.pRegistry.getPipeline(pID)
+	pipeLine, err := m.pRegistry.getPipeline(pID)
 	if err != nil {
 		return err
 	}
@@ -129,18 +97,57 @@ func (m *Manager) EventLoop(ctx context.Context) {
 			logger.Info("Received shutdown", zap.String("Abstraction", "etl-manager"))
 
 		case stateChange := <-m.compEventChan:
-			_, err := m.pRegistry.fetchCompPipelineIDs(stateChange.ID)
+			_, err := m.pRegistry.getPipeLineIDs(stateChange.ID)
 			if err != nil {
 				logger.Error("Could not fetch pipeline IDs for comp state change")
 			}
 
 			logger.Info("Received component state change requeset")
 		}
-
 	}
-
 }
 
+// getComponents ... Returns all components provided a slice of register definitions
+func (m *Manager) getComponents(cfg *config.PipelineConfig,
+	registers []*core.DataRegister) ([]component.Component, error) {
+	components := make([]component.Component, 0)
+	prevID := core.NilCompID()
+
+	for i, register := range registers {
+		// NOTE - This doesn't consider the circumstance where
+		// a requested pipeline already exists but requires some backfill to run
+		// TODO(#30): Pipeline Collisions Occur When They Shouldn't
+		cID := core.MakeComponentID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
+
+		if !m.dag.componentExists(cID) {
+			comp, err := inferComponent(m.ctx, cfg, cID, register, m.compEventChan)
+			if err != nil {
+				return []component.Component{}, err
+			}
+			if err = m.dag.addComponent(cID, comp); err != nil {
+				return []component.Component{}, err
+			}
+		}
+
+		c, err := m.dag.getComponent(cID)
+		if err != nil {
+			return []component.Component{}, err
+		}
+
+		if i != 0 { // IE we've passed the pipeline's last path node; start adding edges
+			if err := m.dag.addEdge(cID, prevID); err != nil {
+				return []component.Component{}, err
+			}
+		}
+
+		prevID = c.ID()
+		components = append(components, c)
+	}
+
+	return components, nil
+}
+
+// inferComponent ... Constructs a component provided a data register definition
 func inferComponent(ctx context.Context, cfg *config.PipelineConfig, id core.ComponentID,
 	register *core.DataRegister, eventCh chan component.StateChange) (component.Component, error) {
 	log.Printf("constructing %s component for register %s", register.ComponentType, register.DataType)

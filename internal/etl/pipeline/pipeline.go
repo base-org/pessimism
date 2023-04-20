@@ -1,7 +1,6 @@
 package pipeline
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"sync"
@@ -9,13 +8,6 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
 )
-
-/*
- Edge cases:
- 1 - Synchronization required for a pipeline from some starting block height
- 2 - Live config is passed through to a register pipeline config that requires a backfill,
- 	resulting in component collision within the DAG.
-*/
 
 type PipeLine interface {
 	ID() core.PipelineID
@@ -30,8 +22,7 @@ type PipeLine interface {
 type Option = func(*pipeLine)
 
 type pipeLine struct {
-	ctx context.Context
-	id  core.PipelineID
+	id core.PipelineID
 
 	aState ActivityState
 	pType  core.PipelineType //nolint:unused // will be implemented soon
@@ -63,7 +54,6 @@ func (pl *pipeLine) ID() core.PipelineID {
 
 func (pl *pipeLine) AddDirective(cID core.ComponentID, outChan chan core.TransitData) error {
 	comp := pl.components[0]
-	log.Printf("Adding output directive between components (%s) --> (%s)", comp.ID().String(), cID.String())
 
 	return comp.AddEgress(cID, outChan)
 }
@@ -90,29 +80,15 @@ func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 }
 
 // TerminatePipeline ...
-func (pl *pipeLine) TerminatePipeline(wg *sync.WaitGroup) error {
+func (pl *pipeLine) Terminate(_ *sync.WaitGroup) error {
 	return nil
 }
 
 func (pl *pipeLine) UpdateState(as ActivityState) error {
 	if as == pl.aState {
-		return fmt.Errorf("State is already set")
+		return fmt.Errorf("state is already set")
 	}
 
 	pl.aState = as
 	return nil
-}
-
-func (pl *pipeLine) String() string {
-	str := ""
-
-	for i := len(pl.components) - 1; i >= 0; i-- {
-		comp := pl.components[i]
-		str += "(" + comp.ID().String() + ")"
-		if i != 0 {
-			str += "->"
-		}
-	}
-
-	return str
 }

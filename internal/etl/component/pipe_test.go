@@ -50,9 +50,10 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 	testID := core.MakeComponentID(6, 9, 6, 9)
 
 	outputChan := make(chan core.TransitData)
+	stateChan := make(chan StateChange)
 
 	// Construct test component
-	testPipe, err := NewPipe(ctx, transformBlockToTxSlice, gethBlock, txSlice)
+	testPipe, err := NewPipe(ctx, transformBlockToTxSlice, gethBlock, txSlice, WithEventChan(stateChan))
 	assert.NoError(t, err)
 
 	err = testPipe.AddEgress(testID, outputChan)
@@ -74,6 +75,7 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 		}
 	}()
 
+	<-stateChan
 	wg := sync.WaitGroup{}
 
 	inputData := core.TransitData{

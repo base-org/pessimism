@@ -86,15 +86,17 @@ func (meta *metaData) emitStateChange(as ActivityState) {
 	meta.stateChan <- event
 }
 
-// TODO::Comment
+// Option ... Component type agnostic option
 type Option = func(*metaData)
 
+// WithID ... Passes parameter ID to component metadata field
 func WithID(id core.ComponentID) Option {
 	return func(meta *metaData) {
 		meta.id = id
 	}
 }
 
+// WithEventChan ... Passes state channel to component metadata field
 func WithEventChan(sc chan StateChange) Option {
 	return func(md *metaData) {
 		md.stateChan = sc

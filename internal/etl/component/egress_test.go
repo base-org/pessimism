@@ -38,7 +38,7 @@ func Test_Add_Remove_Egress(t *testing.T) {
 
 					assert.NoError(t, err, "Ensuring that no error when adding new egress")
 
-					_, exists := eh.egresses[id]
+					_, exists := eh.egresses[id.PID]
 					assert.True(t, exists, "Ensuring that key exists")
 				}
 			},
@@ -90,7 +90,7 @@ func Test_Add_Remove_Egress(t *testing.T) {
 
 				assert.NoError(t, err, "Ensuring that no error is thrown when removing an existing egress")
 
-				_, exists := eh.egresses[core.MakeComponentID(1, 54, 43, 32)]
+				_, exists := eh.egresses[core.MakeComponentID(1, 54, 43, 32).PID]
 				assert.False(t, exists, "Ensuring that key is removed from mapping")
 			},
 		}, {
@@ -111,10 +111,11 @@ func Test_Add_Remove_Egress(t *testing.T) {
 
 			testLogic: func(t *testing.T, egress *egressHandler) {
 
-				err := egress.RemoveEgress(core.MakeComponentID(69, 69, 69, 69))
+				cID := core.MakeComponentID(69, 69, 69, 69)
+				err := egress.RemoveEgress(cID)
 
 				assert.Error(t, err, "Ensuring that an error is thrown when trying to remove a non-existent egress")
-				assert.Equal(t, err.Error(), fmt.Sprintf(egressNotFoundErr, core.MakeComponentID(69, 69, 69, 69).String()))
+				assert.Equal(t, err.Error(), fmt.Sprintf(egressNotFoundErr, cID.PID.String()))
 			},
 		},
 	}
