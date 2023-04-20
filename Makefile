@@ -20,9 +20,13 @@ build-app:
 run-app: 
 	@./bin/${APP_NAME}
 
+.PHONY: go-gen-mocks
+go-gen-mocks:
+	@echo "generating go mocks..."
+	@GO111MODULE=on go generate --run "mockgen*" ./...
+	
 .PHONY: test
 test:
-	@ go generate ./...
 	@ go test ./... -v -timeout $(TEST_LIMIT)
 
 .PHONY: lint
