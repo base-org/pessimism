@@ -14,8 +14,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/trie"
-	"github.com/stretchr/testify/assert"
 	gomock "github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 )
 
 //go:generate mockgen --destination ..\..\mocks\eth_client.go  --package mocks github.com/base-org/pessimism/internal/client EthClientInterface
@@ -401,15 +401,15 @@ func Test_ReadRoutine(t *testing.T) {
 					Return(nil).
 					AnyTimes()
 
-					od := &GethBlockODef{cfg: &config.OracleConfig{
-						RPCEndpoint:  "pass test",
-						StartHeight:  nil,
-						EndHeight:    big.NewInt(1),
-						NumOfRetries: 3,
-					}, currHeight: nil, client: testObj}
-					outChan := make(chan core.TransitData)
-					return od, outChan
-		},
+				od := &GethBlockODef{cfg: &config.OracleConfig{
+					RPCEndpoint:  "pass test",
+					StartHeight:  nil,
+					EndHeight:    big.NewInt(1),
+					NumOfRetries: 3,
+				}, currHeight: nil, client: testObj}
+				outChan := make(chan core.TransitData)
+				return od, outChan
+			},
 
 			testLogic: func(t *testing.T, od *GethBlockODef, outChan chan core.TransitData) {
 
