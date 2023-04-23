@@ -31,7 +31,7 @@ func (as ActivityState) String() string {
 }
 
 type StateChange struct {
-	ID core.ComponentID
+	ID core.ComponentUUID
 
 	From ActivityState
 	To   ActivityState

@@ -9,13 +9,13 @@ import (
 // egress ... Used to route transit data from a component to it's respective edge components.
 // Also used to manage egresses or "edge routes" for some component.
 type egressHandler struct {
-	egresses map[core.CPID]chan core.TransitData
+	egresses map[core.ComponentPID]chan core.TransitData
 }
 
 // newEgress ... Initializer
 func newEgressHandler() *egressHandler {
 	return &egressHandler{
-		egresses: make(map[core.CPID]chan core.TransitData),
+		egresses: make(map[core.ComponentPID]chan core.TransitData),
 	}
 }
 
@@ -46,7 +46,7 @@ func (eh *egressHandler) SendBatch(dataSlice []core.TransitData) error {
 }
 
 // AddEgress ... Inserts a new egress given an ID and channel; fail on key collision
-func (eh *egressHandler) AddEgress(componentID core.ComponentID, outChan chan core.TransitData) error {
+func (eh *egressHandler) AddEgress(componentID core.ComponentUUID, outChan chan core.TransitData) error {
 	if _, found := eh.egresses[componentID.PID]; found {
 		return fmt.Errorf(egressAlreadyExistsErr, componentID.String())
 	}
@@ -56,7 +56,7 @@ func (eh *egressHandler) AddEgress(componentID core.ComponentID, outChan chan co
 }
 
 // RemoveEgress ... Removes an egress given an ID; fail if no key found
-func (eh *egressHandler) RemoveEgress(componentID core.ComponentID) error {
+func (eh *egressHandler) RemoveEgress(componentID core.ComponentUUID) error {
 	if _, found := eh.egresses[componentID.PID]; !found {
 		return fmt.Errorf(egressNotFoundErr, componentID.PID.String())
 	}

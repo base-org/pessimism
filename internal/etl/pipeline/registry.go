@@ -9,7 +9,7 @@ import (
 type pipeLineMap = map[core.PipelinePID][]pipeLineEntry
 
 type pipeLineEntry struct {
-	id core.PipelineID
+	id core.PipelineUUID
 	as ActivityState
 	p  PipeLine
 }
@@ -20,24 +20,24 @@ type pipeLineEntry struct {
 //	compPipelines - Mapping used for storing all component-->[]PID entries
 type pipeRegistry struct {
 	pipeLines     pipeLineMap
-	compPipeLines map[core.ComponentID][]core.PipelineID
+	compPipeLines map[core.ComponentUUID][]core.PipelineUUID
 }
 
 // newPipeRegistry ... Initializer
 func newPipeRegistry() *pipeRegistry {
 	return &pipeRegistry{
-		compPipeLines: make(map[core.ComponentID][]core.PipelineID),
+		compPipeLines: make(map[core.ComponentUUID][]core.PipelineUUID),
 		pipeLines:     make(pipeLineMap),
 	}
 }
 
 /*
-Note - PipelineIDs can only conflict
+Note - PipelineUUIDs can only conflict
        when whenpipeLineType = Live && activityState = Active
 */
 
 // addPipeline ... Creates and stores a new pipeline entry
-func (pr *pipeRegistry) addPipeline(id core.PipelineID, pl PipeLine) {
+func (pr *pipeRegistry) addPipeline(id core.PipelineUUID, pl PipeLine) {
 	entry := pipeLineEntry{
 		id: id,
 		as: Booting,
@@ -59,28 +59,28 @@ func (pr *pipeRegistry) addPipeline(id core.PipelineID, pl PipeLine) {
 }
 
 // addComponentLink ... Creates an entry for some new CID:PID mapping
-func (pr *pipeRegistry) addComponentLink(cID core.ComponentID, pID core.PipelineID) {
+func (pr *pipeRegistry) addComponentLink(cID core.ComponentUUID, pID core.PipelineUUID) {
 	// EDGE CASE - CID:PID pair already exists
 	if _, found := pr.compPipeLines[cID]; !found { // Create slice
-		pr.compPipeLines[cID] = make([]core.PipelineID, 0)
+		pr.compPipeLines[cID] = make([]core.PipelineUUID, 0)
 	}
 
 	pr.compPipeLines[cID] = append(pr.compPipeLines[cID], pID)
 }
 
-// getPipeLineIDs ... Returns all entried PIDs for some CID
-func (pr *pipeRegistry) getPipeLineIDs(cID core.ComponentID) ([]core.PipelineID, error) {
+// getPipelineUUIDs ... Returns all entried PIDs for some CID
+func (pr *pipeRegistry) getPipelineUUIDs(cID core.ComponentUUID) ([]core.PipelineUUID, error) {
 	pIDs, found := pr.compPipeLines[cID]
 
 	if !found {
-		return []core.PipelineID{}, fmt.Errorf("could not find key for %s", cID)
+		return []core.PipelineUUID{}, fmt.Errorf("could not find key for %s", cID)
 	}
 
 	return pIDs, nil
 }
 
 // getPipelineByPID ... Returns pipeline provided some PID
-func (pr *pipeRegistry) getPipeline(pID core.PipelineID) (PipeLine, error) {
+func (pr *pipeRegistry) getPipeline(pID core.PipelineUUID) (PipeLine, error) {
 	if _, found := pr.pipeLines[pID.PID]; !found {
 		return nil, fmt.Errorf(pIDNotFoundErr, pID.String())
 	}

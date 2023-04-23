@@ -70,11 +70,11 @@ func main() {
 
 	outChan := core.NewTransitChannel()
 
-	if err := etlManager.AddPipelineDirective(pID, core.NilCompID(), outChan); err != nil {
+	if err := etlManager.AddPipelineDirective(pID, core.NilComponentUUID(), outChan); err != nil {
 		panic(err)
 	}
 
-	if err := etlManager.AddPipelineDirective(pID2, core.NilCompID(), outChan); err != nil {
+	if err := etlManager.AddPipelineDirective(pID2, core.NilComponentUUID(), outChan); err != nil {
 		panic(err)
 	}
 

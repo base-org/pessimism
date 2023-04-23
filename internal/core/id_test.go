@@ -8,8 +8,8 @@ import (
 
 func Test_Component_ID(t *testing.T) {
 
-	expectedPID := CPID([4]byte{1, 1, 1, 1})
-	actualID := MakeComponentID(1, 1, 1, 1)
+	expectedPID := ComponentPID([4]byte{1, 1, 1, 1})
+	actualID := MakeComponentUUID(1, 1, 1, 1)
 
 	assert.Equal(t, expectedPID, actualID.PID)
 
@@ -21,9 +21,9 @@ func Test_Component_ID(t *testing.T) {
 
 func Test_Pipeline_ID(t *testing.T) {
 	expectedID := PipelinePID([9]byte{1, 1, 1, 1, 1, 1, 1, 1, 1})
-	actualID := MakePipelineID(1,
-		MakeComponentID(1, 1, 1, 1),
-		MakeComponentID(1, 1, 1, 1))
+	actualID := MakePipelineUUID(1,
+		MakeComponentUUID(1, 1, 1, 1),
+		MakeComponentUUID(1, 1, 1, 1))
 
 	assert.Equal(t, expectedID, actualID.PID)
 

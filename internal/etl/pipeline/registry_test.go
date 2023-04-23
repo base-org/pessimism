@@ -12,10 +12,10 @@ import (
 )
 
 var (
-	nilPID = core.MakePipelineID(0, core.NilCompID(), core.NilCompID())
+	nilPID = core.MakePipelineUUID(0, core.NilComponentUUID(), core.NilComponentUUID())
 
-	cID1 = core.MakeComponentID(0, 0, 0, 0)
-	cID2 = core.MakeComponentID(0, 0, 0, 0)
+	cID1 = core.MakeComponentUUID(0, 0, 0, 0)
+	cID2 = core.MakeComponentUUID(0, 0, 0, 0)
 )
 
 func getTestPipeLine(ctx context.Context) PipeLine {
@@ -70,16 +70,16 @@ func Test_PipeRegistry(t *testing.T) {
 				ctx := context.Background()
 				testPipeLine := getTestPipeLine(ctx)
 
-				pID2 := core.MakePipelineID(
+				pID2 := core.MakePipelineUUID(
 					0,
-					core.MakeComponentID(0, 0, 0, 1),
-					core.MakeComponentID(0, 0, 0, 1),
+					core.MakeComponentUUID(0, 0, 0, 1),
+					core.MakeComponentUUID(0, 0, 0, 1),
 				)
 
 				pr.addPipeline(pID2, testPipeLine)
 
 				for _, comp := range testPipeLine.Components() {
-					pIDs, err := pr.getPipeLineIDs(comp.ID())
+					pIDs, err := pr.getPipelineUUIDs(comp.ID())
 
 					assert.NoError(t, err)
 					assert.Len(t, pIDs, 2)
@@ -102,16 +102,16 @@ func Test_PipeRegistry(t *testing.T) {
 				ctx := context.Background()
 				testPipeLine := getTestPipeLine(ctx)
 
-				pID := core.MakePipelineID(
+				pID := core.MakePipelineUUID(
 					0,
-					core.MakeComponentID(0, 0, 0, 1),
-					core.MakeComponentID(0, 0, 0, 1),
+					core.MakeComponentUUID(0, 0, 0, 1),
+					core.MakeComponentUUID(0, 0, 0, 1),
 				)
 
 				pr.addPipeline(pID, testPipeLine)
 
 				for _, comp := range testPipeLine.Components() {
-					pIDs, err := pr.getPipeLineIDs(comp.ID())
+					pIDs, err := pr.getPipelineUUIDs(comp.ID())
 
 					assert.NoError(t, err)
 					assert.Len(t, pIDs, 1)
@@ -127,13 +127,13 @@ func Test_PipeRegistry(t *testing.T) {
 
 			constructionLogic: newPipeRegistry,
 			testLogic: func(t *testing.T, pr *pipeRegistry) {
-				cID := core.MakeComponentID(0, 0, 0, 0)
-				pID := core.MakePipelineID(0, cID, cID)
+				cID := core.MakeComponentUUID(0, 0, 0, 0)
+				pID := core.MakePipelineUUID(0, cID, cID)
 
 				pr.addComponentLink(cID, pID)
 
-				expectedIDs := []core.PipelineID{pID}
-				actualIDs, err := pr.getPipeLineIDs(cID)
+				expectedIDs := []core.PipelineUUID{pID}
+				actualIDs, err := pr.getPipelineUUIDs(cID)
 
 				assert.NoError(t, err)
 				assert.Equal(t, expectedIDs, actualIDs)
@@ -147,9 +147,9 @@ func Test_PipeRegistry(t *testing.T) {
 
 			constructionLogic: newPipeRegistry,
 			testLogic: func(t *testing.T, pr *pipeRegistry) {
-				cID := core.MakeComponentID(0, 0, 0, 0)
+				cID := core.MakeComponentUUID(0, 0, 0, 0)
 
-				_, err := pr.getPipeLineIDs(cID)
+				_, err := pr.getPipelineUUIDs(cID)
 
 				assert.Error(t, err)
 			},
@@ -161,8 +161,8 @@ func Test_PipeRegistry(t *testing.T) {
 
 			constructionLogic: newPipeRegistry,
 			testLogic: func(t *testing.T, pr *pipeRegistry) {
-				cID := core.MakeComponentID(0, 0, 0, 0)
-				pID := core.MakePipelineID(0, cID, cID)
+				cID := core.MakeComponentUUID(0, 0, 0, 0)
+				pID := core.MakePipelineUUID(0, cID, cID)
 
 				_, err := pr.getPipeline(pID)
 				assert.Error(t, err)
@@ -179,14 +179,14 @@ func Test_PipeRegistry(t *testing.T) {
 				return pr
 			},
 			testLogic: func(t *testing.T, pr *pipeRegistry) {
-				cID := core.MakeComponentID(0, 0, 0, 0)
-				pID := core.MakePipelineID(0, cID, cID)
+				cID := core.MakeComponentUUID(0, 0, 0, 0)
+				pID := core.MakePipelineUUID(0, cID, cID)
 
 				pLine := getTestPipeLine(context.Background())
 
 				pr.addPipeline(pID, pLine)
 
-				pID2 := core.MakePipelineID(0, cID, cID)
+				pID2 := core.MakePipelineUUID(0, cID, cID)
 				_, err := pr.getPipeline(pID2)
 
 				assert.Error(t, err)
@@ -203,8 +203,8 @@ func Test_PipeRegistry(t *testing.T) {
 				return pr
 			},
 			testLogic: func(t *testing.T, pr *pipeRegistry) {
-				cID := core.MakeComponentID(0, 0, 0, 0)
-				pID := core.MakePipelineID(0, cID, cID)
+				cID := core.MakeComponentUUID(0, 0, 0, 0)
+				pID := core.MakePipelineUUID(0, cID, cID)
 
 				expectedPline := getTestPipeLine(context.Background())
 

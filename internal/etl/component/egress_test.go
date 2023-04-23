@@ -28,11 +28,11 @@ func Test_Add_Remove_Egress(t *testing.T) {
 
 			testLogic: func(t *testing.T, eh *egressHandler) {
 
-				for _, id := range []core.ComponentID{
-					core.MakeComponentID(1, 54, 43, 32),
-					core.MakeComponentID(2, 54, 43, 32),
-					core.MakeComponentID(3, 54, 43, 32),
-					core.MakeComponentID(4, 54, 43, 32)} {
+				for _, id := range []core.ComponentUUID{
+					core.MakeComponentUUID(1, 54, 43, 32),
+					core.MakeComponentUUID(2, 54, 43, 32),
+					core.MakeComponentUUID(3, 54, 43, 32),
+					core.MakeComponentUUID(4, 54, 43, 32)} {
 					outChan := make(chan core.TransitData)
 					err := eh.AddEgress(id, outChan)
 
@@ -48,7 +48,7 @@ func Test_Add_Remove_Egress(t *testing.T) {
 			description: "When existing direcegresstive is passed to AddEgress function it should fail to be added to the egress mapping",
 
 			constructionLogic: func() *egressHandler {
-				id := core.MakeComponentID(1, 54, 43, 32)
+				id := core.MakeComponentUUID(1, 54, 43, 32)
 				outChan := make(chan core.TransitData)
 
 				handler := newEgressHandler()
@@ -60,7 +60,7 @@ func Test_Add_Remove_Egress(t *testing.T) {
 			},
 
 			testLogic: func(t *testing.T, eh *egressHandler) {
-				id := core.MakeComponentID(1, 54, 43, 32)
+				id := core.MakeComponentUUID(1, 54, 43, 32)
 				outChan := make(chan core.TransitData)
 				err := eh.AddEgress(id, outChan)
 
@@ -73,7 +73,7 @@ func Test_Add_Remove_Egress(t *testing.T) {
 			description: "When existing egress is passed to RemoveEgress function, it should be removed from mapping",
 
 			constructionLogic: func() *egressHandler {
-				id := core.MakeComponentID(1, 54, 43, 32)
+				id := core.MakeComponentUUID(1, 54, 43, 32)
 				outChan := make(chan core.TransitData)
 
 				handler := newEgressHandler()
@@ -86,11 +86,11 @@ func Test_Add_Remove_Egress(t *testing.T) {
 
 			testLogic: func(t *testing.T, eh *egressHandler) {
 
-				err := eh.RemoveEgress(core.MakeComponentID(1, 54, 43, 32))
+				err := eh.RemoveEgress(core.MakeComponentUUID(1, 54, 43, 32))
 
 				assert.NoError(t, err, "Ensuring that no error is thrown when removing an existing egress")
 
-				_, exists := eh.egresses[core.MakeComponentID(1, 54, 43, 32).PID]
+				_, exists := eh.egresses[core.MakeComponentUUID(1, 54, 43, 32).PID]
 				assert.False(t, exists, "Ensuring that key is removed from mapping")
 			},
 		}, {
@@ -98,7 +98,7 @@ func Test_Add_Remove_Egress(t *testing.T) {
 			description: "When non-existing egress key is passed to RemoveEgress function, an error should be returned",
 
 			constructionLogic: func() *egressHandler {
-				id := core.MakeComponentID(1, 54, 43, 32)
+				id := core.MakeComponentUUID(1, 54, 43, 32)
 				outChan := make(chan core.TransitData)
 
 				handler := newEgressHandler()
@@ -111,7 +111,7 @@ func Test_Add_Remove_Egress(t *testing.T) {
 
 			testLogic: func(t *testing.T, egress *egressHandler) {
 
-				cID := core.MakeComponentID(69, 69, 69, 69)
+				cID := core.MakeComponentUUID(69, 69, 69, 69)
 				err := egress.RemoveEgress(cID)
 
 				assert.Error(t, err, "Ensuring that an error is thrown when trying to remove a non-existent egress")
@@ -134,23 +134,23 @@ func Test_Transit_Output(t *testing.T) {
 
 	var egresses = []struct {
 		channel chan core.TransitData
-		id      core.ComponentID
+		id      core.ComponentUUID
 	}{
 		{
 			channel: make(chan core.TransitData, 1),
-			id:      core.MakeComponentID(3, 54, 43, 32),
+			id:      core.MakeComponentUUID(3, 54, 43, 32),
 		},
 		{
 			channel: make(chan core.TransitData, 1),
-			id:      core.MakeComponentID(1, 54, 43, 32),
+			id:      core.MakeComponentUUID(1, 54, 43, 32),
 		},
 		{
 			channel: make(chan core.TransitData, 1),
-			id:      core.MakeComponentID(1, 2, 43, 32),
+			id:      core.MakeComponentUUID(1, 2, 43, 32),
 		},
 		{
 			channel: make(chan core.TransitData, 1),
-			id:      core.MakeComponentID(1, 4, 43, 32),
+			id:      core.MakeComponentUUID(1, 4, 43, 32),
 		},
 	}
 

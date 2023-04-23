@@ -10,19 +10,19 @@ import (
 )
 
 type PipeLine interface {
-	ID() core.PipelineID
+	ID() core.PipelineUUID
 	Components() []component.Component
 	// EventLoop ... Pipeline driver function; spun up as separate go routine
 	RunPipeline(wg *sync.WaitGroup) error
 	UpdateState(as ActivityState) error
 
-	AddDirective(cID core.ComponentID, outChan chan core.TransitData) error
+	AddDirective(cID core.ComponentUUID, outChan chan core.TransitData) error
 }
 
 type Option = func(*pipeLine)
 
 type pipeLine struct {
-	id core.PipelineID
+	id core.PipelineUUID
 
 	aState ActivityState
 	pType  core.PipelineType //nolint:unused // will be implemented soon
@@ -30,7 +30,7 @@ type pipeLine struct {
 	components []component.Component
 }
 
-func NewPipeLine(id core.PipelineID, comps []component.Component, opts ...Option) (PipeLine, error) {
+func NewPipeLine(id core.PipelineUUID, comps []component.Component, opts ...Option) (PipeLine, error) {
 	pl := &pipeLine{
 		id:         id,
 		components: comps,
@@ -48,11 +48,11 @@ func (pl *pipeLine) Components() []component.Component {
 	return pl.components
 }
 
-func (pl *pipeLine) ID() core.PipelineID {
+func (pl *pipeLine) ID() core.PipelineUUID {
 	return pl.id
 }
 
-func (pl *pipeLine) AddDirective(cID core.ComponentID, outChan chan core.TransitData) error {
+func (pl *pipeLine) AddDirective(cID core.ComponentUUID, outChan chan core.TransitData) error {
 	comp := pl.components[0]
 
 	return comp.AddEgress(cID, outChan)

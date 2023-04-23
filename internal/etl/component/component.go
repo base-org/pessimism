@@ -8,10 +8,10 @@ import (
 
 // Component ... Generalized interface that all pipeline components must adhere to
 type Component interface {
-	AddEgress(core.ComponentID, chan core.TransitData) error
-	RemoveEgress(core.ComponentID) error
+	AddEgress(core.ComponentUUID, chan core.TransitData) error
+	RemoveEgress(core.ComponentUUID) error
 
-	ID() core.ComponentID
+	ID() core.ComponentUUID
 	Type() core.ComponentType
 
 	// EventLoop ... Component driver function; spun up as separate go routine
@@ -29,7 +29,7 @@ type Component interface {
 
 // metaData ... Component-agnostic agnostic struct that stores component metadata and routing state
 type metaData struct {
-	id        core.ComponentID
+	id        core.ComponentUUID
 	cType     core.ComponentType
 	output    core.RegisterType
 	state     ActivityState
@@ -43,7 +43,7 @@ type metaData struct {
 
 func newMetaData(ct core.ComponentType, ot core.RegisterType) *metaData {
 	return &metaData{
-		id:             core.NilCompID(),
+		id:             core.NilComponentUUID(),
 		cType:          ct,
 		egressHandler:  newEgressHandler(),
 		ingressHandler: newIngressHandler(),
@@ -59,8 +59,8 @@ func (meta *metaData) ActivityState() ActivityState {
 	return meta.state
 }
 
-// ID ... Returns component's ComponentID
-func (meta *metaData) ID() core.ComponentID {
+// ID ... Returns component's ComponentUUID
+func (meta *metaData) ID() core.ComponentUUID {
 	return meta.id
 }
 
@@ -90,7 +90,7 @@ func (meta *metaData) emitStateChange(as ActivityState) {
 type Option = func(*metaData)
 
 // WithID ... Passes parameter ID to component metadata field
-func WithID(id core.ComponentID) Option {
+func WithID(id core.ComponentUUID) Option {
 	return func(meta *metaData) {
 		meta.id = id
 	}

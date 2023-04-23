@@ -47,7 +47,7 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 	ts := time.Date(1969, time.April, 1, 4, 20, 0, 0, time.Local)
 
 	// Setup component dependencies
-	testID := core.MakeComponentID(6, 9, 6, 9)
+	testID := core.MakeComponentUUID(6, 9, 6, 9)
 
 	outputChan := make(chan core.TransitData)
 	stateChan := make(chan StateChange)

@@ -37,39 +37,39 @@ func NewManager(ctx context.Context) *Manager {
 }
 
 // CreateDataPipeline ... Creates an ETL data pipeline provided a pipeline configuration
-func (m *Manager) CreateDataPipeline(cfg *config.PipelineConfig) (core.PipelineID, error) {
+func (m *Manager) CreateDataPipeline(cfg *config.PipelineConfig) (core.PipelineUUID, error) {
 	logger := logging.WithContext(m.ctx)
 
 	register, err := registry.GetRegister(cfg.DataType)
 	if err != nil {
-		return core.NilPipelineID(), err
+		return core.NilPipelineUUID(), err
 	}
 
 	registers := append([]*core.DataRegister{register}, register.Dependencies...)
 	components, err := m.getComponents(cfg, registers)
 	if err != nil {
-		return core.NilPipelineID(), err
+		return core.NilPipelineUUID(), err
 	}
 
 	lastReg := registers[len(registers)-1]
 
-	cID1 := core.MakeComponentID(cfg.PipelineType, registers[0].ComponentType, registers[0].DataType, cfg.Network)
-	cID2 := core.MakeComponentID(cfg.PipelineType, lastReg.ComponentType, lastReg.DataType, cfg.Network)
-	pID := core.MakePipelineID(cfg.PipelineType, cID1, cID2)
+	cID1 := core.MakeComponentUUID(cfg.PipelineType, registers[0].ComponentType, registers[0].DataType, cfg.Network)
+	cID2 := core.MakeComponentUUID(cfg.PipelineType, lastReg.ComponentType, lastReg.DataType, cfg.Network)
+	pID := core.MakePipelineUUID(cfg.PipelineType, cID1, cID2)
 
 	logger.Debug("constructing pipeline",
 		zap.String("ID", pID.String()))
 
 	pipeLine, err := NewPipeLine(pID, components)
 	if err != nil {
-		return core.NilPipelineID(), err
+		return core.NilPipelineUUID(), err
 	}
 	m.pRegistry.addPipeline(pID, pipeLine)
 
 	return pID, nil
 }
 
-func (m *Manager) RunPipeline(pID core.PipelineID) error {
+func (m *Manager) RunPipeline(pID core.PipelineUUID) error {
 	pipeLine, err := m.pRegistry.getPipeline(pID)
 	if err != nil {
 		return err
@@ -79,8 +79,8 @@ func (m *Manager) RunPipeline(pID core.PipelineID) error {
 	return pipeLine.RunPipeline(m.wg)
 }
 
-func (m *Manager) AddPipelineDirective(pID core.PipelineID,
-	cID core.ComponentID, outChan chan core.TransitData) error {
+func (m *Manager) AddPipelineDirective(pID core.PipelineUUID,
+	cID core.ComponentUUID, outChan chan core.TransitData) error {
 	pipeLine, err := m.pRegistry.getPipeline(pID)
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func (m *Manager) EventLoop(ctx context.Context) {
 			// TODO(#35): No ETL Management Procedure Exists
 			// for Handling Component State Changes
 
-			_, err := m.pRegistry.getPipeLineIDs(stateChange.ID)
+			_, err := m.pRegistry.getPipelineUUIDs(stateChange.ID)
 			if err != nil {
 				logger.Error("Could not fetch pipeline IDs for comp state change")
 			}
@@ -114,13 +114,13 @@ func (m *Manager) EventLoop(ctx context.Context) {
 func (m *Manager) getComponents(cfg *config.PipelineConfig,
 	registers []*core.DataRegister) ([]component.Component, error) {
 	components := make([]component.Component, 0)
-	prevID := core.NilCompID()
+	prevID := core.NilComponentUUID()
 
 	for i, register := range registers {
 		// NOTE - This doesn't consider the circumstance where
 		// a requested pipeline already exists but requires some backfill to run
 		// TODO(#30): Pipeline Collisions Occur When They Shouldn't
-		cID := core.MakeComponentID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
+		cID := core.MakeComponentUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
 
 		if !m.dag.componentExists(cID) {
 			comp, err := inferComponent(m.ctx, cfg, cID, register, m.compEventChan)
@@ -151,7 +151,7 @@ func (m *Manager) getComponents(cfg *config.PipelineConfig,
 }
 
 // inferComponent ... Constructs a component provided a data register definition
-func inferComponent(ctx context.Context, cfg *config.PipelineConfig, id core.ComponentID,
+func inferComponent(ctx context.Context, cfg *config.PipelineConfig, id core.ComponentUUID,
 	register *core.DataRegister, eventCh chan component.StateChange) (component.Component, error) {
 	log.Printf("constructing %s component for register %s", register.ComponentType, register.DataType)
 
