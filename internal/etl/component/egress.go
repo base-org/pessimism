@@ -6,7 +6,7 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
-// egress ... Used to route transit data from a component to it's respective edge components.
+// egressHandler ... Used to route transit data from a component to it's respective edge components.
 // Also used to manage egresses or "edge routes" for some component.
 type egressHandler struct {
 	egresses map[core.ComponentPID]chan core.TransitData
@@ -22,7 +22,7 @@ func newEgressHandler() *egressHandler {
 // Send ... Sends single piece of transitData to all innner mapping value channels
 func (eh *egressHandler) Send(td core.TransitData) error {
 	if len(eh.egresses) == 0 {
-		return fmt.Errorf("received transit request with 0 out channels to write to")
+		return fmt.Errorf(egressNotExistErr)
 	}
 
 	// NOTE - Consider introducing a fail safe timeout to ensure that freezing on clogged chanel buffers is recognized

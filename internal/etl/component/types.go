@@ -30,17 +30,21 @@ func (as ActivityState) String() string {
 	return "unknown"
 }
 
+// StateChange ... Represents a component state change event
+// that is processed by component management logic to determine
+// proper pipeline states and duplicate pipeline merging opportunities
 type StateChange struct {
 	ID core.ComponentUUID
 
-	From ActivityState
-	To   ActivityState
+	From ActivityState // S
+	To   ActivityState // S'
 }
 
 // EgressHandler specific errors
 const (
 	egressAlreadyExistsErr = "%s egress key already exists within component router mapping"
 	egressNotFoundErr      = "no egress key %s exists within component router mapping"
+	egressNotExistErr      = "received transit request with 0 out channels to write to"
 
 	transitErr = "received transit error: %s"
 )

@@ -28,7 +28,7 @@ func NewEthClient() EthClientInterface {
 	}
 }
 
-// DialContext ... Wraps go-etheruem node dialContext RPC call
+// DialContext ... Wraps go-etheruem node dialContext RPC creation
 func (ec *EthClient) DialContext(ctx context.Context, rawURL string) error {
 	client, err := ethclient.DialContext(ctx, rawURL)
 
@@ -40,7 +40,7 @@ func (ec *EthClient) DialContext(ctx context.Context, rawURL string) error {
 	return nil
 }
 
-// HeaderByNumber ... Wraps go-ethereum node header by number RPC call
+// HeaderByNumber ... Wraps go-ethereum node headerByNumber RPC call
 func (ec *EthClient) HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error) {
 	return ec.client.HeaderByNumber(ctx, number)
 }

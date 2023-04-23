@@ -8,11 +8,15 @@ import (
 
 // Component ... Generalized interface that all pipeline components must adhere to
 type Component interface {
-	AddEgress(core.ComponentUUID, chan core.TransitData) error
-	RemoveEgress(core.ComponentUUID) error
-
+	// ID ...
 	ID() core.ComponentUUID
+	// Type ...
 	Type() core.ComponentType
+
+	// AddEgress ...
+	AddEgress(core.ComponentUUID, chan core.TransitData) error
+	// RemoveEgress ...
+	RemoveEgress(core.ComponentUUID) error
 
 	// EventLoop ... Component driver function; spun up as separate go routine
 	EventLoop() error
@@ -41,6 +45,7 @@ type metaData struct {
 	*sync.RWMutex
 }
 
+// newMetaData ... Initializer
 func newMetaData(ct core.ComponentType, ot core.RegisterType) *metaData {
 	return &metaData{
 		id:             core.NilComponentUUID(),
@@ -83,13 +88,13 @@ func (meta *metaData) emitStateChange(as ActivityState) {
 	}
 
 	meta.state = as
-	meta.stateChan <- event
+	meta.stateChan <- event // Send to upstream consumers
 }
 
 // Option ... Component type agnostic option
 type Option = func(*metaData)
 
-// WithID ... Passes parameter ID to component metadata field
+// WithID ... Passes component UUID to component metadata field
 func WithID(id core.ComponentUUID) Option {
 	return func(meta *metaData) {
 		meta.id = id

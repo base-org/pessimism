@@ -9,10 +9,9 @@ import (
 	"github.com/base-org/pessimism/internal/etl/component"
 )
 
-type PipeLine interface {
+type Pipeline interface {
 	ID() core.PipelineUUID
 	Components() []component.Component
-	// EventLoop ... Pipeline driver function; spun up as separate go routine
 	RunPipeline(wg *sync.WaitGroup) error
 	UpdateState(as ActivityState) error
 
@@ -30,7 +29,8 @@ type pipeLine struct {
 	components []component.Component
 }
 
-func NewPipeLine(id core.PipelineUUID, comps []component.Component, opts ...Option) (PipeLine, error) {
+// NewPipeLine ... Initializer
+func NewPipeLine(id core.PipelineUUID, comps []component.Component, opts ...Option) (Pipeline, error) {
 	pl := &pipeLine{
 		id:         id,
 		components: comps,
@@ -44,31 +44,38 @@ func NewPipeLine(id core.PipelineUUID, comps []component.Component, opts ...Opti
 	return pl, nil
 }
 
+// Components ... Returns slice of all constituent components
 func (pl *pipeLine) Components() []component.Component {
 	return pl.components
 }
 
+// ID ... Returns pipeline ID
 func (pl *pipeLine) ID() core.PipelineUUID {
 	return pl.id
 }
 
+// NOTE: This function should be deleted once risk engine is introduced
+// AddDirective ... Adds an egress from the final component of a pipeline
+// path to an arbitrary channel
 func (pl *pipeLine) AddDirective(cID core.ComponentUUID, outChan chan core.TransitData) error {
 	comp := pl.components[0]
 
 	return comp.AddEgress(cID, outChan)
 }
 
+// RunPipeline  ... Spawns and manages component event loops
+// for some pipeline
 func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 	for _, comp := range pl.components {
 		wg.Add(1)
 
 		go func(c component.Component, wg *sync.WaitGroup) {
+			defer wg.Done()
+
 			log.Printf("Attempting to run component (%s) with activity state = %s", c.ID().String(), c.ActivityState())
-			if c.ActivityState() != component.Inactive {
+			if c.ActivityState() != component.Inactive { // Component already active
 				return
 			}
-
-			defer wg.Done()
 
 			if err := c.EventLoop(); err != nil {
 				log.Printf("Got error from event loop: %s", err.Error())
@@ -79,8 +86,9 @@ func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 	return nil
 }
 
-// TerminatePipeline ...
+// Terminate ...
 func (pl *pipeLine) Terminate(_ *sync.WaitGroup) error {
+	// TODO: implement
 	return nil
 }
 

@@ -18,7 +18,7 @@ var (
 	cID2 = core.MakeComponentUUID(0, 0, 0, 0)
 )
 
-func getTestPipeLine(ctx context.Context) PipeLine {
+func getTestPipeLine(ctx context.Context) Pipeline {
 
 	blackHolePipe, err := registry.NewBlackHoleTxPipe(ctx, component.WithID(cID1))
 	if err != nil {
@@ -35,7 +35,7 @@ func getTestPipeLine(ctx context.Context) PipeLine {
 		contractCreatePipe,
 	}
 
-	pipeLine, err := NewPipeLine(nilPID, comps)
+	pipeLine, err := NewPipeLine(core.NilPipelineUUID(), comps)
 	if err != nil {
 		panic(err)
 	}
@@ -63,7 +63,7 @@ func Test_PipeRegistry(t *testing.T) {
 				testRegistry := newPipeRegistry()
 				testPipeLine := getTestPipeLine(ctx)
 
-				testRegistry.addPipeline(nilPID, testPipeLine)
+				testRegistry.addPipeline(core.NilPipelineUUID(), testPipeLine)
 				return testRegistry
 			},
 			testLogic: func(t *testing.T, pr *pipeRegistry) {
@@ -83,8 +83,8 @@ func Test_PipeRegistry(t *testing.T) {
 
 					assert.NoError(t, err)
 					assert.Len(t, pIDs, 2)
-					assert.Equal(t, pIDs[0], nilPID)
-					assert.Equal(t, pIDs[1], pID2)
+					assert.Equal(t, pIDs[0].PID, nilPID.PID)
+					assert.Equal(t, pIDs[1].PID, pID2.PID)
 				}
 
 			},

@@ -6,13 +6,15 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
-type pipeLineMap = map[core.PipelinePID][]pipeLineEntry
-
+// pipeLineEntry ... value entry for some
+// pipeline with necessary metadata
 type pipeLineEntry struct {
 	id core.PipelineUUID
 	as ActivityState
-	p  PipeLine
+	p  Pipeline
 }
+
+type pipeLineMap = map[core.PipelinePID][]pipeLineEntry
 
 // pipeRegistry ... Stores critical pipeline information
 //
@@ -37,7 +39,7 @@ Note - PipelineUUIDs can only conflict
 */
 
 // addPipeline ... Creates and stores a new pipeline entry
-func (pr *pipeRegistry) addPipeline(id core.PipelineUUID, pl PipeLine) {
+func (pr *pipeRegistry) addPipeline(id core.PipelineUUID, pl Pipeline) {
 	entry := pipeLineEntry{
 		id: id,
 		as: Booting,
@@ -58,9 +60,9 @@ func (pr *pipeRegistry) addPipeline(id core.PipelineUUID, pl PipeLine) {
 	}
 }
 
-// addComponentLink ... Creates an entry for some new CID:PID mapping
+// addComponentLink ... Creates an entry for some new C_UUID:P_UUID mapping
 func (pr *pipeRegistry) addComponentLink(cID core.ComponentUUID, pID core.PipelineUUID) {
-	// EDGE CASE - CID:PID pair already exists
+	// EDGE CASE - C_UUID:P_UUID pair already exists
 	if _, found := pr.compPipeLines[cID]; !found { // Create slice
 		pr.compPipeLines[cID] = make([]core.PipelineUUID, 0)
 	}
@@ -80,7 +82,7 @@ func (pr *pipeRegistry) getPipelineUUIDs(cID core.ComponentUUID) ([]core.Pipelin
 }
 
 // getPipelineByPID ... Returns pipeline provided some PID
-func (pr *pipeRegistry) getPipeline(pID core.PipelineUUID) (PipeLine, error) {
+func (pr *pipeRegistry) getPipeline(pID core.PipelineUUID) (Pipeline, error) {
 	if _, found := pr.pipeLines[pID.PID]; !found {
 		return nil, fmt.Errorf(pIDNotFoundErr, pID.String())
 	}

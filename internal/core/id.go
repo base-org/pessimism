@@ -6,23 +6,36 @@ import (
 	"github.com/google/uuid"
 )
 
-type UUID uuid.UUID
+type UUID struct {
+	uuid.UUID
+}
+
+func newUUID() UUID {
+	return UUID{
+		uuid.New(),
+	}
+}
+
+func nilUUID() UUID {
+	return UUID{[16]byte{0}}
+}
 
 // String ... Overrides UUID string method for easier
 // debugging and ensuring conformance with pessimism specific abstractions
 // https://pkg.go.dev/github.com/google/UUID#UUID.String
 func (id UUID) String() string {
+	uid := id.UUID
 	// Only render first 8 bytes instead of entire sequence
 	return fmt.Sprintf("%d%d%d%d%d%d%d%d%d",
-		id[0],
-		id[1],
-		id[2],
-		id[2],
-		id[3],
-		id[4],
-		id[5],
-		id[6],
-		id[7])
+		uid[0],
+		uid[1],
+		uid[2],
+		uid[2],
+		uid[3],
+		uid[4],
+		uid[5],
+		uid[6],
+		uid[7])
 }
 
 // ComponentPID ... Component Primary ID
@@ -32,7 +45,7 @@ type ComponentPID [4]byte
 // every uniquely constructed ETL component
 type ComponentUUID struct {
 	PID  ComponentPID
-	UUID uuid.UUID
+	UUID UUID
 }
 
 // Used for local lookups to look for active collisions
@@ -42,7 +55,7 @@ type PipelinePID [9]byte
 // every uniquely constructed ETL pipeline
 type PipelineUUID struct {
 	PID  PipelinePID
-	UUID uuid.UUID
+	UUID UUID
 }
 
 /*
@@ -57,7 +70,7 @@ type PipelineUUID struct {
 func NilComponentUUID() ComponentUUID {
 	return ComponentUUID{
 		PID:  ComponentPID{0},
-		UUID: [16]byte{0},
+		UUID: nilUUID(),
 	}
 }
 
@@ -65,7 +78,7 @@ func NilComponentUUID() ComponentUUID {
 func NilPipelineUUID() PipelineUUID {
 	return PipelineUUID{
 		PID:  PipelinePID{0},
-		UUID: [16]byte{0},
+		UUID: nilUUID(),
 	}
 }
 
@@ -80,7 +93,7 @@ func MakeComponentUUID(pt PipelineType, ct ComponentType, rt RegisterType, n Net
 
 	return ComponentUUID{
 		PID:  cID,
-		UUID: uuid.New(),
+		UUID: newUUID(),
 	}
 }
 
@@ -102,7 +115,7 @@ func MakePipelineUUID(pt PipelineType, firstCID, lastCID ComponentUUID) Pipeline
 
 	return PipelineUUID{
 		PID:  pID,
-		UUID: uuid.New(),
+		UUID: newUUID(),
 	}
 }
 
