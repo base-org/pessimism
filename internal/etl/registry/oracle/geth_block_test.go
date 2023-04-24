@@ -1,4 +1,4 @@
-package registry
+package oracle
 
 import (
 	"context"
@@ -18,7 +18,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//go:generate mockgen --destination ..\..\mocks\eth_client.go  --package mocks github.com/base-org/pessimism/internal/client EthClientInterface
 func Test_ConfigureRoutine_Error(t *testing.T) {
 
 	_, cancel := context.WithCancel(context.Background())

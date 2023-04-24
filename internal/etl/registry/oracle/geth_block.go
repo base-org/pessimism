@@ -1,4 +1,4 @@
-package registry
+package oracle
 
 import (
 	"context"
@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	// TODO(#36): Poll Interval is a Hardcoded Value for EVM Block Polling Client
 	pollInterval = 1000
 )
 

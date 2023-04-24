@@ -4,23 +4,27 @@ package core
 type RegisterType uint8
 
 const (
-	GethBlock RegisterType = iota + 1
-	ContractCreateTX
+	AccountBalance RegisterType = iota + 1
 	BlackholeTX
+	ContractCreateTX
+	GethBlock
 )
 
 // String ... Returns string representation of a
 // register enum
 func (rt RegisterType) String() string {
 	switch rt {
-	case GethBlock:
-		return "geth.block"
+	case AccountBalance:
+		return "account.balance"
 
 	case ContractCreateTX:
 		return "contract.create.tx"
 
 	case BlackholeTX:
 		return "blackhole.tx"
+
+	case GethBlock:
+		return "geth.block"
 	}
 
 	return UnknownType

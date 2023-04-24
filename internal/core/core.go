@@ -1,8 +1,16 @@
 package core
 
 import (
+	"math/big"
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
 )
+
+type AccountBalanceVal struct {
+	Address common.Address
+	Balance *big.Int
+}
 
 // TransitData ... Standardized type used for data inter-communication
 // between all ETL components and Risk Engine

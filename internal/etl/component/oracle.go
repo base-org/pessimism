@@ -12,6 +12,7 @@ import (
 
 // OracleDefinition ... Provides a generalized interface for developers to bind their own functionality to
 type OracleDefinition interface {
+	HandleUpdate(any) error
 	ConfigureRoutine() error
 	BackTestRoutine(ctx context.Context, componentChan chan core.TransitData,
 		startHeight *big.Int, endHeight *big.Int) error
@@ -56,6 +57,12 @@ func NewOracle(ctx context.Context, pt core.PipelineType, outType core.RegisterT
 		zap.String("ID", o.metaData.id.String()))
 
 	return o, nil
+}
+
+func (o *Oracle) Update(data any) error {
+	logging.WithContext(o.ctx).Info("Attempting to update oracle component")
+
+	return o.definition.HandleUpdate(data)
 }
 
 // TODO (#22) : Add closure logic to all component types

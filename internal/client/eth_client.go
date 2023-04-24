@@ -1,9 +1,12 @@
+//go:generate mockgen --destination ..\..\mocks\eth_client.go  --package mocks github.com/base-org/pessimism/internal/client EthClientInterface
+
 package client
 
 import (
 	"context"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -16,6 +19,7 @@ type EthClient struct {
 // EthClientInterface ... Provides interface wrapper for ethClient functions
 // Useful for mocking go-etheruem node client logic
 type EthClientInterface interface {
+	BalanceAt(ctx context.Context, account common.Address, number *big.Int) (*big.Int, error)
 	DialContext(ctx context.Context, rawURL string) error
 	HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error)
 	BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error)
@@ -48,4 +52,9 @@ func (ec *EthClient) HeaderByNumber(ctx context.Context, number *big.Int) (*type
 // BlockByNumber ... Wraps go-ethereum node blockByNumber RPC call
 func (ec *EthClient) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
 	return ec.client.BlockByNumber(ctx, number)
+}
+
+// BalanceAt ... Wraps go-ethereum node balanceAt RPC call
+func (ec *EthClient) BalanceAt(ctx context.Context, account common.Address, number *big.Int) (*big.Int, error) {
+	return ec.client.BalanceAt(ctx, account, number)
 }

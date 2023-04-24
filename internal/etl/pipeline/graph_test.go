@@ -7,7 +7,9 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
-	"github.com/base-org/pessimism/internal/etl/registry"
+	"github.com/base-org/pessimism/internal/etl/registry/oracle"
+	o_registry "github.com/base-org/pessimism/internal/etl/registry/oracle"
+	p_registry "github.com/base-org/pessimism/internal/etl/registry/pipe"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +36,7 @@ func Test_Graph(t *testing.T) {
 			testLogic: func(t *testing.T, g *cGraph) {
 				testID := core.MakeComponentUUID(69, 69, 69, 69)
 
-				component, err := registry.NewBlackHoleTxPipe(context.Background(), component.WithID(testID))
+				component, err := p_registry.NewBlackHoleTxPipe(context.Background(), component.WithID(testID))
 				assert.NoError(t, err)
 
 				err = g.addComponent(testID, component)
@@ -54,7 +56,7 @@ func Test_Graph(t *testing.T) {
 			constructionLogic: func() *cGraph {
 				g := newGraph()
 
-				comp1, err := registry.NewMockOracle(context.Background(), core.GethBlock)
+				comp1, err := o_registry.NewMockOracle(context.Background(), core.GethBlock)
 				if err != nil {
 					panic(err)
 				}
@@ -63,7 +65,7 @@ func Test_Graph(t *testing.T) {
 					panic(err)
 				}
 
-				comp2, err := registry.NewCreateContractTxPipe(context.Background(), component.WithID(testID1))
+				comp2, err := p_registry.NewCreateContractTxPipe(context.Background(), component.WithID(testID1))
 				if err != nil {
 					panic(err)
 				}
@@ -93,7 +95,7 @@ func Test_Graph(t *testing.T) {
 			constructionLogic: func() *cGraph {
 				g := newGraph()
 
-				comp1, err := registry.NewMockOracle(context.Background(), core.GethBlock)
+				comp1, err := oracle.NewMockOracle(context.Background(), core.GethBlock)
 				if err != nil {
 					panic(err)
 				}
@@ -102,7 +104,7 @@ func Test_Graph(t *testing.T) {
 					panic(err)
 				}
 
-				comp2, err := registry.NewCreateContractTxPipe(context.Background(), component.WithID(testID1))
+				comp2, err := p_registry.NewCreateContractTxPipe(context.Background(), component.WithID(testID1))
 				if err != nil {
 					panic(err)
 				}
@@ -132,7 +134,7 @@ func Test_Graph(t *testing.T) {
 			constructionLogic: func() *cGraph {
 				g := newGraph()
 
-				comp1, err := registry.NewMockOracle(context.Background(), core.GethBlock)
+				comp1, err := o_registry.NewMockOracle(context.Background(), core.GethBlock)
 				if err != nil {
 					panic(err)
 				}
@@ -141,7 +143,7 @@ func Test_Graph(t *testing.T) {
 					panic(err)
 				}
 
-				comp2, err := registry.NewCreateContractTxPipe(context.Background(), component.WithID(testID1))
+				comp2, err := p_registry.NewCreateContractTxPipe(context.Background(), component.WithID(testID1))
 				if err != nil {
 					panic(err)
 				}
