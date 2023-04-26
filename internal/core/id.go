@@ -20,10 +20,10 @@ func nilUUID() UUID {
 	return UUID{[16]byte{0}}
 }
 
-// String ... Overrides UUID string method for easier
+// ShortString ... Short string representation for easier
 // debugging and ensuring conformance with pessimism specific abstractions
 // https://pkg.go.dev/github.com/google/UUID#UUID.String
-func (id UUID) String() string {
+func (id UUID) ShortString() string {
 	uid := id.UUID
 	// Only render first 8 bytes instead of entire sequence
 	return fmt.Sprintf("%d%d%d%d%d%d%d%d%d",
@@ -133,7 +133,7 @@ func (id ComponentPID) String() string {
 func (id ComponentUUID) String() string {
 	return fmt.Sprintf("%s::%s",
 		id.PID.String(),
-		id.UUID.String(),
+		id.UUID.ShortString(),
 	)
 }
 
@@ -154,6 +154,6 @@ func (id PipelinePID) String() string {
 // String ... Returns string representation of a pipeline UUID
 func (id PipelineUUID) String() string {
 	return fmt.Sprintf("%s:::%s",
-		id.PID.String(), id.UUID.String(),
+		id.PID.String(), id.UUID.ShortString(),
 	)
 }
