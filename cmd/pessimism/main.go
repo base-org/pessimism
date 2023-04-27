@@ -6,9 +6,12 @@ import (
 	"sync"
 	"time"
 
+	"time"
+
 	"github.com/base-org/pessimism/internal/api/handlers"
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/api/service"
+
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/pipeline"
