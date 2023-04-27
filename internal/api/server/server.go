@@ -82,7 +82,7 @@ func (sv *Server) done() <-chan os.Signal {
 	return sigs
 }
 
-// waits for shutdown signal from shutdown cahnnel
+// waits for shutdown signal from shutdown channel
 func (sv *Server) Stop(stop func()) {
 	done := <-sv.done()
 	logging.NoContext().Info("Received shutdown OS signal", zap.String("signal", done.String()))

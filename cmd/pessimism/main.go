@@ -145,7 +145,7 @@ func main() {
 
 	logger.Info("pessimism boot up")
 
-	etlManager := pipeline.NewManager(appCtx)
+	etlManager, shutDownETL := pipeline.NewManager(appCtx)
 	outChan, err := setupExampleETL(cfg, etlManager)
 	if err != nil {
 		panic(err)
@@ -159,14 +159,17 @@ func main() {
 	}()
 
 	go func() {
-		server, stop, err := initializeAndRunServer(appCtx, cfgPath)
+		server, shutDownServer, err := initializeAndRunServer(appCtx, cfgPath)
 
 		if err != nil {
 			logger.Error("Error obtained trying to start server", zap.Error(err))
 			panic(err)
 		}
 
-		server.Stop(stop)
+		server.Stop(func() {
+			shutDownETL()
+			shutDownServer()
+		})
 	}()
 
 	processExampleETL(appCtx, outChan)
