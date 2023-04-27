@@ -24,4 +24,24 @@ Pessimism is currently experimental and very much in development. It means Pessi
 1. Create local config file (`config.env`)
     * `cp config.env.template config.env`
 
-# TBD
+2. [Download](https://go.dev/doc/install) `golang 1.19` if you haven't already
+
+3. Install go dependencies
+    * `go mod download`
+
+# To Run
+1. Compile pessimism to binary
+    * `make build-app`
+
+2. Run binary
+    * `make run-app`
+    * `./bin/pessimism`
+
+## Testing
+
+### Unit Tests
+Unit tests are written using native [go test](https://pkg.go.dev/testing) with mocks generated golang native [mock](https://github.com/golang/mock) library.
+Tests can be ran by running `make test`. 
+
+### Integration Tests
+TBD
