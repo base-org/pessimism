@@ -1,7 +1,7 @@
 package pipeline
 
 import (
-	"context"
+	"fmt"
 	"log"
 	"sync"
 
@@ -9,26 +9,19 @@ import (
 	"github.com/base-org/pessimism/internal/etl/component"
 )
 
-/*
- Edge cases:
- 1 - Synchronization required for a pipeline from some starting block height
- 2 - Live config is passed through to a register pipeline config that requires a backfill,
- 	resulting in component collision within the DAG.
-*/
-
-type PipeLine interface {
-	ID() core.PipelineID
-	// EventLoop ... Pipeline driver function; spun up as separate go routine
-	EventLoop() error
+type Pipeline interface {
+	ID() core.PipelineUUID
+	Components() []component.Component
 	RunPipeline(wg *sync.WaitGroup) error
-	AddDirective(cID core.ComponentID, outChan chan core.TransitData) error
+	UpdateState(as ActivityState) error
+
+	AddDirective(cID core.ComponentUUID, outChan chan core.TransitData) error
 }
 
 type Option = func(*pipeLine)
 
 type pipeLine struct {
-	ctx context.Context
-	id  core.PipelineID
+	id core.PipelineUUID
 
 	aState ActivityState
 	pType  core.PipelineType //nolint:unused // will be implemented soon
@@ -36,7 +29,8 @@ type pipeLine struct {
 	components []component.Component
 }
 
-func NewPipeLine(id core.PipelineID, comps []component.Component, opts ...Option) (PipeLine, error) {
+// NewPipeLine ... Initializer
+func NewPipeLine(id core.PipelineUUID, comps []component.Component, opts ...Option) (Pipeline, error) {
 	pl := &pipeLine{
 		id:         id,
 		components: comps,
@@ -50,28 +44,38 @@ func NewPipeLine(id core.PipelineID, comps []component.Component, opts ...Option
 	return pl, nil
 }
 
-func (pl *pipeLine) ID() core.PipelineID {
+// Components ... Returns slice of all constituent components
+func (pl *pipeLine) Components() []component.Component {
+	return pl.components
+}
+
+// ID ... Returns pipeline ID
+func (pl *pipeLine) ID() core.PipelineUUID {
 	return pl.id
 }
 
-func (pl *pipeLine) AddDirective(cID core.ComponentID, outChan chan core.TransitData) error {
+// NOTE: This function should be deleted once risk engine is introduced
+// AddDirective ... Adds an egress from the final component of a pipeline
+// path to an arbitrary channel
+func (pl *pipeLine) AddDirective(cID core.ComponentUUID, outChan chan core.TransitData) error {
 	comp := pl.components[0]
-	log.Printf("Adding output directive between components (%s) --> (%s)", comp.ID().String(), cID.String())
 
 	return comp.AddEgress(cID, outChan)
 }
 
+// RunPipeline  ... Spawns and manages component event loops
+// for some pipeline
 func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 	for _, comp := range pl.components {
 		wg.Add(1)
 
 		go func(c component.Component, wg *sync.WaitGroup) {
+			defer wg.Done()
+
 			log.Printf("Attempting to run component (%s) with activity state = %s", c.ID().String(), c.ActivityState())
-			if c.ActivityState() != component.Inactive {
+			if c.ActivityState() != component.Inactive { // Component already active
 				return
 			}
-
-			defer wg.Done()
 
 			if err := c.EventLoop(); err != nil {
 				log.Printf("Got error from event loop: %s", err.Error())
@@ -82,31 +86,17 @@ func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 	return nil
 }
 
-func (pl *pipeLine) String() string {
-	str := ""
-
-	for i := len(pl.components) - 1; i >= 0; i-- {
-		comp := pl.components[i]
-		str += "(" + comp.ID().String() + ")"
-		if i != 0 {
-			str += "->"
-		}
-	}
-
-	return str
+// Terminate ...
+func (pl *pipeLine) Terminate(_ *sync.WaitGroup) error {
+	// TODO: implement
+	return nil
 }
 
-func (pl *pipeLine) EventLoop() error {
-	// TODO(#29): No Pipeline Driver Functionality
-	// TODO - Add component sampling logic
-	// I.E, Components in a pipeline should be checked for activity state changes
-	// Critical for understanding when things like "syncing" or backfilling have completed for some
-	// live invariant pipeline
-
-	for { //nolint:gosimple // will soon be extended to other go channels
-		select {
-		case <-pl.ctx.Done():
-			return nil
-		}
+func (pl *pipeLine) UpdateState(as ActivityState) error {
+	if as == pl.aState {
+		return fmt.Errorf("state is already set")
 	}
+
+	pl.aState = as
+	return nil
 }

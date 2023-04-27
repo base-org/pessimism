@@ -41,15 +41,7 @@ func NewOracle(ctx context.Context, pt core.PipelineType, outType core.RegisterT
 		oracleChannel: core.NewTransitChannel(),
 		wg:            &sync.WaitGroup{},
 
-		metaData: &metaData{
-			id:             core.NilCompID(),
-			cType:          core.Oracle,
-			egressHandler:  newEgressHandler(),
-			ingressHandler: newIngressHandler(),
-			state:          Inactive,
-			output:         outType,
-			RWMutex:        &sync.RWMutex{},
-		},
+		metaData: newMetaData(core.Oracle, outType),
 	}
 
 	for _, opt := range opts {
@@ -82,12 +74,13 @@ func (o *Oracle) EventLoop() error {
 
 	logger := logging.WithContext(o.ctx)
 
-	o.state = Live
 	logger.Debug("Starting component event loop",
 		zap.String("ID", o.id.String()))
 
 	o.wg.Add(1)
 	go func() {
+		o.emitStateChange(Live)
+
 		defer o.wg.Done()
 		if err := o.definition.ReadRoutine(o.ctx, o.oracleChannel); err != nil {
 			logger.Error("Received error from read routine",
@@ -107,6 +100,8 @@ func (o *Oracle) EventLoop() error {
 			}
 
 		case <-o.ctx.Done():
+			o.emitStateChange(Terminated)
+
 			close(o.oracleChannel)
 
 			return nil

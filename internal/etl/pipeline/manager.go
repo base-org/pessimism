@@ -18,107 +18,141 @@ type Manager struct {
 	ctx context.Context
 
 	dag       *cGraph
-	pipeLines map[core.PipelineID]PipeLine
-	wg        *sync.WaitGroup
+	pRegistry *pipeRegistry
+
+	compEventChan chan component.StateChange
+
+	wg *sync.WaitGroup
 }
 
+// NewManager ... Initializer
 func NewManager(ctx context.Context) *Manager {
 	return &Manager{
-		ctx:       ctx,
-		dag:       newGraph(),
-		pipeLines: make(map[core.PipelineID]PipeLine, 0),
-		wg:        &sync.WaitGroup{},
+		ctx:           ctx,
+		dag:           newGraph(),
+		pRegistry:     newPipeRegistry(),
+		compEventChan: make(chan component.StateChange),
+		wg:            &sync.WaitGroup{},
 	}
 }
 
-func (manager *Manager) CreateRegisterPipeline(ctx context.Context,
-	cfg *config.PipelineConfig) (core.PipelineID, error) {
-	logger := logging.WithContext(manager.ctx)
+// CreateDataPipeline ... Creates an ETL data pipeline provided a pipeline configuration
+func (m *Manager) CreateDataPipeline(cfg *config.PipelineConfig) (core.PipelineUUID, error) {
+	logger := logging.WithContext(m.ctx)
 
 	register, err := registry.GetRegister(cfg.DataType)
 	if err != nil {
-		return core.NilPipelineID(), err
+		return core.NilPipelineUUID(), err
 	}
 
-	components := make([]component.Component, 0)
 	registers := append([]*core.DataRegister{register}, register.Dependencies...)
+	components, err := m.getComponents(cfg, registers)
+	if err != nil {
+		return core.NilPipelineUUID(), err
+	}
 
-	prevID := core.NilCompID()
 	lastReg := registers[len(registers)-1]
 
-	cID1 := core.MakeComponentID(cfg.PipelineType, registers[0].ComponentType, registers[0].DataType, cfg.Network)
-	cID2 := core.MakeComponentID(cfg.PipelineType, lastReg.ComponentType, lastReg.DataType, cfg.Network)
-	pID := core.MakePipelineID(cfg.PipelineType, cID1, cID2)
+	cID1 := core.MakeComponentUUID(cfg.PipelineType, registers[0].ComponentType, registers[0].DataType, cfg.Network)
+	cID2 := core.MakeComponentUUID(cfg.PipelineType, lastReg.ComponentType, lastReg.DataType, cfg.Network)
+	pID := core.MakePipelineUUID(cfg.PipelineType, cID1, cID2)
 
-	logger.Debug("constructing register pipeline",
+	logger.Debug("constructing pipeline",
 		zap.String("ID", pID.String()))
+
+	pipeLine, err := NewPipeLine(pID, components)
+	if err != nil {
+		return core.NilPipelineUUID(), err
+	}
+	m.pRegistry.addPipeline(pID, pipeLine)
+
+	return pID, nil
+}
+
+func (m *Manager) RunPipeline(pID core.PipelineUUID) error {
+	pipeLine, err := m.pRegistry.getPipeline(pID)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("[%s] Running pipeline", pipeLine.ID().String())
+	return pipeLine.RunPipeline(m.wg)
+}
+
+func (m *Manager) AddPipelineDirective(pID core.PipelineUUID,
+	cID core.ComponentUUID, outChan chan core.TransitData) error {
+	pipeLine, err := m.pRegistry.getPipeline(pID)
+	if err != nil {
+		return err
+	}
+	return pipeLine.AddDirective(cID, outChan)
+}
+
+func (m *Manager) EventLoop(ctx context.Context) {
+	logger := logging.WithContext(ctx)
+
+	for {
+		select {
+		case <-ctx.Done():
+			logger.Info("Received shutdown", zap.String("Abstraction", "etl-manager"))
+
+		case stateChange := <-m.compEventChan:
+			// TODO(#35): No ETL Management Procedure Exists
+			// for Handling Component State Changes
+
+			_, err := m.pRegistry.getPipelineUUIDs(stateChange.ID)
+			if err != nil {
+				logger.Error("Could not fetch pipeline IDs for comp state change")
+			}
+
+			logger.Info("Received component state change requeset")
+		}
+	}
+}
+
+// getComponents ... Returns all components provided a slice of register definitions
+func (m *Manager) getComponents(cfg *config.PipelineConfig,
+	registers []*core.DataRegister) ([]component.Component, error) {
+	components := make([]component.Component, 0)
+	prevID := core.NilComponentUUID()
 
 	for i, register := range registers {
 		// NOTE - This doesn't consider the circumstance where
 		// a requested pipeline already exists but requires some backfill to run
 		// TODO(#30): Pipeline Collisions Occur When They Shouldn't
-		cID := core.MakeComponentID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
-		if err != nil {
-			return core.NilPipelineID(), err
-		}
+		cID := core.MakeComponentUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
 
-		if !manager.dag.componentExists(cID) {
-			comp, err := inferComponent(ctx, cfg, cID, register)
+		if !m.dag.componentExists(cID) {
+			comp, err := inferComponent(m.ctx, cfg, cID, register, m.compEventChan)
 			if err != nil {
-				return core.NilPipelineID(), err
+				return []component.Component{}, err
 			}
-			if err = manager.dag.addComponent(cID, comp); err != nil {
-				return core.NilPipelineID(), err
+			if err = m.dag.addComponent(cID, comp); err != nil {
+				return []component.Component{}, err
 			}
 		}
 
-		component, err := manager.dag.getComponent(cID)
+		c, err := m.dag.getComponent(cID)
 		if err != nil {
-			return core.NilPipelineID(), err
+			return []component.Component{}, err
 		}
 
 		if i != 0 { // IE we've passed the pipeline's last path node; start adding edges
-			if err := manager.dag.addEdge(cID, prevID); err != nil {
-				return core.NilPipelineID(), err
+			if err := m.dag.addEdge(cID, prevID); err != nil {
+				return []component.Component{}, err
 			}
 		}
 
-		prevID = component.ID()
-		components = append(components, component)
+		prevID = c.ID()
+		components = append(components, c)
 	}
 
-	pipeLine, err := NewPipeLine(pID, components)
-	if err != nil {
-		return core.NilPipelineID(), err
-	}
-
-	manager.pipeLines[pID] = pipeLine
-
-	return pID, nil
+	return components, nil
 }
 
-func (manager *Manager) RunPipeline(id core.PipelineID) error {
-	pipeLine, found := manager.pipeLines[id]
-	if !found {
-		return fmt.Errorf("could not find pipeline for id: %s", id)
-	}
-
-	log.Printf("[%s] Running pipeline", pipeLine.ID().String())
-	return pipeLine.RunPipeline(manager.wg)
-}
-
-func (manager *Manager) AddPipelineDirective(pID core.PipelineID,
-	cID core.ComponentID, outChan chan core.TransitData) error {
-	pipeLine, found := manager.pipeLines[pID]
-	if !found {
-		return fmt.Errorf("could not find pipeline for id: %s", pID)
-	}
-
-	return pipeLine.AddDirective(cID, outChan)
-}
-
-func inferComponent(ctx context.Context, cfg *config.PipelineConfig, id core.ComponentID,
-	register *core.DataRegister) (component.Component, error) {
+// inferComponent ... Constructs a component provided a data register definition
+func inferComponent(ctx context.Context, cfg *config.PipelineConfig, id core.ComponentUUID,
+	register *core.DataRegister, eventCh chan component.StateChange) (component.Component, error) {
 	log.Printf("constructing %s component for register %s", register.ComponentType, register.DataType)
 
 	switch register.ComponentType {
@@ -129,7 +163,8 @@ func inferComponent(ctx context.Context, cfg *config.PipelineConfig, id core.Com
 		}
 
 		// NOTE ... We assume at most 1 oracle per register pipeline
-		return init(ctx, cfg.PipelineType, cfg.OracleCfg, component.WithID(id))
+		return init(ctx, cfg.PipelineType, cfg.OracleCfg,
+			component.WithID(id), component.WithEventChan(eventCh))
 
 	case core.Pipe:
 		init, success := register.ComponentConstructor.(component.PipeConstructorFunc)
@@ -137,7 +172,7 @@ func inferComponent(ctx context.Context, cfg *config.PipelineConfig, id core.Com
 			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Pipe.String()))
 		}
 
-		return init(ctx, component.WithID(id))
+		return init(ctx, component.WithID(id), component.WithEventChan(eventCh))
 
 	case core.Aggregator:
 		return nil, fmt.Errorf("aggregator component has yet to be implemented")
