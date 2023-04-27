@@ -37,6 +37,7 @@ func (ph *PessimismHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // registerEndpoint registers an endpoint to the router for a specified method type and handlerFunction
-func registerEndpoint(endpoint string, routeMethod func(pattern string, handlerFn http.HandlerFunc), handlerFunc func(w http.ResponseWriter, r *http.Request)) {
+func registerEndpoint(endpoint string, routeMethod func(pattern string, handlerFn http.HandlerFunc),
+	handlerFunc func(w http.ResponseWriter, r *http.Request)) {
 	routeMethod(endpoint, http.HandlerFunc(handlerFunc).ServeHTTP)
 }

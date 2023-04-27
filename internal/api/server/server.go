@@ -33,7 +33,6 @@ type Server struct {
 
 // New ... Initializer
 func New(ctx context.Context, cfg *Config, apiHandlers handlers.Handlers) (*Server, func(), error) {
-
 	restServer := initializeServer(cfg, apiHandlers)
 	go spawnServer(restServer)
 
@@ -55,10 +54,9 @@ func New(ctx context.Context, cfg *Config, apiHandlers handlers.Handlers) (*Serv
 // spawnServer ... Starts a counterparty listen and serve API routine
 func spawnServer(server *Server) {
 	logging.NoContext().Info("Starting REST API HTTP server",
-		zap.String("adress", server.serverHTTP.Addr))
+		zap.String("address", server.serverHTTP.Addr))
 
 	if err := server.serverHTTP.ListenAndServe(); err != http.ErrServerClosed {
-
 		logging.NoContext().Error("failed to run REST API HTTP server", zap.String("address", server.serverHTTP.Addr))
 		panic(err)
 	}
@@ -66,14 +64,13 @@ func spawnServer(server *Server) {
 
 // initializeServer ... Initializes server struct object
 func initializeServer(config *Config, handler http.Handler) *Server {
-
 	return &Server{
 		Cfg: config,
 		serverHTTP: &http.Server{
 			Addr:         fmt.Sprintf("%s:%d", config.Host, config.Port),
 			Handler:      handler,
-			ReadTimeout:  time.Duration(10) * time.Second,
-			WriteTimeout: time.Duration(10) * time.Second,
+			ReadTimeout:  time.Duration(config.ReadTimeout) * time.Second,
+			WriteTimeout: time.Duration(config.WriteTimeout) * time.Second,
 		},
 	}
 }
