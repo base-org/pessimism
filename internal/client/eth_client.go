@@ -1,3 +1,5 @@
+//go:generate mockgen --destination ../../mocks/eth_client.go . EthClientInterface
+
 package client
 
 import (
