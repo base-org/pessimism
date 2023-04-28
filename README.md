@@ -1,7 +1,7 @@
 # pessimism
 __Because you can't always be optimistic__
 
-_Pessimism_ is a public good monitoring service that allows for Optimism bedrock chains _(BASE, OP)_ to be continously assessed for real-time threats using customly defined user invariants.
+_Pessimism_ is a public good monitoring service that allows for Optimism bedrock chains _(Base Layer 2, Optimism)_ to be continously assessed for real-time threats using customly defined user invariants.
 
 
 <!-- Badge row 1 - status -->
@@ -18,30 +18,34 @@ _Pessimism_ is a public good monitoring service that allows for Optimism bedrock
 [![GitHub Issues](https://img.shields.io/github/issues-raw/base-org/pessimism.svg)](https://github.com/base-org/pessimism/issues)
 
 **Warning:**
-Pessimism is currently experimental and very much in development. It means Pessimism is currently not secure nor stable, so code will change and builds can break over the coming months. If you come across problems, it would help greatly to open issues so that we can fix them as quickly as possible.
+Pessimism is currently experimental and very much in development. It means Pessimism is currently unstable, so code will change and builds can break over the coming months. If you come across problems, it would help greatly to open issues so that we can fix them as quickly as possible.
 
 ## Setup
-1. Create local config file (`config.env`)
-    * `cp config.env.template config.env`
+1. Create local config file (`config.env`) to store all necessary environmental variables. There's already an example `config.env.template` in the repo that stores default env vars.
 
-2. [Download](https://go.dev/doc/install) `golang 1.19` if you haven't already
+To use the template, run the following the command(s):
+* `cp config.env.template config.env`
 
-3. Install go dependencies
-    * `go mod download`
+2. [Download](https://go.dev/doc/install) or upgrade to `golang 1.19`.
+
+3. Install all project golang dependencies by running `go mod download`.
 
 # To Run
-1. Compile pessimism to binary
-    * `make build-app`
+1. Compile pessimism to machine binary by running the following project level command(s):
+    * Using Make: `make build-app`
 
-2. Run binary
-    * `make run-app`
-    * `./bin/pessimism`
+2. To run the compiled binary, you can use the following project level command(s):
+    * Using Make: `make run-app`
+    * Direct Call: `./bin/pessimism`
 
 ## Testing
 
 ### Unit Tests
-Unit tests are written using native [go test](https://pkg.go.dev/testing) with mocks generated golang native [mock](https://github.com/golang/mock) library.
-Tests can be ran by running `make test`. 
+Unit tests are written using native [go test](https://pkg.go.dev/testing) library with test mocks generated using the golang native [mock](https://github.com/golang/mock) library.
+
+Unit tests can ran using the following project level command(s):
+* Using Make: `make test`
+* Direct Call: `go test ./...`
 
 ### Integration Tests
 TBD
