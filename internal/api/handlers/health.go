@@ -6,7 +6,7 @@ import (
 	"github.com/go-chi/render"
 )
 
-// HealthCheck handle health check
+// HealthCheck ... Handle health check
 func (ph *PessimismHandler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, ph.service.CheckHealth())
 }
