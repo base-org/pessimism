@@ -6,9 +6,9 @@ The Pessimism ETL is a generalized abstraction for a DAG-based component system 
 ## Component
 A component refers to a graph node within the ETL system. Every component performs some operation for transforming data from any data source into a consumable input for the Risk Engine to ingest. 
 Currently, there are three total component types:
-1. `Pipe` - Used to perform local arbitrary computations _(e.g, Extracting L1Withdrawal transactions from a block)_
-2. `Oracle` - Used to poll and collect data from some counter-party source _(e.g, Querying real-time account balance amounts)_
-3. `Aggregator` - Used to synchronize events between asynchronous data sources _(e.g, Synchronizing L1/L2 blocks to understand real-time changes in bridging TVL)_
+1. `Pipe` - Used to perform local arbitrary computations _(e.g. Extracting L1Withdrawal transactions from a block)_
+2. `Oracle` - Used to poll and collect data from some counter-party source _(e.g. Querying real-time account balance amounts)_
+3. `Aggregator` - Used to synchronize events between asynchronous data sources _(e.g. Synchronizing L1/L2 blocks to understand real-time changes in bridging TVL)_
  
 
 ### Inter-Connectivity 
