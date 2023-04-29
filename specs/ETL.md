@@ -58,7 +58,7 @@ I. _Inactive_ - Refers to a component with no actively running event loop routin
 II. _Live_ - Refers to a component with an actively running event loop routine.
 III. _Crashed_ - Refers to a component that's suffered some failure and subsequent `eventLoop` routine death. 
 
-**NOTE - State handling policies by managament abstractions has yet to be properly fleshed out**
+**NOTE - State handling policies by management abstractions has yet to be properly fleshed out**
 
 
 ### Pipe
