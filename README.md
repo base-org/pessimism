@@ -41,7 +41,7 @@ To use the template, run the following the command(s):
 ## Testing
 
 ### Unit Tests
-Unit tests are written using native [go test](https://pkg.go.dev/testing) library with test mocks generated using the golang native [mock](https://github.com/golang/mock) library.
+Unit tests are written using the native [go test](https://pkg.go.dev/testing) library with test mocks generated using the golang native [mock](https://github.com/golang/mock) library.
 
 Unit tests can ran using the following project level command(s):
 * Using Make: `make test`
