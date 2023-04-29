@@ -72,7 +72,7 @@ Pipes are used to perform local arbitrary computations on some input data. Once 
 * A specified output data type
 
 ### Oracle 
-Oracles are responsible for collecting data from some external third party _(e.g, L1 geth node, L2 rollup node, etc.)_. As of now, oracle's are configurable through the use of a standard `OracleDefinition` interface that allows developers to write arbitrary oracle logic. 
+Oracles are responsible for collecting data from some external third party _(e.g. L1 geth node, L2 rollup node, etc.)_. As of now, oracle's are configurable through the use of a standard `OracleDefinition` interface that allows developers to write arbitrary oracle logic. 
 The following key interface functions are supported/enforced:
 * `ReadRoutine` - Routine used for reading/polling real-time data for some arbitrarily configured data source
 * `BackTestRoutine` - _Optional_ routine used for sequentially backtesting from some starting to ending block heights. 
