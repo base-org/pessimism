@@ -1,6 +1,6 @@
 # ETL
 
-The Pessimism ETL is a generalized abstraction for a DAG based component system that continuously reads live chain data into inputs designed for consumption by the Risk Engine in the form of intertwined “pipelines”.
+The Pessimism ETL is a generalized abstraction for a DAG-based component system that continuously transforms chain data into inputs for consumption by the Risk Engine in the form of intertwined “pipelines”.
 
 
 ## Component
