@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	testID1 = core.MakeComponentID(69, 69, 69, 69)
-	testID2 = core.MakeComponentID(42, 42, 42, 42)
+	testID1 = core.MakeComponentUUID(69, 69, 69, 69)
+	testID2 = core.MakeComponentUUID(42, 42, 42, 42)
 )
 
 func Test_Graph(t *testing.T) {
@@ -32,7 +32,7 @@ func Test_Graph(t *testing.T) {
 
 			constructionLogic: newGraph,
 			testLogic: func(t *testing.T, g *cGraph) {
-				testID := core.MakeComponentID(69, 69, 69, 69)
+				testID := core.MakeComponentUUID(69, 69, 69, 69)
 
 				component, err := registry.NewBlackHoleTxPipe(context.Background(), component.WithID(testID))
 				assert.NoError(t, err)
@@ -41,7 +41,7 @@ func Test_Graph(t *testing.T) {
 				assert.NoError(t, err, "Component addition should resolve to Nil")
 
 				nodeEntry := g.edgeMap[testID]
-				assert.Equal(t, nodeEntry.edges, make(map[core.ComponentID]interface{}, 0), "No edges should exist for component entry")
+				assert.Equal(t, nodeEntry.edges, make(map[core.ComponentUUID]interface{}, 0), "No edges should exist for component entry")
 				assert.Equal(t, nodeEntry.outType, component.OutputType(), "Output types should match")
 				assert.Equal(t, nodeEntry.comp.ID(), testID, "IDs should match for component entry")
 			},

@@ -29,4 +29,6 @@ func (as ActivityState) String() string {
 
 const (
 	couldNotCastErr = "could not cast component initializer function to %s constructor type"
+	pIDNotFoundErr  = "could not find pipeline ID for %s"
+	uuidNotFoundErr = "could not find matching UUID for pipeline entry"
 )

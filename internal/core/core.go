@@ -13,6 +13,7 @@ type TransitData struct {
 	Value any
 }
 
+// NewTransitChannel ... Builds new tranit channel
 func NewTransitChannel() chan TransitData {
 	return make(chan TransitData)
 }

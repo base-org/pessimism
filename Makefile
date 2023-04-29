@@ -27,7 +27,7 @@ go-gen-mocks:
 	
 .PHONY: test
 test:
-	@ go test ./... -v -timeout $(TEST_LIMIT)
+	@ go test ./... -timeout $(TEST_LIMIT)
 
 .PHONY: lint
 lint:
