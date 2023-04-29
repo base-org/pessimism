@@ -1,7 +1,7 @@
 # Pessimism Architecture
 
 
-There are two primary subsystems that drive Pessimism’s architecture:
+There are two subsystems that drive Pessimism’s architecture:
 1. [ETL](./ETL.md) - Modularized data extraction system for retrieving and processing external chain data in the form of a DAG known as the Pipeline DAG
 2. [Risk Engine](./RISK_ENGINE.md) - Logical execution platform that runs a set of invariants on the data funneled from the Pipeline DAG
 
