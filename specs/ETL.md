@@ -4,7 +4,7 @@ The Pessimism ETL is a generalized abstraction for a DAG-based component system 
 
 
 ## Component
-A component is an abstract representation of a graph node within the ETL system. Every component performs some operation for transiting data from some arbitrary data source to a consumable input for the Risk Engine to ingest. 
+A component refers to a graph node within the ETL system. Every component performs some operation for transforming data from any data source into a consumable input for the Risk Engine to ingest. 
 Currently, there are three total component types:
 1. `Pipe` - Used to perform local arbitrary computations _(e.g, Extracting L1Withdrawal transactions from a block)_
 2. `Oracle` - Used to poll and collect data from some counter-party source _(e.g, Querying real-time account balance amounts)_
