@@ -92,7 +92,7 @@ graph LR;
 #### Attributes
 * A communication channel with the pipeline manager
 * Poller/subscription logic that performs real-time data reads on some third-party source
-* An egressHandler that stores dependencies to write to (i,e. Other pipeline components, invariant engine)
+* An `egressHandler` that stores dependencies to write to (i.e. Other pipeline components, invariant engine)
 * A specified output data type
 
 * _(Optional)_ Interface with some storage (postgres, mongo, etc.) to persist lively extracted data
