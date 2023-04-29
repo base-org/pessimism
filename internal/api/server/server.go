@@ -75,7 +75,7 @@ func initializeServer(config *Config, handler http.Handler) *Server {
 	}
 }
 
-// returns a channel to handle shutdown
+// Done ... Returns a channel to handle shutdown
 func (sv *Server) done() <-chan os.Signal {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
