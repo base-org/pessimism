@@ -31,7 +31,7 @@ func New(service service.Service) (Handlers, error) {
 	return handlers, nil
 }
 
-// ServeHTTP serves a http request given a response builder and request
+// ServeHTTP ... Serves a http request given a response builder and request
 func (ph *PessimismHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ph.router.ServeHTTP(w, r)
 }
