@@ -53,7 +53,7 @@ All components have a UUID that stores critical identification data. Component I
 Component UUID's constitute of both a randomly generated `UUID` and a deterministic `PID`. This is done to ensure uniqueness of each component instance while also ensuring collision based properties so that components can be reused when viable.
 
 ### Activity State Channel
-All component's have an internal activity state to represent their current status of operation. Currently, the only supported values are:
+All components have an internal activity state to represent their current status of operation. Currently, the only supported values are:
 I. _Inactive_ - Refers to a component with no actively running event loop routine.
 II. _Live_ - Refers to a component with an actively running event loop routine.
 III. _Crashed_ - Refers to a component that's suffered some failure and subsequent `eventLoop` routine death. 
