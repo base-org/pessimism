@@ -68,7 +68,7 @@ Pipes are used to perform local arbitrary computations on some input data. Once 
 * An `ActivityState` channel with a pipeline manager
 * Ingress handler that other components can write to
 * `TransformFunc` - A processing function that performs some data translation/transformation on respective inputs
-* An egressHandler that stores dependencies to write to (i,e. Other pipeline components, invariant engine)
+* An `egressHandler` that stores dependencies to write to (i.e. Other pipeline components, invariant engine)
 * A specified output data type
 
 ### Oracle 
