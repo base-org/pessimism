@@ -77,7 +77,7 @@ The following key interface functions are supported/enforced:
 * `ReadRoutine` - Routine used for reading/polling real-time data for some arbitrarily configured data source
 * `BackTestRoutine` - _Optional_ routine used for sequentially backtesting from some starting to ending block heights. 
 
-Unlike other components, Oracle's actually employ _2 go routines_ to safely operate. This is because the definition routines are ran as a seperate go routine with a communication channel to the actual Oracle event loop. This is visualized below:
+Unlike other components, `Oracles` actually employ _2 go routines_ to safely operate. This is because the definition routines are run as a separate go routine with a communication channel to the actual `Oracle` event loop. This is visualized below:
 
 ```mermaid
 graph LR;
