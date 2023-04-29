@@ -1,7 +1,6 @@
 package component
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/base-org/pessimism/internal/core"
@@ -80,11 +79,6 @@ func (meta *metaData) Type() core.ComponentType {
 // OutputType ... Returns component's data output type
 func (meta *metaData) OutputType() core.RegisterType {
 	return meta.output
-}
-
-// Update ...
-func (meta *metaData) Update(any) error {
-	return fmt.Errorf("update is not implemented for component")
 }
 
 // emitStateChange ... Emits a stateChange event to stateChan

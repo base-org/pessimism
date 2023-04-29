@@ -1,4 +1,4 @@
-//go:generate mockgen --destination ..\..\mocks\eth_client.go  --package mocks github.com/base-org/pessimism/internal/client EthClientInterface
+//go:generate mockgen -package mocks --destination ../mocks/eth_client.go . EthClientInterface
 
 package client
 
