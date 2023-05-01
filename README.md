@@ -21,7 +21,6 @@ _Pessimism_ is a public good monitoring service that allows for Optimism bedrock
 Pessimism is currently experimental and very much in development. It means Pessimism is currently unstable, so code will change and builds can break over the coming months. If you come across problems, it would help greatly to open issues so that we can fix them as quickly as possible.
 
 ## Setup
-1. Create local config file (`config.env`) to store all necessary environmental variables. There's already an example `config.env.template` in the repo that stores default env vars.
 
 To use the template, run the following the command(s):
 * `cp config.env.template config.env`
