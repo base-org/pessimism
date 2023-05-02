@@ -29,8 +29,6 @@ type Component interface {
 
 	// TODO(#24): Add Internal Component Activity State Tracking
 	ActivityState() ActivityState
-
-	Update(any) error
 }
 
 // metaData ... Component-agnostic agnostic struct that stores component metadata and routing state

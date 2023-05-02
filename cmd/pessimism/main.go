@@ -9,6 +9,7 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 )
@@ -109,6 +110,10 @@ func main() {
 	*/
 
 	appCtx, cancel := context.WithCancel(context.Background())
+
+	localState := state.NewMemState()
+	appCtx = context.WithValue(appCtx, "state", localState)
+
 	defer cancel()
 	cfg := config.NewConfig("config.env")
 
