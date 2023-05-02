@@ -10,7 +10,7 @@ These systems will be accessible by a client through the use of a restful HTTP A
 The API will be supported to allow Pessimism developers to:
 1. Deploy arbitrary invariants
 2. Run active invariant sessions (Backtest, Live)
-3. Remove invariant or invariant sessions
+3. Remove invariants or invariant sessions
 
 ## Diagram
 ![high level component diagram](./assets/high_level_diagram.png)
