@@ -198,6 +198,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 		case <-ticker.C:
 
 			height := oracle.getHeightToProcess(ctx)
+			logging.WithContext(ctx).Debug("Processing at height", zap.Int("Height", int(height.Int64())))
 
 			headerAsInterface, err := oracle.fetchData(ctx, height, core.FetchHeader)
 			headerAsserted, headerAssertedOk := headerAsInterface.(*types.Header)
@@ -236,6 +237,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 				height.Add(headerAsserted.Number, big.NewInt(1))
 			}
 
+			logging.NoContext().Debug("New height", zap.Int("Height", int(height.Int64())))
 			oracle.currHeight = height
 
 		case <-ctx.Done():

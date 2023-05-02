@@ -2,21 +2,23 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"math/big"
+	"sync"
 	"time"
 
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/engine"
+	inv_registry "github.com/base-org/pessimism/internal/engine/registry"
+
 	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/logging"
-	"github.com/ethereum/go-ethereum/core/types"
-	"go.uber.org/zap"
 )
 
 func setupExampleETL(cfg *config.Config, m *pipeline.Manager) (chan core.TransitData, error) {
 	l1OracleCfg := &config.OracleConfig{
 		RPCEndpoint: cfg.L1RpcEndpoint,
-		StartHeight: nil,
+		StartHeight: big.NewInt(17170900),
 		EndHeight:   nil}
 
 	pipelineCfg1 := &config.PipelineConfig{
@@ -26,19 +28,7 @@ func setupExampleETL(cfg *config.Config, m *pipeline.Manager) (chan core.Transit
 		OracleCfg:    l1OracleCfg,
 	}
 
-	pipelineCfg2 := &config.PipelineConfig{
-		Network:      core.Layer1,
-		DataType:     core.BlackholeTX,
-		PipelineType: core.Live,
-		OracleCfg:    l1OracleCfg,
-	}
-
 	pID, err := m.CreateDataPipeline(pipelineCfg1)
-	if err != nil {
-		return nil, err
-	}
-
-	pID2, err := m.CreateDataPipeline(pipelineCfg2)
 	if err != nil {
 		return nil, err
 	}
@@ -49,49 +39,13 @@ func setupExampleETL(cfg *config.Config, m *pipeline.Manager) (chan core.Transit
 		return nil, err
 	}
 
-	if err := m.AddPipelineDirective(pID2, core.NilComponentUUID(), outChan); err != nil {
-		return nil, err
-	}
-
 	if err := m.RunPipeline(pID); err != nil {
 		return nil, err
 	}
 
 	time.Sleep(time.Second * 1)
 
-	if err := m.RunPipeline(pID2); err != nil {
-		return nil, err
-	}
-
 	return outChan, nil
-}
-
-func processExampleETL(ctx context.Context, outChan chan core.TransitData) {
-	logger := logging.WithContext(ctx)
-
-	logger.Info("Reading layer 1 EVM blockchain for live contract creation txs")
-
-	for td := range outChan {
-		switch td.Type { //nolint:exhaustive // checks for all transit data types are unnecessary here
-		case core.ContractCreateTX:
-
-			parsedTx, success := td.Value.(*types.Transaction)
-			if !success {
-				logger.Error("Could not parse transaction value")
-			} else {
-				logger.Info("Received Contract Creation (CREATE) Transaction", zap.String("tx", fmt.Sprintf("%+v", parsedTx)))
-			}
-
-		case core.BlackholeTX:
-
-			parsedTx, success := td.Value.(*types.Transaction)
-			if !success {
-				logger.Error("Could not parse transaction value")
-			} else {
-				logger.Info("Received Blackhole (NULL) Transaction", zap.String("tx", fmt.Sprintf("%+v", parsedTx)))
-			}
-		}
-	}
 }
 
 // TODO(#34): No Documentation Exists Specifying How to Run & Test Service
@@ -107,6 +61,7 @@ func main() {
 			duplication when necessary
 		C) Demonstrate a lightweight MVP for the system
 	*/
+	wg := &sync.WaitGroup{}
 
 	appCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -124,9 +79,35 @@ func main() {
 		panic(err)
 	}
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
+
 		etlManager.EventLoop(appCtx)
+
 	}()
 
-	processExampleETL(appCtx, outChan)
+	invStore := engine.NewInvariantStore()
+	err = invStore.AddInvariant(core.ContractCreateTX, inv_registry.NewExampleInvariant(
+		&inv_registry.ExampleInvConfig{
+			FromAddress: "0x1DcBbDc86c0fb66788323b35Fe9046C6c761E418",
+		},
+	))
+
+	if err != nil {
+		panic(err)
+	}
+
+	riskEngine := engine.NewEngine(outChan, invStore)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+
+		if err := riskEngine.EventLoop(appCtx); err != nil {
+			panic(err)
+		}
+	}()
+
+	wg.Wait()
 }
