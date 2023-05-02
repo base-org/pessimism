@@ -7,8 +7,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
+
 	"github.com/joho/godotenv"
 
 	"os"
@@ -31,6 +33,7 @@ type Config struct {
 	L2RpcEndpoint string
 	Environment   Env
 	LoggerConfig  *logging.Config
+	ServerConfig  *server.Config
 }
 
 // OracleConfig ... Configuration passed through to an oracle component constructor
@@ -77,6 +80,16 @@ func NewConfig(fileName FilePath) *Config {
 			Encoding:          getEnvStr("LOGGER_ENCODING"),
 			OutputPaths:       getEnvSlice("LOGGER_OUTPUT_PATHS"),
 			ErrorOutputPaths:  getEnvSlice("LOGGER_ERROR_OUTPUT_PATHS"),
+		},
+
+		ServerConfig: &server.Config{
+			Host:            getEnvStr("SERVER_HOST"),
+			Port:            getEnvInt("SERVER_PORT"),
+			ListenLimit:     getEnvInt("SERVER_LISTEN_LIMIT"),
+			KeepAlive:       getEnvInt("SERVER_KEEP_ALIVE_TIME"),
+			ReadTimeout:     getEnvInt("SERVER_READ_TIMEOUT"),
+			WriteTimeout:    getEnvInt("SERVER_WRITE_TIMEOUT"),
+			ShutdownTimeout: getEnvInt("SERVER_SHUTDOWN_TIME"),
 		},
 	}
 
