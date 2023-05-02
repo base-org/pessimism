@@ -26,14 +26,31 @@ type Manager struct {
 }
 
 // NewManager ... Initializer
-func NewManager(ctx context.Context) *Manager {
-	return &Manager{
+func NewManager(ctx context.Context) (*Manager, func()) {
+	dag := newGraph()
+
+	m := &Manager{
 		ctx:           ctx,
-		dag:           newGraph(),
+		dag:           dag,
 		pRegistry:     newPipeRegistry(),
 		compEventChan: make(chan component.StateChange),
 		wg:            &sync.WaitGroup{},
 	}
+
+	shutDown := func() {
+		for id := range dag.edges() {
+			c, err := dag.getComponent(id)
+			if err != nil {
+				logging.NoContext().Error("Could not get component during shutdown", zap.Error(err))
+			}
+
+			if err := c.Close(); err != nil {
+				logging.NoContext().Error("Could not close component", zap.Error(err))
+			}
+		}
+	}
+
+	return m, shutDown
 }
 
 // CreateDataPipeline ... Creates an ETL data pipeline provided a pipeline configuration
@@ -105,7 +122,7 @@ func (m *Manager) EventLoop(ctx context.Context) {
 				logger.Error("Could not fetch pipeline IDs for comp state change")
 			}
 
-			logger.Info("Received component state change requeset")
+			logger.Info("Received component state change request")
 		}
 	}
 }

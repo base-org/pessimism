@@ -6,6 +6,10 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
+const (
+	killSignal = 0
+)
+
 // Component ... Generalized interface that all pipeline components must adhere to
 type Component interface {
 	// ID ...
@@ -17,6 +21,9 @@ type Component interface {
 	AddEgress(core.ComponentUUID, chan core.TransitData) error
 	// RemoveEgress ...
 	RemoveEgress(core.ComponentUUID) error
+
+	// Close ... Signifies a component to stop operating
+	Close() error
 
 	// EventLoop ... Component driver function; spun up as separate go routine
 	EventLoop() error
@@ -33,10 +40,12 @@ type Component interface {
 
 // metaData ... Component-agnostic agnostic struct that stores component metadata and routing state
 type metaData struct {
-	id        core.ComponentUUID
-	cType     core.ComponentType
-	output    core.RegisterType
-	state     ActivityState
+	id     core.ComponentUUID
+	cType  core.ComponentType
+	output core.RegisterType
+	state  ActivityState
+
+	closeChan chan int
 	stateChan chan StateChange
 
 	*ingressHandler
@@ -53,6 +62,7 @@ func newMetaData(ct core.ComponentType, ot core.RegisterType) *metaData {
 		egressHandler:  newEgressHandler(),
 		ingressHandler: newIngressHandler(),
 		state:          Inactive,
+		closeChan:      make(chan int),
 		stateChan:      make(chan StateChange),
 		output:         ot,
 		RWMutex:        &sync.RWMutex{},

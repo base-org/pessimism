@@ -58,13 +58,14 @@ func NewOracle(ctx context.Context, pt core.PipelineType, outType core.RegisterT
 	return o, nil
 }
 
-// TODO (#22) : Add closure logic to all component types
-
 // Close ... This function is called at the end when processes related to oracle need to shut down
-func (o *Oracle) Close() {
+func (o *Oracle) Close() error {
 	logging.WithContext(o.ctx).Info("Waiting for oracle goroutines to be done.")
+	o.closeChan <- killSignal
+
 	o.wg.Wait()
 	logging.WithContext(o.ctx).Info("Oracle goroutines have exited.")
+	return nil
 }
 
 // EventLoop ... Component loop that actively waits and transits register data
@@ -78,11 +79,14 @@ func (o *Oracle) EventLoop() error {
 		zap.String("ID", o.id.String()))
 
 	o.wg.Add(1)
+
+	routineCtx, cancel := context.WithCancel(o.ctx)
+
 	go func() {
 		o.emitStateChange(Live)
 
 		defer o.wg.Done()
-		if err := o.definition.ReadRoutine(o.ctx, o.oracleChannel); err != nil {
+		if err := o.definition.ReadRoutine(routineCtx, o.oracleChannel); err != nil {
 			logger.Error("Received error from read routine",
 				zap.String("ID", o.id.String()),
 				zap.Error(err))
@@ -99,10 +103,14 @@ func (o *Oracle) EventLoop() error {
 				logger.Error(transitErr, zap.String("ID", o.id.String()))
 			}
 
-		case <-o.ctx.Done():
+		case <-o.closeChan:
+			logger.Debug("Received component shutdown signal",
+				zap.String("ID", o.id.String()))
+
 			o.emitStateChange(Terminated)
 
 			close(o.oracleChannel)
+			cancel() // End definition routine
 
 			return nil
 		}
