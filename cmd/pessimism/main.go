@@ -3,7 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
+
+	"github.com/base-org/pessimism/internal/api/handlers"
+	"github.com/base-org/pessimism/internal/api/server"
+	"github.com/base-org/pessimism/internal/api/service"
 
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
@@ -12,6 +17,10 @@ import (
 	"github.com/base-org/pessimism/internal/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
+)
+
+const (
+	cfgPath = "config.env"
 )
 
 func setupExampleETL(cfg *config.Config, m *pipeline.Manager) (chan core.TransitData, error) {
@@ -95,6 +104,23 @@ func processExampleETL(ctx context.Context, outChan chan core.TransitData) {
 	}
 }
 
+func initializeAndRunServer(ctx context.Context, cfgPath config.FilePath) (*server.Server, func(), error) {
+	cfg := config.NewConfig(cfgPath)
+
+	apiService := service.New()
+	handler, err := handlers.New(apiService)
+	if err != nil {
+		return nil, nil, err
+	}
+	server, cleanup, err := server.New(ctx, cfg.ServerConfig, handler)
+	if err != nil {
+		return nil, nil, err
+	}
+	return server, func() {
+		cleanup()
+	}, nil
+}
+
 // TODO(#34): No Documentation Exists Specifying How to Run & Test Service
 func main() {
 	/*
@@ -115,7 +141,9 @@ func main() {
 	appCtx = context.WithValue(appCtx, "state", localState)
 
 	defer cancel()
-	cfg := config.NewConfig("config.env")
+	cfg := config.NewConfig(cfgPath)
+
+	wg := &sync.WaitGroup{}
 
 	logging.NewLogger(cfg.LoggerConfig, cfg.IsProduction())
 
@@ -123,14 +151,31 @@ func main() {
 
 	logger.Info("pessimism boot up")
 
-	etlManager := pipeline.NewManager(appCtx)
+	etlManager, shutDownETL := pipeline.NewManager(appCtx)
 	outChan, err := setupExampleETL(cfg, etlManager)
 	if err != nil {
 		panic(err)
 	}
 
+	wg.Add(1)
+
 	go func() {
 		etlManager.EventLoop(appCtx)
+		wg.Done()
+	}()
+
+	go func() {
+		server, shutDownServer, err := initializeAndRunServer(appCtx, cfgPath)
+
+		if err != nil {
+			logger.Error("Error obtained trying to start server", zap.Error(err))
+			panic(err)
+		}
+
+		server.Stop(func() {
+			shutDownETL()
+			shutDownServer()
+		})
 	}()
 
 	processExampleETL(appCtx, outChan)

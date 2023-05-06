@@ -47,8 +47,11 @@ func NewPipe(ctx context.Context, tform TransformFunc, inType core.RegisterType,
 	return pipe, nil
 }
 
-// TODO(#22): Add closure logic to all component types
-func (p *Pipe) Close() {
+// Close ... Shuts down component by emitting a kill signal to a close channel
+func (p *Pipe) Close() error {
+	p.closeChan <- killSignal
+
+	return nil
 }
 
 // EventLoop ... Driver loop for component that actively subscribes
@@ -97,7 +100,10 @@ func (p *Pipe) EventLoop() error {
 			}
 
 		// Manager is telling us to shutdown
-		case <-p.ctx.Done():
+		case <-p.closeChan:
+			logger.Debug("Received component shutdown signal",
+				zap.String("ID", p.id.String()))
+
 			p.emitStateChange(Terminated)
 
 			return nil
