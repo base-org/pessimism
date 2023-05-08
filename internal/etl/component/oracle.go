@@ -61,7 +61,7 @@ func NewOracle(ctx context.Context, pt core.PipelineType, outType core.RegisterT
 // Close ... This function is called at the end when processes related to oracle need to shut down
 func (o *Oracle) Close() error {
 	logging.WithContext(o.ctx).Info("Waiting for oracle goroutines to be done.")
-	o.closeChan <- killSignal
+	o.closeChan <- KillSignal
 
 	o.wg.Wait()
 	logging.WithContext(o.ctx).Info("Oracle goroutines have exited.")

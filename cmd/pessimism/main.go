@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"os"
 	"sync"
 
 	"github.com/base-org/pessimism/internal/api/handlers"
@@ -39,43 +40,41 @@ func initializeAndRunServer(ctx context.Context, cfgPath config.FilePath,
 }
 
 func main() {
-
 	wg := &sync.WaitGroup{}
 
-	appCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	appCtx, ctxCancel := context.WithCancel(context.Background())
+
 	cfg := config.NewConfig(cfgPath)
 
 	logging.NewLogger(cfg.LoggerConfig, cfg.IsProduction())
 
 	logger := logging.WithContext(appCtx)
 
-	logger.Info("pessimism boot up")
+	logger.Info("bootstrapping pessimsim monitoring application")
 
-	engineManager := engine.NewManager()
+	engineManager, shutDownEngine := engine.NewManager()
 
-	logger.Info("starting and running ETL manager")
+	logger.Info("starting and running ETL manager instance")
 
-	etlManager, shutDownETL := pipeline.NewManager(appCtx, engineManager.Transit())
+	etlManager, shutDownETL := pipeline.NewManager(appCtx, engineManager.Transit(), wg)
 
 	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
 
-		engineManager.EventLoop(appCtx)
-
+		if err := engineManager.EventLoop(appCtx); err != nil {
+			logger.Error("engine manager event loop crashed", zap.Error(err))
+		}
 	}()
 
-	logger.Info("starting and running risk engine manager")
+	logger.Info("starting and running risk engine manager instance")
 
 	wg.Add(1)
-
 	go func() {
 		defer wg.Done()
 
 		etlManager.EventLoop(appCtx)
-
 	}()
 
 	go func() {
@@ -88,9 +87,13 @@ func main() {
 
 		server.Stop(func() {
 			shutDownETL()
+			shutDownEngine()
 			shutDownServer()
+			ctxCancel()
 		})
 	}()
 
 	wg.Wait()
+	logger.Info("Ending pessimism application run")
+	os.Exit(0)
 }

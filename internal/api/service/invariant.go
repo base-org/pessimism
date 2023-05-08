@@ -8,11 +8,15 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	RetryCount = 3
+)
+
 func (svc *PessimismService) ProcessInvariantRequest(ir models.InvRequestBody) (core.InvariantUUID, error) {
-	switch ir.Method {
-	case models.Run:
+	if ir.Method == models.Run {
 		return svc.runInvariant(&ir)
 	}
+
 	return core.NilInvariantUUID(), nil
 }
 
@@ -33,7 +37,7 @@ func (svc *PessimismService) runInvariant(ir *models.InvRequestBody) (core.Invar
 		RPCEndpoint:  endPoint,
 		StartHeight:  ir.Params.StartHeight,
 		EndHeight:    ir.Params.EndHeight,
-		NumOfRetries: 3, // TODO - Make configurable through env file
+		NumOfRetries: RetryCount, // TODO - Make configurable through env file
 	}
 
 	pCfg := &core.PipelineConfig{
@@ -63,5 +67,4 @@ func (svc *PessimismService) runInvariant(ir *models.InvRequestBody) (core.Invar
 	}
 
 	return invID, nil
-
 }

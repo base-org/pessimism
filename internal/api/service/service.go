@@ -46,7 +46,6 @@ type PessimismService struct {
 // New ... Initializer
 func New(ctx context.Context, cfg *Config, etlManager *pipeline.Manager,
 	engineManager *engine.Manager) *PessimismService {
-
 	return &PessimismService{
 		ctx:           ctx,
 		cfg:           cfg,

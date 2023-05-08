@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	killSignal = 0
+	KillSignal = 0
 )
 
 // Component ... Generalized interface that all pipeline components must adhere to

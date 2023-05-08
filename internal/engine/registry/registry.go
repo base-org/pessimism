@@ -21,7 +21,10 @@ func GetInvariant(it core.InvariantType, cfg any) (invariant.Invariant, error) {
 		}
 		// convert json to struct
 		invConfg := ExampleInvConfig{}
-		json.Unmarshal(cfg, &invConfg)
+		err = json.Unmarshal(cfg, &invConfg)
+		if err != nil {
+			return nil, err
+		}
 
 		inv := NewExampleInvariant(&invConfg)
 
@@ -35,7 +38,10 @@ func GetInvariant(it core.InvariantType, cfg any) (invariant.Invariant, error) {
 		}
 		// convert json to struct
 		invConfg := InvocationInvConfig{}
-		json.Unmarshal(cfg, &invConfg)
+		err = json.Unmarshal(cfg, &invConfg)
+		if err != nil {
+			return nil, err
+		}
 
 		inv := NewInvocationTrackerInvariant(&invConfg)
 

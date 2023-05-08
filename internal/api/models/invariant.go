@@ -16,7 +16,7 @@ type InvResponseStatus string
 
 const (
 	OK    InvResponseStatus = "OK"
-	NotOK                   = "NOTOK"
+	NotOK InvResponseStatus = "NOTOK"
 )
 
 type InvParams struct {
@@ -43,7 +43,6 @@ type InvResponse struct {
 }
 
 func NewOkResp(id core.InvariantUUID) *InvResponse {
-
 	return &InvResponse{
 		Status: OK,
 		Result: map[string]string{"invariant_id": id.String()},
@@ -55,7 +54,6 @@ func NewUnmarshalErrResp() *InvResponse {
 		Status: NotOK,
 		Error:  "could not unmarshal request body",
 	}
-
 }
 
 func NewNoProcessErrResp() *InvResponse {
@@ -63,5 +61,4 @@ func NewNoProcessErrResp() *InvResponse {
 		Status: NotOK,
 		Error:  "error processing invariant request",
 	}
-
 }

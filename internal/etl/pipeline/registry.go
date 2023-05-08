@@ -58,7 +58,6 @@ func (pr *pipeRegistry) addPipeline(id core.PipelineUUID, pl Pipeline) {
 	for _, comp := range pl.Components() {
 		pr.addComponentLink(comp.ID(), id)
 	}
-
 }
 
 // addComponentLink ... Creates an entry for some new C_UUID:P_UUID mapping

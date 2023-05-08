@@ -8,14 +8,14 @@ import (
 	"github.com/base-org/pessimism/internal/logging"
 )
 
-type EngineType int
+type Type int
 
 const (
-	HardCoded EngineType = iota
+	HardCoded Type = iota
 )
 
 type RiskEngine interface {
-	Type() EngineType
+	Type() Type
 	Execute(ctx context.Context, data core.TransitData, invs []invariant.Invariant) error
 }
 
@@ -26,7 +26,7 @@ func NewHardCodedEngine() RiskEngine {
 	return &hardCodedEngine{}
 }
 
-func (e hardCodedEngine) Type() EngineType {
+func (e hardCodedEngine) Type() Type {
 	return HardCoded
 }
 
@@ -41,7 +41,7 @@ func (e hardCodedEngine) Execute(ctx context.Context, data core.TransitData, inv
 		}
 
 		if invalid {
-			logger.Info("Invariant invalidation occured")
+			logger.Info("Invariant invalidation occurred")
 		}
 	}
 

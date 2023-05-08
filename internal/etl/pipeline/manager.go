@@ -19,6 +19,7 @@ type Manager struct {
 	dag       *cGraph
 	pRegistry *pipeRegistry
 
+	closeChan     chan int
 	engineChan    chan core.TransitData
 	compEventChan chan component.StateChange
 
@@ -26,16 +27,17 @@ type Manager struct {
 }
 
 // NewManager ... Initializer
-func NewManager(ctx context.Context, ec chan core.TransitData) (*Manager, func()) {
+func NewManager(ctx context.Context, ec chan core.TransitData, wg *sync.WaitGroup) (*Manager, func()) {
 	dag := newGraph()
 
 	m := &Manager{
 		ctx:           ctx,
 		dag:           dag,
+		closeChan:     make(chan int, 1),
 		pRegistry:     newPipeRegistry(),
 		engineChan:    ec,
 		compEventChan: make(chan component.StateChange),
-		wg:            &sync.WaitGroup{},
+		wg:            wg,
 	}
 
 	shutDown := func() {
@@ -49,6 +51,8 @@ func NewManager(ctx context.Context, ec chan core.TransitData) (*Manager, func()
 				logging.NoContext().Error("Could not close component", zap.Error(err))
 			}
 		}
+
+		m.closeChan <- 0
 	}
 
 	return m, shutDown
@@ -87,7 +91,10 @@ func (m *Manager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUI
 	lastComp := comps[len(comps)-1]
 
 	// Route pipeline output to risk engine
-	lastComp.AddEgress(core.NilComponentUUID(), m.engineChan)
+	err = lastComp.AddEgress(core.NilComponentUUID(), m.engineChan)
+	if err != nil {
+		return core.NilPipelineUUID(), err
+	}
 	m.pRegistry.addPipeline(pID, pipeLine)
 
 	return pID, nil
@@ -108,8 +115,9 @@ func (m *Manager) EventLoop(ctx context.Context) {
 
 	for {
 		select {
-		case <-ctx.Done():
-			logger.Info("Received shutdown", zap.String("Abstraction", "etl-manager"))
+		case <-m.closeChan:
+			logger.Info("etlManager receieved shutdown request")
+			return
 
 		case stateChange := <-m.compEventChan:
 			// TODO(#35): No ETL Management Procedure Exists

@@ -87,5 +87,4 @@ func (sv *Server) Stop(stop func()) {
 	done := <-sv.done()
 	logging.NoContext().Info("Received shutdown OS signal", zap.String("signal", done.String()))
 	stop()
-	os.Exit(0)
 }
