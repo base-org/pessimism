@@ -9,6 +9,7 @@ import (
 type TransitData struct {
 	Timestamp time.Time
 
+	PType PipelineType
 	Type  RegisterType
 	Value any
 }
@@ -16,4 +17,11 @@ type TransitData struct {
 // NewTransitChannel ... Builds new tranit channel
 func NewTransitChannel() chan TransitData {
 	return make(chan TransitData)
+}
+
+func (td TransitData) GetRegisterPID() RegisterPID {
+	return MakeRegisterPID(
+		td.PType,
+		td.Type,
+	)
 }

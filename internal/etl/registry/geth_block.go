@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/base-org/pessimism/internal/client"
-	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/logging"
@@ -22,13 +21,13 @@ const (
 // TODO(#21): Verify config validity during Oracle construction
 // GethBlockODef ...GethBlock register oracle definition used to drive oracle component
 type GethBlockODef struct {
-	cfg        *config.OracleConfig
+	cfg        *core.OracleConfig
 	client     client.EthClientInterface
 	currHeight *big.Int
 }
 
 // NewGethBlockODef ... Initializer for geth.block oracle definition
-func NewGethBlockODef(cfg *config.OracleConfig, client client.EthClientInterface, h *big.Int) *GethBlockODef {
+func NewGethBlockODef(cfg *core.OracleConfig, client client.EthClientInterface, h *big.Int) *GethBlockODef {
 	return &GethBlockODef{
 		cfg:        cfg,
 		client:     client,
@@ -38,7 +37,7 @@ func NewGethBlockODef(cfg *config.OracleConfig, client client.EthClientInterface
 
 // NewGethBlockOracle ... Initializer for geth.block oracle component
 func NewGethBlockOracle(ctx context.Context, ot core.PipelineType,
-	cfg *config.OracleConfig, opts ...component.Option) (component.Component, error) {
+	cfg *core.OracleConfig, opts ...component.Option) (component.Component, error) {
 	client := client.NewEthClient()
 	od := NewGethBlockODef(cfg, client, nil)
 
@@ -96,8 +95,8 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 			headerAsserted, headerAssertedOk := headerAsInterface.(*types.Header)
 
 			if err != nil || !headerAssertedOk {
-				logging.WithContext(ctx).Error("problem fetching or asserting header", zap.NamedError("headerFetch", err),
-					zap.Bool("headerAsserted", headerAssertedOk))
+				// logging.WithContext(ctx).Error("problem fetching or asserting header", zap.NamedError("headerFetch", err),
+				// 	zap.Bool("headerAsserted", headerAssertedOk))
 				continue
 			}
 
@@ -105,8 +104,8 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 			blockAsserted, blockAssertedOk := blockAsInterface.(*types.Block)
 
 			if err != nil || !blockAssertedOk {
-				logging.WithContext(ctx).Error("problem fetching or asserting block", zap.NamedError("blockFetch", err),
-					zap.Bool("blockAsserted", blockAssertedOk))
+				// logging.WithContext(ctx).Error("problem fetching or asserting block", zap.NamedError("blockFetch", err),
+				// 	zap.Bool("blockAsserted", blockAssertedOk))
 				continue
 			}
 
@@ -198,7 +197,9 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 		case <-ticker.C:
 
 			height := oracle.getHeightToProcess(ctx)
-			logging.WithContext(ctx).Debug("Processing at height", zap.Int("Height", int(height.Int64())))
+			if height != nil {
+				logging.WithContext(ctx).Debug("Processing at height", zap.Int("Height", int(height.Int64())))
+			}
 
 			headerAsInterface, err := oracle.fetchData(ctx, height, core.FetchHeader)
 			headerAsserted, headerAssertedOk := headerAsInterface.(*types.Header)
@@ -221,6 +222,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			// TODO - Add support for database persistence
 			componentChan <- core.TransitData{
 				Timestamp: time.Now(),
+				PType:     core.Live,
 				Type:      core.GethBlock,
 				Value:     *blockAsserted,
 			}

@@ -2,10 +2,10 @@ package invariant
 
 import "github.com/base-org/pessimism/internal/core"
 
-type InvariantType int
+type ExecutionType int
 
 const (
-	HardCoded InvariantType = iota
+	HardCoded ExecutionType = iota
 )
 
 type Invariant interface {

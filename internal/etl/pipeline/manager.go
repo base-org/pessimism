@@ -6,7 +6,6 @@ import (
 	"log"
 	"sync"
 
-	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/etl/registry"
@@ -20,19 +19,21 @@ type Manager struct {
 	dag       *cGraph
 	pRegistry *pipeRegistry
 
+	engineChan    chan core.TransitData
 	compEventChan chan component.StateChange
 
 	wg *sync.WaitGroup
 }
 
 // NewManager ... Initializer
-func NewManager(ctx context.Context) (*Manager, func()) {
+func NewManager(ctx context.Context, ec chan core.TransitData) (*Manager, func()) {
 	dag := newGraph()
 
 	m := &Manager{
 		ctx:           ctx,
 		dag:           dag,
 		pRegistry:     newPipeRegistry(),
+		engineChan:    ec,
 		compEventChan: make(chan component.StateChange),
 		wg:            &sync.WaitGroup{},
 	}
@@ -54,7 +55,7 @@ func NewManager(ctx context.Context) (*Manager, func()) {
 }
 
 // CreateDataPipeline ... Creates an ETL data pipeline provided a pipeline configuration
-func (m *Manager) CreateDataPipeline(cfg *config.PipelineConfig) (core.PipelineUUID, error) {
+func (m *Manager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error) {
 	logger := logging.WithContext(m.ctx)
 
 	register, err := registry.GetRegister(cfg.DataType)
@@ -81,6 +82,12 @@ func (m *Manager) CreateDataPipeline(cfg *config.PipelineConfig) (core.PipelineU
 	if err != nil {
 		return core.NilPipelineUUID(), err
 	}
+
+	comps := pipeLine.Components()
+	lastComp := comps[len(comps)-1]
+
+	// Route pipeline output to risk engine
+	lastComp.AddEgress(core.NilComponentUUID(), m.engineChan)
 	m.pRegistry.addPipeline(pID, pipeLine)
 
 	return pID, nil
@@ -94,15 +101,6 @@ func (m *Manager) RunPipeline(pID core.PipelineUUID) error {
 
 	log.Printf("[%s] Running pipeline", pipeLine.ID().String())
 	return pipeLine.RunPipeline(m.wg)
-}
-
-func (m *Manager) AddPipelineDirective(pID core.PipelineUUID,
-	cID core.ComponentUUID, outChan chan core.TransitData) error {
-	pipeLine, err := m.pRegistry.getPipeline(pID)
-	if err != nil {
-		return err
-	}
-	return pipeLine.AddDirective(cID, outChan)
 }
 
 func (m *Manager) EventLoop(ctx context.Context) {
@@ -128,7 +126,7 @@ func (m *Manager) EventLoop(ctx context.Context) {
 }
 
 // getComponents ... Returns all components provided a slice of register definitions
-func (m *Manager) getComponents(cfg *config.PipelineConfig,
+func (m *Manager) getComponents(cfg *core.PipelineConfig,
 	registers []*core.DataRegister) ([]component.Component, error) {
 	components := make([]component.Component, 0)
 	prevID := core.NilComponentUUID()
@@ -168,7 +166,7 @@ func (m *Manager) getComponents(cfg *config.PipelineConfig,
 }
 
 // inferComponent ... Constructs a component provided a data register definition
-func inferComponent(ctx context.Context, cfg *config.PipelineConfig, id core.ComponentUUID,
+func inferComponent(ctx context.Context, cfg *core.PipelineConfig, id core.ComponentUUID,
 	register *core.DataRegister, eventCh chan component.StateChange) (component.Component, error) {
 	log.Printf("constructing %s component for register %s", register.ComponentType, register.DataType)
 

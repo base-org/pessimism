@@ -12,7 +12,7 @@ import (
 )
 
 type ExampleInvConfig struct {
-	FromAddress string
+	FromAddress string `json:"from"`
 }
 
 type ExampleInvariant struct {

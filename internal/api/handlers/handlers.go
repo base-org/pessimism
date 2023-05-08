@@ -26,6 +26,7 @@ func New(service service.Service) (Handlers, error) {
 	router.Use(middleware.Logger)
 
 	registerEndpoint("/health", router.Get, handlers.HealthCheck)
+	registerEndpoint("/invariant", router.Post, handlers.RunInvariant)
 	handlers.router = router
 
 	return handlers, nil

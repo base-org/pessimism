@@ -58,6 +58,18 @@ type PipelineUUID struct {
 	UUID UUID
 }
 
+// InvariantPID ... Invariant session Primary ID
+type InvariantPID [3]byte
+
+// Represents a non-deterministic ID that's assigned to
+// every uniquely constructed invariant session
+type InvariantUUID struct {
+	PID  InvariantPID
+	UUID UUID
+}
+
+type RegisterPID [3]byte
+
 /*
 	NOTE: Pipelines that require a backfill will cause inaccurate collisions
 	within the pipeline DAG.
@@ -78,6 +90,14 @@ func NilComponentUUID() ComponentUUID {
 func NilPipelineUUID() PipelineUUID {
 	return PipelineUUID{
 		PID:  PipelinePID{0},
+		UUID: nilUUID(),
+	}
+}
+
+// NilInvariantUUID ... Returns a zero'd out or empty invariant UUID
+func NilInvariantUUID() InvariantUUID {
+	return InvariantUUID{
+		PID:  InvariantPID{0},
 		UUID: nilUUID(),
 	}
 }
@@ -119,6 +139,29 @@ func MakePipelineUUID(pt PipelineType, firstCID, lastCID ComponentUUID) Pipeline
 	}
 }
 
+// MakeInvariantUUID ... Constructs an invariant PID sequence & random UUID
+func MakeInvariantUUID(n Network, pt PipelineType, invType InvariantType) InvariantUUID {
+	pID := InvariantPID{
+		byte(n),
+		byte(pt),
+		byte(invType),
+	}
+
+	return InvariantUUID{
+		PID:  pID,
+		UUID: newUUID(),
+	}
+}
+
+func MakeRegisterPID(pt PipelineType, dt RegisterType) RegisterPID {
+	rID := RegisterPID{
+		byte(pt),
+		byte(dt),
+	}
+
+	return rID
+}
+
 // String ... Returns string representation of a component PID
 func (id ComponentPID) String() string {
 	return fmt.Sprintf("%s:%s:%s:%s",
@@ -156,4 +199,23 @@ func (id PipelineUUID) String() string {
 	return fmt.Sprintf("%s:::%s",
 		id.PID.String(), id.UUID.ShortString(),
 	)
+}
+
+func (id RegisterPID) String() string {
+	return fmt.Sprintf("%s:%s",
+		PipelineType(id[0]).String(),
+		RegisterType(id[1]).String())
+}
+
+func (id InvariantPID) String() string {
+	return fmt.Sprintf("%s:%s:%s",
+		Network(id[0]).String(),
+		PipelineType(id[1]).String(),
+		InvariantType(id[2]).String(),
+	)
+}
+
+func (id InvariantUUID) String() string {
+	return fmt.Sprintf("%s:::%s",
+		id.PID.String(), id.UUID.ShortString())
 }

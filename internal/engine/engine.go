@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/logging"
 )
 
@@ -15,54 +16,34 @@ const (
 
 type RiskEngine interface {
 	Type() EngineType
-	EventLoop(ctx context.Context) error
+	Execute(ctx context.Context, data core.TransitData, invs []invariant.Invariant) error
 }
 
-type engine struct {
-	is       *InvariantStore
-	readChan chan core.TransitData
+type hardCodedEngine struct {
 }
 
-func NewEngine(readChan chan core.TransitData, is *InvariantStore) RiskEngine {
-	return &engine{
-		is:       is,
-		readChan: readChan,
-	}
+func NewHardCodedEngine() RiskEngine {
+	return &hardCodedEngine{}
 }
 
-func (e engine) Type() EngineType {
+func (e hardCodedEngine) Type() EngineType {
 	return HardCoded
 }
 
-func (e engine) EventLoop(ctx context.Context) error {
+func (e hardCodedEngine) Execute(ctx context.Context, data core.TransitData, invs []invariant.Invariant) error {
 	logger := logging.WithContext(ctx)
 
-	for {
-		select {
-		case data := <-e.readChan:
-
-			invs, err := e.is.GetInvariants(data.Type)
-			if err != nil {
-				logger.Error("Could not get invariants from store")
-			}
-
-			for _, inv := range invs {
-				invalid, err := inv.Invalidate(data)
-				if err != nil {
-					logger.Error(err.Error())
-				}
-
-				if invalid {
-					logger.Info("Invariant invalidatio occured")
-				}
-			}
-
-		case <-ctx.Done():
-			logger.Info("Received shutdown for risk engine event loop")
-			return nil
-
+	for _, inv := range invs {
+		invalid, err := inv.Invalidate(data)
+		if err != nil {
+			logger.Error(err.Error())
+			return err
 		}
 
+		if invalid {
+			logger.Info("Invariant invalidation occured")
+		}
 	}
 
+	return nil
 }

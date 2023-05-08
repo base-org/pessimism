@@ -85,3 +85,23 @@ type Timeouts int
 const (
 	EthClientTimeout Timeouts = 20 // in seconds
 )
+
+type InvariantType int
+
+const (
+	ExampleInv InvariantType = iota
+	TxCaller
+)
+
+func (it InvariantType) String() string {
+	switch it {
+	case ExampleInv:
+		return "example"
+
+	case TxCaller:
+		return "tx_caller"
+
+	default:
+		return "unknown"
+	}
+}
