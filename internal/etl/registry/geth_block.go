@@ -39,7 +39,7 @@ func NewGethBlockODef(cfg *config.OracleConfig, client client.EthClientInterface
 // NewGethBlockOracle ... Initializer for geth.block oracle component
 func NewGethBlockOracle(ctx context.Context, ot core.PipelineType,
 	cfg *config.OracleConfig, opts ...component.Option) (component.Component, error) {
-	client := client.NewEthClient()
+	client := client.NewEthClient(nil)
 	od := NewGethBlockODef(cfg, client, nil)
 
 	return component.NewOracle(ctx, ot, core.GethBlock, od, opts...)

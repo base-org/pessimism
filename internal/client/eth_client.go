@@ -4,16 +4,23 @@ package client
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/go-resty/resty/v2"
 )
 
-// TODO (#20) : Introduce optional Retry-able EthClient
 type EthClient struct {
 	client *ethclient.Client
+	restyClient *resty.Client
+	url         string
+
 }
+
 
 // EthClientInterface ... Provides interface wrapper for ethClient functions
 // Useful for mocking go-etheruem node client logic
@@ -23,14 +30,16 @@ type EthClientInterface interface {
 	BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error)
 }
 
-// NewEthClient ... Initializer
-func NewEthClient() EthClientInterface {
+func NewEthClient(restyClient *resty.Client) EthClientInterface {
+    if restyClient == nil {
+        restyClient = resty.New()
+    }
 	return &EthClient{
 		client: &ethclient.Client{},
+		restyClient: restyClient,
 	}
 }
 
-// DialContext ... Wraps go-etheruem node dialContext RPC creation
 func (ec *EthClient) DialContext(ctx context.Context, rawURL string) error {
 	client, err := ethclient.DialContext(ctx, rawURL)
 
@@ -38,16 +47,61 @@ func (ec *EthClient) DialContext(ctx context.Context, rawURL string) error {
 		return err
 	}
 
+	// Configure retry logic
+	ec.restyClient.
+		SetRetryCount(3).
+		SetRetryWaitTime(5 * time.Second).
+		SetRetryMaxWaitTime(20 * time.Second).
+		AddRetryCondition(
+			func(r *resty.Response, err error) bool {
+				return r.IsError() || err != nil
+			},
+		)
+
 	ec.client = client
+	ec.url = rawURL // Store the URL
 	return nil
 }
 
-// HeaderByNumber ... Wraps go-ethereum node headerByNumber RPC call
 func (ec *EthClient) HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error) {
-	return ec.client.HeaderByNumber(ctx, number)
+	var header *types.Header
+	resp, err := ec.restyClient.R().
+		SetContext(ctx).
+		SetPathParams(map[string]string{
+			"blockNumber": number.String(),
+		}).
+		Get(ec.url + "/eth_getBlockByNumber/{blockNumber}")
+
+	if err != nil {
+		return nil, err
+	}
+	if resp.IsError() {
+		return nil, fmt.Errorf("Error fetching header: %s", resp.Status())
+	}
+
+	err = json.Unmarshal(resp.Body(), &header)
+	return header, err
 }
 
-// BlockByNumber ... Wraps go-ethereum node blockByNumber RPC call
 func (ec *EthClient) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
-	return ec.client.BlockByNumber(ctx, number)
+	var block *types.Block
+	resp, err := ec.restyClient.R().
+		SetContext(ctx).
+		SetPathParams(map[string]string{
+			"blockNumber": number.String(),
+		}).
+		Get(ec.url + "/eth_getBlockByNumber/{blockNumber}")
+
+	if err != nil {
+		return nil, err
+	}
+	if resp.IsError() {
+		return nil, fmt.Errorf("Error fetching block: %s", resp.Status())
+	}
+
+	err = json.Unmarshal(resp.Body(), &block)
+	return block, err
 }
+
+
+

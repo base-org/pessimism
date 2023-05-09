@@ -30,6 +30,7 @@ require (
 	github.com/go-chi/chi v1.5.4 // indirect
 	github.com/go-chi/render v1.0.2 // indirect
 	github.com/go-ole/go-ole v1.2.1 // indirect
+	github.com/go-resty/resty/v2 v2.7.0
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
