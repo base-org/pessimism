@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/core"
@@ -29,16 +30,20 @@ const (
 // Config ... Application level configuration defined by `FilePath` value
 // TODO - Consider renaming to "environment config"
 type Config struct {
-	L1RpcEndpoint string
-	L2RpcEndpoint string
-	Environment   Env
-	LoggerConfig  *logging.Config
-	ServerConfig  *server.Config
+	L1RpcEndpoint  string
+	L2RpcEndpoint  string
+	L1PollInterval int
+	L2PollInterval int
+	Environment    Env
+	LoggerConfig   *logging.Config
+	ServerConfig   *server.Config
+	OracleConfig   *OracleConfig
 }
 
 // OracleConfig ... Configuration passed through to an oracle component constructor
 type OracleConfig struct {
 	RPCEndpoint  string
+	PollInterval time.Duration
 	StartHeight  *big.Int
 	EndHeight    *big.Int
 	NumOfRetries int
@@ -69,6 +74,9 @@ func NewConfig(fileName FilePath) *Config {
 	config := &Config{
 		L1RpcEndpoint: getEnvStr("L1_RPC_ENDPOINT"),
 		L2RpcEndpoint: getEnvStr("L2_RPC_ENDPOINT"),
+
+		L1PollInterval: getEnvInt("L1_POLL_INTERVAL"),
+		L2PollInterval: getEnvInt("L2_POLL_INTERVAL"),
 
 		Environment: Env(getEnvStr("ENV")),
 
