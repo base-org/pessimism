@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/core/types"
@@ -15,12 +17,10 @@ import (
 )
 
 type EthClient struct {
-	client *ethclient.Client
+	client      *ethclient.Client
 	restyClient *resty.Client
 	url         string
-
 }
-
 
 // EthClientInterface ... Provides interface wrapper for ethClient functions
 // Useful for mocking go-etheruem node client logic
@@ -31,11 +31,15 @@ type EthClientInterface interface {
 }
 
 func NewEthClient(restyClient *resty.Client) EthClientInterface {
-    if restyClient == nil {
-        restyClient = resty.New()
-    }
+	if restyClient == nil {
+		restyClient = resty.New()
+	}
+
+	restyDebug, _ := strconv.ParseBool(os.Getenv("RESTY_DEBUG"))
+	restyClient.SetDebug(restyDebug)
+
 	return &EthClient{
-		client: &ethclient.Client{},
+		client:      &ethclient.Client{},
 		restyClient: restyClient,
 	}
 }
@@ -48,10 +52,15 @@ func (ec *EthClient) DialContext(ctx context.Context, rawURL string) error {
 	}
 
 	// Configure retry logic
+	// to-do make env variables
+	retryCount := 3
+	retryWaitTime := 5
+	retryMaxWaitTime := 20
+
 	ec.restyClient.
-		SetRetryCount(3).
-		SetRetryWaitTime(5 * time.Second).
-		SetRetryMaxWaitTime(20 * time.Second).
+		SetRetryCount(retryCount).
+		SetRetryWaitTime(time.Duration(retryWaitTime) * time.Second).
+		SetRetryMaxWaitTime(time.Duration(retryMaxWaitTime) * time.Second).
 		AddRetryCondition(
 			func(r *resty.Response, err error) bool {
 				return r.IsError() || err != nil
@@ -76,7 +85,7 @@ func (ec *EthClient) HeaderByNumber(ctx context.Context, number *big.Int) (*type
 		return nil, err
 	}
 	if resp.IsError() {
-		return nil, fmt.Errorf("Error fetching header: %s", resp.Status())
+		return nil, fmt.Errorf("error fetching header: %s", resp.Status())
 	}
 
 	err = json.Unmarshal(resp.Body(), &header)
@@ -96,12 +105,9 @@ func (ec *EthClient) BlockByNumber(ctx context.Context, number *big.Int) (*types
 		return nil, err
 	}
 	if resp.IsError() {
-		return nil, fmt.Errorf("Error fetching block: %s", resp.Status())
+		return nil, fmt.Errorf("error fetching block: %s", resp.Status())
 	}
 
 	err = json.Unmarshal(resp.Body(), &block)
 	return block, err
 }
-
-
-
