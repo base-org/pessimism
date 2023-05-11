@@ -19,6 +19,10 @@ const (
 	pollInterval = 1000
 )
 
+const (
+	cfgPath = "config.env"
+)
+
 // TODO(#21): Verify config validity during Oracle construction
 // GethBlockODef ...GethBlock register oracle definition used to drive oracle component
 type GethBlockODef struct {
@@ -39,7 +43,8 @@ func NewGethBlockODef(cfg *config.OracleConfig, client client.EthClientInterface
 // NewGethBlockOracle ... Initializer for geth.block oracle component
 func NewGethBlockOracle(ctx context.Context, ot core.PipelineType,
 	cfg *config.OracleConfig, opts ...component.Option) (component.Component, error) {
-	client := client.NewEthClient(nil)
+	ethClientCfg := config.NewConfig(cfgPath).EthClientConfig
+	client := client.NewEthClient(nil, ethClientCfg)
 	od := NewGethBlockODef(cfg, client, nil)
 
 	return component.NewOracle(ctx, ot, core.GethBlock, od, opts...)

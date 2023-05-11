@@ -4,22 +4,23 @@ package client
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"math/big"
-	"os"
-	"strconv"
 	"time"
 
+	"github.com/avast/retry-go"
+	"github.com/base-org/pessimism/internal/config"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/go-resty/resty/v2"
 )
 
 type EthClient struct {
-	client      *ethclient.Client
-	restyClient *resty.Client
-	url         string
+	client           *ethclient.Client
+	restyClient      *resty.Client
+	url              string
+	retryCount       int
+	retryWaitTime    time.Duration
+	retryMaxWaitTime time.Duration
 }
 
 // EthClientInterface ... Provides interface wrapper for ethClient functions
@@ -30,17 +31,20 @@ type EthClientInterface interface {
 	BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error)
 }
 
-func NewEthClient(restyClient *resty.Client) EthClientInterface {
+func NewEthClient(restyClient *resty.Client, ethClientCfg *config.EthClientCfg) EthClientInterface {
 	if restyClient == nil {
 		restyClient = resty.New()
 	}
 
-	restyDebug, _ := strconv.ParseBool(os.Getenv("RESTY_DEBUG"))
+	restyDebug := ethClientCfg.RetryConfig.Debug
 	restyClient.SetDebug(restyDebug)
 
 	return &EthClient{
-		client:      &ethclient.Client{},
-		restyClient: restyClient,
+		client:           &ethclient.Client{},
+		restyClient:      restyClient,
+		retryCount:       ethClientCfg.RetryConfig.RetryCount,
+		retryWaitTime:    time.Duration(ethClientCfg.RetryConfig.RetryWaitTime) * time.Second,
+		retryMaxWaitTime: time.Duration(ethClientCfg.RetryConfig.RetryMaxWaitTime) * time.Second,
 	}
 }
 
@@ -51,16 +55,10 @@ func (ec *EthClient) DialContext(ctx context.Context, rawURL string) error {
 		return err
 	}
 
-	// Configure retry logic
-	// to-do make env variables
-	retryCount := 3
-	retryWaitTime := 5
-	retryMaxWaitTime := 20
-
 	ec.restyClient.
-		SetRetryCount(retryCount).
-		SetRetryWaitTime(time.Duration(retryWaitTime) * time.Second).
-		SetRetryMaxWaitTime(time.Duration(retryMaxWaitTime) * time.Second).
+		SetRetryCount(ec.retryCount).
+		SetRetryWaitTime(ec.retryWaitTime).
+		SetRetryMaxWaitTime(ec.retryMaxWaitTime).
 		AddRetryCondition(
 			func(r *resty.Response, err error) bool {
 				return r.IsError() || err != nil
@@ -73,41 +71,57 @@ func (ec *EthClient) DialContext(ctx context.Context, rawURL string) error {
 }
 
 func (ec *EthClient) HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error) {
+	retryableFunc := func() (*types.Header, error) {
+		header, err := ec.client.HeaderByNumber(ctx, number)
+		if err != nil {
+			return nil, err
+		}
+		return header, nil
+	}
+
+	// Execute the function with retry logic
 	var header *types.Header
-	resp, err := ec.restyClient.R().
-		SetContext(ctx).
-		SetPathParams(map[string]string{
-			"blockNumber": number.String(),
-		}).
-		Get(ec.url + "/eth_getBlockByNumber/{blockNumber}")
+	err := retry.Do(
+		func() error {
+			var err error
+			header, err = retryableFunc()
+			return err
+		},
+		retry.Attempts(uint(ec.retryCount)),
+		retry.Delay(ec.retryWaitTime),
+		retry.MaxDelay(ec.retryMaxWaitTime),
+	)
 
 	if err != nil {
 		return nil, err
 	}
-	if resp.IsError() {
-		return nil, fmt.Errorf("error fetching header: %s", resp.Status())
-	}
-
-	err = json.Unmarshal(resp.Body(), &header)
-	return header, err
+	return header, nil
 }
 
 func (ec *EthClient) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
+	retryableFunc := func() (*types.Block, error) {
+		block, err := ec.client.BlockByNumber(ctx, number)
+		if err != nil {
+			return nil, err
+		}
+		return block, nil
+	}
+
+	// Execute the function with retry logic
 	var block *types.Block
-	resp, err := ec.restyClient.R().
-		SetContext(ctx).
-		SetPathParams(map[string]string{
-			"blockNumber": number.String(),
-		}).
-		Get(ec.url + "/eth_getBlockByNumber/{blockNumber}")
+	err := retry.Do(
+		func() error {
+			var err error
+			block, err = retryableFunc()
+			return err
+		},
+		retry.Attempts(uint(ec.retryCount)),
+		retry.Delay(ec.retryWaitTime),
+		retry.MaxDelay(ec.retryMaxWaitTime),
+	)
 
 	if err != nil {
 		return nil, err
 	}
-	if resp.IsError() {
-		return nil, fmt.Errorf("error fetching block: %s", resp.Status())
-	}
-
-	err = json.Unmarshal(resp.Body(), &block)
-	return block, err
+	return block, nil
 }
