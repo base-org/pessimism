@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
+	pess_middleware "github.com/base-org/pessimism/internal/api/handlers/middleware"
 	"github.com/base-org/pessimism/internal/api/service"
+	"github.com/base-org/pessimism/internal/logging"
 	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
+	chi_middleware "github.com/go-chi/chi/middleware"
 )
 
 type Handlers interface {
@@ -15,18 +18,30 @@ type Handlers interface {
 
 // PessimismHandler ... Server handler logic
 type PessimismHandler struct {
+	ctx     context.Context
 	service service.Service
 	router  *chi.Mux
 }
 
-// New ... Initializer
-func New(service service.Service) (Handlers, error) {
-	handlers := &PessimismHandler{service: service}
-	router := chi.NewRouter()
-	router.Use(middleware.Logger)
+type Route = string
 
-	registerEndpoint("/health", router.Get, handlers.HealthCheck)
-	registerEndpoint("/invariant", router.Post, handlers.RunInvariant)
+const (
+	healthRoute    = "/health"
+	invariantRoute = "/v0/invariant"
+)
+
+// New ... Initializer
+func New(ctx context.Context, service service.Service) (Handlers, error) {
+	handlers := &PessimismHandler{ctx: ctx, service: service}
+	router := chi.NewRouter()
+
+	router.Use(chi_middleware.Recoverer)
+
+	router.Use(pess_middleware.InjectedLogging(logging.NoContext()))
+
+	registerEndpoint(healthRoute, router.Get, handlers.HealthCheck)
+	registerEndpoint(invariantRoute, router.Post, handlers.RunInvariant)
+
 	handlers.router = router
 
 	return handlers, nil

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/engine/registry"
 	"github.com/base-org/pessimism/internal/logging"
 	"go.uber.org/zap"
@@ -11,7 +12,7 @@ import (
 
 type Manager struct {
 	closeChan chan int
-	transit   chan core.TransitData
+	transit   chan core.InvariantInput
 	engine    RiskEngine
 	store     *InvariantStore
 }
@@ -20,7 +21,7 @@ func NewManager() (*Manager, func()) {
 	m := &Manager{
 		engine:    NewHardCodedEngine(),
 		closeChan: make(chan int, 1),
-		transit:   core.NewTransitChannel(),
+		transit:   make(chan core.InvariantInput),
 		store:     NewInvariantStore(),
 	}
 
@@ -32,26 +33,25 @@ func NewManager() (*Manager, func()) {
 	return m, shutDown
 }
 
-func (em *Manager) Transit() chan core.TransitData {
+func (em *Manager) Transit() chan core.InvariantInput {
 	return em.transit
 }
 
-func (em *Manager) DeployInvariantSession(n core.Network, it core.InvariantType,
-	pt core.PipelineType, invParams any) (core.InvariantUUID, error) {
+func (em *Manager) DeployInvariantSession(n core.Network, pUUUID core.PipelineUUID, it core.InvariantType,
+	pt core.PipelineType, invParams any) (core.InvSessionUUID, error) {
 	inv, err := registry.GetInvariant(it, invParams)
 	if err != nil {
 		return core.NilInvariantUUID(), err
 	}
 
-	invID := core.MakeInvariantUUID(n, pt, it)
-	rID := core.MakeRegisterPID(pt, inv.InputType())
+	sessionID := core.MakeInvSessionUUID(n, pt, it)
 
-	err = em.store.AddInvariant(invID, rID, inv)
+	err = em.store.AddInvariant(sessionID, pUUUID, inv)
 	if err != nil {
 		return core.NilInvariantUUID(), err
 	}
 
-	return invID, nil
+	return sessionID, nil
 }
 
 func (em *Manager) EventLoop(ctx context.Context) error {
@@ -60,19 +60,22 @@ func (em *Manager) EventLoop(ctx context.Context) error {
 	for {
 		select {
 		case data := <-em.transit:
-			rID := data.GetRegisterPID()
-			invs, err := em.store.GetInvariantsByRegisterPID(rID)
-			if err != nil {
-				logger.Error("Could not find invariants for register ID",
-					zap.String("register_id", rID.String()),
-					zap.Error(err),
-				)
+
+			invIDs := em.store.invPipeLineMap[data.PUUID] // TODO - Change to Get method
+			if len(invIDs) == 0 {
+				logging.WithContext(ctx).
+					Error("No invariants found", zap.String("puuid", data.PUUID.String()))
 			}
 
-			err = em.engine.Execute(ctx, data, invs)
+			invs := make([]invariant.Invariant, len(invIDs))
+
+			for i, id := range invIDs {
+				invs[i] = em.store.invMap[id]
+			}
+
+			err := em.engine.Execute(ctx, data.Input, invs)
 			if err != nil {
 				logger.Error("Could not execute invariants for register ID",
-					zap.String("register_id", rID.String()),
 					zap.Error(err),
 				)
 			}

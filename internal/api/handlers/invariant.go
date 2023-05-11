@@ -15,21 +15,23 @@ func (ph *PessimismHandler) RunInvariant(w http.ResponseWriter, r *http.Request)
 	var body models.InvRequestBody
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		logging.NoContext().Error("could not unmarshal request", zap.Error(err))
+		logging.WithContext(ph.ctx).
+			Error("Could not unmarshal request", zap.Error(err))
 
 		w.WriteHeader(http.StatusBadRequest)
-		render.JSON(w, r, models.NewUnmarshalErrResp())
+		render.JSON(w, r, models.NewInvRequestUnmarshalErrResp())
 		return
 	}
 
-	uuid, err := ph.service.ProcessInvariantRequest(body)
+	invUUID, err := ph.service.ProcessInvariantRequest(body)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		logging.NoContext().Error("could not process invariant request", zap.Error(err))
-		render.JSON(w, r, models.NewUnmarshalErrResp())
+		logging.WithContext(ph.ctx).
+			Error("Could not process invariant request", zap.Error(err))
+		render.JSON(w, r, models.NewInvRequestUnmarshalErrResp())
 		return
 	}
 
 	w.WriteHeader(http.StatusAccepted)
-	render.JSON(w, r, models.NewOkResp(uuid))
+	render.JSON(w, r, models.NewOkResp(invUUID))
 }

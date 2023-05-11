@@ -20,14 +20,14 @@ type Manager struct {
 	pRegistry *pipeRegistry
 
 	closeChan     chan int
-	engineChan    chan core.TransitData
+	engineChan    chan core.InvariantInput
 	compEventChan chan component.StateChange
 
 	wg *sync.WaitGroup
 }
 
 // NewManager ... Initializer
-func NewManager(ctx context.Context, ec chan core.TransitData, wg *sync.WaitGroup) (*Manager, func()) {
+func NewManager(ctx context.Context, ec chan core.InvariantInput, wg *sync.WaitGroup) (*Manager, func()) {
 	dag := newGraph()
 
 	m := &Manager{
@@ -60,29 +60,27 @@ func NewManager(ctx context.Context, ec chan core.TransitData, wg *sync.WaitGrou
 
 // CreateDataPipeline ... Creates an ETL data pipeline provided a pipeline configuration
 func (m *Manager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error) {
+	// NOTE - If some of these early sub-system operations succeed but lower function
+	// code logic fails, then some rollback will need be triggered to undo prior applied state operations
 	logger := logging.WithContext(m.ctx)
 
-	register, err := registry.GetRegister(cfg.DataType)
+	outputReg, err := registry.GetRegister(cfg.DataType)
 	if err != nil {
 		return core.NilPipelineUUID(), err
 	}
 
-	registers := append([]*core.DataRegister{register}, register.Dependencies...)
-	components, err := m.getComponents(cfg, registers)
+	depPath := outputReg.GetDependencyPath()
+	pUUID := depPath.GeneratePipelineUUID(cfg.PipelineType, cfg.Network)
+
+	components, err := m.getComponents(cfg, depPath)
 	if err != nil {
-		return core.NilPipelineUUID(), err
+		return core.NilPipelineUUID(), nil
 	}
-
-	lastReg := registers[len(registers)-1]
-
-	cID1 := core.MakeComponentUUID(cfg.PipelineType, registers[0].ComponentType, registers[0].DataType, cfg.Network)
-	cID2 := core.MakeComponentUUID(cfg.PipelineType, lastReg.ComponentType, lastReg.DataType, cfg.Network)
-	pID := core.MakePipelineUUID(cfg.PipelineType, cID1, cID2)
 
 	logger.Debug("constructing pipeline",
-		zap.String("ID", pID.String()))
+		zap.String("ID", pUUID.String()))
 
-	pipeLine, err := NewPipeLine(pID, components)
+	pipeLine, err := NewPipeLine(pUUID)
 	if err != nil {
 		return core.NilPipelineUUID(), err
 	}
@@ -90,14 +88,16 @@ func (m *Manager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUI
 	comps := pipeLine.Components()
 	lastComp := comps[len(comps)-1]
 
-	// Route pipeline output to risk engine
-	err = lastComp.AddEgress(core.NilComponentUUID(), m.engineChan)
+	relay := core.NewEngineRelay(pUUID, m.engineChan)
+
+	// Route pipeline output to risk engine as invariant input
+	err = lastComp.AddRelay(relay)
 	if err != nil {
 		return core.NilPipelineUUID(), err
 	}
-	m.pRegistry.addPipeline(pID, pipeLine)
+	m.pRegistry.addPipeline(pUUID, pipeLine)
 
-	return pID, nil
+	return pUUID, nil
 }
 
 func (m *Manager) RunPipeline(pID core.PipelineUUID) error {
@@ -135,7 +135,7 @@ func (m *Manager) EventLoop(ctx context.Context) {
 
 // getComponents ... Returns all components provided a slice of register definitions
 func (m *Manager) getComponents(cfg *core.PipelineConfig,
-	registers []*core.DataRegister) ([]component.Component, error) {
+	depPath core.RegisterDependencyPath) ([]component.Component, error) {
 	components := make([]component.Component, 0)
 	prevID := core.NilComponentUUID()
 
@@ -176,7 +176,9 @@ func (m *Manager) getComponents(cfg *core.PipelineConfig,
 // inferComponent ... Constructs a component provided a data register definition
 func inferComponent(ctx context.Context, cfg *core.PipelineConfig, id core.ComponentUUID,
 	register *core.DataRegister, eventCh chan component.StateChange) (component.Component, error) {
-	log.Printf("constructing %s component for register %s", register.ComponentType, register.DataType)
+	logging.WithContext(ctx).Debug("constructing component",
+		zap.String("type", register.ComponentType.String()),
+		zap.String("outdata_type", register.DataType.String()))
 
 	switch register.ComponentType {
 	case core.Oracle:

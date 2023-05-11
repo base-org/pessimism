@@ -12,18 +12,19 @@ const (
 	RetryCount = 3
 )
 
-func (svc *PessimismService) ProcessInvariantRequest(ir models.InvRequestBody) (core.InvariantUUID, error) {
+func (svc *PessimismService) ProcessInvariantRequest(ir models.InvRequestBody) (core.InvSessionUUID, error) {
 	if ir.Method == models.Run {
-		return svc.runInvariant(&ir)
+		return svc.runInvariantSession(&ir)
 	}
+	// TODO - Add support for other run types
 
 	return core.NilInvariantUUID(), nil
 }
 
-func (svc *PessimismService) runInvariant(ir *models.InvRequestBody) (core.InvariantUUID, error) {
+func (svc *PessimismService) runInvariantSession(ir *models.InvRequestBody) (core.InvSessionUUID, error) {
 	logger := logging.WithContext(svc.ctx)
 
-	inv, err := registry.GetInvariant(ir.Params.InvType, ir.Params.InvParams)
+	inv, err := registry.GetInvariant(ir.Params.InvType, ir.Params.SessionParams)
 	if err != nil {
 		return core.NilInvariantUUID(), err
 	}
@@ -47,20 +48,18 @@ func (svc *PessimismService) runInvariant(ir *models.InvRequestBody) (core.Invar
 		OracleCfg:    &oCfg,
 	}
 
-	invID, err := svc.engineManager.DeployInvariantSession(ir.Params.Network, ir.Params.InvType,
-		ir.Params.PType, ir.Params.InvParams)
-	if err != nil {
-		return core.NilInvariantUUID(), err
-	}
-	logger.Info("Deployed invariant session", zap.String("invariant_id", invID.String()))
-
-	logger.Info("Creating register pipeline")
+	logger.Info("Creating data pipeline")
 	pID, err := svc.etlManager.CreateDataPipeline(pCfg)
 	if err != nil {
 		return core.NilInvariantUUID(), err
 	}
 
-	logger.Info("Creating register pipeline")
+	invID, err := svc.engineManager.DeployInvariantSession(ir.Params.Network, pID, ir.Params.InvType,
+		ir.Params.PType, ir.Params.SessionParams)
+	if err != nil {
+		return core.NilInvariantUUID(), err
+	}
+	logger.Info("Deployed invariant session", zap.String("invariant_uuid", invID.String()))
 
 	if err = svc.etlManager.RunPipeline(pID); err != nil {
 		return core.NilInvariantUUID(), err

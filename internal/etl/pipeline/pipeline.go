@@ -15,7 +15,7 @@ type Pipeline interface {
 	RunPipeline(wg *sync.WaitGroup) error
 	UpdateState(as ActivityState) error
 
-	AddDirective(cID core.ComponentUUID, outChan chan core.TransitData) error
+	AddEngineRelay(engineChan chan core.InvariantInput) error
 }
 
 type Option = func(*pipeLine)
@@ -54,13 +54,13 @@ func (pl *pipeLine) ID() core.PipelineUUID {
 	return pl.id
 }
 
-// NOTE: This function should be deleted once risk engine is introduced
-// AddDirective ... Adds an egress from the final component of a pipeline
-// path to an arbitrary channel
-func (pl *pipeLine) AddDirective(cID core.ComponentUUID, outChan chan core.TransitData) error {
-	comp := pl.components[0]
+// AddEngineRelay ... Adds a relay to the pipeline that forces it to send transformed invariant input
+// to a risk engine
+func (pl *pipeLine) AddEngineRelay(engineChan chan core.InvariantInput) error {
+	lastComponent := pl.components[len(pl.components)-1]
+	eir := core.NewEngineRelay(pl.id, engineChan)
 
-	return comp.AddEgress(cID, outChan)
+	return lastComponent.AddRelay(eir)
 }
 
 // RunPipeline  ... Spawns and manages component event loops

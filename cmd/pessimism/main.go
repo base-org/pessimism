@@ -26,7 +26,7 @@ func initializeAndRunServer(ctx context.Context, cfgPath config.FilePath,
 	cfg := config.NewConfig(cfgPath)
 
 	apiService := service.New(ctx, cfg.SvcConfig, etlMan, engineMan)
-	handler, err := handlers.New(apiService)
+	handler, err := handlers.New(ctx, apiService)
 	if err != nil {
 		return nil, nil, err
 	}

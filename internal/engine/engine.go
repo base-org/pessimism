@@ -6,6 +6,7 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/logging"
+	"go.uber.org/zap"
 )
 
 type Type int
@@ -26,17 +27,17 @@ func NewHardCodedEngine() RiskEngine {
 	return &hardCodedEngine{}
 }
 
-func (e hardCodedEngine) Type() Type {
+func (e *hardCodedEngine) Type() Type {
 	return HardCoded
 }
 
-func (e hardCodedEngine) Execute(ctx context.Context, data core.TransitData, invs []invariant.Invariant) error {
+func (e *hardCodedEngine) Execute(ctx context.Context, data core.TransitData, invs []invariant.Invariant) error {
 	logger := logging.WithContext(ctx)
 
 	for _, inv := range invs {
 		invalid, err := inv.Invalidate(data)
 		if err != nil {
-			logger.Error(err.Error())
+			logger.Error("Failed to perform invalidation option for invariant", zap.Error(err))
 			return err
 		}
 

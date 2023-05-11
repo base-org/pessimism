@@ -58,13 +58,13 @@ type PipelineUUID struct {
 	UUID UUID
 }
 
-// InvariantPID ... Invariant session Primary ID
-type InvariantPID [3]byte
+// InvSessionPID ... Invariant session Primary ID
+type InvSessionPID [3]byte
 
 // Represents a non-deterministic ID that's assigned to
 // every uniquely constructed invariant session
-type InvariantUUID struct {
-	PID  InvariantPID
+type InvSessionUUID struct {
+	PID  InvSessionPID
 	UUID UUID
 }
 
@@ -95,9 +95,9 @@ func NilPipelineUUID() PipelineUUID {
 }
 
 // NilInvariantUUID ... Returns a zero'd out or empty invariant UUID
-func NilInvariantUUID() InvariantUUID {
-	return InvariantUUID{
-		PID:  InvariantPID{0},
+func NilInvariantUUID() InvSessionUUID {
+	return InvSessionUUID{
+		PID:  InvSessionPID{0},
 		UUID: nilUUID(),
 	}
 }
@@ -139,15 +139,15 @@ func MakePipelineUUID(pt PipelineType, firstCID, lastCID ComponentUUID) Pipeline
 	}
 }
 
-// MakeInvariantUUID ... Constructs an invariant PID sequence & random UUID
-func MakeInvariantUUID(n Network, pt PipelineType, invType InvariantType) InvariantUUID {
-	pID := InvariantPID{
+// MakeInvSessionUUID ... Constructs an invariant PID sequence & random UUID
+func MakeInvSessionUUID(n Network, pt PipelineType, invType InvariantType) InvSessionUUID {
+	pID := InvSessionPID{
 		byte(n),
 		byte(pt),
 		byte(invType),
 	}
 
-	return InvariantUUID{
+	return InvSessionUUID{
 		PID:  pID,
 		UUID: newUUID(),
 	}
@@ -207,7 +207,7 @@ func (id RegisterPID) String() string {
 		RegisterType(id[1]).String())
 }
 
-func (id InvariantPID) String() string {
+func (id InvSessionPID) String() string {
 	return fmt.Sprintf("%s:%s:%s",
 		Network(id[0]).String(),
 		PipelineType(id[1]).String(),
@@ -215,7 +215,7 @@ func (id InvariantPID) String() string {
 	)
 }
 
-func (id InvariantUUID) String() string {
-	return fmt.Sprintf("%s:::%s",
+func (id InvSessionUUID) String() string {
+	return fmt.Sprintf("%s::%s",
 		id.PID.String(), id.UUID.ShortString())
 }

@@ -31,7 +31,7 @@ func (cfg *Config) GetEndpointFromNetwork(n core.Network) (string, error) {
 
 // Service ...
 type Service interface {
-	ProcessInvariantRequest(ir models.InvRequestBody) (core.InvariantUUID, error)
+	ProcessInvariantRequest(ir models.InvRequestBody) (core.InvSessionUUID, error)
 	CheckHealth() *models.HealthCheck
 }
 

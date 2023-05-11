@@ -19,7 +19,7 @@ const (
 	NotOK InvResponseStatus = "NOTOK"
 )
 
-type InvParams struct {
+type InvRequestParams struct {
 	Network core.Network       `json:"network"`
 	PType   core.PipelineType  `json:"pipeline_type"`
 	InvType core.InvariantType `json:"type"`
@@ -27,12 +27,12 @@ type InvParams struct {
 	StartHeight *big.Int `json:"start_height"`
 	EndHeight   *big.Int `json:"end_height"`
 
-	InvParams interface{} `json:"invariant_params"`
+	SessionParams interface{} `json:"invariant_params"`
 }
 
 type InvRequestBody struct {
-	Method InvariantMethod `json:"method"`
-	Params InvParams       `json:"params"`
+	Method InvariantMethod  `json:"method"`
+	Params InvRequestParams `json:"params"`
 }
 
 type InvResponse struct {
@@ -42,21 +42,23 @@ type InvResponse struct {
 	Error  string `json:"error"`
 }
 
-func NewOkResp(id core.InvariantUUID) *InvResponse {
+func NewOkResp(id core.InvSessionUUID) *InvResponse {
 	return &InvResponse{
 		Status: OK,
-		Result: map[string]string{"invariant_id": id.String()},
+		Result: map[string]string{"invariant_uuid": string(id.String())},
 	}
 }
 
-func NewUnmarshalErrResp() *InvResponse {
+// NewInvRequestUnmarshalErrResp ... New unmarshal error response construction
+func NewInvRequestUnmarshalErrResp() *InvResponse {
 	return &InvResponse{
 		Status: NotOK,
 		Error:  "could not unmarshal request body",
 	}
 }
 
-func NewNoProcessErrResp() *InvResponse {
+// NewNoProcessInvErrResp ...
+func NewNoProcessInvErrResp() *InvResponse {
 	return &InvResponse{
 		Status: NotOK,
 		Error:  "error processing invariant request",

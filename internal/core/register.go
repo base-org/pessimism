@@ -26,11 +26,35 @@ func (rt RegisterType) String() string {
 	return UnknownType
 }
 
-// DataRegister ...Represents an ETL subsytem data type that
+// DataRegister ... Represents an ETL subsytem data type that
 // can be produced and consumed by heterogenous components
 type DataRegister struct {
 	DataType             RegisterType
 	ComponentType        ComponentType
 	ComponentConstructor interface{}
 	Dependencies         []*DataRegister
+}
+
+type RegisterDependencyPath struct {
+	regPath []*DataRegister
+}
+
+func (rdp RegisterDependencyPath) OutputRegister() *DataRegister {
+	return rdp.regPath[len(rdp.regPath)-1]
+}
+
+func (rdp RegisterDependencyPath) GeneratePipelineUUID(pt PipelineType, n Network) PipelineUUID {
+	firstComp, lastComp := rdp.regPath[0], rdp.OutputRegister()
+	firstUUID := MakeComponentUUID(pt, firstComp.ComponentType, firstComp.DataType, n)
+	lastUUID := MakeComponentUUID(pt, lastComp.ComponentType, lastComp.DataType, n)
+
+	return MakePipelineUUID(pt, firstUUID, lastUUID)
+}
+
+// GetDependencyPath ... Returns inclusive dependency path for data register
+func (dr *DataRegister) GetDependencyPath() RegisterDependencyPath {
+
+	registers := append([]*DataRegister{dr}, dr.Dependencies...)
+
+	return RegisterDependencyPath{registers}
 }
