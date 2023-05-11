@@ -29,11 +29,12 @@ const (
 // Config ... Application level configuration defined by `FilePath` value
 // TODO - Consider renaming to "environment config"
 type Config struct {
-	L1RpcEndpoint string
-	L2RpcEndpoint string
-	Environment   Env
-	LoggerConfig  *logging.Config
-	ServerConfig  *server.Config
+	L1RpcEndpoint   string
+	L2RpcEndpoint   string
+	Environment     Env
+	LoggerConfig    *logging.Config
+	ServerConfig    *server.Config
+	EthClientConfig *EthClientCfg
 }
 
 // OracleConfig ... Configuration passed through to an oracle component constructor
@@ -80,6 +81,15 @@ func NewConfig(fileName FilePath) *Config {
 			Encoding:          getEnvStr("LOGGER_ENCODING"),
 			OutputPaths:       getEnvSlice("LOGGER_OUTPUT_PATHS"),
 			ErrorOutputPaths:  getEnvSlice("LOGGER_ERROR_OUTPUT_PATHS"),
+		},
+
+		EthClientConfig: &EthClientCfg{
+			RetryConfig: &RetryConfig{
+				Debug:            getEnvBool("DEBUG"),
+				RetryCount:       getEnvInt("RETRY_COUNT"),
+				RetryWaitTime:    getEnvInt("RETRY_WAIT_TIME"),
+				RetryMaxWaitTime: getEnvInt("RETRY_MAX_WAIT_TIME"),
+			},
 		},
 
 		ServerConfig: &server.Config{
