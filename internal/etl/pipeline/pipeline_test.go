@@ -3,9 +3,10 @@ package pipeline
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 
-	"github.com/base-org/pessimism/internal/core"
+	"github.com/stretchr/testify/assert"
 )
 
 // TODO(#33): No Unit Tests for Pipeline & ETL Manager Logic
@@ -16,30 +17,35 @@ func Test_Pipeline(t *testing.T) {
 		function    string
 		description string
 
-		constructionLogic func() EtlStore
-		testLogic         func(*testing.T, EtlStore)
+		constructionLogic func() Pipeline
+		testLogic         func(t *testing.T, pl Pipeline)
 	}{
 		{
 			name:        "Successful Add When PID Already Exists",
 			function:    "addPipeline",
 			description: "",
 
-			constructionLogic: func() EtlStore {
-				ctx := context.Background()
+			constructionLogic: func() Pipeline {
+				return getTestPipeLine(context.Background())
+			},
 
-				testRegistry := newEtlStore()
-				testPipeLine := getTestPipeLine(ctx)
+			testLogic: func(t *testing.T, pl Pipeline) {
+				wg := sync.WaitGroup{}
 
-				testRegistry.AddPipeline(core.NilPipelineUUID(), testPipeLine)
-				return testRegistry
+				err := pl.RunPipeline(&wg)
+				assert.NoError(t, err)
+
+				err = pl.Close()
+				assert.NoError(t, err)
+
 			},
 		},
 	}
 
 	for i, tc := range tests {
 		t.Run(fmt.Sprintf("%d-%s-%s", i, tc.function, tc.name), func(t *testing.T) {
-			testRouter := tc.constructionLogic()
-			tc.testLogic(t, testRouter)
+			testPipeline := tc.constructionLogic()
+			tc.testLogic(t, testPipeline)
 		})
 
 	}

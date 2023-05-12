@@ -34,6 +34,8 @@ func (e *hardCodedEngine) Type() Type {
 func (e *hardCodedEngine) Execute(ctx context.Context, data core.TransitData, inv invariant.Invariant) error {
 	logger := logging.WithContext(ctx)
 
+	logger.Debug("Performing invariant invalidation",
+		zap.String("suuid", inv.UUID().String()))
 	invalid, err := inv.Invalidate(data)
 	if err != nil {
 		logger.Error("Failed to perform invalidation option for invariant", zap.Error(err))

@@ -51,7 +51,6 @@ func (eh *egressHandler) SendBatch(dataSlice []core.TransitData) error {
 		if err := eh.Send(data); err != nil {
 			return err
 		}
-
 	}
 
 	return nil
@@ -83,7 +82,6 @@ func (eh *egressHandler) HasEngineEgress() bool {
 }
 
 func (eh *egressHandler) AddRelay(relay *core.EngineInputRelay) error {
-
 	if eh.HasEngineEgress() {
 		return fmt.Errorf(engineEgressExistsErr)
 	}

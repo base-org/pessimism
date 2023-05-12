@@ -16,17 +16,6 @@ const (
 	ContentType   HeaderParam = "Content-Type"
 )
 
-// responseWriter is a minimal wrapper for http.ResponseWriter that allows the
-// written HTTP status code to be captured for logging.
-type responseWriter struct {
-	http.ResponseWriter
-	status int
-}
-
-func wrapResponseWriter(w http.ResponseWriter) *responseWriter {
-	return &responseWriter{ResponseWriter: w}
-}
-
 // InjectedLogging uses logging middleware
 func InjectedLogging(logger *zap.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -34,7 +23,7 @@ func InjectedLogging(logger *zap.Logger) func(http.Handler) http.Handler {
 			defer func() {
 				if err := recover(); err != nil {
 					w.WriteHeader(http.StatusInternalServerError)
-					logger.Error("Failure occured during request processing")
+					logger.Error("Failure occurred during request processing")
 				}
 			}()
 
@@ -59,14 +48,13 @@ func InjectedLogging(logger *zap.Logger) func(http.Handler) http.Handler {
 			}
 
 			start := time.Now()
-			wrapped := wrapResponseWriter(w)
-			next.ServeHTTP(wrapped, r)
+			next.ServeHTTP(w, r)
 
-			logger.Info("access",
-				zap.Int("status_code", wrapped.status), zap.String("method", r.Method),
-				zap.String("path", r.URL.EscapedPath()), zap.Duration("duration", time.Since(start)),
-				zap.String("content_type", contentType), zap.String("content_length", contentLength),
-				zap.String("user_agent", userAgent),
+			logger.Info("HTTP request received",
+				zap.String("method", r.Method), zap.String("path", r.URL.EscapedPath()),
+				zap.Duration("duration", time.Since(start)), zap.String("content_type", contentType),
+				zap.String("content_length", contentLength),
+				zap.String("user_agent", userAgent), zap.String("host", host),
 			)
 		}
 

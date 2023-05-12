@@ -75,15 +75,11 @@ func (m *Manager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUI
 
 	components, err := m.getComponents(cfg, depPath)
 	if err != nil {
-		return core.NilPipelineUUID(), nil
+		return core.NilPipelineUUID(), err
 	}
 
 	logger.Debug("constructing pipeline",
 		zap.String("puuid", pUUID.String()))
-
-	if pLines := m.etlStore.GetExistingPipelinesByPID(pUUID.PID); len(pLines) > 0 {
-
-	}
 
 	pipeLine, err := NewPipeLine(pUUID, components)
 	if err != nil {
@@ -91,11 +87,11 @@ func (m *Manager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUI
 	}
 
 	if err := pipeLine.AddEngineRelay(m.engineChan); err != nil {
-		return core.NilPipelineUUID(), nil
+		return core.NilPipelineUUID(), err
 	}
 
 	if err := m.dag.AddPipeLine(pipeLine); err != nil {
-		return core.NilPipelineUUID(), nil
+		return core.NilPipelineUUID(), err
 	}
 
 	m.etlStore.AddPipeline(pUUID, pipeLine)
@@ -128,12 +124,15 @@ func (m *Manager) EventLoop(ctx context.Context) {
 			// TODO(#35): No ETL Management Procedure Exists
 			// for Handling Component State Changes
 
+			logger.Info("Received component state change request",
+				zap.String("from", stateChange.From.String()),
+				zap.String("to", stateChange.To.String()),
+				zap.String("cuuid", stateChange.ID.String()))
+
 			_, err := m.etlStore.GetPipelineUUIDs(stateChange.ID)
 			if err != nil {
 				logger.Error("Could not fetch pipeline IDs for comp state change")
 			}
-
-			logger.Info("Received component state change request")
 		}
 	}
 }

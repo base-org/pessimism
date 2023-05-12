@@ -17,11 +17,15 @@ type ExampleInvConfig struct {
 
 type ExampleInvariant struct {
 	cfg *ExampleInvConfig
+
+	invariant.Invariant
 }
 
 func NewExampleInvariant(cfg *ExampleInvConfig) invariant.Invariant {
 	return &ExampleInvariant{
 		cfg: cfg,
+
+		Invariant: invariant.NewBaseInvariant(pess_core.ContractCreateTX),
 	}
 }
 

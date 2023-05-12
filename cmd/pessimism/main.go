@@ -93,13 +93,13 @@ func main() {
 			shutDownEngine()  // Shutdown risk engine subsystem
 			logger.Info("Shutdown risk engine subsystem")
 
-			shutDownETL() // Shutdown ETL subsystem
+			appCtxCancel() // Shutdown ETL subsystem event loops
+			shutDownETL()  // Shutdown ETL subsystem
 			logger.Info("Shutdown ETL subsystem")
 
 			shutDownServer() // Shutdown API server
 			logger.Info("Shutdown API server")
 
-			appCtxCancel() // Use ctx cancel to end shutdown subsystem event loops
 			logger.Info("Shutdown context")
 		})
 	}()

@@ -132,13 +132,12 @@ func (graph *cGraph) AddPipeLine(pl Pipeline) error {
 		if err := graph.addComponent(c.ID(), c); err != nil {
 			return err
 		}
-
 	}
 	return nil
 }
 
 // edges ...  Returns a representation of all graph edges between component IDs
-func (graph *cGraph) edges() map[core.ComponentUUID][]core.ComponentUUID {
+func (graph *cGraph) edges() map[core.ComponentUUID][]core.ComponentUUID { //nolint:unused // will be leveraged soon
 	idMap := make(map[core.ComponentUUID][]core.ComponentUUID, len(graph.edgeMap))
 
 	for cID, cEntry := range graph.edgeMap {

@@ -1,7 +1,6 @@
 package pipeline
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/base-org/pessimism/internal/core"
@@ -15,7 +14,6 @@ type Pipeline interface {
 	Close() error
 	Components() []component.Component
 	RunPipeline(wg *sync.WaitGroup) error
-	UpdateState(as ActivityState) error
 
 	AddEngineRelay(engineChan chan core.InvariantInput) error
 }
@@ -79,14 +77,6 @@ func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 					zap.String("cuuid", c.ID().String()),
 					zap.String("puuid", pl.id.String()))
 
-			if c.ActivityState() != component.Inactive { // Component already active
-				logging.NoContext().
-					Debug("Component already active, arborting routine creation",
-						zap.String("cuuid", c.ID().String()),
-						zap.String("puuid", pl.id.String()))
-				return
-			}
-
 			if err := c.EventLoop(); err != nil {
 				logging.NoContext().Error("Obtained error from event loop", zap.Error(err),
 					zap.String("cuuid", c.ID().String()),
@@ -100,7 +90,6 @@ func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 
 // Close ...
 func (pl *pipeLine) Close() error {
-
 	for _, comp := range pl.components {
 		if comp.ActivityState() != component.Terminated {
 			logging.NoContext().
@@ -113,15 +102,5 @@ func (pl *pipeLine) Close() error {
 			}
 		}
 	}
-
-	return nil
-}
-
-func (pl *pipeLine) UpdateState(as ActivityState) error {
-	if as == pl.aState {
-		return fmt.Errorf("state is already set")
-	}
-
-	pl.aState = as
 	return nil
 }

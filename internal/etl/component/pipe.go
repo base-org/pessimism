@@ -64,7 +64,7 @@ func (p *Pipe) EventLoop() error {
 		zap.String("ID", p.id.String()),
 	)
 
-	p.emitStateChange(Live)
+	// p.emitStateChange(Live)
 
 	inChan, err := p.GetIngress(p.inType)
 	if err != nil {
@@ -104,7 +104,7 @@ func (p *Pipe) EventLoop() error {
 			logger.Debug("Received component shutdown signal",
 				zap.String("ID", p.id.String()))
 
-			p.emitStateChange(Terminated)
+			// p.emitStateChange(Terminated)
 
 			return nil
 		}

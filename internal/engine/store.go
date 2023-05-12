@@ -62,7 +62,8 @@ func (ss *sessionStore) GetInvSessionsForPipeline(pUUID core.PipelineUUID) ([]co
 }
 
 // AddInvSession ... Adds an invariant session to the store
-func (ss *sessionStore) AddInvSession(sUUID core.InvSessionUUID, pUUID core.PipelineUUID, inv invariant.Invariant) error {
+func (ss *sessionStore) AddInvSession(sUUID core.InvSessionUUID,
+	pUUID core.PipelineUUID, inv invariant.Invariant) error {
 	if _, found := ss.invSessionMap[sUUID]; found {
 		return fmt.Errorf("invariant UUID already exists in store pid mapping")
 	}
@@ -76,6 +77,7 @@ func (ss *sessionStore) AddInvSession(sUUID core.InvSessionUUID, pUUID core.Pipe
 }
 
 // RemoveInvSession ... Removes an existing invariant session from the store
-func (ss *sessionStore) RemoveInvSession(sUUID core.InvSessionUUID, pUUID core.PipelineUUID, inv invariant.Invariant) error {
+func (ss *sessionStore) RemoveInvSession(_ core.InvSessionUUID,
+	_ core.PipelineUUID, _ invariant.Invariant) error {
 	return nil
 }

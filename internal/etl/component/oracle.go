@@ -61,12 +61,12 @@ func NewOracle(ctx context.Context, pt core.PipelineType, outType core.RegisterT
 // Close ... This function is called at the end when processes related to oracle need to shut down
 func (o *Oracle) Close() error {
 	logging.WithContext(o.ctx).
-		Info("Waiting for oracle goroutines to be done",
+		Info("Waiting for oracle definition go routines to finish",
 			zap.String("cuuid", o.id.String()))
 	o.closeChan <- KillSignal
 
 	o.wg.Wait()
-	logging.WithContext(o.ctx).Info("Oracle goroutines have exited",
+	logging.WithContext(o.ctx).Info("Oracle definition go routines have exited",
 		zap.String("cuuid", o.id.String()))
 	return nil
 }
@@ -84,11 +84,10 @@ func (o *Oracle) EventLoop() error {
 	o.wg.Add(1)
 
 	routineCtx, cancel := context.WithCancel(o.ctx)
-	o.emitStateChange(Live)
+	// o.emitStateChange(Live)
 
 	// Spawn definition read routine
 	go func() {
-
 		defer o.wg.Done()
 		if err := o.definition.ReadRoutine(routineCtx, o.oracleChannel); err != nil {
 			logger.Error("Received error from read routine",
@@ -111,7 +110,7 @@ func (o *Oracle) EventLoop() error {
 			logger.Debug("Received component shutdown signal",
 				zap.String("cuuid", o.id.String()))
 
-			o.emitStateChange(Terminated)
+			// o.emitStateChange(Terminated)
 			logger.Debug("Closing component channel",
 				zap.String("cuuid", o.id.String()))
 			close(o.oracleChannel)

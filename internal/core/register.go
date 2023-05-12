@@ -51,8 +51,13 @@ func (rdp RegisterDependencyPath) GeneratePipelineUUID(pt PipelineType, n Networ
 
 // GetDependencyPath ... Returns inclusive dependency path for data register
 func (dr *DataRegister) GetDependencyPath() RegisterDependencyPath {
-
 	registers := append([]*DataRegister{dr}, dr.Dependencies...)
 
 	return RegisterDependencyPath{registers}
+}
+
+type InvariantRegister struct {
+	Constructor   interface{}
+	InvariantType InvariantType
+	DataType      RegisterType
 }

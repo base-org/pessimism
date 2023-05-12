@@ -6,6 +6,7 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
+// TODO(#48): Pipeline Analysis Functionality
 // EtlStore ... Interface used to define all etl storage based functions
 type EtlStore interface {
 	AddComponentLink(cID core.ComponentUUID, pID core.PipelineUUID)

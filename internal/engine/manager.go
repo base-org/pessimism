@@ -46,8 +46,7 @@ func (em *Manager) Transit() chan core.InvariantInput {
 
 // TODO() :
 // DeleteInvariantSession ...
-func (em *Manager) DeleteInvariantSession(n core.Network, pUUUID core.PipelineUUID, it core.InvariantType,
-	pt core.PipelineType, invParams any) (core.InvSessionUUID, error) {
+func (em *Manager) DeleteInvariantSession(_ core.InvSessionUUID) (core.InvSessionUUID, error) {
 	return core.NilInvariantUUID(), nil
 }
 
@@ -60,6 +59,7 @@ func (em *Manager) DeployInvariantSession(n core.Network, pUUUID core.PipelineUU
 	}
 
 	sessionID := core.MakeInvSessionUUID(n, pt, it)
+	inv.WithUUID(sessionID)
 
 	err = em.store.AddInvSession(sessionID, pUUUID, inv)
 	if err != nil {

@@ -45,7 +45,7 @@ type InvResponse struct {
 func NewOkResp(id core.InvSessionUUID) *InvResponse {
 	return &InvResponse{
 		Status: OK,
-		Result: map[string]string{"invariant_uuid": string(id.String())},
+		Result: map[string]string{"invariant_uuid": id.String()},
 	}
 }
 

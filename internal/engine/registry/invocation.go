@@ -3,7 +3,7 @@ package registry
 import (
 	"fmt"
 
-	pess_core "github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/ethereum/go-ethereum/common"
@@ -16,22 +16,26 @@ type InvocationInvConfig struct {
 
 type InvocationTrackerInvariant struct {
 	cfg *InvocationInvConfig
+
+	invariant.Invariant
 }
 
 func NewInvocationTrackerInvariant(cfg *InvocationInvConfig) invariant.Invariant {
 	return &InvocationTrackerInvariant{
 		cfg: cfg,
+
+		Invariant: invariant.NewBaseInvariant(core.GethBlock),
 	}
 }
 
-func (it *InvocationTrackerInvariant) InputType() pess_core.RegisterType {
-	return pess_core.GethBlock
+func (it *InvocationTrackerInvariant) InputType() core.RegisterType {
+	return core.GethBlock
 }
 
-func (it *InvocationTrackerInvariant) Invalidate(td pess_core.TransitData) (bool, error) {
+func (it *InvocationTrackerInvariant) Invalidate(td core.TransitData) (bool, error) {
 	logging.NoContext().Debug("Checking invalidation")
 
-	if td.Type != pess_core.GethBlock {
+	if td.Type != core.GethBlock {
 		return false, fmt.Errorf("invalid type supplied")
 	}
 
