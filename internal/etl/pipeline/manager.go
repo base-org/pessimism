@@ -41,12 +41,12 @@ func NewManager(ctx context.Context, ec chan core.InvariantInput) (*Manager, fun
 		for _, pl := range m.etlStore.GetAllPipelines() {
 			logging.WithContext(ctx).
 				Info("Shuting down pipeline",
-					zap.String("puuid", pl.UUID().String()))
+					zap.String(core.PUUIDKey, pl.UUID().String()))
 
 			if err := pl.Close(); err != nil {
 				logging.WithContext(ctx).
 					Error("Failed to close pipeline",
-						zap.String("puuid", pl.UUID().String()))
+						zap.String(core.PUUIDKey, pl.UUID().String()))
 			}
 		}
 		logging.WithContext(ctx).Debug("Waiting for all component routines to end")
@@ -79,7 +79,7 @@ func (m *Manager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUI
 	}
 
 	logger.Debug("constructing pipeline",
-		zap.String("puuid", pUUID.String()))
+		zap.String(core.PUUIDKey, pUUID.String()))
 
 	pipeLine, err := NewPipeLine(pUUID, components)
 	if err != nil {
@@ -106,7 +106,7 @@ func (m *Manager) RunPipeline(pID core.PipelineUUID) error {
 	}
 
 	logging.WithContext(m.ctx).Info("Running pipeline",
-		zap.String("puuid", pID.String()))
+		zap.String(core.PUUIDKey, pID.String()))
 
 	return pipeLine.RunPipeline(&m.wg)
 }
@@ -127,7 +127,7 @@ func (m *Manager) EventLoop(ctx context.Context) {
 			logger.Info("Received component state change request",
 				zap.String("from", stateChange.From.String()),
 				zap.String("to", stateChange.To.String()),
-				zap.String("cuuid", stateChange.ID.String()))
+				zap.String(core.CUUIDKey, stateChange.ID.String()))
 
 			_, err := m.etlStore.GetPipelineUUIDs(stateChange.ID)
 			if err != nil {
@@ -150,7 +150,7 @@ func (m *Manager) getComponents(cfg *core.PipelineConfig,
 		// TODO(#30): Pipeline Collisions Occur When They Shouldn't
 		cUUID := core.MakeComponentUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
 
-		c, err := inferComponent(m.ctx, cfg, cUUID, register, m.compEventChan)
+		c, err := inferComponent(m.ctx, cfg, cUUID, register)
 		if err != nil {
 			return []component.Component{}, err
 		}
@@ -170,7 +170,7 @@ func (m *Manager) getComponents(cfg *core.PipelineConfig,
 
 // inferComponent ... Constructs a component provided a data register definition
 func inferComponent(ctx context.Context, cfg *core.PipelineConfig, id core.ComponentUUID,
-	register *core.DataRegister, eventCh chan component.StateChange) (component.Component, error) {
+	register *core.DataRegister) (component.Component, error) {
 	logging.WithContext(ctx).Debug("constructing component",
 		zap.String("type", register.ComponentType.String()),
 		zap.String("outdata_type", register.DataType.String()))
@@ -184,7 +184,7 @@ func inferComponent(ctx context.Context, cfg *core.PipelineConfig, id core.Compo
 
 		// NOTE ... We assume at most 1 oracle per register pipeline
 		return init(ctx, cfg.PipelineType, cfg.OracleCfg,
-			component.WithID(id), component.WithEventChan(eventCh))
+			component.WithID(id))
 
 	case core.Pipe:
 		init, success := register.ComponentConstructor.(component.PipeConstructorFunc)
@@ -192,7 +192,7 @@ func inferComponent(ctx context.Context, cfg *core.PipelineConfig, id core.Compo
 			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Pipe.String()))
 		}
 
-		return init(ctx, component.WithID(id), component.WithEventChan(eventCh))
+		return init(ctx, component.WithID(id))
 
 	case core.Aggregator:
 		return nil, fmt.Errorf("aggregator component has yet to be implemented")

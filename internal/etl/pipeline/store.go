@@ -60,24 +60,24 @@ func (store *etlStore) AddComponentLink(cUUID core.ComponentUUID, pUUID core.Pip
 }
 
 // addPipeline ... Creates and stores a new pipeline entry
-func (store *etlStore) AddPipeline(id core.PipelineUUID, pl Pipeline) {
+func (store *etlStore) AddPipeline(pUUID core.PipelineUUID, pl Pipeline) {
 	entry := pipeLineEntry{
-		id: id,
+		id: pUUID,
 		as: Booting,
 		p:  pl,
 	}
 
-	entrySlice, found := store.pipeLines[id.PID]
+	entrySlice, found := store.pipeLines[pUUID.PID]
 	if !found {
 		entrySlice = make([]pipeLineEntry, 0)
 	}
 
 	entrySlice = append(entrySlice, entry)
 
-	store.pipeLines[id.PID] = entrySlice
+	store.pipeLines[pUUID.PID] = entrySlice
 
 	for _, comp := range pl.Components() {
-		store.AddComponentLink(comp.ID(), id)
+		store.AddComponentLink(comp.ID(), pUUID)
 	}
 }
 

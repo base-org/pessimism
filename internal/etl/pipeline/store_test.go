@@ -216,6 +216,29 @@ func Test_EtlStore(t *testing.T) {
 				assert.Equal(t, expectedPline, actualPline)
 			},
 		},
+		{
+			name:        "Successful Pipeline Fetch",
+			function:    "getAllPipelines",
+			description: "",
+
+			constructionLogic: func() EtlStore {
+				store := newEtlStore()
+				return store
+			},
+			testLogic: func(t *testing.T, store EtlStore) {
+				cID := core.MakeComponentUUID(0, 0, 0, 0)
+				pID := core.MakePipelineUUID(0, cID, cID)
+
+				expectedPline := getTestPipeLine(context.Background())
+
+				store.AddPipeline(pID, expectedPline)
+
+				pipelines := store.GetAllPipelines()
+
+				assert.Len(t, pipelines, 1)
+				assert.Equal(t, pipelines[0], expectedPline)
+			},
+		},
 	}
 
 	for i, tc := range tests {

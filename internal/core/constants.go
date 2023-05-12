@@ -1,5 +1,7 @@
 package core
 
+import "github.com/base-org/pessimism/internal/logging"
+
 // Network ... Represents the network for which a pipeline's oracle
 // is subscribed to.
 type Network uint8
@@ -105,3 +107,9 @@ func (it InvariantType) String() string {
 		return "unknown"
 	}
 }
+
+const (
+	CUUIDKey logging.LogKey = "cuuid"
+	PUUIDKey logging.LogKey = "puuid"
+	SUUIDKey logging.LogKey = "suuid"
+)

@@ -9,22 +9,15 @@ import (
 type TransitData struct {
 	Timestamp time.Time
 
-	Newtwork Network
-	PType    PipelineType
-	Type     RegisterType
-	Value    any
+	Network Network
+	PType   PipelineType
+	Type    RegisterType
+	Value   any
 }
 
 // NewTransitChannel ... Builds new tranit channel
 func NewTransitChannel() chan TransitData {
 	return make(chan TransitData)
-}
-
-func (td TransitData) GetRegisterPID() RegisterPID {
-	return MakeRegisterPID(
-		td.PType,
-		td.Type,
-	)
 }
 
 // InvariantInput ... Standardized type used to supply

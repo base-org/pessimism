@@ -68,8 +68,6 @@ type InvSessionUUID struct {
 	UUID UUID
 }
 
-type RegisterPID [3]byte
-
 /*
 	NOTE: Pipelines that require a backfill will cause inaccurate collisions
 	within the pipeline DAG.
@@ -153,15 +151,6 @@ func MakeInvSessionUUID(n Network, pt PipelineType, invType InvariantType) InvSe
 	}
 }
 
-func MakeRegisterPID(pt PipelineType, dt RegisterType) RegisterPID {
-	rID := RegisterPID{
-		byte(pt),
-		byte(dt),
-	}
-
-	return rID
-}
-
 // String ... Returns string representation of a component PID
 func (id ComponentPID) String() string {
 	return fmt.Sprintf("%s:%s:%s:%s",
@@ -199,12 +188,6 @@ func (id PipelineUUID) String() string {
 	return fmt.Sprintf("%s:::%s",
 		id.PID.String(), id.UUID.ShortString(),
 	)
-}
-
-func (id RegisterPID) String() string {
-	return fmt.Sprintf("%s:%s",
-		PipelineType(id[0]).String(),
-		RegisterType(id[1]).String())
 }
 
 func (id InvSessionPID) String() string {

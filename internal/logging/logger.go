@@ -7,6 +7,8 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+type LogKey = string
+
 type loggerKeyType int
 
 const loggerKey loggerKeyType = iota

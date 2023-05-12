@@ -74,13 +74,13 @@ func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 
 			logging.NoContext().
 				Debug("Attempting to start component event loop",
-					zap.String("cuuid", c.ID().String()),
-					zap.String("puuid", pl.id.String()))
+					zap.String(core.CUUIDKey, c.ID().String()),
+					zap.String(core.PUUIDKey, pl.id.String()))
 
 			if err := c.EventLoop(); err != nil {
 				logging.NoContext().Error("Obtained error from event loop", zap.Error(err),
-					zap.String("cuuid", c.ID().String()),
-					zap.String("puuid", pl.id.String()))
+					zap.String(core.CUUIDKey, c.ID().String()),
+					zap.String(core.PUUIDKey, pl.id.String()))
 			}
 		}(comp, wg)
 	}
@@ -94,8 +94,8 @@ func (pl *pipeLine) Close() error {
 		if comp.ActivityState() != component.Terminated {
 			logging.NoContext().
 				Debug("Shutting down pipeline component",
-					zap.String("cuuid", comp.ID().String()),
-					zap.String("puuid", pl.id.String()))
+					zap.String(core.CUUIDKey, comp.ID().String()),
+					zap.String(core.PUUIDKey, pl.id.String()))
 
 			if err := comp.Close(); err != nil {
 				return err

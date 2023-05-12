@@ -95,14 +95,14 @@ func (em *Manager) executeInvariants(ctx context.Context, data core.InvariantInp
 	if err != nil {
 		logger.Error("Could not fetch invariants for pipeline",
 			zap.Error(err),
-			zap.String("puuid", data.PUUID.String()))
+			zap.String(core.PUUIDKey, data.PUUID.String()))
 	}
 
 	invs, err := em.store.GetInvariantsByUUIDs(invUUIDs...)
 	if err != nil {
 		logger.Error("Could not fetch invariants for pipeline",
 			zap.Error(err),
-			zap.String("puuid", data.PUUID.String()))
+			zap.String(core.PUUIDKey, data.PUUID.String()))
 	}
 
 	for i, inv := range invs {
@@ -111,7 +111,7 @@ func (em *Manager) executeInvariants(ctx context.Context, data core.InvariantInp
 		err = em.engine.Execute(ctx, data.Input, inv)
 		if err != nil {
 			logger.Error("Could not execute invariant",
-				zap.String("puuid", data.PUUID.String()),
+				zap.String(core.PUUIDKey, data.PUUID.String()),
 				zap.String("session_uuid", sUUID.String()),
 			)
 		}
