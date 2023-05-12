@@ -2,15 +2,17 @@ package pipeline
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
+	"github.com/base-org/pessimism/internal/logging"
+	"go.uber.org/zap"
 )
 
 type Pipeline interface {
-	ID() core.PipelineUUID
+	UUID() core.PipelineUUID
+	Close() error
 	Components() []component.Component
 	RunPipeline(wg *sync.WaitGroup) error
 	UpdateState(as ActivityState) error
@@ -49,8 +51,8 @@ func (pl *pipeLine) Components() []component.Component {
 	return pl.components
 }
 
-// ID ... Returns pipeline ID
-func (pl *pipeLine) ID() core.PipelineUUID {
+// UUID ... Returns pipeline UUID
+func (pl *pipeLine) UUID() core.PipelineUUID {
 	return pl.id
 }
 
@@ -72,13 +74,23 @@ func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 		go func(c component.Component, wg *sync.WaitGroup) {
 			defer wg.Done()
 
-			log.Printf("Attempting to run component (%s) with activity state = %s", c.ID().String(), c.ActivityState())
+			logging.NoContext().
+				Debug("Attempting to start component event loop",
+					zap.String("cuuid", c.ID().String()),
+					zap.String("puuid", pl.id.String()))
+
 			if c.ActivityState() != component.Inactive { // Component already active
+				logging.NoContext().
+					Debug("Component already active, arborting routine creation",
+						zap.String("cuuid", c.ID().String()),
+						zap.String("puuid", pl.id.String()))
 				return
 			}
 
 			if err := c.EventLoop(); err != nil {
-				log.Printf("Got error from event loop: %s", err.Error())
+				logging.NoContext().Error("Obtained error from event loop", zap.Error(err),
+					zap.String("cuuid", c.ID().String()),
+					zap.String("puuid", pl.id.String()))
 			}
 		}(comp, wg)
 	}
@@ -86,9 +98,22 @@ func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 	return nil
 }
 
-// Terminate ...
-func (pl *pipeLine) Terminate(_ *sync.WaitGroup) error {
-	// TODO: implement
+// Close ...
+func (pl *pipeLine) Close() error {
+
+	for _, comp := range pl.components {
+		if comp.ActivityState() != component.Terminated {
+			logging.NoContext().
+				Debug("Shutting down pipeline component",
+					zap.String("cuuid", comp.ID().String()),
+					zap.String("puuid", pl.id.String()))
+
+			if err := comp.Close(); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 

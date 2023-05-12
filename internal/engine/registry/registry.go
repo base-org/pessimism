@@ -3,15 +3,12 @@ package registry
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
 )
 
 func GetInvariant(it core.InvariantType, cfg any) (invariant.Invariant, error) {
-	log.Printf("cfg %+v", cfg)
-
 	switch it {
 	case core.ExampleInv:
 

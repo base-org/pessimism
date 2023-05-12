@@ -41,6 +41,7 @@ type StateChange struct {
 
 // EgressHandler specific errors
 const (
+	engineEgressExistsErr  = "engine egress already exists"
 	egressAlreadyExistsErr = "%s egress key already exists within component router mapping"
 	egressNotFoundErr      = "no egress key %s exists within component router mapping"
 	egressNotExistErr      = "received transit request with 0 out channels to write to"

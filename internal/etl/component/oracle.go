@@ -53,18 +53,21 @@ func NewOracle(ctx context.Context, pt core.PipelineType, outType core.RegisterT
 	}
 
 	logging.WithContext(ctx).Info("Constructed component",
-		zap.String("ID", o.metaData.id.String()))
+		zap.String("cuuid", o.metaData.id.String()))
 
 	return o, nil
 }
 
 // Close ... This function is called at the end when processes related to oracle need to shut down
 func (o *Oracle) Close() error {
-	logging.WithContext(o.ctx).Info("Waiting for oracle goroutines to be done.")
+	logging.WithContext(o.ctx).
+		Info("Waiting for oracle goroutines to be done",
+			zap.String("cuuid", o.id.String()))
 	o.closeChan <- KillSignal
 
 	o.wg.Wait()
-	logging.WithContext(o.ctx).Info("Oracle goroutines have exited.")
+	logging.WithContext(o.ctx).Info("Oracle goroutines have exited",
+		zap.String("cuuid", o.id.String()))
 	return nil
 }
 
@@ -76,19 +79,20 @@ func (o *Oracle) EventLoop() error {
 	logger := logging.WithContext(o.ctx)
 
 	logger.Debug("Starting component event loop",
-		zap.String("ID", o.id.String()))
+		zap.String("cuuid", o.id.String()))
 
 	o.wg.Add(1)
 
 	routineCtx, cancel := context.WithCancel(o.ctx)
+	o.emitStateChange(Live)
 
+	// Spawn definition read routine
 	go func() {
-		o.emitStateChange(Live)
 
 		defer o.wg.Done()
 		if err := o.definition.ReadRoutine(routineCtx, o.oracleChannel); err != nil {
 			logger.Error("Received error from read routine",
-				zap.String("ID", o.id.String()),
+				zap.String("cuuid", o.id.String()),
 				zap.Error(err))
 		}
 	}()
@@ -97,7 +101,7 @@ func (o *Oracle) EventLoop() error {
 		select {
 		case registerData := <-o.oracleChannel:
 			logger.Debug("Sending data",
-				zap.String("ID", o.id.String()))
+				zap.String("cuuid", o.id.String()))
 
 			if err := o.egressHandler.Send(registerData); err != nil {
 				logger.Error(transitErr, zap.String("ID", o.id.String()))
@@ -105,13 +109,18 @@ func (o *Oracle) EventLoop() error {
 
 		case <-o.closeChan:
 			logger.Debug("Received component shutdown signal",
-				zap.String("ID", o.id.String()))
+				zap.String("cuuid", o.id.String()))
 
 			o.emitStateChange(Terminated)
-
+			logger.Debug("Closing component channel",
+				zap.String("cuuid", o.id.String()))
 			close(o.oracleChannel)
+			logger.Debug("Closed component channel",
+				zap.String("cuuid", o.id.String()))
 			cancel() // End definition routine
 
+			logger.Debug("Component shutdown success",
+				zap.String("cuuid", o.id.String()))
 			return nil
 		}
 	}

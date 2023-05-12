@@ -43,30 +43,30 @@ func getTestPipeLine(ctx context.Context) Pipeline {
 	return pipeLine
 }
 
-func Test_PipeRegistry(t *testing.T) {
+func Test_EtlStore(t *testing.T) {
 	var tests = []struct {
 		name        string
 		function    string
 		description string
 
-		constructionLogic func() *pipeRegistry
-		testLogic         func(*testing.T, *pipeRegistry)
+		constructionLogic func() EtlStore
+		testLogic         func(*testing.T, EtlStore)
 	}{
 		{
 			name:        "Successful Add When PID Already Exists",
 			function:    "addPipeline",
 			description: "",
 
-			constructionLogic: func() *pipeRegistry {
+			constructionLogic: func() EtlStore {
 				ctx := context.Background()
 
-				testRegistry := newPipeRegistry()
+				testRegistry := newEtlStore()
 				testPipeLine := getTestPipeLine(ctx)
 
-				testRegistry.addPipeline(core.NilPipelineUUID(), testPipeLine)
+				testRegistry.AddPipeline(core.NilPipelineUUID(), testPipeLine)
 				return testRegistry
 			},
-			testLogic: func(t *testing.T, pr *pipeRegistry) {
+			testLogic: func(t *testing.T, store EtlStore) {
 				ctx := context.Background()
 				testPipeLine := getTestPipeLine(ctx)
 
@@ -76,10 +76,10 @@ func Test_PipeRegistry(t *testing.T) {
 					core.MakeComponentUUID(0, 0, 0, 1),
 				)
 
-				pr.addPipeline(pID2, testPipeLine)
+				store.AddPipeline(pID2, testPipeLine)
 
 				for _, comp := range testPipeLine.Components() {
-					pIDs, err := pr.getPipelineUUIDs(comp.ID())
+					pIDs, err := store.GetPipelineUUIDs(comp.ID())
 
 					assert.NoError(t, err)
 					assert.Len(t, pIDs, 2)
@@ -94,11 +94,11 @@ func Test_PipeRegistry(t *testing.T) {
 			function:    "addPipeline",
 			description: "",
 
-			constructionLogic: func() *pipeRegistry {
-				pr := newPipeRegistry()
+			constructionLogic: func() EtlStore {
+				pr := newEtlStore()
 				return pr
 			},
-			testLogic: func(t *testing.T, pr *pipeRegistry) {
+			testLogic: func(t *testing.T, store EtlStore) {
 				ctx := context.Background()
 				testPipeLine := getTestPipeLine(ctx)
 
@@ -108,10 +108,10 @@ func Test_PipeRegistry(t *testing.T) {
 					core.MakeComponentUUID(0, 0, 0, 1),
 				)
 
-				pr.addPipeline(pID, testPipeLine)
+				store.AddPipeline(pID, testPipeLine)
 
 				for _, comp := range testPipeLine.Components() {
-					pIDs, err := pr.getPipelineUUIDs(comp.ID())
+					pIDs, err := store.GetPipelineUUIDs(comp.ID())
 
 					assert.NoError(t, err)
 					assert.Len(t, pIDs, 1)
@@ -125,15 +125,15 @@ func Test_PipeRegistry(t *testing.T) {
 			function:    "getPipeLineIDs",
 			description: "",
 
-			constructionLogic: newPipeRegistry,
-			testLogic: func(t *testing.T, pr *pipeRegistry) {
+			constructionLogic: newEtlStore,
+			testLogic: func(t *testing.T, store EtlStore) {
 				cID := core.MakeComponentUUID(0, 0, 0, 0)
 				pID := core.MakePipelineUUID(0, cID, cID)
 
-				pr.addComponentLink(cID, pID)
+				store.AddComponentLink(cID, pID)
 
 				expectedIDs := []core.PipelineUUID{pID}
-				actualIDs, err := pr.getPipelineUUIDs(cID)
+				actualIDs, err := store.GetPipelineUUIDs(cID)
 
 				assert.NoError(t, err)
 				assert.Equal(t, expectedIDs, actualIDs)
@@ -145,11 +145,11 @@ func Test_PipeRegistry(t *testing.T) {
 			function:    "getPipeLineIDs",
 			description: "",
 
-			constructionLogic: newPipeRegistry,
-			testLogic: func(t *testing.T, pr *pipeRegistry) {
+			constructionLogic: newEtlStore,
+			testLogic: func(t *testing.T, store EtlStore) {
 				cID := core.MakeComponentUUID(0, 0, 0, 0)
 
-				_, err := pr.getPipelineUUIDs(cID)
+				_, err := store.GetPipelineUUIDs(cID)
 
 				assert.Error(t, err)
 			},
@@ -159,12 +159,12 @@ func Test_PipeRegistry(t *testing.T) {
 			function:    "getPipeline",
 			description: "",
 
-			constructionLogic: newPipeRegistry,
-			testLogic: func(t *testing.T, pr *pipeRegistry) {
+			constructionLogic: newEtlStore,
+			testLogic: func(t *testing.T, store EtlStore) {
 				cID := core.MakeComponentUUID(0, 0, 0, 0)
 				pID := core.MakePipelineUUID(0, cID, cID)
 
-				_, err := pr.getPipeline(pID)
+				_, err := store.GetPipelineFromPUUID(pID)
 				assert.Error(t, err)
 				assert.Equal(t, err.Error(), fmt.Sprintf(pIDNotFoundErr, pID))
 
@@ -174,20 +174,20 @@ func Test_PipeRegistry(t *testing.T) {
 			function:    "getPipeline",
 			description: "",
 
-			constructionLogic: func() *pipeRegistry {
-				pr := newPipeRegistry()
-				return pr
+			constructionLogic: func() EtlStore {
+				store := newEtlStore()
+				return store
 			},
-			testLogic: func(t *testing.T, pr *pipeRegistry) {
+			testLogic: func(t *testing.T, store EtlStore) {
 				cID := core.MakeComponentUUID(0, 0, 0, 0)
 				pID := core.MakePipelineUUID(0, cID, cID)
 
 				pLine := getTestPipeLine(context.Background())
 
-				pr.addPipeline(pID, pLine)
+				store.AddPipeline(pID, pLine)
 
 				pID2 := core.MakePipelineUUID(0, cID, cID)
-				_, err := pr.getPipeline(pID2)
+				_, err := store.GetPipelineFromPUUID(pID2)
 
 				assert.Error(t, err)
 				assert.Equal(t, err.Error(), uuidNotFoundErr)
@@ -198,19 +198,19 @@ func Test_PipeRegistry(t *testing.T) {
 			function:    "getPipeline",
 			description: "",
 
-			constructionLogic: func() *pipeRegistry {
-				pr := newPipeRegistry()
-				return pr
+			constructionLogic: func() EtlStore {
+				store := newEtlStore()
+				return store
 			},
-			testLogic: func(t *testing.T, pr *pipeRegistry) {
+			testLogic: func(t *testing.T, store EtlStore) {
 				cID := core.MakeComponentUUID(0, 0, 0, 0)
 				pID := core.MakePipelineUUID(0, cID, cID)
 
 				expectedPline := getTestPipeLine(context.Background())
 
-				pr.addPipeline(pID, expectedPline)
+				store.AddPipeline(pID, expectedPline)
 
-				actualPline, err := pr.getPipeline(pID)
+				actualPline, err := store.GetPipelineFromPUUID(pID)
 
 				assert.NoError(t, err)
 				assert.Equal(t, expectedPline, actualPline)

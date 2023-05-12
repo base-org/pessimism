@@ -2,8 +2,6 @@ package core
 
 import (
 	"time"
-
-	"golang.org/x/net/context"
 )
 
 // TransitData ... Standardized type used for data inter-communication
@@ -35,19 +33,23 @@ type InvariantInput struct {
 	PUUID PipelineUUID
 	Input TransitData
 }
-type InvariantInputFunc func(TransitData) InvariantInput
 
+// EngineInputRelay ... Represents a inter-subsystem
+// relay used to bind final ETL pipeline outputs to risk engine inputs
 type EngineInputRelay struct {
-	ctx context.Context
-
 	pUUID   PipelineUUID
 	outChan chan InvariantInput
 }
 
+// NewEngineRelay ... Initializer
 func NewEngineRelay(pUUID PipelineUUID, outChan chan InvariantInput) *EngineInputRelay {
-	return &EngineInputRelay{}
+	return &EngineInputRelay{
+		pUUID:   pUUID,
+		outChan: outChan,
+	}
 }
 
+// RelayTransitData ...
 func (eir *EngineInputRelay) RelayTransitData(td TransitData) error {
 	invInput := InvariantInput{
 		PUUID: eir.pUUID,
@@ -55,10 +57,5 @@ func (eir *EngineInputRelay) RelayTransitData(td TransitData) error {
 	}
 
 	eir.outChan <- invInput
-	return nil
-}
-
-func (eir *EngineInputRelay) Close() error {
-	close(eir.outChan)
 	return nil
 }

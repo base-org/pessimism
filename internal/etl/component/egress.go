@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/logging"
 )
 
 // egressHandler ... Used to route transit data from a component to it's respective edge components.
@@ -29,6 +28,12 @@ func (eh *egressHandler) Send(td core.TransitData) error {
 		return fmt.Errorf(egressNotExistErr)
 	}
 
+	if eh.HasEngineEgress() {
+		if err := eh.relay.RelayTransitData(td); err != nil {
+			return err
+		}
+	}
+
 	// NOTE - Consider introducing a fail safe timeout to ensure that freezing on clogged chanel buffers is recognized
 	for _, channel := range eh.egresses {
 		channel <- td
@@ -47,11 +52,6 @@ func (eh *egressHandler) SendBatch(dataSlice []core.TransitData) error {
 			return err
 		}
 
-		if eh.HasEngineEgress() {
-			if err := eh.relay.RelayTransitData(data); err != nil {
-				return err
-			}
-		}
 	}
 
 	return nil
@@ -83,10 +83,9 @@ func (eh *egressHandler) HasEngineEgress() bool {
 }
 
 func (eh *egressHandler) AddRelay(relay *core.EngineInputRelay) error {
-	logging.NoContext().Debug("Adding egress to risk engine")
 
 	if eh.HasEngineEgress() {
-		return fmt.Errorf("engine egress already exists")
+		return fmt.Errorf(engineEgressExistsErr)
 	}
 
 	eh.relay = relay

@@ -40,44 +40,45 @@ func initializeAndRunServer(ctx context.Context, cfgPath config.FilePath,
 }
 
 func main() {
-	wg := &sync.WaitGroup{}
+	appWg := &sync.WaitGroup{}
 
-	appCtx, ctxCancel := context.WithCancel(context.Background())
+	appCtx, appCtxCancel := context.WithCancel(context.Background())
 
 	cfg := config.NewConfig(cfgPath)
 
 	logging.NewLogger(cfg.LoggerConfig, cfg.IsProduction())
 
 	logger := logging.WithContext(appCtx)
-
-	logger.Info("bootstrapping pessimsim monitoring application")
+	logger.Info("Bootstrapping pessimsim monitoring application")
 
 	engineManager, shutDownEngine := engine.NewManager()
+	etlManager, shutDownETL := pipeline.NewManager(appCtx, engineManager.Transit())
 
-	logger.Info("starting and running ETL manager instance")
+	logger.Info("Starting and running risk engine manager instance")
+	engineCtx, engineCtxCancel := context.WithCancel(appCtx)
 
-	etlManager, shutDownETL := pipeline.NewManager(appCtx, engineManager.Transit(), wg)
-
-	wg.Add(1)
-
+	appWg.Add(1)
 	go func() {
-		defer wg.Done()
-
-		if err := engineManager.EventLoop(appCtx); err != nil {
-			logger.Error("engine manager event loop crashed", zap.Error(err))
-		}
-	}()
-
-	logger.Info("starting and running risk engine manager instance")
-
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
+		defer appWg.Done()
 
 		etlManager.EventLoop(appCtx)
 	}()
 
+	logger.Info("Starting and running ETL manager instance")
+
+	appWg.Add(1)
 	go func() {
+		defer appWg.Done()
+
+		if err := engineManager.EventLoop(engineCtx); err != nil {
+			logger.Error("engine manager event loop crashed", zap.Error(err))
+		}
+	}()
+
+	appWg.Add(1)
+	go func() {
+		defer appWg.Done()
+
 		server, shutDownServer, err := initializeAndRunServer(appCtx, cfgPath, etlManager, engineManager)
 
 		if err != nil {
@@ -86,14 +87,25 @@ func main() {
 		}
 
 		server.Stop(func() {
-			shutDownETL()
-			shutDownEngine()
-			shutDownServer()
-			ctxCancel()
+			logger.Info("Shutting down pessimism application")
+
+			engineCtxCancel() // Shutdown risk engine event-loop
+			shutDownEngine()  // Shutdown risk engine subsystem
+			logger.Info("Shutdown risk engine subsystem")
+
+			shutDownETL() // Shutdown ETL subsystem
+			logger.Info("Shutdown ETL subsystem")
+
+			shutDownServer() // Shutdown API server
+			logger.Info("Shutdown API server")
+
+			appCtxCancel() // Use ctx cancel to end shutdown subsystem event loops
+			logger.Info("Shutdown context")
 		})
 	}()
 
-	wg.Wait()
-	logger.Info("Ending pessimism application run")
+	logger.Debug("Waiting for all application threads to end")
+	appWg.Wait()
+	logger.Info("Successful pessimism shutdown")
 	os.Exit(0)
 }

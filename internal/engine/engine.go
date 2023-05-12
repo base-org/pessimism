@@ -17,7 +17,7 @@ const (
 
 type RiskEngine interface {
 	Type() Type
-	Execute(ctx context.Context, data core.TransitData, invs []invariant.Invariant) error
+	Execute(ctx context.Context, data core.TransitData, inv invariant.Invariant) error
 }
 
 type hardCodedEngine struct {
@@ -31,19 +31,17 @@ func (e *hardCodedEngine) Type() Type {
 	return HardCoded
 }
 
-func (e *hardCodedEngine) Execute(ctx context.Context, data core.TransitData, invs []invariant.Invariant) error {
+func (e *hardCodedEngine) Execute(ctx context.Context, data core.TransitData, inv invariant.Invariant) error {
 	logger := logging.WithContext(ctx)
 
-	for _, inv := range invs {
-		invalid, err := inv.Invalidate(data)
-		if err != nil {
-			logger.Error("Failed to perform invalidation option for invariant", zap.Error(err))
-			return err
-		}
+	invalid, err := inv.Invalidate(data)
+	if err != nil {
+		logger.Error("Failed to perform invalidation option for invariant", zap.Error(err))
+		return err
+	}
 
-		if invalid {
-			logger.Info("Invariant invalidation occurred")
-		}
+	if invalid {
+		logger.Info("Invariant invalidation occurred")
 	}
 
 	return nil

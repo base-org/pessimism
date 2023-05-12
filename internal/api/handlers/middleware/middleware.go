@@ -20,8 +20,7 @@ const (
 // written HTTP status code to be captured for logging.
 type responseWriter struct {
 	http.ResponseWriter
-	status      int
-	wroteHeader bool
+	status int
 }
 
 func wrapResponseWriter(w http.ResponseWriter) *responseWriter {

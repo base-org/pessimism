@@ -36,15 +36,13 @@ type DataRegister struct {
 }
 
 type RegisterDependencyPath struct {
-	regPath []*DataRegister
+	Path []*DataRegister
 }
 
-func (rdp RegisterDependencyPath) OutputRegister() *DataRegister {
-	return rdp.regPath[len(rdp.regPath)-1]
-}
-
+// GeneratePipelineUUID ... Generates a pipelineUUID for an existing dependency path
+// provided an enumerated pipeline and network type
 func (rdp RegisterDependencyPath) GeneratePipelineUUID(pt PipelineType, n Network) PipelineUUID {
-	firstComp, lastComp := rdp.regPath[0], rdp.OutputRegister()
+	firstComp, lastComp := rdp.Path[0], rdp.Path[len(rdp.Path)-1]
 	firstUUID := MakeComponentUUID(pt, firstComp.ComponentType, firstComp.DataType, n)
 	lastUUID := MakeComponentUUID(pt, lastComp.ComponentType, lastComp.DataType, n)
 

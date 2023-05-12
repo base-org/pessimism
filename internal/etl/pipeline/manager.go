@@ -3,7 +3,6 @@ package pipeline
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/base-org/pessimism/internal/core"
@@ -16,43 +15,45 @@ import (
 type Manager struct {
 	ctx context.Context
 
-	dag       *cGraph
-	pRegistry *pipeRegistry
+	dag      *cGraph
+	etlStore EtlStore
 
-	closeChan     chan int
 	engineChan    chan core.InvariantInput
 	compEventChan chan component.StateChange
 
-	wg *sync.WaitGroup
+	wg sync.WaitGroup
 }
 
 // NewManager ... Initializer
-func NewManager(ctx context.Context, ec chan core.InvariantInput, wg *sync.WaitGroup) (*Manager, func()) {
+func NewManager(ctx context.Context, ec chan core.InvariantInput) (*Manager, func()) {
 	dag := newGraph()
 
 	m := &Manager{
 		ctx:           ctx,
 		dag:           dag,
-		closeChan:     make(chan int, 1),
-		pRegistry:     newPipeRegistry(),
+		etlStore:      newEtlStore(),
 		engineChan:    ec,
 		compEventChan: make(chan component.StateChange),
-		wg:            wg,
+		wg:            sync.WaitGroup{},
 	}
 
 	shutDown := func() {
-		for id := range dag.edges() {
-			c, err := dag.getComponent(id)
-			if err != nil {
-				logging.NoContext().Error("Could not get component during shutdown", zap.Error(err))
-			}
+		for _, pl := range m.etlStore.GetAllPipelines() {
+			logging.WithContext(ctx).
+				Info("Shuting down pipeline",
+					zap.String("puuid", pl.UUID().String()))
 
-			if err := c.Close(); err != nil {
-				logging.NoContext().Error("Could not close component", zap.Error(err))
+			if err := pl.Close(); err != nil {
+				logging.WithContext(ctx).
+					Error("Failed to close pipeline",
+						zap.String("puuid", pl.UUID().String()))
 			}
 		}
+		logging.WithContext(ctx).Debug("Waiting for all component routines to end")
 
-		m.closeChan <- 0
+		m.wg.Wait()
+		logging.WithContext(ctx).Debug("Closing component event channel")
+		close(m.compEventChan)
 	}
 
 	return m, shutDown
@@ -64,12 +65,12 @@ func (m *Manager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUI
 	// code logic fails, then some rollback will need be triggered to undo prior applied state operations
 	logger := logging.WithContext(m.ctx)
 
-	outputReg, err := registry.GetRegister(cfg.DataType)
+	register, err := registry.GetRegister(cfg.DataType)
 	if err != nil {
 		return core.NilPipelineUUID(), err
 	}
 
-	depPath := outputReg.GetDependencyPath()
+	depPath := register.GetDependencyPath()
 	pUUID := depPath.GeneratePipelineUUID(cfg.PipelineType, cfg.Network)
 
 	components, err := m.getComponents(cfg, depPath)
@@ -78,36 +79,40 @@ func (m *Manager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUI
 	}
 
 	logger.Debug("constructing pipeline",
-		zap.String("ID", pUUID.String()))
+		zap.String("puuid", pUUID.String()))
 
-	pipeLine, err := NewPipeLine(pUUID)
+	if pLines := m.etlStore.GetExistingPipelinesByPID(pUUID.PID); len(pLines) > 0 {
+
+	}
+
+	pipeLine, err := NewPipeLine(pUUID, components)
 	if err != nil {
 		return core.NilPipelineUUID(), err
 	}
 
-	comps := pipeLine.Components()
-	lastComp := comps[len(comps)-1]
-
-	relay := core.NewEngineRelay(pUUID, m.engineChan)
-
-	// Route pipeline output to risk engine as invariant input
-	err = lastComp.AddRelay(relay)
-	if err != nil {
-		return core.NilPipelineUUID(), err
+	if err := pipeLine.AddEngineRelay(m.engineChan); err != nil {
+		return core.NilPipelineUUID(), nil
 	}
-	m.pRegistry.addPipeline(pUUID, pipeLine)
+
+	if err := m.dag.AddPipeLine(pipeLine); err != nil {
+		return core.NilPipelineUUID(), nil
+	}
+
+	m.etlStore.AddPipeline(pUUID, pipeLine)
 
 	return pUUID, nil
 }
 
 func (m *Manager) RunPipeline(pID core.PipelineUUID) error {
-	pipeLine, err := m.pRegistry.getPipeline(pID)
+	pipeLine, err := m.etlStore.GetPipelineFromPUUID(pID)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("[%s] Running pipeline", pipeLine.ID().String())
-	return pipeLine.RunPipeline(m.wg)
+	logging.WithContext(m.ctx).Info("Running pipeline",
+		zap.String("puuid", pID.String()))
+
+	return pipeLine.RunPipeline(&m.wg)
 }
 
 func (m *Manager) EventLoop(ctx context.Context) {
@@ -115,7 +120,7 @@ func (m *Manager) EventLoop(ctx context.Context) {
 
 	for {
 		select {
-		case <-m.closeChan:
+		case <-ctx.Done():
 			logger.Info("etlManager receieved shutdown request")
 			return
 
@@ -123,7 +128,7 @@ func (m *Manager) EventLoop(ctx context.Context) {
 			// TODO(#35): No ETL Management Procedure Exists
 			// for Handling Component State Changes
 
-			_, err := m.pRegistry.getPipelineUUIDs(stateChange.ID)
+			_, err := m.etlStore.GetPipelineUUIDs(stateChange.ID)
 			if err != nil {
 				logger.Error("Could not fetch pipeline IDs for comp state change")
 			}
@@ -139,29 +144,20 @@ func (m *Manager) getComponents(cfg *core.PipelineConfig,
 	components := make([]component.Component, 0)
 	prevID := core.NilComponentUUID()
 
-	for i, register := range registers {
+	for _, register := range depPath.Path {
 		// NOTE - This doesn't consider the circumstance where
 		// a requested pipeline already exists but requires some backfill to run
+
 		// TODO(#30): Pipeline Collisions Occur When They Shouldn't
-		cID := core.MakeComponentUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
+		cUUID := core.MakeComponentUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
 
-		if !m.dag.componentExists(cID) {
-			comp, err := inferComponent(m.ctx, cfg, cID, register, m.compEventChan)
-			if err != nil {
-				return []component.Component{}, err
-			}
-			if err = m.dag.addComponent(cID, comp); err != nil {
-				return []component.Component{}, err
-			}
-		}
-
-		c, err := m.dag.getComponent(cID)
+		c, err := inferComponent(m.ctx, cfg, cUUID, register, m.compEventChan)
 		if err != nil {
 			return []component.Component{}, err
 		}
 
-		if i != 0 { // IE we've passed the pipeline's last path node; start adding edges
-			if err := m.dag.addEdge(cID, prevID); err != nil {
+		if prevID != core.NilComponentUUID() { // IE we've passed the pipeline's last path node; start adding edges (n, n-1)
+			if err := m.dag.addEdge(cUUID, prevID); err != nil {
 				return []component.Component{}, err
 			}
 		}

@@ -2,7 +2,6 @@ package pipeline
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
@@ -39,7 +38,7 @@ func newGraph() *cGraph {
 	}
 }
 
-// componentExists ... Returns true if component node already exists for ID, false otherwise
+// componentExists ... Returns true if component node already exists for UUID, false otherwise
 func (graph *cGraph) componentExists(cID core.ComponentUUID) bool {
 	_, exists := graph.edgeMap[cID]
 	return exists
@@ -77,14 +76,17 @@ func (graph *cGraph) addEdge(cID1, cID2 core.ComponentUUID) error {
 		return fmt.Errorf("could not find a valid component in mapping for cID: %s", cID2.String())
 	}
 
-	log.Printf("creating entrypoint for %s in component %s", entry1.outType, entry2.comp.ID().String())
+	logging.NoContext().
+		Debug("Adding edge between components",
+			zap.String("cuuid_1", entry1.comp.ID().String()),
+			zap.String("cuuid_2", entry2.comp.ID().String()))
 
-	// Edge already exists case edgecase (No pun)
+	// Edge already exists edgecase (No pun)
 	if _, exists := entry1.edges[entry2.comp.ID()]; exists {
 		return fmt.Errorf("edge already exists from (%s) to (%s)", cID1.String(), cID2.String())
 	}
 
-	entryChan, err := entry2.comp.GetIngress(entry1.outType)
+	c2Ingress, err := entry2.comp.GetIngress(entry1.outType)
 	if err != nil {
 		return err
 	}
@@ -92,7 +94,7 @@ func (graph *cGraph) addEdge(cID1, cID2 core.ComponentUUID) error {
 	logging.NoContext().
 		Debug("Adding edge", zap.String("From", cID1.String()), zap.String("To", cID2.String()))
 
-	if err := entry1.comp.AddEgress(cID2, entryChan); err != nil {
+	if err := entry1.comp.AddEgress(cID2, c2Ingress); err != nil {
 		return err
 	}
 
@@ -122,6 +124,16 @@ func (graph *cGraph) addComponent(cID core.ComponentUUID, comp component.Compone
 
 	graph.edgeMap[cID] = newEntry(comp, comp.OutputType())
 
+	return nil
+}
+
+func (graph *cGraph) AddPipeLine(pl Pipeline) error {
+	for _, c := range pl.Components() {
+		if err := graph.addComponent(c.ID(), c); err != nil {
+			return err
+		}
+
+	}
 	return nil
 }
 
