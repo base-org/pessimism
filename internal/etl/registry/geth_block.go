@@ -15,10 +15,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	pollInterval = 1000
-)
-
 // TODO(#21): Verify config validity during Oracle construction
 // GethBlockODef ...GethBlock register oracle definition used to drive oracle component
 type GethBlockODef struct {
@@ -85,7 +81,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 		return errors.New("start height cannot be more than the latest height from network")
 	}
 
-	ticker := time.NewTicker(pollInterval * time.Millisecond)
+	ticker := time.NewTicker(time.Duration(oracle.cfg.PollInterval) * time.Millisecond)
 	height := startHeight
 
 	for {
@@ -192,7 +188,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 		return err
 	}
 
-	ticker := time.NewTicker(pollInterval * time.Millisecond)
+	ticker := time.NewTicker(time.Duration(oracle.cfg.PollInterval) * time.Millisecond)
 	for {
 		select {
 		case <-ticker.C:

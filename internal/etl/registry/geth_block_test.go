@@ -304,6 +304,7 @@ func Test_Backroutine(t *testing.T) {
 				od := &GethBlockODef{cfg: &config.OracleConfig{
 					RPCEndpoint:  "pass test",
 					NumOfRetries: 3,
+					PollInterval: 1000,
 				}, currHeight: nil, client: testObj}
 
 				outChan := make(chan core.TransitData, 2)
@@ -369,6 +370,7 @@ func Test_ReadRoutine(t *testing.T) {
 					StartHeight:  big.NewInt(2),
 					EndHeight:    big.NewInt(1),
 					NumOfRetries: 3,
+					PollInterval: 1000,
 				}, currHeight: nil, client: testObj}
 				outChan := make(chan core.TransitData)
 				return od, outChan
@@ -405,6 +407,7 @@ func Test_ReadRoutine(t *testing.T) {
 					StartHeight:  nil,
 					EndHeight:    big.NewInt(1),
 					NumOfRetries: 3,
+					PollInterval: 1000,
 				}, currHeight: nil, client: testObj}
 				outChan := make(chan core.TransitData)
 				return od, outChan
@@ -456,6 +459,7 @@ func Test_ReadRoutine(t *testing.T) {
 					StartHeight:  big.NewInt(1),
 					EndHeight:    big.NewInt(5),
 					NumOfRetries: 3,
+					PollInterval: 1000,
 				}, currHeight: nil, client: testObj}
 				outChan := make(chan core.TransitData, 10)
 				return od, outChan
@@ -495,6 +499,8 @@ func Test_ReadRoutine(t *testing.T) {
 		//			StartHeight:  nil,
 		//			EndHeight:    nil,
 		//			NumOfRetries: 3,
+		//			PollInterval: 1000,
+
 		//		}, currHeight: nil, client: testObj}
 		//		outChan := make(chan core.TransitData, 10)
 		//		return od, outChan
