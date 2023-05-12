@@ -43,7 +43,7 @@ func (e *hardCodedEngine) Execute(ctx context.Context, data core.TransitData, in
 	}
 
 	if invalid {
-		logger.Info("Invariant invalidation occurred")
+		logger.Info("Invariant invalidation occurred", zap.String("suuid", inv.UUID().String()))
 	}
 
 	return nil
