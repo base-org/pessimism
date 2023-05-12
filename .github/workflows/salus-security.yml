@@ -1,0 +1,19 @@
+# https://github.com/coinbase/salus 
+name: salus-security
+on:
+
+  push:
+    branches: [ "master", "development" ]
+
+  pull_request:
+    branches: [ "master", "development" ]
+
+jobs:
+  salus_scan_job:
+    runs-on: ubuntu-latest
+    name: Salus Security Scan Example
+    steps:
+    - uses: actions/checkout@v1
+    - name: Salus Scan
+      id: salus_scan
+      uses: federacy/scan-action@0.1.1
