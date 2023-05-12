@@ -23,10 +23,9 @@ const (
 )
 
 func setupExampleETL(cfg *config.Config, m *pipeline.Manager) (chan core.TransitData, error) {
-
 	l1OracleCfg := &config.OracleConfig{
 		RPCEndpoint:  cfg.L1RpcEndpoint,
-		PollInterval: time.Duration(cfg.L1PollInterval),
+		PollInterval: cfg.L1PollInterval,
 		StartHeight:  nil,
 		EndHeight:    nil,
 	}

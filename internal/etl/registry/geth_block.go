@@ -81,7 +81,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 		return errors.New("start height cannot be more than the latest height from network")
 	}
 
-	ticker := time.NewTicker(oracle.cfg.PollInterval * time.Millisecond)
+	ticker := time.NewTicker(time.Duration(oracle.cfg.PollInterval) * time.Millisecond)
 	height := startHeight
 
 	for {
@@ -188,7 +188,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 		return err
 	}
 
-	ticker := time.NewTicker(oracle.cfg.PollInterval * time.Millisecond)
+	ticker := time.NewTicker(time.Duration(oracle.cfg.PollInterval) * time.Millisecond)
 	for {
 		select {
 		case <-ticker.C:

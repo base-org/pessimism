@@ -6,12 +6,10 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
-
 	"github.com/joho/godotenv"
 
 	"os"
@@ -43,7 +41,7 @@ type Config struct {
 // OracleConfig ... Configuration passed through to an oracle component constructor
 type OracleConfig struct {
 	RPCEndpoint  string
-	PollInterval time.Duration
+	PollInterval int
 	StartHeight  *big.Int
 	EndHeight    *big.Int
 	NumOfRetries int
