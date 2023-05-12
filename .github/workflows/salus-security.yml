@@ -16,4 +16,4 @@ jobs:
     - uses: actions/checkout@v1
     - name: Salus Scan
       id: salus_scan
-      uses: federacy/scan-action@0.1.1
+      uses: federacy/scan-action@0.1.4
