@@ -18,9 +18,11 @@ import (
 )
 
 const (
+	// cfgPath ... env file path
 	cfgPath = "config.env"
 )
 
+// initializeAndRunServer ... Performs dependency injection with parameters to build server struct
 func initializeAndRunServer(ctx context.Context, cfgPath config.FilePath,
 	etlMan pipeline.Manager, engineMan engine.Manager) (*server.Server, func(), error) {
 	cfg := config.NewConfig(cfgPath)
@@ -39,12 +41,12 @@ func initializeAndRunServer(ctx context.Context, cfgPath config.FilePath,
 	}, nil
 }
 
+// main ... Application driver
 func main() {
 	appWg := &sync.WaitGroup{}
-
 	appCtx, appCtxCancel := context.WithCancel(context.Background())
 
-	cfg := config.NewConfig(cfgPath)
+	cfg := config.NewConfig(cfgPath) // Load env vars
 
 	logging.NewLogger(cfg.LoggerConfig, cfg.IsProduction())
 
@@ -58,7 +60,7 @@ func main() {
 	engineCtx, engineCtxCancel := context.WithCancel(appCtx)
 
 	appWg.Add(1)
-	go func() {
+	go func() { // EtlManager driver thread
 		defer appWg.Done()
 
 		etlManager.EventLoop(appCtx)
@@ -67,7 +69,7 @@ func main() {
 	logger.Info("Starting and running ETL manager instance")
 
 	appWg.Add(1)
-	go func() {
+	go func() { // EngineManager driver thread
 		defer appWg.Done()
 
 		if err := engineManager.EventLoop(engineCtx); err != nil {
@@ -76,17 +78,17 @@ func main() {
 	}()
 
 	appWg.Add(1)
-	go func() {
+	go func() { // ApiServer driver thread
 		defer appWg.Done()
 
-		server, shutDownServer, err := initializeAndRunServer(appCtx, cfgPath, etlManager, engineManager)
+		apiServer, shutDownServer, err := initializeAndRunServer(appCtx, cfgPath, etlManager, engineManager)
 
 		if err != nil {
 			logger.Error("Error obtained trying to start server", zap.Error(err))
 			panic(err)
 		}
 
-		server.Stop(func() {
+		apiServer.Stop(func() {
 			logger.Info("Shutting down pessimism application")
 
 			engineCtxCancel() // Shutdown risk engine event-loop
@@ -99,8 +101,6 @@ func main() {
 
 			shutDownServer() // Shutdown API server
 			logger.Info("Shutdown API server")
-
-			logger.Info("Shutdown context")
 		})
 	}()
 
