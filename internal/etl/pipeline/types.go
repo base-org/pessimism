@@ -37,4 +37,7 @@ const (
 	cUUIDNotFoundErr = "component with ID %s does not exist within component graph"
 	cUUIDExistsErr   = "component with ID %s already exists in component graph"
 	edgeExistsErr    = "edge already exists from (%s) to (%s) in component graph"
+
+	// Manager error constants
+	unknownCompType = "unknown component type %s provided"
 )

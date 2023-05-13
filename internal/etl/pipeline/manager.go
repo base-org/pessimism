@@ -12,12 +12,14 @@ import (
 	"go.uber.org/zap"
 )
 
+// Manager ...
 type Manager interface {
 	CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error)
 	RunPipeline(pID core.PipelineUUID) error
 	EventLoop(ctx context.Context)
 }
 
+// etlManager ...
 type etlManager struct {
 	ctx context.Context
 
@@ -43,7 +45,7 @@ func NewManager(ctx context.Context, ec chan core.InvariantInput) (Manager, func
 		wg:            sync.WaitGroup{},
 	}
 
-	shutDown := func() {
+	shutDown := func() { // Iterate and kill active pipelines one by one
 		for _, pl := range m.etlStore.GetAllPipelines() {
 			logging.WithContext(ctx).
 				Info("Shuting down pipeline",
@@ -56,8 +58,8 @@ func NewManager(ctx context.Context, ec chan core.InvariantInput) (Manager, func
 			}
 		}
 		logging.WithContext(ctx).Debug("Waiting for all component routines to end")
-
 		m.wg.Wait()
+
 		logging.WithContext(ctx).Debug("Closing component event channel")
 		close(m.compEventChan)
 	}
@@ -105,25 +107,27 @@ func (m *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.Pipeline
 	return pUUID, nil
 }
 
-func (m *etlManager) RunPipeline(pID core.PipelineUUID) error {
-	pipeLine, err := m.etlStore.GetPipelineFromPUUID(pID)
+// RunPipeline ... Runs pipeline session for some provided pUUID
+func (m *etlManager) RunPipeline(pUUID core.PipelineUUID) error {
+	pipeLine, err := m.etlStore.GetPipelineFromPUUID(pUUID)
 	if err != nil {
 		return err
 	}
 
 	logging.WithContext(m.ctx).Info("Running pipeline",
-		zap.String(core.PUUIDKey, pID.String()))
+		zap.String(core.PUUIDKey, pUUID.String()))
 
 	return pipeLine.RunPipeline(&m.wg)
 }
 
+// EventLoop ... Driver ran as seperate go routine
 func (m *etlManager) EventLoop(ctx context.Context) {
 	logger := logging.WithContext(ctx)
 
 	for {
 		select {
 		case <-ctx.Done():
-			logger.Info("etletlManager receieved shutdown request")
+			logger.Info("Receieved shutdown request")
 			return
 
 		case stateChange := <-m.compEventChan:
@@ -150,9 +154,6 @@ func (m *etlManager) getComponents(cfg *core.PipelineConfig,
 	prevID := core.NilComponentUUID()
 
 	for _, register := range depPath.Path {
-		// NOTE - This doesn't consider the circumstance where
-		// a requested pipeline already exists but requires some backfill to run
-
 		// TODO(#30): Pipeline Collisions Occur When They Shouldn't
 		cUUID := core.MakeComponentUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
 
@@ -203,6 +204,6 @@ func inferComponent(ctx context.Context, cfg *core.PipelineConfig, id core.Compo
 		return nil, fmt.Errorf("aggregator component has yet to be implemented")
 
 	default:
-		return nil, fmt.Errorf("unknown component type provided")
+		return nil, fmt.Errorf(unknownCompType, register.ComponentType.String())
 	}
 }
