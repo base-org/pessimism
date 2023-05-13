@@ -22,7 +22,7 @@ const (
 )
 
 func initializeAndRunServer(ctx context.Context, cfgPath config.FilePath,
-	etlMan *pipeline.Manager, engineMan *engine.Manager) (*server.Server, func(), error) {
+	etlMan pipeline.Manager, engineMan engine.Manager) (*server.Server, func(), error) {
 	cfg := config.NewConfig(cfgPath)
 
 	apiService := service.New(ctx, cfg.SvcConfig, etlMan, engineMan)

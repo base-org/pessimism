@@ -10,6 +10,12 @@ import (
 	"go.uber.org/zap"
 )
 
+func renderInvariantResponse(w http.ResponseWriter, r *http.Request,
+	ir *models.InvResponse) {
+	w.WriteHeader(ir.Code)
+	render.JSON(w, r, ir)
+}
+
 // RunInvariant ... Handle invariant run request
 func (ph *PessimismHandler) RunInvariant(w http.ResponseWriter, r *http.Request) {
 	var body models.InvRequestBody
@@ -18,8 +24,8 @@ func (ph *PessimismHandler) RunInvariant(w http.ResponseWriter, r *http.Request)
 		logging.WithContext(ph.ctx).
 			Error("Could not unmarshal request", zap.Error(err))
 
-		w.WriteHeader(http.StatusBadRequest)
-		render.JSON(w, r, models.NewInvRequestUnmarshalErrResp())
+		renderInvariantResponse(w, r,
+			models.NewInvRequestUnmarshalErrResp())
 		return
 	}
 
@@ -28,10 +34,10 @@ func (ph *PessimismHandler) RunInvariant(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusInternalServerError)
 		logging.WithContext(ph.ctx).
 			Error("Could not process invariant request", zap.Error(err))
-		render.JSON(w, r, models.NewInvRequestUnmarshalErrResp())
+
+		renderInvariantResponse(w, r, models.NewInvRequestUnmarshalErrResp())
 		return
 	}
 
-	w.WriteHeader(http.StatusAccepted)
-	render.JSON(w, r, models.NewOkResp(invUUID))
+	renderInvariantResponse(w, r, models.NewOkResp(invUUID))
 }

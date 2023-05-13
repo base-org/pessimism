@@ -17,20 +17,20 @@ func Test_Manager(t *testing.T) {
 		function    string
 		description string
 
-		constructionLogic func() *Manager
-		testLogic         func(t *testing.T, m *Manager)
+		constructionLogic func() Manager
+		testLogic         func(t *testing.T, m Manager)
 	}{
 		{
 			name:        "Successful Pipe Component Construction",
 			function:    "inferComponent",
 			description: "inferComponent function should generate pipe component instance provided valid params",
 
-			constructionLogic: func() *Manager {
+			constructionLogic: func() Manager {
 				m, _ := NewManager(context.Background(), nil)
 				return m
 			},
 
-			testLogic: func(t *testing.T, m *Manager) {
+			testLogic: func(t *testing.T, m Manager) {
 				cUUID := core.MakeComponentUUID(1, 1, 1, 1)
 
 				register, err := registry.GetRegister(core.ContractCreateTX)

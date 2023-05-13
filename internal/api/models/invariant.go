@@ -2,6 +2,7 @@ package models
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/base-org/pessimism/internal/core"
 )
@@ -36,31 +37,24 @@ type InvRequestBody struct {
 }
 
 type InvResponse struct {
+	Code   int               `json:"status_code"`
 	Status InvResponseStatus `json:"status"`
 
 	Result any    `json:"result"`
 	Error  string `json:"error"`
 }
 
-func NewOkResp(id core.InvSessionUUID) *InvResponse {
-	return &InvResponse{
-		Status: OK,
-		Result: map[string]string{"invariant_uuid": id.String()},
-	}
-}
-
-// NewInvRequestUnmarshalErrResp ... New unmarshal error response construction
-func NewInvRequestUnmarshalErrResp() *InvResponse {
-	return &InvResponse{
-		Status: NotOK,
-		Error:  "could not unmarshal request body",
-	}
-}
-
-// NewNoProcessInvErrResp ...
-func NewNoProcessInvErrResp() *InvResponse {
-	return &InvResponse{
-		Status: NotOK,
-		Error:  "error processing invariant request",
+func (params *InvRequestParams) GeneratePipelineConfig(endpoint string, pollInterval time.Duration,
+	regType core.RegisterType) *core.PipelineConfig {
+	return &core.PipelineConfig{
+		Network:      params.Network,
+		DataType:     regType,
+		PipelineType: params.PType,
+		OracleCfg: &core.OracleConfig{
+			RPCEndpoint:  endpoint,
+			PollInterval: pollInterval,
+			StartHeight:  params.StartHeight,
+			EndHeight:    params.EndHeight,
+		},
 	}
 }

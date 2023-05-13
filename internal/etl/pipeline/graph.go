@@ -9,6 +9,18 @@ import (
 	"go.uber.org/zap"
 )
 
+type ComponentGraph interface {
+	ComponentExists(cID core.ComponentUUID) bool
+	GetComponent(cID core.ComponentUUID) (component.Component, error)
+	AddEdge(cUUID1, cUUID2 core.ComponentUUID) error
+	AddComponent(cID core.ComponentUUID, comp component.Component) error
+	AddComponents(cSlice []component.Component) error
+
+	// TODO(#23): Manager DAG Component Removal Support
+	RemoveEdge(_, _ core.ComponentUUID) error
+	RemoveComponent(_ core.ComponentUUID) error
+}
+
 // componentEntry ... Used to store critical component graph entry data
 type componentEntry struct {
 	comp    component.Component
@@ -39,18 +51,18 @@ func newGraph() *cGraph {
 }
 
 // componentExists ... Returns true if component node already exists for UUID, false otherwise
-func (graph *cGraph) componentExists(cID core.ComponentUUID) bool {
+func (graph *cGraph) ComponentExists(cID core.ComponentUUID) bool {
 	_, exists := graph.edgeMap[cID]
 	return exists
 }
 
 // getComponent ... Returns a component entry for some component ID
-func (graph *cGraph) getComponent(cID core.ComponentUUID) (component.Component, error) {
-	if graph.componentExists(cID) {
+func (graph *cGraph) GetComponent(cID core.ComponentUUID) (component.Component, error) {
+	if graph.ComponentExists(cID) {
 		return graph.edgeMap[cID].comp, nil
 	}
 
-	return nil, fmt.Errorf("component with ID %s does not exist within pipeline graph", cID)
+	return nil, fmt.Errorf(cUUIDNotFoundErr, cID)
 }
 
 /*
@@ -65,15 +77,15 @@ NOTE - There is no check to ensure that a cyclic edge is being added, meaning
 
 // TODO(#30): Pipeline Collisions Occur When They Shouldn't
 // addEdge ... Adds edge between two preconstructed constructed component nodes
-func (graph *cGraph) addEdge(cID1, cID2 core.ComponentUUID) error {
-	entry1, found := graph.edgeMap[cID1]
+func (graph *cGraph) AddEdge(cUUID1, cUUID2 core.ComponentUUID) error {
+	entry1, found := graph.edgeMap[cUUID1]
 	if !found {
-		return fmt.Errorf("could not find a valid component in mapping for cID: %s", cID1.String())
+		return fmt.Errorf(cUUIDNotFoundErr, cUUID1.String())
 	}
 
-	entry2, found := graph.edgeMap[cID2]
+	entry2, found := graph.edgeMap[cUUID2]
 	if !found {
-		return fmt.Errorf("could not find a valid component in mapping for cID: %s", cID2.String())
+		return fmt.Errorf(cUUIDNotFoundErr, cUUID2.String())
 	}
 
 	logging.NoContext().
@@ -83,7 +95,7 @@ func (graph *cGraph) addEdge(cID1, cID2 core.ComponentUUID) error {
 
 	// Edge already exists edgecase (No pun)
 	if _, exists := entry1.edges[entry2.comp.ID()]; exists {
-		return fmt.Errorf("edge already exists from (%s) to (%s)", cID1.String(), cID2.String())
+		return fmt.Errorf(edgeExistsErr, cUUID1.String(), cUUID2.String())
 	}
 
 	c2Ingress, err := entry2.comp.GetIngress(entry1.outType)
@@ -92,34 +104,34 @@ func (graph *cGraph) addEdge(cID1, cID2 core.ComponentUUID) error {
 	}
 
 	logging.NoContext().
-		Debug("Adding edge", zap.String("From", cID1.String()), zap.String("To", cID2.String()))
+		Debug("Adding edge", zap.String("From", cUUID1.String()), zap.String("To", cUUID2.String()))
 
-	if err := entry1.comp.AddEgress(cID2, c2Ingress); err != nil {
+	if err := entry1.comp.AddEgress(cUUID2, c2Ingress); err != nil {
 		return err
 	}
 
 	// Update edge mapping with new link
-	graph.edgeMap[cID1].edges[cID2] = nil
+	graph.edgeMap[cUUID1].edges[cUUID2] = nil
 
 	return nil
 }
 
 // TODO(#23): Manager DAG Component Removal Support
 // removeEdge ... Removes an edge from the graph
-func (graph *cGraph) removeEdge(_, _ core.ComponentUUID) error { //nolint:unused // will be implemented soon
+func (graph *cGraph) RemoveEdge(_, _ core.ComponentUUID) error {
 	return nil
 }
 
 // TODO(#23): Manager DAG Component Removal Support
 // removeComponent ... Removes a component from the graph
-func (graph *cGraph) removeComponent(_ core.ComponentUUID) error { //nolint:unused // will be implemented soon
+func (graph *cGraph) RemoveComponent(_ core.ComponentUUID) error {
 	return nil
 }
 
 // addComponent ... Adds component node entry to graph
-func (graph *cGraph) addComponent(cID core.ComponentUUID, comp component.Component) error {
+func (graph *cGraph) AddComponent(cID core.ComponentUUID, comp component.Component) error {
 	if _, exists := graph.edgeMap[cID]; exists {
-		return fmt.Errorf("component with ID %s already exists", cID)
+		return fmt.Errorf(cUUIDExistsErr, cID)
 	}
 
 	graph.edgeMap[cID] = newEntry(comp, comp.OutputType())
@@ -127,9 +139,9 @@ func (graph *cGraph) addComponent(cID core.ComponentUUID, comp component.Compone
 	return nil
 }
 
-func (graph *cGraph) AddPipeLine(pl Pipeline) error {
-	for _, c := range pl.Components() {
-		if err := graph.addComponent(c.ID(), c); err != nil {
+func (graph *cGraph) AddComponents(cSlice []component.Component) error {
+	for _, c := range cSlice {
+		if err := graph.AddComponent(c.ID(), c); err != nil {
 			return err
 		}
 	}

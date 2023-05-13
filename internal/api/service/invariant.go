@@ -8,58 +8,51 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	RetryCount = 3
-)
-
+// ProcessInvariantRequest ... Processes an invariant request type
 func (svc *PessimismService) ProcessInvariantRequest(ir models.InvRequestBody) (core.InvSessionUUID, error) {
-	if ir.Method == models.Run {
-		return svc.runInvariantSession(&ir)
+	if ir.Method == models.Run { // Deploy invariant session
+		return svc.runInvariantSession(ir.Params)
 	}
 	// TODO - Add support for other run types
 
 	return core.NilInvariantUUID(), nil
 }
 
-func (svc *PessimismService) runInvariantSession(ir *models.InvRequestBody) (core.InvSessionUUID, error) {
+// runInvariantSession ... Runs an invariant session provided
+func (svc *PessimismService) runInvariantSession(params models.InvRequestParams) (core.InvSessionUUID, error) {
 	logger := logging.WithContext(svc.ctx)
 
-	inv, err := registry.GetInvariant(ir.Params.InvType, ir.Params.SessionParams)
+	inv, err := registry.GetInvariant(params.InvType, params.SessionParams)
 	if err != nil {
 		return core.NilInvariantUUID(), err
 	}
 
-	endPoint, err := svc.cfg.GetEndpointFromNetwork(ir.Params.Network)
+	endpoint, err := svc.cfg.GetEndpointForNetwork(params.Network)
 	if err != nil {
 		return core.NilInvariantUUID(), err
 	}
 
-	oCfg := core.OracleConfig{
-		RPCEndpoint:  endPoint,
-		StartHeight:  ir.Params.StartHeight,
-		EndHeight:    ir.Params.EndHeight,
-		NumOfRetries: RetryCount, // TODO - Make configurable through env file
-	}
-
-	pCfg := &core.PipelineConfig{
-		Network:      ir.Params.Network,
-		DataType:     inv.InputType(),
-		PipelineType: ir.Params.PType,
-		OracleCfg:    &oCfg,
-	}
-
-	logger.Info("Creating data pipeline")
-	pID, err := svc.etlManager.CreateDataPipeline(pCfg)
+	pollInterval, err := svc.cfg.GetPollIntervalForNetwork(params.Network)
 	if err != nil {
 		return core.NilInvariantUUID(), err
 	}
 
-	invID, err := svc.engineManager.DeployInvariantSession(ir.Params.Network, pID, ir.Params.InvType,
-		ir.Params.PType, ir.Params.SessionParams)
+	pConfig := params.GeneratePipelineConfig(endpoint, pollInterval, inv.InputType())
+
+	pID, err := svc.etlManager.CreateDataPipeline(pConfig)
 	if err != nil {
 		return core.NilInvariantUUID(), err
 	}
-	logger.Info("Deployed invariant session", zap.String("invariant_uuid", invID.String()))
+
+	logger.Info("Created etl pipeline",
+		zap.String(core.PUUIDKey, pID.String()))
+
+	invID, err := svc.engineManager.DeployInvariantSession(params.Network, pID, params.InvType,
+		params.PType, params.SessionParams)
+	if err != nil {
+		return core.NilInvariantUUID(), err
+	}
+	logger.Info("Deployed invariant session", zap.String(core.SUUIDKey, invID.String()))
 
 	if err = svc.etlManager.RunPipeline(pID); err != nil {
 		return core.NilInvariantUUID(), err

@@ -24,11 +24,11 @@ func newEgressHandler() *egressHandler {
 
 // Send ... Sends single piece of transitData to all innner mapping value channels
 func (eh *egressHandler) Send(td core.TransitData) error {
-	if len(eh.egresses) == 0 && !eh.HasEngineEgress() {
+	if len(eh.egresses) == 0 && !eh.HasEngineRelay() {
 		return fmt.Errorf(egressNotExistErr)
 	}
 
-	if eh.HasEngineEgress() {
+	if eh.HasEngineRelay() {
 		if err := eh.relay.RelayTransitData(td); err != nil {
 			return err
 		}
@@ -73,20 +73,20 @@ func (eh *egressHandler) RemoveEgress(componentID core.ComponentUUID) error {
 	}
 
 	delete(eh.egresses, componentID.PID)
-
 	return nil
 }
 
-func (eh *egressHandler) HasEngineEgress() bool {
+// HasEngineRelay ... Returns true if engine relay exists, false otherwise
+func (eh *egressHandler) HasEngineRelay() bool {
 	return eh.relay != nil
 }
 
+// AddRelay ... Adds a relay assuming no existings ones
 func (eh *egressHandler) AddRelay(relay *core.EngineInputRelay) error {
-	if eh.HasEngineEgress() {
+	if eh.HasEngineRelay() {
 		return fmt.Errorf(engineEgressExistsErr)
 	}
 
 	eh.relay = relay
-
 	return nil
 }

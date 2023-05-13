@@ -12,7 +12,13 @@ import (
 	"go.uber.org/zap"
 )
 
-type Manager struct {
+type Manager interface {
+	CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error)
+	RunPipeline(pID core.PipelineUUID) error
+	EventLoop(ctx context.Context)
+}
+
+type etlManager struct {
 	ctx context.Context
 
 	dag      *cGraph
@@ -25,10 +31,10 @@ type Manager struct {
 }
 
 // NewManager ... Initializer
-func NewManager(ctx context.Context, ec chan core.InvariantInput) (*Manager, func()) {
+func NewManager(ctx context.Context, ec chan core.InvariantInput) (Manager, func()) {
 	dag := newGraph()
 
-	m := &Manager{
+	m := &etlManager{
 		ctx:           ctx,
 		dag:           dag,
 		etlStore:      newEtlStore(),
@@ -60,7 +66,7 @@ func NewManager(ctx context.Context, ec chan core.InvariantInput) (*Manager, fun
 }
 
 // CreateDataPipeline ... Creates an ETL data pipeline provided a pipeline configuration
-func (m *Manager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error) {
+func (m *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error) {
 	// NOTE - If some of these early sub-system operations succeed but lower function
 	// code logic fails, then some rollback will need be triggered to undo prior applied state operations
 	logger := logging.WithContext(m.ctx)
@@ -90,7 +96,7 @@ func (m *Manager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUI
 		return core.NilPipelineUUID(), err
 	}
 
-	if err := m.dag.AddPipeLine(pipeLine); err != nil {
+	if err := m.dag.AddComponents(pipeLine.Components()); err != nil {
 		return core.NilPipelineUUID(), err
 	}
 
@@ -99,7 +105,7 @@ func (m *Manager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUI
 	return pUUID, nil
 }
 
-func (m *Manager) RunPipeline(pID core.PipelineUUID) error {
+func (m *etlManager) RunPipeline(pID core.PipelineUUID) error {
 	pipeLine, err := m.etlStore.GetPipelineFromPUUID(pID)
 	if err != nil {
 		return err
@@ -111,13 +117,13 @@ func (m *Manager) RunPipeline(pID core.PipelineUUID) error {
 	return pipeLine.RunPipeline(&m.wg)
 }
 
-func (m *Manager) EventLoop(ctx context.Context) {
+func (m *etlManager) EventLoop(ctx context.Context) {
 	logger := logging.WithContext(ctx)
 
 	for {
 		select {
 		case <-ctx.Done():
-			logger.Info("etlManager receieved shutdown request")
+			logger.Info("etletlManager receieved shutdown request")
 			return
 
 		case stateChange := <-m.compEventChan:
@@ -138,7 +144,7 @@ func (m *Manager) EventLoop(ctx context.Context) {
 }
 
 // getComponents ... Returns all components provided a slice of register definitions
-func (m *Manager) getComponents(cfg *core.PipelineConfig,
+func (m *etlManager) getComponents(cfg *core.PipelineConfig,
 	depPath core.RegisterDependencyPath) ([]component.Component, error) {
 	components := make([]component.Component, 0)
 	prevID := core.NilComponentUUID()
@@ -156,7 +162,7 @@ func (m *Manager) getComponents(cfg *core.PipelineConfig,
 		}
 
 		if prevID != core.NilComponentUUID() { // IE we've passed the pipeline's last path node; start adding edges (n, n-1)
-			if err := m.dag.addEdge(cUUID, prevID); err != nil {
+			if err := m.dag.AddEdge(cUUID, prevID); err != nil {
 				return []component.Component{}, err
 			}
 		}
@@ -182,7 +188,6 @@ func inferComponent(ctx context.Context, cfg *core.PipelineConfig, id core.Compo
 			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Oracle.String()))
 		}
 
-		// NOTE ... We assume at most 1 oracle per register pipeline
 		return init(ctx, cfg.PipelineType, cfg.OracleCfg,
 			component.WithID(id))
 

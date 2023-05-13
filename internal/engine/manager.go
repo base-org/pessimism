@@ -10,6 +10,16 @@ import (
 	"go.uber.org/zap"
 )
 
+type Manager interface {
+	Transit() chan core.InvariantInput
+	EventLoop(ctx context.Context) error
+
+	// TODO( ) : Session deletion logic
+	DeleteInvariantSession(_ core.InvSessionUUID) (core.InvSessionUUID, error)
+	DeployInvariantSession(n core.Network, pUUUID core.PipelineUUID, it core.InvariantType,
+		pt core.PipelineType, invParams any) (core.InvSessionUUID, error)
+}
+
 /*
 	NOTE - Manager will need to understand
 	when pipeline changes occur that require remapping
@@ -17,7 +27,7 @@ import (
 */
 
 // Manager ... Engine management abstraction
-type Manager struct {
+type engineManager struct {
 	transit chan core.InvariantInput
 
 	engine RiskEngine
@@ -25,8 +35,8 @@ type Manager struct {
 }
 
 // NewManager ... Initializer
-func NewManager() (*Manager, func()) {
-	m := &Manager{
+func NewManager() (Manager, func()) {
+	m := &engineManager{
 		engine:  NewHardCodedEngine(),
 		transit: make(chan core.InvariantInput),
 		store:   NewSessionStore(),
@@ -40,18 +50,18 @@ func NewManager() (*Manager, func()) {
 }
 
 // Transit ... Returns inter-subsystem transit channel
-func (em *Manager) Transit() chan core.InvariantInput {
+func (em *engineManager) Transit() chan core.InvariantInput {
 	return em.transit
 }
 
 // TODO() :
 // DeleteInvariantSession ...
-func (em *Manager) DeleteInvariantSession(_ core.InvSessionUUID) (core.InvSessionUUID, error) {
+func (em *engineManager) DeleteInvariantSession(_ core.InvSessionUUID) (core.InvSessionUUID, error) {
 	return core.NilInvariantUUID(), nil
 }
 
-// DeployInvariantSession ... Deploys an
-func (em *Manager) DeployInvariantSession(n core.Network, pUUUID core.PipelineUUID, it core.InvariantType,
+// DeployInvariantSession ...
+func (em *engineManager) DeployInvariantSession(n core.Network, pUUUID core.PipelineUUID, it core.InvariantType,
 	pt core.PipelineType, invParams any) (core.InvSessionUUID, error) {
 	inv, err := registry.GetInvariant(it, invParams)
 	if err != nil {
@@ -69,7 +79,8 @@ func (em *Manager) DeployInvariantSession(n core.Network, pUUUID core.PipelineUU
 	return sessionID, nil
 }
 
-func (em *Manager) EventLoop(ctx context.Context) error {
+// EventLoop ...
+func (em *engineManager) EventLoop(ctx context.Context) error {
 	logger := logging.WithContext(ctx)
 
 	for {
@@ -88,10 +99,10 @@ func (em *Manager) EventLoop(ctx context.Context) error {
 }
 
 // executeInvariants ... Executes all invariants associated with the input etl pipeline
-func (em *Manager) executeInvariants(ctx context.Context, data core.InvariantInput) {
+func (em *engineManager) executeInvariants(ctx context.Context, data core.InvariantInput) {
 	logger := logging.WithContext(ctx)
 
-	invUUIDs, err := em.store.GetInvSessionsForPipeline(data.PUUID) // TODO - Change to Get method
+	invUUIDs, err := em.store.GetInvSessionsForPipeline(data.PUUID)
 	if err != nil {
 		logger.Error("Could not fetch invariants for pipeline",
 			zap.Error(err),

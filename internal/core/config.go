@@ -2,14 +2,16 @@ package core
 
 import (
 	"math/big"
+	"time"
 )
 
 // OracleConfig ... Configuration passed through to an oracle component constructor
 type OracleConfig struct {
 	RPCEndpoint  string
+	PollInterval time.Duration
+	NumOfRetries int
 	StartHeight  *big.Int
 	EndHeight    *big.Int
-	NumOfRetries int
 }
 
 // PipelineConfig ... Configuration passed through to a pipeline constructor

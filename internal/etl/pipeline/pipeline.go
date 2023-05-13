@@ -18,10 +18,10 @@ type Pipeline interface {
 	AddEngineRelay(engineChan chan core.InvariantInput) error
 }
 
-type Option = func(*pipeLine)
+type Option = func(*pipeline)
 
-type pipeLine struct {
-	id core.PipelineUUID
+type pipeline struct {
+	uuid core.PipelineUUID
 
 	aState ActivityState
 	pType  core.PipelineType //nolint:unused // will be implemented soon
@@ -30,9 +30,9 @@ type pipeLine struct {
 }
 
 // NewPipeLine ... Initializer
-func NewPipeLine(id core.PipelineUUID, comps []component.Component, opts ...Option) (Pipeline, error) {
-	pl := &pipeLine{
-		id:         id,
+func NewPipeLine(pUUID core.PipelineUUID, comps []component.Component, opts ...Option) (Pipeline, error) {
+	pl := &pipeline{
+		uuid:       pUUID,
 		components: comps,
 		aState:     Booting,
 	}
@@ -45,27 +45,27 @@ func NewPipeLine(id core.PipelineUUID, comps []component.Component, opts ...Opti
 }
 
 // Components ... Returns slice of all constituent components
-func (pl *pipeLine) Components() []component.Component {
+func (pl *pipeline) Components() []component.Component {
 	return pl.components
 }
 
 // UUID ... Returns pipeline UUID
-func (pl *pipeLine) UUID() core.PipelineUUID {
-	return pl.id
+func (pl *pipeline) UUID() core.PipelineUUID {
+	return pl.uuid
 }
 
 // AddEngineRelay ... Adds a relay to the pipeline that forces it to send transformed invariant input
 // to a risk engine
-func (pl *pipeLine) AddEngineRelay(engineChan chan core.InvariantInput) error {
+func (pl *pipeline) AddEngineRelay(engineChan chan core.InvariantInput) error {
 	lastComponent := pl.components[len(pl.components)-1]
-	eir := core.NewEngineRelay(pl.id, engineChan)
+	eir := core.NewEngineRelay(pl.uuid, engineChan)
 
 	return lastComponent.AddRelay(eir)
 }
 
 // RunPipeline  ... Spawns and manages component event loops
 // for some pipeline
-func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
+func (pl *pipeline) RunPipeline(wg *sync.WaitGroup) error {
 	for _, comp := range pl.components {
 		wg.Add(1)
 
@@ -75,12 +75,12 @@ func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 			logging.NoContext().
 				Debug("Attempting to start component event loop",
 					zap.String(core.CUUIDKey, c.ID().String()),
-					zap.String(core.PUUIDKey, pl.id.String()))
+					zap.String(core.PUUIDKey, pl.uuid.String()))
 
 			if err := c.EventLoop(); err != nil {
 				logging.NoContext().Error("Obtained error from event loop", zap.Error(err),
 					zap.String(core.CUUIDKey, c.ID().String()),
-					zap.String(core.PUUIDKey, pl.id.String()))
+					zap.String(core.PUUIDKey, pl.uuid.String()))
 			}
 		}(comp, wg)
 	}
@@ -89,13 +89,13 @@ func (pl *pipeLine) RunPipeline(wg *sync.WaitGroup) error {
 }
 
 // Close ...
-func (pl *pipeLine) Close() error {
+func (pl *pipeline) Close() error {
 	for _, comp := range pl.components {
 		if comp.ActivityState() != component.Terminated {
 			logging.NoContext().
 				Debug("Shutting down pipeline component",
 					zap.String(core.CUUIDKey, comp.ID().String()),
-					zap.String(core.PUUIDKey, pl.id.String()))
+					zap.String(core.PUUIDKey, pl.uuid.String()))
 
 			if err := comp.Close(); err != nil {
 				return err

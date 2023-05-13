@@ -11,12 +11,16 @@ import (
 	"github.com/base-org/pessimism/internal/etl/pipeline"
 )
 
+// Config ... Used to store necessary API service config values
 type Config struct {
-	L1RpcEndpoint string
-	L2RpcEndpoint string
+	L1RpcEndpoint  string
+	L2RpcEndpoint  string
+	L1PollInterval int
+	L2PollInterval int
 }
 
-func (cfg *Config) GetEndpointFromNetwork(n core.Network) (string, error) {
+// GetEndpointForNetwork ... Returns config endpoint for network type
+func (cfg *Config) GetEndpointForNetwork(n core.Network) (string, error) {
 	switch n {
 	case core.Layer1:
 		return cfg.L1RpcEndpoint, nil
@@ -29,6 +33,20 @@ func (cfg *Config) GetEndpointFromNetwork(n core.Network) (string, error) {
 	}
 }
 
+// GetEndpointForNetwork ... Returns config poll-interval for network type
+func (cfg *Config) GetPollIntervalForNetwork(n core.Network) (time.Duration, error) {
+	switch n {
+	case core.Layer1:
+		return time.Duration(cfg.L1PollInterval), nil
+
+	case core.Layer2:
+		return time.Duration(cfg.L2PollInterval), nil
+
+	default:
+		return 0, fmt.Errorf("could not find endpoint for network %s", n.String())
+	}
+}
+
 // Service ...
 type Service interface {
 	ProcessInvariantRequest(ir models.InvRequestBody) (core.InvSessionUUID, error)
@@ -37,15 +55,16 @@ type Service interface {
 
 // PessimismService ...
 type PessimismService struct {
-	ctx           context.Context
-	cfg           *Config
-	etlManager    *pipeline.Manager
-	engineManager *engine.Manager
+	ctx context.Context
+	cfg *Config
+
+	etlManager    pipeline.Manager
+	engineManager engine.Manager
 }
 
 // New ... Initializer
-func New(ctx context.Context, cfg *Config, etlManager *pipeline.Manager,
-	engineManager *engine.Manager) *PessimismService {
+func New(ctx context.Context, cfg *Config, etlManager pipeline.Manager,
+	engineManager engine.Manager) *PessimismService {
 	return &PessimismService{
 		ctx:           ctx,
 		cfg:           cfg,

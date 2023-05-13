@@ -15,10 +15,6 @@ import (
 )
 
 const (
-	pollInterval = 1000
-)
-
-const (
 	notFoundMsg = "not found"
 )
 
@@ -95,7 +91,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 		return errors.New("start height cannot be more than the latest height from network")
 	}
 
-	ticker := time.NewTicker(pollInterval * time.Millisecond)
+	ticker := time.NewTicker(oracle.cfg.PollInterval * time.Millisecond) //nolint:durationcheck // inapplicable
 	height := startHeight
 
 	for {
@@ -202,7 +198,11 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 		return err
 	}
 
-	ticker := time.NewTicker(pollInterval * time.Millisecond)
+	logging.WithContext(ctx).
+		Debug("Starting poll routine", zap.Duration("poll_interval", oracle.cfg.PollInterval),
+			zap.String(core.CUUIDKey, oracle.cUUID.String()))
+
+	ticker := time.NewTicker(oracle.cfg.PollInterval * time.Millisecond) //nolint:durationcheck // inapplicable
 	for {
 		select {
 		case <-ticker.C:

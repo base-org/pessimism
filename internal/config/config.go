@@ -9,7 +9,6 @@ import (
 	"github.com/base-org/pessimism/internal/api/service"
 
 	"github.com/base-org/pessimism/internal/logging"
-
 	"github.com/joho/godotenv"
 
 	"os"
@@ -28,10 +27,12 @@ const (
 // Config ... Application level configuration defined by `FilePath` value
 // TODO - Consider renaming to "environment config"
 type Config struct {
+	Environment Env
+
 	SvcConfig    *service.Config
-	Environment  Env
-	LoggerConfig *logging.Config
 	ServerConfig *server.Config
+
+	LoggerConfig *logging.Config
 }
 
 // NewConfig ... Initializer
@@ -45,8 +46,10 @@ func NewConfig(fileName FilePath) *Config {
 		Environment: Env(getEnvStr("ENV")),
 
 		SvcConfig: &service.Config{
-			L1RpcEndpoint: getEnvStr("L1_RPC_ENDPOINT"),
-			L2RpcEndpoint: getEnvStr("L2_RPC_ENDPOINT"),
+			L1RpcEndpoint:  getEnvStr("L1_RPC_ENDPOINT"),
+			L2RpcEndpoint:  getEnvStr("L2_RPC_ENDPOINT"),
+			L1PollInterval: getEnvInt("L1_POLL_INTERVAL"),
+			L2PollInterval: getEnvInt("L2_POLL_INTERVAL"),
 		},
 
 		LoggerConfig: &logging.Config{
