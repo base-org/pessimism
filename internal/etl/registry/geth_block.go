@@ -47,7 +47,7 @@ func NewGethBlockOracle(ctx context.Context, ot core.PipelineType,
 		return nil, err
 	}
 
-	od.cUUID = oracle.ID()
+	od.cUUID = oracle.UUID()
 	return oracle, nil
 }
 

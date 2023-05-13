@@ -77,7 +77,7 @@ func (store *etlStore) AddPipeline(pUUID core.PipelineUUID, pl Pipeline) {
 	store.pipeLines[pUUID.PID] = entrySlice
 
 	for _, comp := range pl.Components() {
-		store.AddComponentLink(comp.ID(), pUUID)
+		store.AddComponentLink(comp.UUID(), pUUID)
 	}
 }
 

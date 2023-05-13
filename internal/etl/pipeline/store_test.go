@@ -79,7 +79,7 @@ func Test_EtlStore(t *testing.T) {
 				store.AddPipeline(pID2, testPipeLine)
 
 				for _, comp := range testPipeLine.Components() {
-					pIDs, err := store.GetPipelineUUIDs(comp.ID())
+					pIDs, err := store.GetPipelineUUIDs(comp.UUID())
 
 					assert.NoError(t, err)
 					assert.Len(t, pIDs, 2)
@@ -111,7 +111,7 @@ func Test_EtlStore(t *testing.T) {
 				store.AddPipeline(pID, testPipeLine)
 
 				for _, comp := range testPipeLine.Components() {
-					pIDs, err := store.GetPipelineUUIDs(comp.ID())
+					pIDs, err := store.GetPipelineUUIDs(comp.UUID())
 
 					assert.NoError(t, err)
 					assert.Len(t, pIDs, 1)

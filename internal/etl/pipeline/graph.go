@@ -9,12 +9,15 @@ import (
 	"go.uber.org/zap"
 )
 
+// ComponentGraph ...
 type ComponentGraph interface {
-	ComponentExists(cID core.ComponentUUID) bool
-	GetComponent(cID core.ComponentUUID) (component.Component, error)
+	ComponentExists(cUIID core.ComponentUUID) bool
+	GetComponent(cUIID core.ComponentUUID) (component.Component, error)
 	AddEdge(cUUID1, cUUID2 core.ComponentUUID) error
-	AddComponent(cID core.ComponentUUID, comp component.Component) error
+	AddComponent(cUIID core.ComponentUUID, comp component.Component) error
 	AddComponents(cSlice []component.Component) error
+
+	Edges() map[core.ComponentUUID][]core.ComponentUUID // Useful for testing
 
 	// TODO(#23): Manager DAG Component Removal Support
 	RemoveEdge(_, _ core.ComponentUUID) error
@@ -43,26 +46,26 @@ type cGraph struct {
 	edgeMap map[core.ComponentUUID]*componentEntry
 }
 
-// newGraph ... Initializer
-func newGraph() *cGraph {
+// NewComponentGraph ... Initializer
+func NewComponentGraph() ComponentGraph {
 	return &cGraph{
 		edgeMap: make(map[core.ComponentUUID]*componentEntry, 0),
 	}
 }
 
 // componentExists ... Returns true if component node already exists for UUID, false otherwise
-func (graph *cGraph) ComponentExists(cID core.ComponentUUID) bool {
-	_, exists := graph.edgeMap[cID]
+func (graph *cGraph) ComponentExists(cUIID core.ComponentUUID) bool {
+	_, exists := graph.edgeMap[cUIID]
 	return exists
 }
 
 // getComponent ... Returns a component entry for some component ID
-func (graph *cGraph) GetComponent(cID core.ComponentUUID) (component.Component, error) {
-	if graph.ComponentExists(cID) {
-		return graph.edgeMap[cID].comp, nil
+func (graph *cGraph) GetComponent(cUIID core.ComponentUUID) (component.Component, error) {
+	if graph.ComponentExists(cUIID) {
+		return graph.edgeMap[cUIID].comp, nil
 	}
 
-	return nil, fmt.Errorf(cUUIDNotFoundErr, cID)
+	return nil, fmt.Errorf(cUUIDNotFoundErr, cUIID)
 }
 
 /*
@@ -90,11 +93,11 @@ func (graph *cGraph) AddEdge(cUUID1, cUUID2 core.ComponentUUID) error {
 
 	logging.NoContext().
 		Debug("Adding edge between components",
-			zap.String("cuuid_1", entry1.comp.ID().String()),
-			zap.String("cuuid_2", entry2.comp.ID().String()))
+			zap.String("from", entry1.comp.UUID().String()),
+			zap.String("to", entry2.comp.UUID().String()))
 
 	// Edge already exists edgecase (No pun)
-	if _, exists := entry1.edges[entry2.comp.ID()]; exists {
+	if _, exists := entry1.edges[entry2.comp.UUID()]; exists {
 		return fmt.Errorf(edgeExistsErr, cUUID1.String(), cUUID2.String())
 	}
 
@@ -102,9 +105,6 @@ func (graph *cGraph) AddEdge(cUUID1, cUUID2 core.ComponentUUID) error {
 	if err != nil {
 		return err
 	}
-
-	logging.NoContext().
-		Debug("Adding edge", zap.String("From", cUUID1.String()), zap.String("To", cUUID2.String()))
 
 	if err := entry1.comp.AddEgress(cUUID2, c2Ingress); err != nil {
 		return err
@@ -128,31 +128,32 @@ func (graph *cGraph) RemoveComponent(_ core.ComponentUUID) error {
 	return nil
 }
 
-// addComponent ... Adds component node entry to graph
-func (graph *cGraph) AddComponent(cID core.ComponentUUID, comp component.Component) error {
-	if _, exists := graph.edgeMap[cID]; exists {
-		return fmt.Errorf(cUUIDExistsErr, cID)
+// addComponent ... Adds component node entry to edge mapping
+func (graph *cGraph) AddComponent(cUIID core.ComponentUUID, comp component.Component) error {
+	if _, exists := graph.edgeMap[cUIID]; exists {
+		return fmt.Errorf(cUUIDExistsErr, cUIID)
 	}
 
-	graph.edgeMap[cID] = newEntry(comp, comp.OutputType())
+	graph.edgeMap[cUIID] = newEntry(comp, comp.OutputType())
 
 	return nil
 }
 
+// AddComponents ... Inserts all components from some slice into edge mapping
 func (graph *cGraph) AddComponents(cSlice []component.Component) error {
 	for _, c := range cSlice {
-		if err := graph.AddComponent(c.ID(), c); err != nil {
+		if err := graph.AddComponent(c.UUID(), c); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// edges ...  Returns a representation of all graph edges between component IDs
-func (graph *cGraph) edges() map[core.ComponentUUID][]core.ComponentUUID { //nolint:unused // will be leveraged soon
-	idMap := make(map[core.ComponentUUID][]core.ComponentUUID, len(graph.edgeMap))
+// Edges ...  Returns a representation of all graph edges between component UUIDs
+func (graph *cGraph) Edges() map[core.ComponentUUID][]core.ComponentUUID {
+	uuidMap := make(map[core.ComponentUUID][]core.ComponentUUID, len(graph.edgeMap))
 
-	for cID, cEntry := range graph.edgeMap {
+	for cUIID, cEntry := range graph.edgeMap {
 		cEdges := make([]core.ComponentUUID, len(cEntry.edges))
 
 		i := 0
@@ -161,8 +162,8 @@ func (graph *cGraph) edges() map[core.ComponentUUID][]core.ComponentUUID { //nol
 			i++
 		}
 
-		idMap[cID] = cEdges
+		uuidMap[cUIID] = cEdges
 	}
 
-	return idMap
+	return uuidMap
 }

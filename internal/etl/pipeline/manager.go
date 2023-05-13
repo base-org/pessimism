@@ -19,11 +19,11 @@ type Manager interface {
 	EventLoop(ctx context.Context)
 }
 
-// etlManager ...
+// etlManager ... Holds
 type etlManager struct {
 	ctx context.Context
 
-	dag      *cGraph
+	dag      ComponentGraph
 	etlStore EtlStore
 
 	engineChan    chan core.InvariantInput
@@ -34,7 +34,7 @@ type etlManager struct {
 
 // NewManager ... Initializer
 func NewManager(ctx context.Context, ec chan core.InvariantInput) (Manager, func()) {
-	dag := newGraph()
+	dag := NewComponentGraph()
 
 	m := &etlManager{
 		ctx:           ctx,
@@ -45,7 +45,7 @@ func NewManager(ctx context.Context, ec chan core.InvariantInput) (Manager, func
 		wg:            sync.WaitGroup{},
 	}
 
-	shutDown := func() { // Iterate and kill active pipelines one by one
+	shutDown := func() { // Iterate and kill active pipelines
 		for _, pl := range m.etlStore.GetAllPipelines() {
 			logging.WithContext(ctx).
 				Info("Shuting down pipeline",
@@ -89,39 +89,39 @@ func (m *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.Pipeline
 	logger.Debug("constructing pipeline",
 		zap.String(core.PUUIDKey, pUUID.String()))
 
-	pipeLine, err := NewPipeLine(pUUID, components)
+	pipeline, err := NewPipeLine(pUUID, components)
 	if err != nil {
 		return core.NilPipelineUUID(), err
 	}
 
-	if err := pipeLine.AddEngineRelay(m.engineChan); err != nil {
+	if err := pipeline.AddEngineRelay(m.engineChan); err != nil {
 		return core.NilPipelineUUID(), err
 	}
 
-	if err := m.dag.AddComponents(pipeLine.Components()); err != nil {
+	if err := m.dag.AddComponents(pipeline.Components()); err != nil {
 		return core.NilPipelineUUID(), err
 	}
 
-	m.etlStore.AddPipeline(pUUID, pipeLine)
+	m.etlStore.AddPipeline(pUUID, pipeline)
 
 	return pUUID, nil
 }
 
 // RunPipeline ... Runs pipeline session for some provided pUUID
-func (m *etlManager) RunPipeline(pUUID core.PipelineUUID) error {
-	pipeLine, err := m.etlStore.GetPipelineFromPUUID(pUUID)
+func (em *etlManager) RunPipeline(pUUID core.PipelineUUID) error {
+	pipeline, err := em.etlStore.GetPipelineFromPUUID(pUUID)
 	if err != nil {
 		return err
 	}
 
-	logging.WithContext(m.ctx).Info("Running pipeline",
+	logging.WithContext(em.ctx).Info("Running pipeline",
 		zap.String(core.PUUIDKey, pUUID.String()))
 
-	return pipeLine.RunPipeline(&m.wg)
+	return pipeline.RunPipeline(&em.wg)
 }
 
 // EventLoop ... Driver ran as seperate go routine
-func (m *etlManager) EventLoop(ctx context.Context) {
+func (em *etlManager) EventLoop(ctx context.Context) {
 	logger := logging.WithContext(ctx)
 
 	for {
@@ -130,7 +130,7 @@ func (m *etlManager) EventLoop(ctx context.Context) {
 			logger.Info("Receieved shutdown request")
 			return
 
-		case stateChange := <-m.compEventChan:
+		case stateChange := <-em.compEventChan:
 			// TODO(#35): No ETL Management Procedure Exists
 			// for Handling Component State Changes
 
@@ -139,7 +139,7 @@ func (m *etlManager) EventLoop(ctx context.Context) {
 				zap.String("to", stateChange.To.String()),
 				zap.String(core.CUUIDKey, stateChange.ID.String()))
 
-			_, err := m.etlStore.GetPipelineUUIDs(stateChange.ID)
+			_, err := em.etlStore.GetPipelineUUIDs(stateChange.ID)
 			if err != nil {
 				logger.Error("Could not fetch pipeline IDs for comp state change")
 			}
@@ -148,7 +148,7 @@ func (m *etlManager) EventLoop(ctx context.Context) {
 }
 
 // getComponents ... Returns all components provided a slice of register definitions
-func (m *etlManager) getComponents(cfg *core.PipelineConfig,
+func (em *etlManager) getComponents(cfg *core.PipelineConfig,
 	depPath core.RegisterDependencyPath) ([]component.Component, error) {
 	components := make([]component.Component, 0)
 	prevID := core.NilComponentUUID()
@@ -157,18 +157,18 @@ func (m *etlManager) getComponents(cfg *core.PipelineConfig,
 		// TODO(#30): Pipeline Collisions Occur When They Shouldn't
 		cUUID := core.MakeComponentUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
 
-		c, err := inferComponent(m.ctx, cfg, cUUID, register)
+		c, err := inferComponent(em.ctx, cfg, cUUID, register)
 		if err != nil {
 			return []component.Component{}, err
 		}
 
 		if prevID != core.NilComponentUUID() { // IE we've passed the pipeline's last path node; start adding edges (n, n-1)
-			if err := m.dag.AddEdge(cUUID, prevID); err != nil {
+			if err := em.dag.AddEdge(cUUID, prevID); err != nil {
 				return []component.Component{}, err
 			}
 		}
 
-		prevID = c.ID()
+		prevID = c.UUID()
 		components = append(components, c)
 	}
 

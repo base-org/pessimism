@@ -49,7 +49,7 @@ func NewPipe(ctx context.Context, tform TransformFunc, inType core.RegisterType,
 
 // Close ... Shuts down component by emitting a kill signal to a close channel
 func (p *Pipe) Close() error {
-	p.closeChan <- KillSignal
+	p.closeChan <- killSig
 
 	return nil
 }

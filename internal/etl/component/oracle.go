@@ -63,7 +63,7 @@ func (o *Oracle) Close() error {
 	logging.WithContext(o.ctx).
 		Info("Waiting for oracle definition go routines to finish",
 			zap.String(core.CUUIDKey, o.id.String()))
-	o.closeChan <- KillSignal
+	o.closeChan <- killSig
 
 	o.wg.Wait()
 	logging.WithContext(o.ctx).Info("Oracle definition go routines have exited",
@@ -111,11 +111,9 @@ func (o *Oracle) EventLoop() error {
 				zap.String(core.CUUIDKey, o.id.String()))
 
 			// o.emitStateChange(Terminated)
-			logger.Debug("Closing component channel",
+			logger.Debug("Closing component channel and context",
 				zap.String(core.CUUIDKey, o.id.String()))
 			close(o.oracleChannel)
-			logger.Debug("Closed component channel",
-				zap.String(core.CUUIDKey, o.id.String()))
 			cancel() // End definition routine
 
 			logger.Debug("Component shutdown success",
