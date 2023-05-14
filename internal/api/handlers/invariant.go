@@ -25,7 +25,7 @@ func (ph *PessimismHandler) RunInvariant(w http.ResponseWriter, r *http.Request)
 			Error("Could not unmarshal request", zap.Error(err))
 
 		renderInvariantResponse(w, r,
-			models.NewInvRequestUnmarshalErrResp())
+			models.NewInvUnmarshalErrResp())
 		return
 	}
 
@@ -35,9 +35,9 @@ func (ph *PessimismHandler) RunInvariant(w http.ResponseWriter, r *http.Request)
 		logging.WithContext(ph.ctx).
 			Error("Could not process invariant request", zap.Error(err))
 
-		renderInvariantResponse(w, r, models.NewInvRequestUnmarshalErrResp())
+		renderInvariantResponse(w, r, models.NewInvNoProcessInvResp())
 		return
 	}
 
-	renderInvariantResponse(w, r, models.NewAcceptedResp(invUUID))
+	renderInvariantResponse(w, r, models.NewInvAcceptedResp(invUUID))
 }

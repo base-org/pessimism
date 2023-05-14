@@ -6,7 +6,8 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
-func NewAcceptedResp(id core.InvSessionUUID) *InvResponse {
+// NewInvAcceptedResp ...Returns an invariant response with status accepted
+func NewInvAcceptedResp(id core.InvSessionUUID) *InvResponse {
 	return &InvResponse{
 		Status: OK,
 		Code:   http.StatusAccepted,
@@ -14,8 +15,8 @@ func NewAcceptedResp(id core.InvSessionUUID) *InvResponse {
 	}
 }
 
-// NewInvRequestUnmarshalErrResp ... New unmarshal error response construction
-func NewInvRequestUnmarshalErrResp() *InvResponse {
+// NewInvUnmarshalErrResp ... New unmarshal error response construction
+func NewInvUnmarshalErrResp() *InvResponse {
 	return &InvResponse{
 		Status: NotOK,
 		Code:   http.StatusBadRequest,
@@ -23,8 +24,8 @@ func NewInvRequestUnmarshalErrResp() *InvResponse {
 	}
 }
 
-// NewNoProcessInvErrResp ... New internal processing response error
-func NewNoProcessInvErrResp() *InvResponse {
+// NewInvNoProcessInvResp ... New internal processing response error
+func NewInvNoProcessInvResp() *InvResponse {
 	return &InvResponse{
 		Status: NotOK,
 		Code:   http.StatusInternalServerError,
