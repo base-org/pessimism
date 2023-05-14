@@ -1,3 +1,5 @@
+//go:generate mockgen -package mocks --destination ../../mocks/etl_manager.go --mock_names Manager=EtlManager . Manager
+
 package pipeline
 
 import (

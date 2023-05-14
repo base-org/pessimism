@@ -24,17 +24,17 @@ type ComponentGraph interface {
 	RemoveComponent(_ core.ComponentUUID) error
 }
 
-// componentEntry ... Used to store critical component graph entry data
-type componentEntry struct {
+// cNode ... Used to store critical component graph entry data
+type cNode struct {
 	comp    component.Component
 	edges   map[core.ComponentUUID]interface{}
 	outType core.RegisterType
 }
 
-// newEntry ... Intitializer for graph node entry; stores critical routing information
+// newNode ... Intitializer for graph node entry; stores critical routing information
 // & component metadata
-func newEntry(c component.Component, rt core.RegisterType) *componentEntry {
-	return &componentEntry{
+func newNode(c component.Component, rt core.RegisterType) *cNode {
+	return &cNode{
 		comp:    c,
 		outType: rt,
 		edges:   make(map[core.ComponentUUID]interface{}),
@@ -43,13 +43,13 @@ func newEntry(c component.Component, rt core.RegisterType) *componentEntry {
 
 // cGraph ... Represents a directed acyclic component graph (DAG)
 type cGraph struct {
-	edgeMap map[core.ComponentUUID]*componentEntry
+	edgeMap map[core.ComponentUUID]*cNode
 }
 
 // NewComponentGraph ... Initializer
 func NewComponentGraph() ComponentGraph {
 	return &cGraph{
-		edgeMap: make(map[core.ComponentUUID]*componentEntry, 0),
+		edgeMap: make(map[core.ComponentUUID]*cNode, 0),
 	}
 }
 
@@ -134,7 +134,7 @@ func (graph *cGraph) AddComponent(cUIID core.ComponentUUID, comp component.Compo
 		return fmt.Errorf(cUUIDExistsErr, cUIID)
 	}
 
-	graph.edgeMap[cUIID] = newEntry(comp, comp.OutputType())
+	graph.edgeMap[cUIID] = newNode(comp, comp.OutputType())
 
 	return nil
 }

@@ -27,6 +27,7 @@ func (svc *PessimismService) runInvariantSession(params models.InvRequestParams)
 		return core.NilInvariantUUID(), err
 	}
 
+	// TODO(#53): API Request Validation Submodule
 	endpoint, err := svc.cfg.GetEndpointForNetwork(params.Network)
 	if err != nil {
 		return core.NilInvariantUUID(), err

@@ -1,3 +1,5 @@
+//go:generate mockgen -package mocks --destination ../mocks/engine_manager.go --mock_names Manager=EngineManager . Manager
+
 package engine
 
 import (
