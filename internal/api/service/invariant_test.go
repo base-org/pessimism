@@ -1,57 +1,14 @@
 package service
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
-
-const (
-	testErrMsg1 = "69"
-	testErrMsg2 = "420"
-	testErrMsg3 = "666"
-)
-
-type testSuite struct {
-	testCfg Config
-
-	mockEngineMan *mocks.EngineManager
-	mockEtlMan    *mocks.EtlManager
-
-	apiSvc   Service
-	mockCtrl *gomock.Controller
-}
-
-func testErr1() error {
-	return fmt.Errorf(testErrMsg1)
-}
-func testErr2() error {
-	return fmt.Errorf(testErrMsg2)
-}
-func testErr3() error {
-	return fmt.Errorf(testErrMsg3)
-}
-func createTestSuite(ctrl *gomock.Controller, cfg Config) testSuite {
-	engineManager := mocks.NewEngineManager(ctrl)
-	etlManager := mocks.NewEtlManager(ctrl)
-
-	svc := New(context.Background(), &cfg, etlManager, engineManager)
-	return testSuite{
-		testCfg: cfg,
-
-		mockEngineMan: engineManager,
-		mockEtlMan:    etlManager,
-
-		apiSvc:   svc,
-		mockCtrl: ctrl,
-	}
-}
 
 func Test_ProcessInvariantRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -201,9 +158,47 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 			},
 		},
+		{
+			name:        "Successful Sesion Creation",
+			description: "When ProcessInvariantRequest is called that results in a pipeline that succeeds to run, an invariant UUID should be returned",
+			function:    "ProcessInvariantRequest",
+
+			constructionLogic: func() testSuite {
+				cfg := Config{}
+
+				ts := createTestSuite(ctrl, cfg)
+
+				ts.mockEtlMan.EXPECT().
+					CreateDataPipeline(gomock.Any()).
+					Return(core.NilPipelineUUID(), nil).
+					Times(1)
+
+				ts.mockEngineMan.EXPECT().
+					DeployInvariantSession(gomock.Any(), gomock.Any(),
+						gomock.Any(), gomock.Any(), gomock.Any()).
+					Return(testSUUID1(), nil).
+					Times(1)
+
+				ts.mockEtlMan.EXPECT().
+					RunPipeline(core.NilPipelineUUID()).
+					Return(nil)
+
+				return ts
+			},
+
+			testLogic: func(t *testing.T, ts testSuite) {
+
+				sUUUID, err := ts.apiSvc.ProcessInvariantRequest(defaultRequestBody())
+
+				assert.NoError(t, err)
+				assert.Equal(t, testSUUID1().PID.String(), sUUUID.PID.String())
+
+			},
+		},
 	}
+
 	for i, tc := range tests {
-		t.Run(fmt.Sprintf("%d-%s", i, tc.name), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%d-%s-%s", i, tc.name, tc.function), func(t *testing.T) {
 			testMeta := tc.constructionLogic()
 			tc.testLogic(t, testMeta)
 		})
