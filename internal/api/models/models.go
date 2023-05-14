@@ -6,9 +6,10 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
-func NewOkResp(id core.InvSessionUUID) *InvResponse {
+func NewAcceptedResp(id core.InvSessionUUID) *InvResponse {
 	return &InvResponse{
 		Status: OK,
+		Code:   http.StatusAccepted,
 		Result: map[string]string{"invariant_uuid": id.String()},
 	}
 }

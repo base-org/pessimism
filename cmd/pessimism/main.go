@@ -22,7 +22,7 @@ const (
 	cfgPath = "config.env"
 )
 
-// initializeAndRunServer ... Performs dependency injection with parameters to build server struct
+// initializeAndRunServer ... Performs dependency injection to build server struct
 func initializeAndRunServer(ctx context.Context, cfgPath config.FilePath,
 	etlMan pipeline.Manager, engineMan engine.Manager) (*server.Server, func(), error) {
 	cfg := config.NewConfig(cfgPath)
@@ -63,7 +63,9 @@ func main() {
 	go func() { // EtlManager driver thread
 		defer appWg.Done()
 
-		etlManager.EventLoop(appCtx)
+		if err := etlManager.EventLoop(appCtx); err != nil {
+			logger.Error("etl manager event loop error", zap.Error(err))
+		}
 	}()
 
 	logger.Info("Starting and running ETL manager instance")
@@ -73,7 +75,7 @@ func main() {
 		defer appWg.Done()
 
 		if err := engineManager.EventLoop(engineCtx); err != nil {
-			logger.Error("engine manager event loop crashed", zap.Error(err))
+			logger.Error("engine manager event loop error", zap.Error(err))
 		}
 	}()
 

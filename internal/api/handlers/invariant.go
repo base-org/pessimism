@@ -39,5 +39,5 @@ func (ph *PessimismHandler) RunInvariant(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	renderInvariantResponse(w, r, models.NewOkResp(invUUID))
+	renderInvariantResponse(w, r, models.NewAcceptedResp(invUUID))
 }

@@ -16,7 +16,7 @@ import (
 type Manager interface {
 	CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error)
 	RunPipeline(pID core.PipelineUUID) error
-	EventLoop(ctx context.Context)
+	EventLoop(ctx context.Context) error
 }
 
 // etlManager ... Holds
@@ -68,10 +68,10 @@ func NewManager(ctx context.Context, ec chan core.InvariantInput) (Manager, func
 }
 
 // CreateDataPipeline ... Creates an ETL data pipeline provided a pipeline configuration
-func (m *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error) {
+func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error) {
 	// NOTE - If some of these early sub-system operations succeed but lower function
 	// code logic fails, then some rollback will need be triggered to undo prior applied state operations
-	logger := logging.WithContext(m.ctx)
+	logger := logging.WithContext(em.ctx)
 
 	register, err := registry.GetRegister(cfg.DataType)
 	if err != nil {
@@ -81,7 +81,7 @@ func (m *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.Pipeline
 	depPath := register.GetDependencyPath()
 	pUUID := depPath.GeneratePipelineUUID(cfg.PipelineType, cfg.Network)
 
-	components, err := m.getComponents(cfg, depPath)
+	components, err := em.getComponents(cfg, depPath)
 	if err != nil {
 		return core.NilPipelineUUID(), err
 	}
@@ -94,15 +94,15 @@ func (m *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.Pipeline
 		return core.NilPipelineUUID(), err
 	}
 
-	if err := pipeline.AddEngineRelay(m.engineChan); err != nil {
+	if err := pipeline.AddEngineRelay(em.engineChan); err != nil {
 		return core.NilPipelineUUID(), err
 	}
 
-	if err := m.dag.AddComponents(pipeline.Components()); err != nil {
+	if err := em.dag.AddComponents(pipeline.Components()); err != nil {
 		return core.NilPipelineUUID(), err
 	}
 
-	m.etlStore.AddPipeline(pUUID, pipeline)
+	em.etlStore.AddPipeline(pUUID, pipeline)
 
 	return pUUID, nil
 }
@@ -120,15 +120,15 @@ func (em *etlManager) RunPipeline(pUUID core.PipelineUUID) error {
 	return pipeline.RunPipeline(&em.wg)
 }
 
-// EventLoop ... Driver ran as seperate go routine
-func (em *etlManager) EventLoop(ctx context.Context) {
+// EventLoop ... Driver ran as separate go routine
+func (em *etlManager) EventLoop(ctx context.Context) error {
 	logger := logging.WithContext(ctx)
 
 	for {
 		select {
 		case <-ctx.Done():
 			logger.Info("Receieved shutdown request")
-			return
+			return nil
 
 		case stateChange := <-em.compEventChan:
 			// TODO(#35): No ETL Management Procedure Exists

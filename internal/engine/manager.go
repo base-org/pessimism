@@ -36,17 +36,17 @@ type engineManager struct {
 
 // NewManager ... Initializer
 func NewManager() (Manager, func()) {
-	m := &engineManager{
+	em := &engineManager{
 		engine:  NewHardCodedEngine(),
 		transit: make(chan core.InvariantInput),
 		store:   NewSessionStore(),
 	}
 
 	shutDown := func() {
-		close(m.transit)
+		close(em.transit)
 	}
 
-	return m, shutDown
+	return em, shutDown
 }
 
 // Transit ... Returns inter-subsystem transit channel

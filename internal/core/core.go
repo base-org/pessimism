@@ -42,7 +42,7 @@ func NewEngineRelay(pUUID PipelineUUID, outChan chan InvariantInput) *EngineInpu
 	}
 }
 
-// RelayTransitData ...
+// RelayTransitData ... Creates invariant input from transit data to send to risk engine
 func (eir *EngineInputRelay) RelayTransitData(td TransitData) error {
 	invInput := InvariantInput{
 		PUUID: eir.pUUID,
