@@ -31,7 +31,6 @@ func (ph *PessimismHandler) RunInvariant(w http.ResponseWriter, r *http.Request)
 
 	invUUID, err := ph.service.ProcessInvariantRequest(body)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
 		logging.WithContext(ph.ctx).
 			Error("Could not process invariant request", zap.Error(err))
 

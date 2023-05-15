@@ -11,7 +11,7 @@ func NewInvAcceptedResp(id core.InvSessionUUID) *InvResponse {
 	return &InvResponse{
 		Status: OK,
 		Code:   http.StatusAccepted,
-		Result: map[string]string{"invariant_uuid": id.String()},
+		Result: InvResult{core.SUUIDKey: id.String()},
 	}
 }
 

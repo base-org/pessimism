@@ -13,6 +13,8 @@ import (
 
 type Handlers interface {
 	HealthCheck(w http.ResponseWriter, r *http.Request)
+	RunInvariant(w http.ResponseWriter, r *http.Request)
+
 	ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 

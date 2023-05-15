@@ -1,7 +1,6 @@
 package models
 
 import (
-	"encoding/json"
 	"time"
 )
 
@@ -10,8 +9,4 @@ import (
 type HealthCheck struct {
 	Timestamp time.Time
 	Healthy   bool
-}
-
-func (hc *HealthCheck) UnmarshalJson(blob []byte) error {
-	return json.Unmarshal(blob, hc)
 }

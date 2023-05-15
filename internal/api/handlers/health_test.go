@@ -1,8 +1,9 @@
 package handlers_test
 
 import (
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -26,9 +27,9 @@ func Test_HealthCheck(t *testing.T) {
 		testLogic         func(*testing.T, testSuite)
 	}{
 		{
-			name:        "Get Invariant Failure",
-			description: "When ProcessInvariantRequest is called provided an invalid invariant, an error should be returned",
-			function:    "ProcessInvariantRequest",
+			name:        "Successful Health Check",
+			description: "When GetHealth is called provided a healthy application, a healthy check should be rendered",
+			function:    "GetHealth",
 
 			constructionLogic: func() testSuite {
 				ts := createTestSuite(t)
@@ -47,13 +48,13 @@ func Test_HealthCheck(t *testing.T) {
 				ts.testHandler.HealthCheck(w, r)
 				res := w.Result()
 
-				data, err := ioutil.ReadAll(res.Body)
+				data, err := io.ReadAll(res.Body)
 				if err != nil {
 					t.Errorf("Error: %v", err)
 				}
 
-				actualHc := models.HealthCheck{}
-				err = actualHc.UnmarshalJson(data)
+				actualHc := &models.HealthCheck{}
+				err = json.Unmarshal(data, actualHc)
 
 				assert.NoError(t, err)
 				assert.True(t, actualHc.Healthy)

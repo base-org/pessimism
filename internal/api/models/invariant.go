@@ -40,9 +40,11 @@ type InvResponse struct {
 	Code   int               `json:"status_code"`
 	Status InvResponseStatus `json:"status"`
 
-	Result any    `json:"result"`
-	Error  string `json:"error"`
+	Result InvResult `json:"result"`
+	Error  string    `json:"error"`
 }
+
+type InvResult = map[string]string
 
 func (params *InvRequestParams) GeneratePipelineConfig(endpoint string, pollInterval time.Duration,
 	regType core.RegisterType) *core.PipelineConfig {
