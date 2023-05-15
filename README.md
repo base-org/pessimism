@@ -1,8 +1,7 @@
 # pessimism
 __Because you can't always be optimistic__
 
-_Pessimism_ is a public good monitoring service that allows for Optimism bedrock chains _(Base Layer 2, Optimism)_ to be continously assessed for real-time threats using customly defined user invariants.
-
+_Pessimism_ is a public good monitoring service that allows for Optimism bedrock blockchains _(Base Layer 2, Optimism)_ to be continously assessed for real-time threats using customly defined user invariant rulesets.
 
 <!-- Badge row 1 - status -->
 
@@ -36,6 +35,12 @@ To use the template, run the following the command(s):
 2. To run the compiled binary, you can use the following project level command(s):
     * Using Make: `make run-app`
     * Direct Call: `./bin/pessimism`
+
+## Linting
+[golangci-lint](https://golangci-lint.run/) is used to perform code linting. Configurations are defined in [.golangci.yml](./.golangci.yml)
+It can be ran using the following project level command(s):
+* Using Make: `make lint`
+* Direct Call: `golangci-lint run`
 
 ## Testing
 
