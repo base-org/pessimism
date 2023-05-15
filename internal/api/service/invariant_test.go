@@ -1,8 +1,10 @@
-package service
+package service_test
 
 import (
 	"fmt"
 	"testing"
+
+	svc "github.com/base-org/pessimism/internal/api/service"
 
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/core"
@@ -44,7 +46,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			function:    "ProcessInvariantRequest",
 
 			constructionLogic: func() testSuite {
-				cfg := Config{}
+				cfg := svc.Config{}
 
 				return createTestSuite(ctrl, cfg)
 			},
@@ -67,7 +69,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			function:    "ProcessInvariantRequest",
 
 			constructionLogic: func() testSuite {
-				cfg := Config{}
+				cfg := svc.Config{}
 
 				ts := createTestSuite(ctrl, cfg)
 
@@ -94,7 +96,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			function:    "ProcessInvariantRequest",
 
 			constructionLogic: func() testSuite {
-				cfg := Config{}
+				cfg := svc.Config{}
 
 				ts := createTestSuite(ctrl, cfg)
 
@@ -127,7 +129,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			function:    "ProcessInvariantRequest",
 
 			constructionLogic: func() testSuite {
-				cfg := Config{}
+				cfg := svc.Config{}
 
 				ts := createTestSuite(ctrl, cfg)
 
@@ -164,7 +166,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			function:    "ProcessInvariantRequest",
 
 			constructionLogic: func() testSuite {
-				cfg := Config{}
+				cfg := svc.Config{}
 
 				ts := createTestSuite(ctrl, cfg)
 

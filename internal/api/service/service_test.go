@@ -1,14 +1,14 @@
-package service
+package service_test
 
 import (
 	"context"
 	"fmt"
-	"testing"
+
+	svc "github.com/base-org/pessimism/internal/api/service"
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/mocks"
 	"github.com/golang/mock/gomock"
-	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -18,12 +18,12 @@ const (
 )
 
 type testSuite struct {
-	testCfg Config
+	testCfg svc.Config
 
 	mockEngineMan *mocks.EngineManager
 	mockEtlMan    *mocks.EtlManager
 
-	apiSvc   Service
+	apiSvc   svc.Service
 	mockCtrl *gomock.Controller
 }
 
@@ -41,58 +41,18 @@ func testSUUID1() core.InvSessionUUID {
 	return core.MakeInvSessionUUID(1, 1, 1)
 }
 
-func createTestSuite(ctrl *gomock.Controller, cfg Config) testSuite {
+func createTestSuite(ctrl *gomock.Controller, cfg svc.Config) testSuite {
 	engineManager := mocks.NewEngineManager(ctrl)
 	etlManager := mocks.NewEtlManager(ctrl)
 
-	svc := New(context.Background(), &cfg, etlManager, engineManager)
+	service := svc.New(context.Background(), &cfg, etlManager, engineManager)
 	return testSuite{
 		testCfg: cfg,
 
 		mockEngineMan: engineManager,
 		mockEtlMan:    etlManager,
 
-		apiSvc:   svc,
+		apiSvc:   service,
 		mockCtrl: ctrl,
 	}
-}
-
-func Test_GetHealth(t *testing.T) {
-	ctrl := gomock.NewController(t)
-
-	var tests = []struct {
-		name        string
-		description string
-		function    string
-
-		constructionLogic func() testSuite
-		testLogic         func(*testing.T, testSuite)
-	}{
-		{
-			name:        "Get Health Success",
-			description: "",
-			function:    "ProcessInvariantRequest",
-
-			constructionLogic: func() testSuite {
-				cfg := Config{}
-
-				return createTestSuite(ctrl, cfg)
-			},
-
-			testLogic: func(t *testing.T, ts testSuite) {
-				hc := ts.apiSvc.CheckHealth()
-
-				assert.True(t, hc.Healthy)
-			},
-		},
-	}
-
-	for i, tc := range tests {
-		t.Run(fmt.Sprintf("%d-%s", i, tc.name), func(t *testing.T) {
-			testMeta := tc.constructionLogic()
-			tc.testLogic(t, testMeta)
-		})
-
-	}
-
 }

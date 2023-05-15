@@ -1,3 +1,5 @@
+//go:generate mockgen -package mocks --destination ../../mocks/api_service.go . Service
+
 package service
 
 import (
@@ -71,9 +73,4 @@ func New(ctx context.Context, cfg *Config, etlManager pipeline.Manager,
 		etlManager:    etlManager,
 		engineManager: engineManager,
 	}
-}
-
-// CheckHealth ... Returns health check for server
-func (svc *PessimismService) CheckHealth() *models.HealthCheck {
-	return &models.HealthCheck{Timestamp: time.Now(), Healthy: true}
 }
