@@ -6,30 +6,60 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
-var (
-	gethBlockReg = &core.DataRegister{
-		DataType:             core.GethBlock,
-		ComponentType:        core.Oracle,
-		ComponentConstructor: NewGethBlockOracle,
-		Dependencies:         make([]*core.DataRegister, 0),
-	}
+type Registry interface {
+	GetRegister(rt core.RegisterType) (*core.DataRegister, error)
+}
 
-	contractCreateTXReg = &core.DataRegister{
-		DataType:             core.ContractCreateTX,
-		ComponentType:        core.Pipe,
-		ComponentConstructor: NewCreateContractTxPipe,
-		Dependencies:         []*core.DataRegister{gethBlockReg},
-	}
+type componentRegistry struct {
+	registers []*core.DataRegister
+}
 
-	blackHoleTxReg = &core.DataRegister{
-		DataType:             core.BlackholeTX,
-		ComponentType:        core.Pipe,
-		ComponentConstructor: NewBlackHoleTxPipe,
-		Dependencies:         []*core.DataRegister{gethBlockReg},
-	}
-)
+func NewRegistry() Registry {
 
-func GetRegister(rt core.RegisterType) (*core.DataRegister, error) {
+	registers := []&core.DataRegister{
+
+		&core.DataRegister{
+			DataType:             core.GethBlock,
+			ComponentType:        core.Oracle,
+			ComponentConstructor: NewGethBlockOracle,
+			Dependencies:         make([]*core.DataRegister, 0),
+		},
+		&core.DataRegister{
+			DataType:             core.GethBlock,
+			ComponentType:        core.Oracle,
+			ComponentConstructor: NewGethBlockOracle,
+			Dependencies:         make([]*core.DataRegister, 0),
+		},
+		&core.DataRegister{
+			DataType:             core.ContractCreateTX,
+			ComponentType:        core.Pipe,
+			ComponentConstructor: NewCreateContractTxPipe,
+			Dependencies:         []*core.DataRegister{gethBlockReg},
+		},
+		&core.DataRegister{
+			DataType:             core.BlackholeTX,
+			ComponentType:        core.Pipe,
+			ComponentConstructor: NewBlackHoleTxPipe,
+			Dependencies:         []*core.DataRegister{gethBlockReg},
+		},
+		&core.DataRegister{
+			DataType:             core.ContractCreateTX,
+			ComponentType:        core.Pipe,
+			ComponentConstructor: NewCreateContractTxPipe,
+			Dependencies:         []*core.DataRegister{gethBlockReg},
+		},
+		&core.DataRegister{
+			DataType:             core.BlackholeTX,
+			ComponentType:        core.Pipe,
+			ComponentConstructor: NewBlackHoleTxPipe,
+			Dependencies:         []*core.DataRegister{gethBlockReg},
+		}
+}
+
+	return &componentRegistry{registers}
+}
+
+func (cr *componentRegistry) GetRegister(rt core.RegisterType) (*core.DataRegister, error) {
 	switch rt {
 	case core.GethBlock:
 		return gethBlockReg, nil

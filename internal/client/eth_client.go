@@ -21,6 +21,8 @@ type EthClientInterface interface {
 	DialContext(ctx context.Context, rawURL string) error
 	HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error)
 	BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error)
+
+	BalanceAt(ctx context.Context, account common.Address, number *big.Int) (*big.Int, error)
 }
 
 // NewEthClient ... Initializer
