@@ -49,7 +49,7 @@ func NewPipe(ctx context.Context, tform TransformFunc, inType core.RegisterType,
 
 // Close ... Shuts down component by emitting a kill signal to a close channel
 func (p *Pipe) Close() error {
-	p.closeChan <- killSignal
+	p.closeChan <- killSig
 
 	return nil
 }
@@ -64,7 +64,7 @@ func (p *Pipe) EventLoop() error {
 		zap.String("ID", p.id.String()),
 	)
 
-	p.emitStateChange(Live)
+	// p.emitStateChange(Live)
 
 	inChan, err := p.GetIngress(p.inType)
 	if err != nil {
@@ -104,7 +104,7 @@ func (p *Pipe) EventLoop() error {
 			logger.Debug("Received component shutdown signal",
 				zap.String("ID", p.id.String()))
 
-			p.emitStateChange(Terminated)
+			// p.emitStateChange(Terminated)
 
 			return nil
 		}

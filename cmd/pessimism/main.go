@@ -2,114 +2,33 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"os"
 	"sync"
-	"time"
 
 	"github.com/base-org/pessimism/internal/api/handlers"
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/api/service"
+	"github.com/base-org/pessimism/internal/engine"
+	"go.uber.org/zap"
 
 	"github.com/base-org/pessimism/internal/config"
-	"github.com/base-org/pessimism/internal/core"
+
 	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/logging"
-	"github.com/ethereum/go-ethereum/core/types"
-	"go.uber.org/zap"
 )
 
 const (
+	// cfgPath ... env file path
 	cfgPath = "config.env"
 )
 
-func setupExampleETL(cfg *config.Config, m *pipeline.Manager) (chan core.TransitData, error) {
-	l1OracleCfg := &config.OracleConfig{
-		RPCEndpoint:  cfg.L1RpcEndpoint,
-		PollInterval: cfg.L1PollInterval,
-		StartHeight:  nil,
-		EndHeight:    nil,
-	}
-
-	pipelineCfg1 := &config.PipelineConfig{
-		Network:      core.Layer1,
-		DataType:     core.ContractCreateTX,
-		PipelineType: core.Live,
-		OracleCfg:    l1OracleCfg,
-	}
-
-	pipelineCfg2 := &config.PipelineConfig{
-		Network:      core.Layer1,
-		DataType:     core.BlackholeTX,
-		PipelineType: core.Live,
-		OracleCfg:    l1OracleCfg,
-	}
-
-	pID, err := m.CreateDataPipeline(pipelineCfg1)
-	if err != nil {
-		return nil, err
-	}
-
-	pID2, err := m.CreateDataPipeline(pipelineCfg2)
-	if err != nil {
-		return nil, err
-	}
-
-	outChan := core.NewTransitChannel()
-
-	if err := m.AddPipelineDirective(pID, core.NilComponentUUID(), outChan); err != nil {
-		return nil, err
-	}
-
-	if err := m.AddPipelineDirective(pID2, core.NilComponentUUID(), outChan); err != nil {
-		return nil, err
-	}
-
-	if err := m.RunPipeline(pID); err != nil {
-		return nil, err
-	}
-
-	time.Sleep(time.Second * 1)
-
-	if err := m.RunPipeline(pID2); err != nil {
-		return nil, err
-	}
-
-	return outChan, nil
-}
-
-func processExampleETL(ctx context.Context, outChan chan core.TransitData) {
-	logger := logging.WithContext(ctx)
-
-	logger.Info("Reading layer 1 EVM blockchain for live contract creation txs")
-
-	for td := range outChan {
-		switch td.Type { //nolint:exhaustive // checks for all transit data types are unnecessary here
-		case core.ContractCreateTX:
-
-			parsedTx, success := td.Value.(*types.Transaction)
-			if !success {
-				logger.Error("Could not parse transaction value")
-			} else {
-				logger.Info("Received Contract Creation (CREATE) Transaction", zap.String("tx", fmt.Sprintf("%+v", parsedTx)))
-			}
-
-		case core.BlackholeTX:
-
-			parsedTx, success := td.Value.(*types.Transaction)
-			if !success {
-				logger.Error("Could not parse transaction value")
-			} else {
-				logger.Info("Received Blackhole (NULL) Transaction", zap.String("tx", fmt.Sprintf("%+v", parsedTx)))
-			}
-		}
-	}
-}
-
-func initializeAndRunServer(ctx context.Context, cfgPath config.FilePath) (*server.Server, func(), error) {
+// initializeAndRunServer ... Performs dependency injection to build server struct
+func initializeAndRunServer(ctx context.Context, cfgPath config.FilePath,
+	etlMan pipeline.Manager, engineMan engine.Manager) (*server.Server, func(), error) {
 	cfg := config.NewConfig(cfgPath)
 
-	apiService := service.New()
-	handler, err := handlers.New(apiService)
+	apiService := service.New(ctx, cfg.SvcConfig, etlMan, engineMan)
+	handler, err := handlers.New(ctx, apiService)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -122,58 +41,73 @@ func initializeAndRunServer(ctx context.Context, cfgPath config.FilePath) (*serv
 	}, nil
 }
 
-// TODO(#34): No Documentation Exists Specifying How to Run & Test Service
+// main ... Application driver
 func main() {
-	/*
-		This a simple experimental POC showcasing a pipeline DAG with two register pipelines that use overlapping components:
-							    -> (C1)(Contract Create TX Pipe)
-		(C0)(Geth Block Node) --
-							    -> (C3)(Blackhole Address Tx Pipe)
-		This is done to:
-		A) Prove that the Oracle and Pipe components operate as expected and are able to channel data between each other
-		B) Showcase a minimal example of the Pipeline DAG that can leverage overlapping register components to avoid
-			duplication when necessary
-		C) Demonstrate a lightweight MVP for the system
-	*/
+	appWg := &sync.WaitGroup{}
+	appCtx, appCtxCancel := context.WithCancel(context.Background())
 
-	appCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	cfg := config.NewConfig(cfgPath)
-
-	wg := &sync.WaitGroup{}
+	cfg := config.NewConfig(cfgPath) // Load env vars
 
 	logging.NewLogger(cfg.LoggerConfig, cfg.IsProduction())
 
 	logger := logging.WithContext(appCtx)
+	logger.Info("Bootstrapping pessimsim monitoring application")
 
-	logger.Info("pessimism boot up")
+	engineManager, shutDownEngine := engine.NewManager()
+	etlManager, shutDownETL := pipeline.NewManager(appCtx, engineManager.Transit())
 
-	etlManager, shutDownETL := pipeline.NewManager(appCtx)
-	outChan, err := setupExampleETL(cfg, etlManager)
-	if err != nil {
-		panic(err)
-	}
+	logger.Info("Starting and running risk engine manager instance")
+	engineCtx, engineCtxCancel := context.WithCancel(appCtx)
 
-	wg.Add(1)
+	appWg.Add(1)
+	go func() { // EtlManager driver thread
+		defer appWg.Done()
 
-	go func() {
-		etlManager.EventLoop(appCtx)
-		wg.Done()
+		if err := etlManager.EventLoop(appCtx); err != nil {
+			logger.Error("etl manager event loop error", zap.Error(err))
+		}
 	}()
 
-	go func() {
-		server, shutDownServer, err := initializeAndRunServer(appCtx, cfgPath)
+	logger.Info("Starting and running ETL manager instance")
+
+	appWg.Add(1)
+	go func() { // EngineManager driver thread
+		defer appWg.Done()
+
+		if err := engineManager.EventLoop(engineCtx); err != nil {
+			logger.Error("engine manager event loop error", zap.Error(err))
+		}
+	}()
+
+	appWg.Add(1)
+	go func() { // ApiServer driver thread
+		defer appWg.Done()
+
+		apiServer, shutDownServer, err := initializeAndRunServer(appCtx, cfgPath, etlManager, engineManager)
 
 		if err != nil {
 			logger.Error("Error obtained trying to start server", zap.Error(err))
 			panic(err)
 		}
 
-		server.Stop(func() {
-			shutDownETL()
-			shutDownServer()
+		apiServer.Stop(func() {
+			logger.Info("Shutting down pessimism application")
+
+			engineCtxCancel() // Shutdown risk engine event-loop
+			shutDownEngine()  // Shutdown risk engine subsystem
+			logger.Info("Shutdown risk engine subsystem")
+
+			appCtxCancel() // Shutdown ETL subsystem event loops
+			shutDownETL()  // Shutdown ETL subsystem
+			logger.Info("Shutdown ETL subsystem")
+
+			shutDownServer() // Shutdown API server
+			logger.Info("Shutdown API server")
 		})
 	}()
 
-	processExampleETL(appCtx, outChan)
+	logger.Debug("Waiting for all application threads to end")
+	appWg.Wait()
+	logger.Info("Successful pessimism shutdown")
+	os.Exit(0)
 }

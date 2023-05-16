@@ -3,7 +3,6 @@ package component
 import (
 	"context"
 
-	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
 )
 
@@ -42,6 +41,7 @@ type StateChange struct {
 
 // EgressHandler specific errors
 const (
+	engineEgressExistsErr  = "engine egress already exists"
 	egressAlreadyExistsErr = "%s egress key already exists within component router mapping"
 	egressNotFoundErr      = "no egress key %s exists within component router mapping"
 	egressNotExistErr      = "received transit request with 0 out channels to write to"
@@ -57,7 +57,7 @@ const (
 
 type (
 	// OracleConstructorFunc ... Type declaration that a registry oracle component constructor must adhere to
-	OracleConstructorFunc = func(context.Context, core.PipelineType, *config.OracleConfig, ...Option) (Component, error)
+	OracleConstructorFunc = func(context.Context, core.PipelineType, *core.OracleConfig, ...Option) (Component, error)
 
 	// PipeConstructorFunc ... Type declaration that a registry pipe component constructor must adhere to
 	PipeConstructorFunc = func(context.Context, ...Option) (Component, error)

@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 // HealthCheck ... Returns health status of server
 // Currently just returns True

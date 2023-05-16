@@ -3,9 +3,11 @@ module github.com/base-org/pessimism
 go 1.19
 
 require (
-	github.com/ethereum/go-ethereum v1.11.4
+	github.com/ethereum/go-ethereum v1.11.6
+	github.com/go-chi/chi v1.5.4
+	github.com/go-chi/render v1.0.2
 	github.com/golang/mock v1.6.0
-	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
+	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.5.1
 	github.com/stretchr/testify v1.8.2
 	go.uber.org/zap v1.24.0
@@ -27,16 +29,14 @@ require (
 	github.com/deckarep/golang-set/v2 v2.1.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/getsentry/sentry-go v0.18.0 // indirect
-	github.com/go-chi/chi v1.5.4 // indirect
-	github.com/go-chi/render v1.0.2 // indirect
 	github.com/go-ole/go-ole v1.2.1 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/golang/snappy v0.0.4 // indirect
-	github.com/google/uuid v1.3.0 // indirect
+	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/holiman/uint256 v1.2.2-0.20230321075855-87b91420868c // indirect
 	github.com/klauspost/compress v1.15.15 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -58,14 +58,11 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/exp v0.0.0-20230206171751-46f607a40771 // indirect
-	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
-	google.golang.org/genproto v0.0.0-20210624195500-8bfb893ecb84 // indirect
-	google.golang.org/grpc v1.38.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/ethereum/go-ethereum v1.11.4 => github.com/ethereum-optimism/op-geth v1.11.2-de8c5df46.0.20230321002540-11f0554a4313
+replace github.com/ethereum/go-ethereum v1.11.6 => github.com/ethereum-optimism/op-geth v1.101105.2-0.20230502202351-9cc072e922f6

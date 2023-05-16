@@ -1,12 +1,12 @@
+//go:generate mockgen -package mocks --destination ../../mocks/etl_manager.go --mock_names Manager=EtlManager . Manager
+
 package pipeline
 
 import (
 	"context"
 	"fmt"
-	"log"
 	"sync"
 
-	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/etl/registry"
@@ -14,153 +14,163 @@ import (
 	"go.uber.org/zap"
 )
 
-type Manager struct {
+// Manager ...
+type Manager interface {
+	CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error)
+	RunPipeline(pID core.PipelineUUID) error
+	EventLoop(ctx context.Context) error
+}
+
+// etlManager ... Holds
+type etlManager struct {
 	ctx context.Context
 
-	dag       *cGraph
-	pRegistry *pipeRegistry
+	dag      ComponentGraph
+	etlStore EtlStore
 
+	engineChan    chan core.InvariantInput
 	compEventChan chan component.StateChange
 
-	wg *sync.WaitGroup
+	wg sync.WaitGroup
 }
 
 // NewManager ... Initializer
-func NewManager(ctx context.Context) (*Manager, func()) {
-	dag := newGraph()
+func NewManager(ctx context.Context, ec chan core.InvariantInput) (Manager, func()) {
+	dag := NewComponentGraph()
 
-	m := &Manager{
+	m := &etlManager{
 		ctx:           ctx,
 		dag:           dag,
-		pRegistry:     newPipeRegistry(),
+		etlStore:      newEtlStore(),
+		engineChan:    ec,
 		compEventChan: make(chan component.StateChange),
-		wg:            &sync.WaitGroup{},
+		wg:            sync.WaitGroup{},
 	}
 
-	shutDown := func() {
-		for id := range dag.edges() {
-			c, err := dag.getComponent(id)
-			if err != nil {
-				logging.NoContext().Error("Could not get component during shutdown", zap.Error(err))
-			}
+	shutDown := func() { // Iterate and kill active pipelines
+		for _, pl := range m.etlStore.GetAllPipelines() {
+			logging.WithContext(ctx).
+				Info("Shuting down pipeline",
+					zap.String(core.PUUIDKey, pl.UUID().String()))
 
-			if err := c.Close(); err != nil {
-				logging.NoContext().Error("Could not close component", zap.Error(err))
+			if err := pl.Close(); err != nil {
+				logging.WithContext(ctx).
+					Error("Failed to close pipeline",
+						zap.String(core.PUUIDKey, pl.UUID().String()))
 			}
 		}
+		logging.WithContext(ctx).Debug("Waiting for all component routines to end")
+		m.wg.Wait()
+
+		logging.WithContext(ctx).Debug("Closing component event channel")
+		close(m.compEventChan)
 	}
 
 	return m, shutDown
 }
 
 // CreateDataPipeline ... Creates an ETL data pipeline provided a pipeline configuration
-func (m *Manager) CreateDataPipeline(cfg *config.PipelineConfig) (core.PipelineUUID, error) {
-	logger := logging.WithContext(m.ctx)
+func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error) {
+	// NOTE - If some of these early sub-system operations succeed but lower function
+	// code logic fails, then some rollback will need be triggered to undo prior applied state operations
+	logger := logging.WithContext(em.ctx)
 
 	register, err := registry.GetRegister(cfg.DataType)
 	if err != nil {
 		return core.NilPipelineUUID(), err
 	}
 
-	registers := append([]*core.DataRegister{register}, register.Dependencies...)
-	components, err := m.getComponents(cfg, registers)
+	depPath := register.GetDependencyPath()
+	pUUID := depPath.GeneratePipelineUUID(cfg.PipelineType, cfg.Network)
+
+	components, err := em.getComponents(cfg, depPath)
 	if err != nil {
 		return core.NilPipelineUUID(), err
 	}
-
-	lastReg := registers[len(registers)-1]
-
-	cID1 := core.MakeComponentUUID(cfg.PipelineType, registers[0].ComponentType, registers[0].DataType, cfg.Network)
-	cID2 := core.MakeComponentUUID(cfg.PipelineType, lastReg.ComponentType, lastReg.DataType, cfg.Network)
-	pID := core.MakePipelineUUID(cfg.PipelineType, cID1, cID2)
 
 	logger.Debug("constructing pipeline",
-		zap.String("ID", pID.String()))
+		zap.String(core.PUUIDKey, pUUID.String()))
 
-	pipeLine, err := NewPipeLine(pID, components)
+	pipeline, err := NewPipeLine(pUUID, components)
 	if err != nil {
 		return core.NilPipelineUUID(), err
 	}
-	m.pRegistry.addPipeline(pID, pipeLine)
 
-	return pID, nil
+	if err := pipeline.AddEngineRelay(em.engineChan); err != nil {
+		return core.NilPipelineUUID(), err
+	}
+
+	if err := em.dag.AddComponents(pipeline.Components()); err != nil {
+		return core.NilPipelineUUID(), err
+	}
+
+	em.etlStore.AddPipeline(pUUID, pipeline)
+
+	return pUUID, nil
 }
 
-func (m *Manager) RunPipeline(pID core.PipelineUUID) error {
-	pipeLine, err := m.pRegistry.getPipeline(pID)
+// RunPipeline ... Runs pipeline session for some provided pUUID
+func (em *etlManager) RunPipeline(pUUID core.PipelineUUID) error {
+	pipeline, err := em.etlStore.GetPipelineFromPUUID(pUUID)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("[%s] Running pipeline", pipeLine.ID().String())
-	return pipeLine.RunPipeline(m.wg)
+	logging.WithContext(em.ctx).Info("Running pipeline",
+		zap.String(core.PUUIDKey, pUUID.String()))
+
+	return pipeline.RunPipeline(&em.wg)
 }
 
-func (m *Manager) AddPipelineDirective(pID core.PipelineUUID,
-	cID core.ComponentUUID, outChan chan core.TransitData) error {
-	pipeLine, err := m.pRegistry.getPipeline(pID)
-	if err != nil {
-		return err
-	}
-	return pipeLine.AddDirective(cID, outChan)
-}
-
-func (m *Manager) EventLoop(ctx context.Context) {
+// EventLoop ... Driver ran as separate go routine
+func (em *etlManager) EventLoop(ctx context.Context) error {
 	logger := logging.WithContext(ctx)
 
 	for {
 		select {
 		case <-ctx.Done():
-			logger.Info("Received shutdown", zap.String("Abstraction", "etl-manager"))
+			logger.Info("Receieved shutdown request")
+			return nil
 
-		case stateChange := <-m.compEventChan:
+		case stateChange := <-em.compEventChan:
 			// TODO(#35): No ETL Management Procedure Exists
 			// for Handling Component State Changes
 
-			_, err := m.pRegistry.getPipelineUUIDs(stateChange.ID)
+			logger.Info("Received component state change request",
+				zap.String("from", stateChange.From.String()),
+				zap.String("to", stateChange.To.String()),
+				zap.String(core.CUUIDKey, stateChange.ID.String()))
+
+			_, err := em.etlStore.GetPipelineUUIDs(stateChange.ID)
 			if err != nil {
 				logger.Error("Could not fetch pipeline IDs for comp state change")
 			}
-
-			logger.Info("Received component state change request")
 		}
 	}
 }
 
 // getComponents ... Returns all components provided a slice of register definitions
-func (m *Manager) getComponents(cfg *config.PipelineConfig,
-	registers []*core.DataRegister) ([]component.Component, error) {
+func (em *etlManager) getComponents(cfg *core.PipelineConfig,
+	depPath core.RegisterDependencyPath) ([]component.Component, error) {
 	components := make([]component.Component, 0)
 	prevID := core.NilComponentUUID()
 
-	for i, register := range registers {
-		// NOTE - This doesn't consider the circumstance where
-		// a requested pipeline already exists but requires some backfill to run
+	for _, register := range depPath.Path {
 		// TODO(#30): Pipeline Collisions Occur When They Shouldn't
-		cID := core.MakeComponentUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
+		cUUID := core.MakeComponentUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
 
-		if !m.dag.componentExists(cID) {
-			comp, err := inferComponent(m.ctx, cfg, cID, register, m.compEventChan)
-			if err != nil {
-				return []component.Component{}, err
-			}
-			if err = m.dag.addComponent(cID, comp); err != nil {
-				return []component.Component{}, err
-			}
-		}
-
-		c, err := m.dag.getComponent(cID)
+		c, err := inferComponent(em.ctx, cfg, cUUID, register)
 		if err != nil {
 			return []component.Component{}, err
 		}
 
-		if i != 0 { // IE we've passed the pipeline's last path node; start adding edges
-			if err := m.dag.addEdge(cID, prevID); err != nil {
+		if prevID != core.NilComponentUUID() { // IE we've passed the pipeline's last path node; start adding edges (n, n-1)
+			if err := em.dag.AddEdge(cUUID, prevID); err != nil {
 				return []component.Component{}, err
 			}
 		}
 
-		prevID = c.ID()
+		prevID = c.UUID()
 		components = append(components, c)
 	}
 
@@ -168,9 +178,11 @@ func (m *Manager) getComponents(cfg *config.PipelineConfig,
 }
 
 // inferComponent ... Constructs a component provided a data register definition
-func inferComponent(ctx context.Context, cfg *config.PipelineConfig, id core.ComponentUUID,
-	register *core.DataRegister, eventCh chan component.StateChange) (component.Component, error) {
-	log.Printf("constructing %s component for register %s", register.ComponentType, register.DataType)
+func inferComponent(ctx context.Context, cfg *core.PipelineConfig, id core.ComponentUUID,
+	register *core.DataRegister) (component.Component, error) {
+	logging.WithContext(ctx).Debug("constructing component",
+		zap.String("type", register.ComponentType.String()),
+		zap.String("outdata_type", register.DataType.String()))
 
 	switch register.ComponentType {
 	case core.Oracle:
@@ -179,9 +191,8 @@ func inferComponent(ctx context.Context, cfg *config.PipelineConfig, id core.Com
 			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Oracle.String()))
 		}
 
-		// NOTE ... We assume at most 1 oracle per register pipeline
 		return init(ctx, cfg.PipelineType, cfg.OracleCfg,
-			component.WithID(id), component.WithEventChan(eventCh))
+			component.WithID(id))
 
 	case core.Pipe:
 		init, success := register.ComponentConstructor.(component.PipeConstructorFunc)
@@ -189,12 +200,12 @@ func inferComponent(ctx context.Context, cfg *config.PipelineConfig, id core.Com
 			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Pipe.String()))
 		}
 
-		return init(ctx, component.WithID(id), component.WithEventChan(eventCh))
+		return init(ctx, component.WithID(id))
 
 	case core.Aggregator:
 		return nil, fmt.Errorf("aggregator component has yet to be implemented")
 
 	default:
-		return nil, fmt.Errorf("unknown component type provided")
+		return nil, fmt.Errorf(unknownCompType, register.ComponentType.String())
 	}
 }
