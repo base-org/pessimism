@@ -12,7 +12,7 @@ import (
 
 // OracleDefinition ... Provides a generalized interface for developers to bind their own functionality to
 type OracleDefinition interface {
-	ConfigureRoutine() error
+	ConfigureRoutine(cUUID core.ComponentUUID, pUUID core.PipelineUUID) error
 	BackTestRoutine(ctx context.Context, componentChan chan core.TransitData,
 		startHeight *big.Int, endHeight *big.Int) error
 	ReadRoutine(ctx context.Context, componentChan chan core.TransitData) error
@@ -48,10 +48,6 @@ func NewOracle(ctx context.Context, pt core.PipelineType, outType core.RegisterT
 		opt(o.metaData)
 	}
 
-	if cfgErr := od.ConfigureRoutine(); cfgErr != nil {
-		return nil, cfgErr
-	}
-
 	logging.WithContext(ctx).Info("Constructed component",
 		zap.String(core.CUUIDKey, o.metaData.id.String()))
 
@@ -75,6 +71,11 @@ func (o *Oracle) Close() error {
 // from a channel that the definition's read routine writes to
 func (o *Oracle) EventLoop() error {
 	// TODO(#24) - Add Internal Component Activity State Tracking
+
+	err := o.definition.ConfigureRoutine(o.id, o.pUUID)
+	if err != nil {
+		return err
+	}
 
 	logger := logging.WithContext(o.ctx)
 

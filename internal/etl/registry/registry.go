@@ -25,18 +25,21 @@ func NewRegistry() Registry {
 
 	registers := map[core.RegisterType]*core.DataRegister{
 		core.GethBlock: {
+			Addressing:           false,
 			DataType:             core.GethBlock,
 			ComponentType:        core.Oracle,
 			ComponentConstructor: oracle.NewGethBlockOracle,
 			Dependencies:         noDeps(),
 		},
 		core.ContractCreateTX: {
+			Addressing:           false,
 			DataType:             core.ContractCreateTX,
 			ComponentType:        core.Pipe,
 			ComponentConstructor: pipe.NewCreateContractTxPipe,
 			Dependencies:         makeDeps(core.GethBlock),
 		},
 		core.BlackholeTX: {
+			Addressing:           false,
 			DataType:             core.BlackholeTX,
 			ComponentType:        core.Pipe,
 			ComponentConstructor: pipe.NewBlackHoleTxPipe,
@@ -44,6 +47,8 @@ func NewRegistry() Registry {
 		},
 
 		core.AccountBalance: {
+			Addressing: true,
+
 			DataType:             core.AccountBalance,
 			ComponentType:        core.Oracle,
 			ComponentConstructor: oracle.NewAddressBalanceOracle,

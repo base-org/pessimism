@@ -45,6 +45,7 @@ type InvariantType int
 const (
 	ExampleInv InvariantType = iota
 	TxCaller
+	BalanceEnforcement
 )
 
 func (it InvariantType) String() string {

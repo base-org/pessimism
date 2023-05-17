@@ -49,3 +49,13 @@ func (ss *stateStore) Remove(ctx context.Context, key string) error {
 	delete(ss.store, key)
 	return nil
 }
+
+func (ss *stateStore) Merge(ctx context.Context, key1, key2 string) error {
+	ss.Lock()
+	defer ss.Unlock()
+
+	ss.store[key2] = append(ss.store[key2], ss.store[key1]...)
+	delete(ss.store, key1)
+
+	return nil
+}

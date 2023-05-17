@@ -51,7 +51,7 @@ func NewGethBlockOracle(ctx context.Context, ot core.PipelineType,
 	return oracle, nil
 }
 
-func (oracle *GethBlockODef) ConfigureRoutine() error {
+func (oracle *GethBlockODef) ConfigureRoutine(core.ComponentUUID, core.PipelineUUID) error {
 	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
 		time.Second*time.Duration(core.EthClientTimeout))
 	defer ctxCancel()

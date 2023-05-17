@@ -9,6 +9,7 @@ import (
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/api/service"
 	"github.com/base-org/pessimism/internal/engine"
+	"github.com/base-org/pessimism/internal/state"
 	"go.uber.org/zap"
 
 	"github.com/base-org/pessimism/internal/config"
@@ -47,6 +48,8 @@ func main() {
 	appWg := &sync.WaitGroup{}
 	appCtx, appCtxCancel := context.WithCancel(context.Background())
 
+	appCtx = context.WithValue(appCtx, state.Default, state.NewMemState())
+
 	cfg := config.NewConfig(cfgPath) // Load env vars
 
 	logging.NewLogger(cfg.LoggerConfig, cfg.IsProduction())
@@ -55,7 +58,7 @@ func main() {
 	logger.Info("Bootstrapping pessimsim monitoring application")
 	compRegistry := registry.NewRegistry()
 
-	engineManager, shutDownEngine := engine.NewManager()
+	engineManager, shutDownEngine := engine.NewManager(appCtx)
 	etlManager, shutDownETL := pipeline.NewManager(appCtx, compRegistry, engineManager.Transit())
 
 	logger.Info("Starting and running risk engine manager instance")

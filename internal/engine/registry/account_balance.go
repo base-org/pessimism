@@ -3,7 +3,9 @@ package registry
 import (
 	"fmt"
 	"math/big"
+	"net/http"
 
+	"github.com/base-org/pessimism/internal/alert"
 	pess_core "github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/logging"
@@ -15,6 +17,7 @@ const (
 )
 
 type BalanceInvConfig struct {
+	Address    string   `json"address"`
 	UpperBound *big.Int `json:"upper"`
 	LowerBound *big.Int `json:"lower"`
 }
@@ -25,22 +28,28 @@ type BalanceInvariant struct {
 	invariant.Invariant
 }
 
+var reportMsg = `
+	Balance Enforcement Invalidation
+	Current value: %d
+	Upper bound: %d
+	Lower bound: %d
+
+	Session UUID: %s
+	Session Address: %s 
+`
+
 func NewBalanceInvariant(cfg *BalanceInvConfig) invariant.Invariant {
 	return &BalanceInvariant{
 		cfg: cfg,
 
-		Invariant: invariant.NewBaseInvariant(pess_core.ContractCreateTX),
+		Invariant: invariant.NewBaseInvariant(pess_core.AccountBalance, invariant.WithAddressing()),
 	}
-}
-
-func (bi *BalanceInvariant) InputType() pess_core.RegisterType {
-	return pess_core.AccountBalance
 }
 
 func (bi *BalanceInvariant) Invalidate(td pess_core.TransitData) (bool, error) {
 	logging.NoContext().Debug("Checking invalidation")
 
-	if td.Type != pess_core.AccountBalance {
+	if td.Type != bi.InputType() {
 		return false, fmt.Errorf("invalid type supplied")
 	}
 
@@ -60,6 +69,14 @@ func (bi *BalanceInvariant) Invalidate(td pess_core.TransitData) (bool, error) {
 		bi.cfg.LowerBound.Cmp(balance) == greaterThan {
 		invalidated = true
 	}
+
+	alert.SlackHandler(
+		fmt.Sprintf(reportMsg, balance,
+			bi.cfg.UpperBound, bi.cfg.LowerBound,
+			bi.UUID(), bi.cfg.Address),
+		http.Client{},
+		"https://hooks.coinbase-corp.com/api/WIC67VAlaZk04hCqwQrjZA",
+	)
 
 	return invalidated, nil
 }
