@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"os"
 
 	"github.com/base-org/pessimism/internal/alert"
 	pess_core "github.com/base-org/pessimism/internal/core"
@@ -70,12 +71,13 @@ func (bi *BalanceInvariant) Invalidate(td pess_core.TransitData) (bool, error) {
 		invalidated = true
 	}
 
+	url := os.Getenv("SLACK_URL") // TODO - Pass down from config
 	alert.SlackHandler(
 		fmt.Sprintf(reportMsg, balance,
 			bi.cfg.UpperBound, bi.cfg.LowerBound,
 			bi.UUID(), bi.cfg.Address),
 		http.Client{},
-		"https://hooks.coinbase-corp.com/api/WIC67VAlaZk04hCqwQrjZA",
+		url,
 	)
 
 	return invalidated, nil
