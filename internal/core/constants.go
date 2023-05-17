@@ -62,6 +62,8 @@ func (it InvariantType) String() string {
 
 // ID keys used for logging
 const (
+	AddrKey logging.LogKey = "address"
+
 	CUUIDKey logging.LogKey = "cuuid"
 	PUUIDKey logging.LogKey = "puuid"
 	SUUIDKey logging.LogKey = "suuid"

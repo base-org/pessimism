@@ -31,17 +31,19 @@ type etlManager struct {
 	engineChan    chan core.InvariantInput
 	compEventChan chan component.StateChange
 
-	wg sync.WaitGroup
+	registry registry.Registry
+	wg       sync.WaitGroup
 }
 
 // NewManager ... Initializer
-func NewManager(ctx context.Context, ec chan core.InvariantInput) (Manager, func()) {
+func NewManager(ctx context.Context, cRegistry registry.Registry, ec chan core.InvariantInput) (Manager, func()) {
 	dag := NewComponentGraph()
 
 	m := &etlManager{
 		ctx:           ctx,
 		dag:           dag,
 		etlStore:      newEtlStore(),
+		registry:      cRegistry,
 		engineChan:    ec,
 		compEventChan: make(chan component.StateChange),
 		wg:            sync.WaitGroup{},
@@ -75,12 +77,11 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.Pipelin
 	// code logic fails, then some rollback will need be triggered to undo prior applied state operations
 	logger := logging.WithContext(em.ctx)
 
-	register, err := registry.GetRegister(cfg.DataType)
+	depPath, err := em.registry.GetDependencyPath(cfg.DataType)
 	if err != nil {
 		return core.NilPipelineUUID(), err
 	}
 
-	depPath := register.GetDependencyPath()
 	pUUID := depPath.GeneratePipelineUUID(cfg.PipelineType, cfg.Network)
 
 	components, err := em.getComponents(cfg, depPath)

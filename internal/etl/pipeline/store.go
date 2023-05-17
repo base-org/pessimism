@@ -17,23 +17,23 @@ type EtlStore interface {
 	GetPipelineFromPUUID(pUUID core.PipelineUUID) (Pipeline, error)
 }
 
-// pipeLineEntry ... value entry for some
+// pipelineEntry ... value entry for some
 // pipeline with necessary metadata
-type pipeLineEntry struct {
+type pipelineEntry struct {
 	id core.PipelineUUID
 	as ActivityState
 	p  Pipeline
 }
 
-type pipeLineMap = map[core.PipelinePID][]pipeLineEntry
+type pipelineMap = map[core.PipelinePID][]pipelineEntry
 
 // etlStore ... Stores critical pipeline information
 //
 //	pipeLines - Mapping used for storing all existing pipelines
 //	compPipelines - Mapping used for storing all component-->[]PID entries
 type etlStore struct {
-	pipeLines     pipeLineMap
-	compPipeLines map[core.ComponentUUID][]core.PipelineUUID
+	pipelines     pipelineMap
+	compPipelines map[core.ComponentUUID][]core.PipelineUUID
 }
 
 // newEtlStore ... Initializer

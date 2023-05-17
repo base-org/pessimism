@@ -4,7 +4,8 @@ package core
 type RegisterType uint8
 
 const (
-	GethBlock RegisterType = iota + 1
+	AccountBalance RegisterType = iota + 1
+	GethBlock
 	ContractCreateTX
 	BlackholeTX
 )
@@ -13,6 +14,9 @@ const (
 // register enum
 func (rt RegisterType) String() string {
 	switch rt {
+	case AccountBalance:
+		return "account.balance"
+
 	case GethBlock:
 		return "geth.block"
 
@@ -32,9 +36,11 @@ type DataRegister struct {
 	DataType             RegisterType
 	ComponentType        ComponentType
 	ComponentConstructor interface{}
-	Dependencies         []*DataRegister
+	Dependencies         []RegisterType
 }
 
+// RegisterDependencyPath ... Represents an inclusive acyclic sequential
+// path of data register dependencies
 type RegisterDependencyPath struct {
 	Path []*DataRegister
 }
@@ -47,17 +53,4 @@ func (rdp RegisterDependencyPath) GeneratePipelineUUID(pt PipelineType, n Networ
 	lastUUID := MakeComponentUUID(pt, lastComp.ComponentType, lastComp.DataType, n)
 
 	return MakePipelineUUID(pt, firstUUID, lastUUID)
-}
-
-// GetDependencyPath ... Returns inclusive dependency path for data register
-func (dr *DataRegister) GetDependencyPath() RegisterDependencyPath {
-	registers := append([]*DataRegister{dr}, dr.Dependencies...)
-
-	return RegisterDependencyPath{registers}
-}
-
-type InvariantRegister struct {
-	Constructor   interface{}
-	InvariantType InvariantType
-	DataType      RegisterType
 }

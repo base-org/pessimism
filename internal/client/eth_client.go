@@ -6,6 +6,7 @@ import (
 	"context"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
@@ -52,4 +53,9 @@ func (ec *EthClient) HeaderByNumber(ctx context.Context, number *big.Int) (*type
 // BlockByNumber ... Wraps go-ethereum node blockByNumber RPC call
 func (ec *EthClient) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
 	return ec.client.BlockByNumber(ctx, number)
+}
+
+// BalanceAt ... Wraps go-ethereum node balanceAt RPC call
+func (ec *EthClient) BalanceAt(ctx context.Context, account common.Address, number *big.Int) (*big.Int, error) {
+	return ec.client.BalanceAt(ctx, account, number)
 }

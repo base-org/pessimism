@@ -2,7 +2,19 @@ package core
 
 import (
 	"time"
+
+	"github.com/ethereum/go-ethereum/common"
 )
+
+type TransitOption = func(TransitData) TransitData
+
+// WithAddress ... Injects address to transit data
+func WithAddress(address common.Address) TransitOption {
+	return func(td TransitData) TransitData {
+		td.Address = &address
+		return td
+	}
+}
 
 // TransitData ... Standardized type used for data inter-communication
 // between all ETL components and Risk Engine
@@ -12,7 +24,24 @@ type TransitData struct {
 	Network Network
 	PType   PipelineType
 	Type    RegisterType
+
+	Address *common.Address
 	Value   any
+}
+
+func NewTransitData(rt RegisterType, val any, opts ...TransitOption) TransitData {
+	td := TransitData{
+		Timestamp: time.Now(),
+
+		Type:  rt,
+		Value: val,
+	}
+
+	for _, opt := range opts {
+		opt(td)
+	}
+
+	return td
 }
 
 // NewTransitChannel ... Builds new tranit channel

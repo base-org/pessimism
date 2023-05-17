@@ -14,6 +14,7 @@ import (
 	"github.com/base-org/pessimism/internal/config"
 
 	"github.com/base-org/pessimism/internal/etl/pipeline"
+	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/logging"
 )
 
@@ -52,9 +53,10 @@ func main() {
 
 	logger := logging.WithContext(appCtx)
 	logger.Info("Bootstrapping pessimsim monitoring application")
+	compRegistry := registry.NewRegistry()
 
 	engineManager, shutDownEngine := engine.NewManager()
-	etlManager, shutDownETL := pipeline.NewManager(appCtx, engineManager.Transit())
+	etlManager, shutDownETL := pipeline.NewManager(appCtx, compRegistry, engineManager.Transit())
 
 	logger.Info("Starting and running risk engine manager instance")
 	engineCtx, engineCtxCancel := context.WithCancel(appCtx)

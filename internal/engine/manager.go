@@ -32,8 +32,9 @@ type Manager interface {
 type engineManager struct {
 	transit chan core.InvariantInput
 
-	engine RiskEngine
-	store  SessionStore
+	engine    RiskEngine
+	addresser AddressingMap
+	store     SessionStore
 }
 
 // NewManager ... Initializer
@@ -102,6 +103,46 @@ func (em *engineManager) EventLoop(ctx context.Context) error {
 
 // executeInvariants ... Executes all invariants associated with the input etl pipeline
 func (em *engineManager) executeInvariants(ctx context.Context, data core.InvariantInput) {
+
+	if data.Input.Address != nil { // Address based invariant
+		em.executeAddressInvariants(ctx, data)
+
+	} else { // Non Address based invariant
+		em.executeNonAddressInvariants(ctx, data)
+	}
+
+}
+
+func (em *engineManager) executeAddressInvariants(ctx context.Context, data core.InvariantInput) {
+	logger := logging.WithContext(ctx)
+
+	sUUID, err := em.addresser.GetSessionUUIDByPair(*data.Input.Address, data.PUUID)
+	if err != nil {
+		logger.Error("Could not fetch invariants by address:pipeline",
+			zap.Error(err),
+			zap.String(core.PUUIDKey, data.PUUID.String()))
+		return
+	}
+
+	inv, err := em.store.GetInvSessionByUUID(sUUID)
+	if err != nil {
+		logger.Error("Could not session by invariant sUUID",
+			zap.Error(err),
+			zap.String(core.PUUIDKey, sUUID.String()))
+		return
+	}
+
+	err = em.engine.Execute(ctx, data.Input, inv)
+	if err != nil {
+		logger.Error("Could not execute invariant",
+			zap.String(core.PUUIDKey, data.PUUID.String()),
+			zap.String(core.SUUIDKey, sUUID.String()),
+			zap.String(core.AddrKey, data.Input.Address.String()))
+	}
+
+}
+
+func (em *engineManager) executeNonAddressInvariants(ctx context.Context, data core.InvariantInput) {
 	logger := logging.WithContext(ctx)
 
 	invUUIDs, err := em.store.GetInvSessionsForPipeline(data.PUUID)

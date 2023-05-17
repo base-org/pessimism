@@ -4,73 +4,97 @@ import (
 	"fmt"
 
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/etl/registry/oracle"
+	"github.com/base-org/pessimism/internal/etl/registry/pipe"
+)
+
+const (
+	noEntryErr = "could not find entry in registry for encoded register type %s"
 )
 
 type Registry interface {
+	GetDependencyPath(rt core.RegisterType) (core.RegisterDependencyPath, error)
 	GetRegister(rt core.RegisterType) (*core.DataRegister, error)
 }
 
 type componentRegistry struct {
-	registers []*core.DataRegister
+	registers map[core.RegisterType]*core.DataRegister
 }
 
 func NewRegistry() Registry {
 
-	registers := []&core.DataRegister{
+	registers := map[core.RegisterType]*core.DataRegister{
+		core.GethBlock: {
+			DataType:             core.GethBlock,
+			ComponentType:        core.Oracle,
+			ComponentConstructor: oracle.NewGethBlockOracle,
+			Dependencies:         noDeps(),
+		},
+		core.ContractCreateTX: {
+			DataType:             core.ContractCreateTX,
+			ComponentType:        core.Pipe,
+			ComponentConstructor: pipe.NewCreateContractTxPipe,
+			Dependencies:         makeDeps(core.GethBlock),
+		},
+		core.BlackholeTX: {
+			DataType:             core.BlackholeTX,
+			ComponentType:        core.Pipe,
+			ComponentConstructor: pipe.NewBlackHoleTxPipe,
+			Dependencies:         makeDeps(core.GethBlock),
+		},
 
-		&core.DataRegister{
-			DataType:             core.GethBlock,
+		core.AccountBalance: {
+			DataType:             core.AccountBalance,
 			ComponentType:        core.Oracle,
-			ComponentConstructor: NewGethBlockOracle,
-			Dependencies:         make([]*core.DataRegister, 0),
+			ComponentConstructor: oracle.NewAddressBalanceOracle,
+			Dependencies:         noDeps(),
 		},
-		&core.DataRegister{
-			DataType:             core.GethBlock,
-			ComponentType:        core.Oracle,
-			ComponentConstructor: NewGethBlockOracle,
-			Dependencies:         make([]*core.DataRegister, 0),
-		},
-		&core.DataRegister{
-			DataType:             core.ContractCreateTX,
-			ComponentType:        core.Pipe,
-			ComponentConstructor: NewCreateContractTxPipe,
-			Dependencies:         []*core.DataRegister{gethBlockReg},
-		},
-		&core.DataRegister{
-			DataType:             core.BlackholeTX,
-			ComponentType:        core.Pipe,
-			ComponentConstructor: NewBlackHoleTxPipe,
-			Dependencies:         []*core.DataRegister{gethBlockReg},
-		},
-		&core.DataRegister{
-			DataType:             core.ContractCreateTX,
-			ComponentType:        core.Pipe,
-			ComponentConstructor: NewCreateContractTxPipe,
-			Dependencies:         []*core.DataRegister{gethBlockReg},
-		},
-		&core.DataRegister{
-			DataType:             core.BlackholeTX,
-			ComponentType:        core.Pipe,
-			ComponentConstructor: NewBlackHoleTxPipe,
-			Dependencies:         []*core.DataRegister{gethBlockReg},
-		}
-}
+	}
 
 	return &componentRegistry{registers}
 }
 
-func (cr *componentRegistry) GetRegister(rt core.RegisterType) (*core.DataRegister, error) {
-	switch rt {
-	case core.GethBlock:
-		return gethBlockReg, nil
+func makeDeps(types ...core.RegisterType) []core.RegisterType {
+	deps := make([]core.RegisterType, len(types))
 
-	case core.ContractCreateTX:
-		return contractCreateTXReg, nil
-
-	case core.BlackholeTX:
-		return blackHoleTxReg, nil
-
-	default:
-		return nil, fmt.Errorf("no register could be found for type: %s", rt)
+	for i := range types {
+		deps[i] = types[i]
 	}
+
+	return deps
+}
+
+func noDeps() []core.RegisterType {
+	return []core.RegisterType{}
+}
+
+func (cr *componentRegistry) GetDependencyPath(rt core.RegisterType) (core.RegisterDependencyPath, error) {
+
+	destRegister, err := cr.GetRegister(rt)
+	if err != nil {
+		return core.RegisterDependencyPath{}, err
+	}
+
+	registers := make([]*core.DataRegister, len(destRegister.Dependencies)+1)
+
+	registers[0] = destRegister
+
+	for i, depType := range destRegister.Dependencies {
+		depRegister, err := cr.GetRegister(depType)
+		if err != nil {
+			return core.RegisterDependencyPath{}, err
+		}
+
+		registers[i+1] = depRegister
+	}
+
+	return core.RegisterDependencyPath{Path: registers}, nil
+}
+
+func (cr *componentRegistry) GetRegister(rt core.RegisterType) (*core.DataRegister, error) {
+	if _, exists := cr.registers[rt]; !exists {
+		return nil, fmt.Errorf(noEntryErr, rt)
+	}
+
+	return cr.registers[rt], nil
 }
