@@ -39,8 +39,8 @@ type etlStore struct {
 // newEtlStore ... Initializer
 func newEtlStore() EtlStore {
 	return &etlStore{
-		compPipeLines: make(map[core.ComponentUUID][]core.PipelineUUID),
-		pipeLines:     make(pipeLineMap),
+		compPipelines: make(map[core.ComponentUUID][]core.PipelineUUID),
+		pipelines:     make(pipelineMap),
 	}
 }
 
@@ -52,29 +52,29 @@ Note - PipelineUUIDs can only conflict
 // addComponentLink ... Creates an entry for some new C_UUID:P_UUID mapping
 func (store *etlStore) AddComponentLink(cUUID core.ComponentUUID, pUUID core.PipelineUUID) {
 	// EDGE CASE - C_UUID:P_UUID pair already exists
-	if _, found := store.compPipeLines[cUUID]; !found { // Create slice
-		store.compPipeLines[cUUID] = make([]core.PipelineUUID, 0)
+	if _, found := store.compPipelines[cUUID]; !found { // Create slice
+		store.compPipelines[cUUID] = make([]core.PipelineUUID, 0)
 	}
 
-	store.compPipeLines[cUUID] = append(store.compPipeLines[cUUID], pUUID)
+	store.compPipelines[cUUID] = append(store.compPipelines[cUUID], pUUID)
 }
 
 // addPipeline ... Creates and stores a new pipeline entry
 func (store *etlStore) AddPipeline(pUUID core.PipelineUUID, pl Pipeline) {
-	entry := pipeLineEntry{
+	entry := pipelineEntry{
 		id: pUUID,
 		as: Booting,
 		p:  pl,
 	}
 
-	entrySlice, found := store.pipeLines[pUUID.PID]
+	entrySlice, found := store.pipelines[pUUID.PID]
 	if !found {
-		entrySlice = make([]pipeLineEntry, 0)
+		entrySlice = make([]pipelineEntry, 0)
 	}
 
 	entrySlice = append(entrySlice, entry)
 
-	store.pipeLines[pUUID.PID] = entrySlice
+	store.pipelines[pUUID.PID] = entrySlice
 
 	for _, comp := range pl.Components() {
 		store.AddComponentLink(comp.UUID(), pUUID)
@@ -83,7 +83,7 @@ func (store *etlStore) AddPipeline(pUUID core.PipelineUUID, pl Pipeline) {
 
 // GetPipelineUUIDs ... Returns all entried PIDs for some CID
 func (store *etlStore) GetPipelineUUIDs(cID core.ComponentUUID) ([]core.PipelineUUID, error) {
-	pIDs, found := store.compPipeLines[cID]
+	pIDs, found := store.compPipelines[cID]
 
 	if !found {
 		return []core.PipelineUUID{}, fmt.Errorf("could not find key for %s", cID)
@@ -94,11 +94,11 @@ func (store *etlStore) GetPipelineUUIDs(cID core.ComponentUUID) ([]core.Pipeline
 
 // getPipelineByPID ... Returns pipeline storeovided some PID
 func (store *etlStore) GetPipelineFromPUUID(pUUID core.PipelineUUID) (Pipeline, error) {
-	if _, found := store.pipeLines[pUUID.PID]; !found {
+	if _, found := store.pipelines[pUUID.PID]; !found {
 		return nil, fmt.Errorf(pIDNotFoundErr, pUUID.String())
 	}
 
-	for _, plEntry := range store.pipeLines[pUUID.PID] {
+	for _, plEntry := range store.pipelines[pUUID.PID] {
 		if plEntry.id.UUID == pUUID.UUID {
 			return plEntry.p, nil
 		}
@@ -109,7 +109,7 @@ func (store *etlStore) GetPipelineFromPUUID(pUUID core.PipelineUUID) (Pipeline, 
 
 // GetExistingPipelinesByPID ... Returns existing pipelines for some PID value
 func (store *etlStore) GetExistingPipelinesByPID(pPID core.PipelinePID) []core.PipelineUUID {
-	entries, exists := store.pipeLines[pPID]
+	entries, exists := store.pipelines[pPID]
 	if !exists {
 		return []core.PipelineUUID{}
 	}
@@ -127,7 +127,7 @@ func (store *etlStore) GetExistingPipelinesByPID(pPID core.PipelinePID) []core.P
 func (store *etlStore) GetAllPipelines() []Pipeline {
 	pipeLines := make([]Pipeline, 0)
 
-	for _, pLines := range store.pipeLines {
+	for _, pLines := range store.pipelines {
 		for _, pipeLine := range pLines {
 			pipeLines = append(pipeLines, pipeLine.p)
 		}
