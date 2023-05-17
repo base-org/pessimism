@@ -18,7 +18,7 @@ const (
 )
 
 type BalanceInvConfig struct {
-	Address    string   `json"address"`
+	Address    string   `json:"address"`
 	UpperBound *big.Int `json:"upper"`
 	LowerBound *big.Int `json:"lower"`
 }
