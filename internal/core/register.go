@@ -33,6 +33,8 @@ func (rt RegisterType) String() string {
 // DataRegister ... Represents an ETL subsytem data type that
 // can be produced and consumed by heterogenous components
 type DataRegister struct {
+	Addressing bool
+
 	DataType             RegisterType
 	ComponentType        ComponentType
 	ComponentConstructor interface{}
@@ -53,31 +55,4 @@ func (rdp RegisterDependencyPath) GeneratePipelineUUID(pt PipelineType, n Networ
 	lastUUID := MakeComponentUUID(pt, lastComp.ComponentType, lastComp.DataType, n)
 
 	return MakePipelineUUID(pt, firstUUID, lastUUID)
-}
-
-type RegisterDependencyPath struct {
-	Path []*DataRegister
-}
-
-// GeneratePipelineUUID ... Generates a pipelineUUID for an existing dependency path
-// provided an enumerated pipeline and network type
-func (rdp RegisterDependencyPath) GeneratePipelineUUID(pt PipelineType, n Network) PipelineUUID {
-	firstComp, lastComp := rdp.Path[0], rdp.Path[len(rdp.Path)-1]
-	firstUUID := MakeComponentUUID(pt, firstComp.ComponentType, firstComp.DataType, n)
-	lastUUID := MakeComponentUUID(pt, lastComp.ComponentType, lastComp.DataType, n)
-
-	return MakePipelineUUID(pt, firstUUID, lastUUID)
-}
-
-// GetDependencyPath ... Returns inclusive dependency path for data register
-func (dr *DataRegister) GetDependencyPath() RegisterDependencyPath {
-	registers := append([]*DataRegister{dr}, dr.Dependencies...)
-
-	return RegisterDependencyPath{registers}
-}
-
-type InvariantRegister struct {
-	Constructor   interface{}
-	InvariantType InvariantType
-	DataType      RegisterType
 }

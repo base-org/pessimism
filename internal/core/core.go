@@ -81,3 +81,23 @@ func (eir *EngineInputRelay) RelayTransitData(td TransitData) error {
 	eir.outChan <- invInput
 	return nil
 }
+
+const (
+	AddressKey = "address"
+)
+
+type InvSessionParams map[string]interface{}
+
+func (sp *InvSessionParams) Address() string {
+	rawAddr, found := (*sp)[AddressKey]
+	if !found {
+		return ""
+	}
+
+	addr, success := rawAddr.(string)
+	if !success {
+		return ""
+	}
+
+	return addr
+}

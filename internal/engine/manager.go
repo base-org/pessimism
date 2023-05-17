@@ -9,6 +9,8 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/registry"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/state"
+
 	"go.uber.org/zap"
 )
 
@@ -19,7 +21,7 @@ type Manager interface {
 	// TODO( ) : Session deletion logic
 	DeleteInvariantSession(_ core.InvSessionUUID) (core.InvSessionUUID, error)
 	DeployInvariantSession(n core.Network, pUUUID core.PipelineUUID, it core.InvariantType,
-		pt core.PipelineType, invParams any) (core.InvSessionUUID, error)
+		pt core.PipelineType, invParams core.InvSessionParams) (core.InvSessionUUID, error)
 }
 
 /*
@@ -30,6 +32,7 @@ type Manager interface {
 
 // Manager ... Engine management abstraction
 type engineManager struct {
+	ctx     context.Context
 	transit chan core.InvariantInput
 
 	engine    RiskEngine
@@ -38,11 +41,13 @@ type engineManager struct {
 }
 
 // NewManager ... Initializer
-func NewManager() (Manager, func()) {
+func NewManager(ctx context.Context) (Manager, func()) {
 	em := &engineManager{
-		engine:  NewHardCodedEngine(),
-		transit: make(chan core.InvariantInput),
-		store:   NewSessionStore(),
+		ctx:       ctx,
+		transit:   make(chan core.InvariantInput),
+		engine:    NewHardCodedEngine(),
+		addresser: NewAddressingMap(),
+		store:     NewSessionStore(),
 	}
 
 	shutDown := func() {
@@ -65,7 +70,7 @@ func (em *engineManager) DeleteInvariantSession(_ core.InvSessionUUID) (core.Inv
 
 // DeployInvariantSession ...
 func (em *engineManager) DeployInvariantSession(n core.Network, pUUUID core.PipelineUUID, it core.InvariantType,
-	pt core.PipelineType, invParams any) (core.InvSessionUUID, error) {
+	pt core.PipelineType, invParams core.InvSessionParams) (core.InvSessionUUID, error) {
 	inv, err := registry.GetInvariant(it, invParams)
 	if err != nil {
 		return core.NilInvariantUUID(), err
@@ -77,6 +82,19 @@ func (em *engineManager) DeployInvariantSession(n core.Network, pUUUID core.Pipe
 	err = em.store.AddInvSession(sessionID, pUUUID, inv)
 	if err != nil {
 		return core.NilInvariantUUID(), err
+	}
+
+	if inv.Addressing() {
+		stateStore, err := state.FromContext(em.ctx)
+		if err != nil {
+			return core.NilInvariantUUID(), err
+		}
+
+		logging.NoContext().Debug("Setting to state store",
+			zap.String(core.PUUIDKey, pUUUID.String()),
+			zap.String(core.AddrKey, invParams.Address()))
+
+		stateStore.Set(em.ctx, pUUUID.String(), invParams.Address())
 	}
 
 	return sessionID, nil

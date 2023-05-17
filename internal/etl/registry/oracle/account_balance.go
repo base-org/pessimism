@@ -12,12 +12,13 @@ import (
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/state"
 	"github.com/ethereum/go-ethereum/common"
+	"go.uber.org/zap"
 )
 
 // TODO(#21): Verify config validity during Oracle construction
 // AddressBalanceODef ... Address register oracle definition used to drive oracle component
 type AddressBalanceODef struct {
-	id         core.ComponentUUID
+	pUUID      core.PipelineUUID
 	cfg        *core.OracleConfig
 	client     client.EthClientInterface
 	currHeight *big.Int
@@ -46,19 +47,22 @@ func NewAddressBalanceOracle(ctx context.Context, ot core.PipelineType,
 	return o, nil
 }
 
-func (oracle *AddressBalanceODef) ConfigureRoutine() error {
+func (oracle *AddressBalanceODef) ConfigureRoutine(cUUID core.ComponentUUID, pUUID core.PipelineUUID) error {
+	oracle.pUUID = pUUID
+
 	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
 		time.Second*time.Duration(core.EthClientTimeout))
 	defer ctxCancel()
 
 	logging.WithContext(ctxTimeout).Info("Setting up Account Balance client")
 
-	err := oracle.client.DialContext(ctxTimeout, oracle.cfg.RPCEndpoint)
+	return oracle.client.DialContext(ctxTimeout, oracle.cfg.RPCEndpoint)
+}
 
-	if err != nil {
-		return err
-	}
-	return nil
+// BackTestRoutine ...
+func (oracle *AddressBalanceODef) MergeRoutine(ctx context.Context, componentChan chan core.TransitData,
+	startHeight *big.Int, endHeight *big.Int) error {
+	return fmt.Errorf(noBackTestSupportError)
 }
 
 // BackTestRoutine ...
@@ -79,16 +83,23 @@ func (oracle *AddressBalanceODef) ReadRoutine(ctx context.Context, componentChan
 	for {
 		select {
 		case <-ticker.C:
-			addresses, err := stateStore.Get(ctx, oracle.id.String())
+			logging.NoContext().Debug("Getting addresess",
+				zap.String(core.PUUIDKey, oracle.pUUID.String()))
+			addresses, err := stateStore.Get(ctx, oracle.pUUID.String())
 			if err != nil {
-				return err
+				logging.WithContext(ctx).Error(err.Error())
+				continue
 			}
 
 			for _, address := range addresses {
 				gethAddress := common.HexToAddress(address)
+
+				logging.NoContext().Debug("Balance query",
+					zap.String(core.AddrKey, gethAddress.String()))
 				balance, err := oracle.client.BalanceAt(ctx, gethAddress, nil)
 				if err != nil {
 					logging.WithContext(ctx).Error(err.Error())
+					continue
 				}
 
 				componentChan <- core.NewTransitData(core.AccountBalance, balance,

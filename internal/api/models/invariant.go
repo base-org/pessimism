@@ -28,7 +28,7 @@ type InvRequestParams struct {
 	StartHeight *big.Int `json:"start_height"`
 	EndHeight   *big.Int `json:"end_height"`
 
-	SessionParams interface{} `json:"invariant_params"`
+	SessionParams map[string]interface{} `json:"invariant_params"`
 }
 
 type InvRequestBody struct {

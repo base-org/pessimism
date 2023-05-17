@@ -44,6 +44,23 @@ func GetInvariant(it core.InvariantType, cfg any) (invariant.Invariant, error) {
 
 		return inv, nil
 
+	case core.BalanceEnforcement:
+
+		cfg, err := json.Marshal(cfg)
+		if err != nil {
+			return nil, err
+		}
+		// convert json to struct
+		invConfg := BalanceInvConfig{}
+		err = json.Unmarshal(cfg, &invConfg)
+		if err != nil {
+			return nil, err
+		}
+
+		inv := NewBalanceInvariant(&invConfg)
+
+		return inv, nil
+
 	default:
 		return nil, fmt.Errorf("could not find implementation for type %s", it.String())
 	}
