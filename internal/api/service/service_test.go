@@ -20,6 +20,7 @@ const (
 type testSuite struct {
 	testCfg svc.Config
 
+	mockAlertMan  *mocks.MockAlertingManager
 	mockEngineMan *mocks.EngineManager
 	mockEtlMan    *mocks.EtlManager
 
@@ -44,8 +45,9 @@ func testSUUID1() core.InvSessionUUID {
 func createTestSuite(ctrl *gomock.Controller, cfg svc.Config) testSuite {
 	engineManager := mocks.NewEngineManager(ctrl)
 	etlManager := mocks.NewEtlManager(ctrl)
+	alertManager := mocks.NewMockAlertingManager(ctrl)
 
-	service := svc.New(context.Background(), &cfg, etlManager, engineManager)
+	service := svc.New(context.Background(), &cfg, alertManager, etlManager, engineManager)
 	return testSuite{
 		testCfg: cfg,
 

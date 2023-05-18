@@ -47,7 +47,10 @@ func (e *hardCodedEngine) Execute(ctx context.Context, data core.TransitData,
 		return nil, nil
 	}
 
-	alert := core.NewAlert(outcome.TimeStamp, outcome.SUUID, outcome.Message)
+	alert := core.Alert{
+		Timestamp: outcome.TimeStamp,
+		SUUID:     outcome.SUUID,
+		Content:   outcome.Message}
 
 	return &alert, nil
 }

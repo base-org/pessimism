@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine"
@@ -60,16 +61,19 @@ type PessimismService struct {
 	ctx context.Context
 	cfg *Config
 
+	alertManager  alert.AlertingManager
 	etlManager    pipeline.Manager
 	engineManager engine.Manager
 }
 
 // New ... Initializer
-func New(ctx context.Context, cfg *Config, etlManager pipeline.Manager,
+func New(ctx context.Context, cfg *Config, alertManager alert.AlertingManager, etlManager pipeline.Manager,
 	engineManager engine.Manager) *PessimismService {
 	return &PessimismService{
-		ctx:           ctx,
-		cfg:           cfg,
+		ctx: ctx,
+		cfg: cfg,
+
+		alertManager:  alertManager,
 		etlManager:    etlManager,
 		engineManager: engineManager,
 	}

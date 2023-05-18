@@ -16,12 +16,14 @@ const (
 	greaterThan = 1
 )
 
+// BalanceInvConfig  ...
 type BalanceInvConfig struct {
 	Address    string   `json:"address"`
 	UpperBound *big.Int `json:"upper"`
 	LowerBound *big.Int `json:"lower"`
 }
 
+// BalanceInvariant ...
 type BalanceInvariant struct {
 	cfg *BalanceInvConfig
 
@@ -37,6 +39,7 @@ const reportMsg = `
 	Session Address: %s 
 `
 
+// NewBalanceInvariant ... Initializer
 func NewBalanceInvariant(cfg *BalanceInvConfig) invariant.Invariant {
 	return &BalanceInvariant{
 		cfg: cfg,
@@ -45,6 +48,8 @@ func NewBalanceInvariant(cfg *BalanceInvConfig) invariant.Invariant {
 	}
 }
 
+// Invalidate ... Checks if the balance is within the bounds
+// specified in the config
 func (bi *BalanceInvariant) Invalidate(td pess_core.TransitData) (*core.InvalOutcome, error) {
 	logging.NoContext().Debug("Checking invalidation")
 
@@ -59,11 +64,13 @@ func (bi *BalanceInvariant) Invalidate(td pess_core.TransitData) (*core.InvalOut
 
 	invalidated := false
 
+	// balance > upper bound
 	if bi.cfg.UpperBound != nil &&
 		bi.cfg.UpperBound.Cmp(balance) == lessThan {
 		invalidated = true
 	}
 
+	// balance < lower bound
 	if bi.cfg.LowerBound != nil &&
 		bi.cfg.LowerBound.Cmp(balance) == greaterThan {
 		invalidated = true
@@ -79,5 +86,6 @@ func (bi *BalanceInvariant) Invalidate(td pess_core.TransitData) (*core.InvalOut
 		}, nil
 	}
 
+	// No invalidation
 	return nil, nil
 }

@@ -1,3 +1,5 @@
+//go:generate mockgen -package mocks --destination ../mocks/alert_manager.go . AlertingManager
+
 package alert
 
 import (
@@ -20,6 +22,7 @@ type AlertingManager interface {
 type alertManager struct {
 	sc                  client.SlackClient
 	invariantAlertStore AlertStore
+	interpolator        Interpolator
 
 	alertTransit chan core.Alert
 }
@@ -28,6 +31,7 @@ type alertManager struct {
 func NewManager(sc client.SlackClient) (AlertingManager, func()) {
 	am := &alertManager{
 		sc:                  sc,
+		interpolator:        NewInterpolator(),
 		invariantAlertStore: NewAlertStore(),
 		alertTransit:        make(chan core.Alert, 0),
 	}
@@ -51,20 +55,30 @@ func (am *alertManager) Transit() chan core.Alert {
 
 // EventLoop ... Event loop for alert manager
 func (am *alertManager) EventLoop(ctx context.Context) error {
+	logger := logging.WithContext(ctx)
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
 		case alert := <-am.alertTransit:
+			logger.Info("received alert",
+				zap.String(core.SUUIDKey, alert.SUUID.String()))
+
 			alertDest, err := am.invariantAlertStore.GetAlertDestination(alert.SUUID)
 			if err != nil {
-				return err
+				logger.Error("Could not determine alerting destination", zap.Error(err))
 			}
 
 			if alertDest == core.Slack { // TODO - response validation
-				_, err := am.sc.PostAlert(alert.Content)
+
+				logger.Debug("Attempting to post alert to slack")
+
+				slackMsg := am.interpolator.InterpolateSlackMessage(alert.SUUID, alert.Content)
+
+				_, err := am.sc.PostAlert(slackMsg)
 				if err != nil {
-					logging.NoContext().Error("failed to post alert to slack", zap.Error(err))
+					logger.Error("failed to post alert to slack", zap.Error(err))
 				}
 			}
 		}

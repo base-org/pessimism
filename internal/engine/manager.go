@@ -46,11 +46,12 @@ type engineManager struct {
 func NewManager(ctx context.Context,
 	alertTransit chan core.Alert) (Manager, func()) {
 	em := &engineManager{
-		ctx:        ctx,
-		etlTransit: make(chan core.InvariantInput),
-		engine:     NewHardCodedEngine(),
-		addresser:  NewAddressingMap(),
-		store:      NewSessionStore(),
+		ctx:          ctx,
+		alertTransit: alertTransit,
+		etlTransit:   make(chan core.InvariantInput),
+		engine:       NewHardCodedEngine(),
+		addresser:    NewAddressingMap(),
+		store:        NewSessionStore(),
 	}
 
 	shutDown := func() {
@@ -170,7 +171,7 @@ func (em *engineManager) executeInvariant(ctx context.Context, data core.Invaria
 	}
 
 	if alert != nil {
-		logger.Error("Invariant alert")
+		logger.Warn("Invariant alert", zap.String(core.SUUIDKey, inv.UUID().String()))
 		em.alertTransit <- *alert
 	}
 

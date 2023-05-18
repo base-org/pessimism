@@ -71,6 +71,14 @@ type InvSessionUUID struct {
 	UUID UUID
 }
 
+func (pID InvSessionPID) Network() Network {
+	return Network(pID[0])
+}
+
+func (pID InvSessionPID) InvType() InvariantType {
+	return InvariantType(pID[2])
+}
+
 // NOTE - This is useful for error handling with functions that
 // also return a ComponentID
 // NilCompID ... Returns a zero'd out or empty component UUID

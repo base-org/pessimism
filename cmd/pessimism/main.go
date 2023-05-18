@@ -27,10 +27,10 @@ const (
 )
 
 // initializeServer ... Performs dependency injection to build server struct
-func initializeServer(ctx context.Context, cfg *config.Config,
+func initializeServer(ctx context.Context, cfg *config.Config, alertMan alert.AlertingManager,
 	etlMan pipeline.Manager, engineMan engine.Manager) (*server.Server, func(), error) {
 
-	apiService := service.New(ctx, cfg.SvcConfig, etlMan, engineMan)
+	apiService := service.New(ctx, cfg.SvcConfig, alertMan, etlMan, engineMan)
 	handler, err := handlers.New(ctx, apiService)
 	if err != nil {
 		return nil, nil, err
@@ -104,7 +104,8 @@ func main() {
 	go func() { // ApiServer driver thread
 		defer appWg.Done()
 
-		apiServer, shutDownServer, err := initializeServer(appCtx, cfg, etlManager, engineManager)
+		apiServer, shutDownServer, err := initializeServer(appCtx, cfg, alertingManager,
+			etlManager, engineManager)
 
 		if err != nil {
 			logger.Error("Error obtained trying to start server", zap.Error(err))

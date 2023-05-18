@@ -22,6 +22,8 @@ const (
 	Development Env = "development"
 	Production  Env = "production"
 	Local       Env = "local"
+
+	trueEnvVal = "1"
 )
 
 // Config ... Application level configuration defined by `FilePath` value
@@ -47,7 +49,7 @@ func NewConfig(fileName FilePath) *Config {
 	config := &Config{
 
 		Environment: Env(getEnvStr("ENV")),
-		SlackURL:    getEnvStr("SLACK_URL"),
+		SlackURL:    getEnvStrWithDefault("SLACK_URL", ""),
 
 		SvcConfig: &service.Config{
 			L1RpcEndpoint:  getEnvStr("L1_RPC_ENDPOINT"),
@@ -107,12 +109,21 @@ func getEnvStr(key string) string {
 	return envVar
 }
 
+// getEnvStrWithDefault ... Reads env var from process environment, returns default if not found
+func getEnvStrWithDefault(key string, defaultValue string) string {
+	envVar, ok := os.LookupEnv(key)
+
+	// Not found
+	if !ok {
+		return defaultValue
+	}
+
+	return envVar
+}
+
 // getEnvBool ... Reads env vars and converts to booleans
 func getEnvBool(key string) bool {
-	if val := getEnvStr(key); val == "1" {
-		return true
-	}
-	return false
+	return getEnvStr(key) == trueEnvVal
 }
 
 // getEnvSlice ... Reads env vars and converts to string slice
