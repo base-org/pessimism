@@ -29,6 +29,7 @@ type InvRequestParams struct {
 	EndHeight   *big.Int `json:"end_height"`
 
 	SessionParams map[string]interface{} `json:"invariant_params"`
+	AlertingDest  string                 `json:"alert_destination"`
 }
 
 type InvRequestBody struct {

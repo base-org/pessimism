@@ -101,3 +101,10 @@ func (sp *InvSessionParams) Address() string {
 
 	return addr
 }
+
+type InvalOutcome struct {
+	TimeStamp time.Time
+	Message   string
+
+	SUUID InvSessionUUID
+}

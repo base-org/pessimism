@@ -9,6 +9,8 @@ type Network uint8
 const (
 	Layer1 = iota + 1
 	Layer2
+
+	UnknownNetwork
 )
 
 const (
@@ -27,6 +29,18 @@ func (n Network) String() string {
 	return UnknownType
 }
 
+func StringToNetwork(stringType string) Network {
+	switch stringType {
+	case "layer1":
+		return Layer1
+
+	case "layer2":
+		return Layer2
+	}
+
+	return UnknownNetwork
+}
+
 type FetchType int
 
 const (
@@ -40,12 +54,14 @@ const (
 	EthClientTimeout Timeouts = 20 // in seconds
 )
 
-type InvariantType int
+type InvariantType uint8
 
 const (
 	ExampleInv InvariantType = iota
 	TxCaller
 	BalanceEnforcement
+
+	UnknownInvariant
 )
 
 func (it InvariantType) String() string {
@@ -56,8 +72,27 @@ func (it InvariantType) String() string {
 	case TxCaller:
 		return "tx_caller"
 
+	case BalanceEnforcement:
+		return "balance_enforcement"
+
 	default:
 		return "unknown"
+	}
+}
+
+func StringToInvariantType(stringType string) InvariantType {
+	switch stringType {
+	case "example":
+		return ExampleInv
+
+	case "tx_caller":
+		return TxCaller
+
+	case "balance_enforcement":
+		return BalanceEnforcement
+
+	default:
+		return UnknownInvariant
 	}
 }
 

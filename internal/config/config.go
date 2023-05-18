@@ -29,6 +29,9 @@ const (
 type Config struct {
 	Environment Env
 
+	// TODO - Consider moving this URL to a more appropriate location
+	SlackURL string
+
 	SvcConfig    *service.Config
 	ServerConfig *server.Config
 
@@ -44,6 +47,7 @@ func NewConfig(fileName FilePath) *Config {
 	config := &Config{
 
 		Environment: Env(getEnvStr("ENV")),
+		SlackURL:    getEnvStr("SLACK_URL"),
 
 		SvcConfig: &service.Config{
 			L1RpcEndpoint:  getEnvStr("L1_RPC_ENDPOINT"),

@@ -13,7 +13,7 @@ type Invariant interface {
 	UUID() core.InvSessionUUID
 	WithUUID(sUUID core.InvSessionUUID)
 	InputType() core.RegisterType
-	Invalidate(core.TransitData) (bool, error)
+	Invalidate(core.TransitData) (*core.InvalOutcome, error)
 }
 
 type BaseInvariantOpt = func(bi *BaseInvariant) *BaseInvariant
@@ -56,8 +56,8 @@ func (bi *BaseInvariant) InputType() core.RegisterType {
 	return bi.inType
 }
 
-func (bi *BaseInvariant) Invalidate(core.TransitData) (bool, error) {
-	return false, nil
+func (bi *BaseInvariant) Invalidate(core.TransitData) (*core.InvalOutcome, error) {
+	return nil, nil
 }
 
 func (bi *BaseInvariant) Addressing() bool {

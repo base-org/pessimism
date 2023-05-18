@@ -14,14 +14,14 @@ import (
 	"go.uber.org/zap"
 )
 
-// Manager ...
+// Manager ... ETL manager interface
 type Manager interface {
 	CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error)
 	RunPipeline(pID core.PipelineUUID) error
 	EventLoop(ctx context.Context) error
 }
 
-// etlManager ... Holds
+// etlManager ... ETL manager
 type etlManager struct {
 	ctx context.Context
 
@@ -97,6 +97,7 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.Pipelin
 		return core.NilPipelineUUID(), err
 	}
 
+	// Bind communication route between pipeline and risk engine
 	if err := pipeline.AddEngineRelay(em.engineChan); err != nil {
 		return core.NilPipelineUUID(), err
 	}
@@ -154,10 +155,9 @@ func (em *etlManager) EventLoop(ctx context.Context) error {
 func (em *etlManager) getComponents(cfg *core.PipelineConfig,
 	depPath core.RegisterDependencyPath) ([]component.Component, error) {
 	components := make([]component.Component, 0)
-	prevID := core.NilComponentUUID()
+	prevUUID := core.NilComponentUUID()
 
 	for _, register := range depPath.Path {
-		// TODO(#30): Pipeline Collisions Occur When They Shouldn't
 		cUUID := core.MakeComponentUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
 
 		c, err := inferComponent(em.ctx, cfg, cUUID, register)
@@ -165,13 +165,14 @@ func (em *etlManager) getComponents(cfg *core.PipelineConfig,
 			return []component.Component{}, err
 		}
 
-		if prevID != core.NilComponentUUID() { // IE we've passed the pipeline's last path node; start adding edges (n, n-1)
-			if err := em.dag.AddEdge(cUUID, prevID); err != nil {
+		// IE we've passed the pipeline's last path node; start adding edges (cUUID --> prevID)
+		if prevUUID != core.NilComponentUUID() {
+			if err := em.dag.AddEdge(cUUID, prevUUID); err != nil {
 				return []component.Component{}, err
 			}
 		}
 
-		prevID = c.UUID()
+		prevUUID = c.UUID()
 		components = append(components, c)
 	}
 

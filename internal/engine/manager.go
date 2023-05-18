@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/engine/registry"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/state"
@@ -32,8 +33,9 @@ type Manager interface {
 
 // Manager ... Engine management abstraction
 type engineManager struct {
-	ctx     context.Context
-	transit chan core.InvariantInput
+	ctx          context.Context
+	etlTransit   chan core.InvariantInput
+	alertTransit chan core.Alert
 
 	engine    RiskEngine
 	addresser AddressingMap
@@ -41,17 +43,18 @@ type engineManager struct {
 }
 
 // NewManager ... Initializer
-func NewManager(ctx context.Context) (Manager, func()) {
+func NewManager(ctx context.Context,
+	alertTransit chan core.Alert) (Manager, func()) {
 	em := &engineManager{
-		ctx:       ctx,
-		transit:   make(chan core.InvariantInput),
-		engine:    NewHardCodedEngine(),
-		addresser: NewAddressingMap(),
-		store:     NewSessionStore(),
+		ctx:        ctx,
+		etlTransit: make(chan core.InvariantInput),
+		engine:     NewHardCodedEngine(),
+		addresser:  NewAddressingMap(),
+		store:      NewSessionStore(),
 	}
 
 	shutDown := func() {
-		close(em.transit)
+		close(em.etlTransit)
 	}
 
 	return em, shutDown
@@ -59,7 +62,7 @@ func NewManager(ctx context.Context) (Manager, func()) {
 
 // Transit ... Returns inter-subsystem transit channel
 func (em *engineManager) Transit() chan core.InvariantInput {
-	return em.transit
+	return em.etlTransit
 }
 
 // TODO() :
@@ -106,7 +109,7 @@ func (em *engineManager) EventLoop(ctx context.Context) error {
 
 	for {
 		select {
-		case data := <-em.transit:
+		case data := <-em.etlTransit:
 			logger.Debug("Received invariant input",
 				zap.String("input", fmt.Sprintf("%+v", data)))
 
@@ -150,12 +153,25 @@ func (em *engineManager) executeAddressInvariants(ctx context.Context, data core
 		return
 	}
 
-	err = em.engine.Execute(ctx, data.Input, inv)
+	em.executeInvariant(ctx, data, inv)
+
+}
+
+func (em *engineManager) executeInvariant(ctx context.Context, data core.InvariantInput, inv invariant.Invariant) {
+	logger := logging.WithContext(ctx)
+
+	alert, err := em.engine.Execute(ctx, data.Input, inv)
 	if err != nil {
 		logger.Error("Could not execute invariant",
 			zap.String(core.PUUIDKey, data.PUUID.String()),
-			zap.String(core.SUUIDKey, sUUID.String()),
+			zap.String(core.SUUIDKey, inv.UUID().String()),
 			zap.String(core.AddrKey, data.Input.Address.String()))
+		return
+	}
+
+	if alert != nil {
+		logger.Error("Invariant alert")
+		em.alertTransit <- *alert
 	}
 
 }
@@ -177,15 +193,7 @@ func (em *engineManager) executeNonAddressInvariants(ctx context.Context, data c
 			zap.String(core.PUUIDKey, data.PUUID.String()))
 	}
 
-	for i, inv := range invs {
-		sUUID := invUUIDs[i]
-
-		err = em.engine.Execute(ctx, data.Input, inv)
-		if err != nil {
-			logger.Error("Could not execute invariant",
-				zap.String(core.PUUIDKey, data.PUUID.String()),
-				zap.String("session_uuid", sUUID.String()),
-			)
-		}
+	for _, inv := range invs {
+		em.executeInvariant(ctx, data, inv)
 	}
 }

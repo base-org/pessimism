@@ -31,7 +31,24 @@ const (
 	Backtest PipelineType = iota + 1
 	Live
 	MockTest
+
+	Unknown
 )
+
+func StringToPipelineType(stringType string) PipelineType {
+	switch stringType {
+	case "backtest":
+		return Backtest
+
+	case "live":
+		return Live
+
+	case "mocktest":
+		return MockTest
+	}
+
+	return Unknown
+}
 
 func (pt PipelineType) String() string {
 	switch pt {

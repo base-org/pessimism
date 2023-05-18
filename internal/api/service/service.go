@@ -49,13 +49,13 @@ func (cfg *Config) GetPollIntervalForNetwork(n core.Network) (time.Duration, err
 	}
 }
 
-// Service ...
+// Service ... Interface for API service
 type Service interface {
 	ProcessInvariantRequest(ir models.InvRequestBody) (core.InvSessionUUID, error)
 	CheckHealth() *models.HealthCheck
 }
 
-// PessimismService ...
+// PessimismService ... API service
 type PessimismService struct {
 	ctx context.Context
 	cfg *Config

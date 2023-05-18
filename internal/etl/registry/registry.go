@@ -47,8 +47,7 @@ func NewRegistry() Registry {
 		},
 
 		core.AccountBalance: {
-			Addressing: true,
-
+			Addressing:           true,
 			DataType:             core.AccountBalance,
 			ComponentType:        core.Oracle,
 			ComponentConstructor: oracle.NewAddressBalanceOracle,
@@ -59,6 +58,7 @@ func NewRegistry() Registry {
 	return &componentRegistry{registers}
 }
 
+// makeDeps ... Makes dependency slice
 func makeDeps(types ...core.RegisterType) []core.RegisterType {
 	deps := make([]core.RegisterType, len(types))
 
@@ -69,10 +69,12 @@ func makeDeps(types ...core.RegisterType) []core.RegisterType {
 	return deps
 }
 
+// noDeps ... Returns empty dependency slice
 func noDeps() []core.RegisterType {
 	return []core.RegisterType{}
 }
 
+// GetDependencyPath ... Returns in-order slice of ETL pipeline path
 func (cr *componentRegistry) GetDependencyPath(rt core.RegisterType) (core.RegisterDependencyPath, error) {
 
 	destRegister, err := cr.GetRegister(rt)
@@ -96,6 +98,7 @@ func (cr *componentRegistry) GetDependencyPath(rt core.RegisterType) (core.Regis
 	return core.RegisterDependencyPath{Path: registers}, nil
 }
 
+// GetRegister ... Returns a data register provided an enum type
 func (cr *componentRegistry) GetRegister(rt core.RegisterType) (*core.DataRegister, error) {
 	if _, exists := cr.registers[rt]; !exists {
 		return nil, fmt.Errorf(noEntryErr, rt)

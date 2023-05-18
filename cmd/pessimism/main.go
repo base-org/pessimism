@@ -5,9 +5,11 @@ import (
 	"os"
 	"sync"
 
+	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/handlers"
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/api/service"
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/engine"
 	"github.com/base-org/pessimism/internal/state"
 	"go.uber.org/zap"
@@ -24,10 +26,9 @@ const (
 	cfgPath = "config.env"
 )
 
-// initializeAndRunServer ... Performs dependency injection to build server struct
-func initializeAndRunServer(ctx context.Context, cfgPath config.FilePath,
+// initializeServer ... Performs dependency injection to build server struct
+func initializeServer(ctx context.Context, cfg *config.Config,
 	etlMan pipeline.Manager, engineMan engine.Manager) (*server.Server, func(), error) {
-	cfg := config.NewConfig(cfgPath)
 
 	apiService := service.New(ctx, cfg.SvcConfig, etlMan, engineMan)
 	handler, err := handlers.New(ctx, apiService)
@@ -38,9 +39,13 @@ func initializeAndRunServer(ctx context.Context, cfgPath config.FilePath,
 	if err != nil {
 		return nil, nil, err
 	}
-	return server, func() {
-		cleanup()
-	}, nil
+	return server, cleanup, nil
+}
+
+// initializeAlerting ... Performs dependency injection to build alerting struct
+func initializeAlerting(ctx context.Context, cfg *config.Config) (alert.AlertingManager, func()) {
+	sc := client.NewSlackClient(cfg.SlackURL)
+	return alert.NewManager(sc)
 }
 
 // main ... Application driver
@@ -58,7 +63,9 @@ func main() {
 	logger.Info("Bootstrapping pessimsim monitoring application")
 	compRegistry := registry.NewRegistry()
 
-	engineManager, shutDownEngine := engine.NewManager(appCtx)
+	alertingManager, shutdownAlerting := initializeAlerting(appCtx, cfg)
+
+	engineManager, shutDownEngine := engine.NewManager(appCtx, alertingManager.Transit())
 	etlManager, shutDownETL := pipeline.NewManager(appCtx, compRegistry, engineManager.Transit())
 
 	logger.Info("Starting and running risk engine manager instance")
@@ -85,10 +92,19 @@ func main() {
 	}()
 
 	appWg.Add(1)
+	go func() { // AlertManager driver thread
+		defer appWg.Done()
+
+		if err := alertingManager.EventLoop(engineCtx); err != nil {
+			logger.Error("alert manager event loop error", zap.Error(err))
+		}
+	}()
+
+	appWg.Add(1)
 	go func() { // ApiServer driver thread
 		defer appWg.Done()
 
-		apiServer, shutDownServer, err := initializeAndRunServer(appCtx, cfgPath, etlManager, engineManager)
+		apiServer, shutDownServer, err := initializeServer(appCtx, cfg, etlManager, engineManager)
 
 		if err != nil {
 			logger.Error("Error obtained trying to start server", zap.Error(err))
@@ -97,6 +113,8 @@ func main() {
 
 		apiServer.Stop(func() {
 			logger.Info("Shutting down pessimism application")
+
+			shutdownAlerting() // Shutdown alerting subsystem
 
 			engineCtxCancel() // Shutdown risk engine event-loop
 			shutDownEngine()  // Shutdown risk engine subsystem

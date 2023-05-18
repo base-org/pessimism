@@ -40,22 +40,22 @@ func (svc *PessimismService) runInvariantSession(params models.InvRequestParams)
 
 	pConfig := params.GeneratePipelineConfig(endpoint, pollInterval, inv.InputType())
 
-	pID, err := svc.etlManager.CreateDataPipeline(pConfig)
+	pUUID, err := svc.etlManager.CreateDataPipeline(pConfig)
 	if err != nil {
 		return core.NilInvariantUUID(), err
 	}
 
 	logger.Info("Created etl pipeline",
-		zap.String(core.PUUIDKey, pID.String()))
+		zap.String(core.PUUIDKey, pUUID.String()))
 
-	invID, err := svc.engineManager.DeployInvariantSession(params.Network, pID, params.InvType,
+	invID, err := svc.engineManager.DeployInvariantSession(params.Network, pUUID, params.InvType,
 		params.PType, params.SessionParams)
 	if err != nil {
 		return core.NilInvariantUUID(), err
 	}
 	logger.Info("Deployed invariant session", zap.String(core.SUUIDKey, invID.String()))
 
-	if err = svc.etlManager.RunPipeline(pID); err != nil {
+	if err = svc.etlManager.RunPipeline(pUUID); err != nil {
 		return core.NilInvariantUUID(), err
 	}
 
