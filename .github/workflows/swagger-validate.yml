@@ -24,4 +24,4 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm install -g @apidevtools/swagger-cli
-      - run: swagger-cli validate ./specs/openapi/swagger.yaml
+      - run: swagger-cli validate specs/openapi/swagger.yaml
