@@ -93,7 +93,7 @@ paths:
               $ref: '#/components/schemas/InvOperationParameters'
             examples:
               default:
-                $ref: '#/components/examples/run-inv-example'
+                $ref: '#/components/examples/get-inv-result-success'
       responses:
         '200':
           description: 'Successful operation.'
