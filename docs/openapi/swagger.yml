@@ -103,7 +103,7 @@ paths:
                 $ref: '#/components/schemas/InvariantResponse'
               examples:
                 default:
-                  $ref: '#/components/examples/get-inv-result-success'
+                  $ref: '#/components/examples/run-inv-example'
         '400':
           description: 'Unsuccessful request unmarshaling or validation.'
           content:
