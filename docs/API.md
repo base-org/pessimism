@@ -13,5 +13,12 @@ The API can be customly configured using environment variables stored in a `conf
 - `SERVER_READ_TIMEOUT`: The read timeout second duration for the server (eg. `10`)
 - `SERVER_WRITE_TIMEOUT`: The write timeout second duration for the server (eg. `10`)
 
+### Components
+The Pessimism API is broken down into the following constituent components:
+* `handlers`: The handlers package contains the HTTP handlers for the API. Each handler is responsible for handling a specific endpoint and is responsible for parsing the request, calling the appropriate service method, and renders a response.
+* `service`: The service package contains the business logic for the API. The service is responsible for handling calls to the core Pessimism subsystems and is responsible for validating incoming requests.
+* `models`: The models package contains the data models used by the API. Each model is responsible for representing a specific data type and is used to parse and validate incoming requests. 
+* `server`: The server package contains the HTTP server for the API. The server is responsible for serving the API and is responsible for handling incoming requests and dispatching them to the appropriate handler function.
+
 ### Authorization and Authentication
 TBD
