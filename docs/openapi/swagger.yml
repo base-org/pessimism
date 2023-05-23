@@ -2,9 +2,9 @@ openapi: 3.0.3
 info:
   title: Pessimism REST API
   description: >-
-    This document specifies the REST API for the Pessimism application software.
-    This spec is still WIP and will be updated/changed as the application evolves.
-    It's also worth noting that this spec is not a complete representation of the application's current functionality.
+    This document specifies the REST API for the Pessimism application software. <br><br>
+    **NOTE - This spec is still WIP and will be updated/changed as the application evolves.
+    It's also worth noting that this spec is not a complete representation of the application's current functionality.**
   license:
     name: MIT License
     url: https://github.com/base-org/pessimism/blob/master/LICENSE
@@ -16,7 +16,7 @@ servers:
   - url: 'http://127.0.0.1:8080'
 tags:
   - name: invariant
-    description: 'Invariant operations'
+    description: 'Invariant endpoints'
   - name: system
     description: 'System operations'
 
@@ -50,7 +50,6 @@ paths:
           required: false
           schema:
             type: string
-
       responses:
         '200':
           description: 'Successful operation.'
@@ -63,7 +62,6 @@ paths:
                   $ref: '#/components/examples/get-inv-result-success'
                 allsessions:
                   $ref: '#/components/examples/get-all-sessions-success'
-
         '400':
           description: 'Unsuccessful request unmarshaling or validation.'
           content:
@@ -73,7 +71,6 @@ paths:
               examples:
                 default:
                   $ref: '#/components/examples/get-session-dne'
-
         '500':
           description: 'Unsuccessful request processing thats resulted in an internal server.'
           content:
@@ -95,11 +92,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InvariantParameters'
+              $ref: '#/components/schemas/InvOperationParameters'
             examples:
               default:
                 $ref: '#/components/examples/run-inv-example'
-
       responses:
         '200':
           description: 'Successful operation.'
@@ -257,27 +253,27 @@ components:
           description: 'Response processing result'
           enum: [OK, NOTOK]
         result:
-          $ref: '#/components/schemas/result' 
+          $ref: '#/components/schemas/InvOperationResult' 
           
-    OkInvResultObj:
+    OkInvOperationResult:
       type: object
       description: 'Response result object for successful requests'
       properties:
         uuid:
           type: string
         
-    NotOkInvResultObj:
+    NotOkInvOperationResult:
       description: 'Response result object for failed requests'
       type: object
       properties:
         error:
           type: string
-    result:
+    InvOperationResult:
       type: object
       description: 'Response result object'
       oneOf:
-        - $ref: '#/components/schemas/OkInvResultObj'
-        - $ref: '#/components/schemas/NotOkInvResultObj'
+        - $ref: '#/components/schemas/OkInvOperationResult'
+        - $ref: '#/components/schemas/NotOkInvOperationResult'
 
     BalanceInvConfig:
       type: object
@@ -303,7 +299,7 @@ components:
       oneOf:
         - $ref: '#/components/schemas/BalanceInvConfig'
 
-    InvariantParameters:
+    InvOperationParameters:
       description: Standardized request object for performing invariant operations.
       properties:
         method:
