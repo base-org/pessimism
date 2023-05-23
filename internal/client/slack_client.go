@@ -1,4 +1,9 @@
+//go:generate mockgen -package mocks --destination ../mocks/slack_client.go . SlackClient
+
 package client
+
+// NOTE - API endpoint specifications for slack client
+// can be found here - https://api.slack.com/methods/chat.postMessage
 
 import (
 	"bytes"
@@ -11,7 +16,7 @@ import (
 
 // SlackClient ... Interface for slack client
 type SlackClient interface {
-	PostAlert(report string) ([]byte, error)
+	PostData(str string) (*SlackAPIResponse, error)
 }
 
 // slackClient ... Slack client
@@ -24,7 +29,7 @@ type slackClient struct {
 func NewSlackClient(url string) slackClient {
 
 	if url == "" {
-		logging.NoContext().Warn("Slack URL not provided")
+		logging.NoContext().Warn("No Slack webhook URL not provided")
 	}
 
 	return slackClient{
@@ -55,11 +60,17 @@ func (sp *slackPayload) marshal() ([]byte, error) {
 	return bytes, nil
 }
 
-// PostAlert handlers processing a slack alert event
-func (sc slackClient) PostAlert(report string) ([]byte, error) {
+// SlackAPIResponse ... represents the structure of a slack API response
+type SlackAPIResponse struct {
+	Ok  bool   `json:"ok"`
+	Err string `json:"error"`
+}
+
+// PostAlert ... handles posting data to slack
+func (sc slackClient) PostData(str string) (*SlackAPIResponse, error) {
 
 	// make & marshal payload
-	payload, err := newSlackPayload(report).marshal()
+	payload, err := newSlackPayload(str).marshal()
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +86,18 @@ func (sc slackClient) PostAlert(report string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	defer resp.Body.Close()
-	return ioutil.ReadAll(resp.Body)
+
+	// read response
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var apiResp *SlackAPIResponse
+	if err := json.Unmarshal(bytes, &apiResp); err != nil {
+		return nil, err
+	}
+
+	return apiResp, err
 }

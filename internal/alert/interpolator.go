@@ -8,37 +8,43 @@ import (
 
 // TODO: add timestamp to the message
 const (
+	codeBlockFmt = "```%s```"
+
+	// slackMsgFmt ... Slack message format
 	slackMsgFmt = `
 	⚠️🚨 Pessimism Alert: %s Invariant Invalidation 🚨⚠️
 
 	_Invariant invalidation conditions met_
 
-	*Network:* %s
-	*Session UUID:* %s
+	_Network:_ %s
+	_Session UUID:_ %s
 
 	*Assessment Content:* 
 	%s
 	
-	_Remember to check the logs for more information and to take action if necessary. You can't always be optimistic!_
 	¯\_(ツ)_/¯
 	`
 )
 
+// Interpolator ... Interface for interpolating messages
 type Interpolator interface {
 	InterpolateSlackMessage(sUUID core.InvSessionUUID, message string) string
 }
 
+// interpolator ... Interpolator implementation
 type interpolator struct {
 }
 
+// NewInterpolator ... Initializer
 func NewInterpolator() Interpolator {
 	return &interpolator{}
 }
 
-func (i *interpolator) InterpolateSlackMessage(sUUID core.InvSessionUUID, message string) string {
+// InterpolateSlackMessage ... Interpolates a slack message with the given invariant session UUID and message
+func (_ *interpolator) InterpolateSlackMessage(sUUID core.InvSessionUUID, message string) string {
 	return fmt.Sprintf(slackMsgFmt,
-		fmt.Sprintf("`%s`", sUUID.PID.InvType().String()),
+		fmt.Sprintf(codeBlockFmt, sUUID.PID.InvType().String()),
 		sUUID.PID.Network(),
 		sUUID.String(),
-		message)
+		fmt.Sprintf(codeBlockFmt, message))
 }

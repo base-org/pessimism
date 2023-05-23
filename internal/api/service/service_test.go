@@ -51,6 +51,7 @@ func createTestSuite(ctrl *gomock.Controller, cfg svc.Config) testSuite {
 	return testSuite{
 		testCfg: cfg,
 
+		mockAlertMan:  alertManager,
 		mockEngineMan: engineManager,
 		mockEtlMan:    etlManager,
 

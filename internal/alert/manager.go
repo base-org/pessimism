@@ -4,6 +4,7 @@ package alert
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
@@ -11,14 +12,14 @@ import (
 	"go.uber.org/zap"
 )
 
-// AlertingManager ...
+// AlertingManager ... Interface for alert manager
 type AlertingManager interface {
 	AddInvariantSession(core.InvSessionUUID, core.AlertDestination) error
 	EventLoop(ctx context.Context) error
 	Transit() chan core.Alert
 }
 
-// alertManager ...
+// alertManager ... Alert manager implementation
 type alertManager struct {
 	sc                  client.SlackClient
 	invariantAlertStore AlertStore
@@ -48,12 +49,29 @@ func (am *alertManager) AddInvariantSession(sUUID core.InvSessionUUID, alertDest
 	return am.invariantAlertStore.AddAlertDestination(sUUID, alertDestination)
 }
 
-// Transit ... Returns inter-subsystem transit channel
+// Transit ... Returns inter-subsystem transit channel for receiving alerts
 func (am *alertManager) Transit() chan core.Alert {
 	return am.alertTransit
 }
 
-// EventLoop ... Event loop for alert manager
+// handleSlackPost ... Handles posting an alert to slack channel
+func (am *alertManager) handleSlackPost(alert core.Alert) error {
+
+	slackMsg := am.interpolator.InterpolateSlackMessage(alert.SUUID, alert.Content)
+
+	resp, err := am.sc.PostData(slackMsg)
+	if err != nil {
+		return err
+	}
+
+	if !resp.Ok {
+		return fmt.Errorf(resp.Err)
+	}
+
+	return nil
+}
+
+// EventLoop ... Event loop for alert manager subsystem
 func (am *alertManager) EventLoop(ctx context.Context) error {
 	logger := logging.WithContext(ctx)
 
@@ -61,6 +79,7 @@ func (am *alertManager) EventLoop(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return nil
+
 		case alert := <-am.alertTransit:
 			logger.Info("received alert",
 				zap.String(core.SUUIDKey, alert.SUUID.String()))
@@ -70,16 +89,18 @@ func (am *alertManager) EventLoop(ctx context.Context) error {
 				logger.Error("Could not determine alerting destination", zap.Error(err))
 			}
 
-			if alertDest == core.Slack { // TODO - response validation
-
+			switch alertDest {
+			case core.Slack: // TODO: add more alert destinations
 				logger.Debug("Attempting to post alert to slack")
 
-				slackMsg := am.interpolator.InterpolateSlackMessage(alert.SUUID, alert.Content)
-
-				_, err := am.sc.PostAlert(slackMsg)
+				err := am.handleSlackPost(alert)
 				if err != nil {
-					logger.Error("failed to post alert to slack", zap.Error(err))
+					logger.Error("Could not post alert to slack", zap.Error(err))
 				}
+			}
+
+			if alertDest == core.Slack {
+
 			}
 		}
 	}
