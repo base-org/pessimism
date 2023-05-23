@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/mocks"
@@ -35,7 +34,7 @@ func Test_ConfigureRoutine_Error(t *testing.T) {
 		DialContext(gomock.Any(), "error handle test").
 		Return(errors.New("error handle test"))
 
-	testOdef := NewGethBlockODef(&config.OracleConfig{
+	testOdef := NewGethBlockODef(&core.OracleConfig{
 		RPCEndpoint: "error handle test"},
 		testObj,
 		nil,
@@ -62,7 +61,7 @@ func Test_ConfigureRoutine_Pass(t *testing.T) {
 		DialContext(gomock.Any(), gomock.Eq("error handle test")).
 		Return(nil)
 
-	testOdef := NewGethBlockODef(&config.OracleConfig{
+	testOdef := NewGethBlockODef(&core.OracleConfig{
 		RPCEndpoint: "error handle test"},
 		testObj,
 		nil,
@@ -92,7 +91,7 @@ func Test_GetCurrentHeightFromNetwork(t *testing.T) {
 		HeaderByNumber(gomock.Any(), gomock.Any()).
 		Return(&header, nil)
 
-	od := &GethBlockODef{cfg: &config.OracleConfig{
+	od := &GethBlockODef{cfg: &core.OracleConfig{
 		RPCEndpoint:  "pass test",
 		NumOfRetries: 3,
 	}, currHeight: nil, client: testObj}
@@ -128,7 +127,7 @@ func Test_GetHeightToProcess(t *testing.T) {
 		Return(&header, nil).
 		AnyTimes()
 
-	od := &GethBlockODef{cfg: &config.OracleConfig{
+	od := &GethBlockODef{cfg: &core.OracleConfig{
 		RPCEndpoint:  "pass test",
 		NumOfRetries: 3,
 	}, currHeight: big.NewInt(123), client: testObj}
@@ -180,7 +179,7 @@ func Test_Backroutine(t *testing.T) {
 					Return(&header, nil).
 					AnyTimes()
 
-				od := &GethBlockODef{cfg: &config.OracleConfig{
+				od := &GethBlockODef{cfg: &core.OracleConfig{
 					RPCEndpoint:  "pass test",
 					NumOfRetries: 3,
 				}, currHeight: nil, client: testObj}
@@ -217,7 +216,7 @@ func Test_Backroutine(t *testing.T) {
 					Return(nil).
 					AnyTimes()
 
-				od := &GethBlockODef{cfg: &config.OracleConfig{
+				od := &GethBlockODef{cfg: &core.OracleConfig{
 					RPCEndpoint:  "pass test",
 					NumOfRetries: 3,
 				}, currHeight: nil, client: testObj}
@@ -250,7 +249,7 @@ func Test_Backroutine(t *testing.T) {
 		//		testObj.On("DialContext", mock.Anything, "pass test").Return(nil)
 		//		testObj.On("HeaderByNumber", mock.Anything, mock.Anything).Return(nil, errors.New("no header for you"))
 		//
-		//		od := &GethBlockODef{cfg: &config.OracleConfig{
+		//		od := &GethBlockODef{cfg: &core.OracleConfig{
 		//			RPCEndpoint:  "pass test",
 		//			NumOfRetries: 3,
 		//		}, currHeight: nil, client: testObj}
@@ -301,7 +300,7 @@ func Test_Backroutine(t *testing.T) {
 					Return(block, nil).
 					AnyTimes()
 
-				od := &GethBlockODef{cfg: &config.OracleConfig{
+				od := &GethBlockODef{cfg: &core.OracleConfig{
 					RPCEndpoint:  "pass test",
 					NumOfRetries: 3,
 					PollInterval: 1000,
@@ -365,7 +364,7 @@ func Test_ReadRoutine(t *testing.T) {
 					Return(nil).
 					AnyTimes()
 
-				od := &GethBlockODef{cfg: &config.OracleConfig{
+				od := &GethBlockODef{cfg: &core.OracleConfig{
 					RPCEndpoint:  "pass test",
 					StartHeight:  big.NewInt(2),
 					EndHeight:    big.NewInt(1),
@@ -402,7 +401,7 @@ func Test_ReadRoutine(t *testing.T) {
 					Return(nil).
 					AnyTimes()
 
-				od := &GethBlockODef{cfg: &config.OracleConfig{
+				od := &GethBlockODef{cfg: &core.OracleConfig{
 					RPCEndpoint:  "pass test",
 					StartHeight:  nil,
 					EndHeight:    big.NewInt(1),
@@ -454,7 +453,7 @@ func Test_ReadRoutine(t *testing.T) {
 					Return(block, nil).
 					AnyTimes()
 
-				od := &GethBlockODef{cfg: &config.OracleConfig{
+				od := &GethBlockODef{cfg: &core.OracleConfig{
 					RPCEndpoint:  "pass test",
 					StartHeight:  big.NewInt(1),
 					EndHeight:    big.NewInt(5),
@@ -494,7 +493,7 @@ func Test_ReadRoutine(t *testing.T) {
 		//		testObj.On("HeaderByNumber", mock.Anything, mock.Anything).Return(&header, nil)
 		//		testObj.On("BlockByNumber", mock.Anything, mock.Anything).Return(block, nil)
 		//
-		//		od := &GethBlockODef{cfg: &config.OracleConfig{
+		//		od := &GethBlockODef{cfg: &core.OracleConfig{
 		//			RPCEndpoint:  "pass test",
 		//			StartHeight:  nil,
 		//			EndHeight:    nil,

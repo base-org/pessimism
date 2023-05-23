@@ -6,16 +6,19 @@ import (
 	"github.com/google/uuid"
 )
 
+// UUID ... third-party wrapper struct
 type UUID struct {
 	uuid.UUID
 }
 
+// newUUID ... Constructor
 func newUUID() UUID {
 	return UUID{
 		uuid.New(),
 	}
 }
 
+// nilUUID ... Returns a zero'd out 16 byte array
 func nilUUID() UUID {
 	return UUID{[16]byte{0}}
 }
@@ -58,11 +61,15 @@ type PipelineUUID struct {
 	UUID UUID
 }
 
-/*
-	NOTE: Pipelines that require a backfill will cause inaccurate collisions
-	within the pipeline DAG.
+// InvSessionPID ... Invariant session Primary ID
+type InvSessionPID [3]byte
 
-*/
+// Represents a non-deterministic ID that's assigned to
+// every uniquely constructed invariant session
+type InvSessionUUID struct {
+	PID  InvSessionPID
+	UUID UUID
+}
 
 // NOTE - This is useful for error handling with functions that
 // also return a ComponentID
@@ -78,6 +85,14 @@ func NilComponentUUID() ComponentUUID {
 func NilPipelineUUID() PipelineUUID {
 	return PipelineUUID{
 		PID:  PipelinePID{0},
+		UUID: nilUUID(),
+	}
+}
+
+// NilInvariantUUID ... Returns a zero'd out or empty invariant UUID
+func NilInvariantUUID() InvSessionUUID {
+	return InvSessionUUID{
+		PID:  InvSessionPID{0},
 		UUID: nilUUID(),
 	}
 }
@@ -114,6 +129,20 @@ func MakePipelineUUID(pt PipelineType, firstCID, lastCID ComponentUUID) Pipeline
 	}
 
 	return PipelineUUID{
+		PID:  pID,
+		UUID: newUUID(),
+	}
+}
+
+// MakeInvSessionUUID ... Constructs an invariant PID sequence & random UUID
+func MakeInvSessionUUID(n Network, pt PipelineType, invType InvariantType) InvSessionUUID {
+	pID := InvSessionPID{
+		byte(n),
+		byte(pt),
+		byte(invType),
+	}
+
+	return InvSessionUUID{
 		PID:  pID,
 		UUID: newUUID(),
 	}
@@ -156,4 +185,19 @@ func (id PipelineUUID) String() string {
 	return fmt.Sprintf("%s:::%s",
 		id.PID.String(), id.UUID.ShortString(),
 	)
+}
+
+// String ... Returns string representation of an invariant sesion PID
+func (id InvSessionPID) String() string {
+	return fmt.Sprintf("%s:%s:%s",
+		Network(id[0]).String(),
+		PipelineType(id[1]).String(),
+		InvariantType(id[2]).String(),
+	)
+}
+
+// String ... Returns string reprsentation of an invariant session UUID
+func (id InvSessionUUID) String() string {
+	return fmt.Sprintf("%s::%s",
+		id.PID.String(), id.UUID.ShortString())
 }

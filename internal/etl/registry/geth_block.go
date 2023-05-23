@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/base-org/pessimism/internal/client"
-	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/logging"
@@ -15,16 +14,21 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	notFoundMsg = "not found"
+)
+
 // TODO(#21): Verify config validity during Oracle construction
 // GethBlockODef ...GethBlock register oracle definition used to drive oracle component
 type GethBlockODef struct {
-	cfg        *config.OracleConfig
+	cUUID      core.ComponentUUID
+	cfg        *core.OracleConfig
 	client     client.EthClientInterface
 	currHeight *big.Int
 }
 
 // NewGethBlockODef ... Initializer for geth.block oracle definition
-func NewGethBlockODef(cfg *config.OracleConfig, client client.EthClientInterface, h *big.Int) *GethBlockODef {
+func NewGethBlockODef(cfg *core.OracleConfig, client client.EthClientInterface, h *big.Int) *GethBlockODef {
 	return &GethBlockODef{
 		cfg:        cfg,
 		client:     client,
@@ -34,11 +38,17 @@ func NewGethBlockODef(cfg *config.OracleConfig, client client.EthClientInterface
 
 // NewGethBlockOracle ... Initializer for geth.block oracle component
 func NewGethBlockOracle(ctx context.Context, ot core.PipelineType,
-	cfg *config.OracleConfig, opts ...component.Option) (component.Component, error) {
+	cfg *core.OracleConfig, opts ...component.Option) (component.Component, error) {
 	client := client.NewEthClient()
 	od := NewGethBlockODef(cfg, client, nil)
 
-	return component.NewOracle(ctx, ot, core.GethBlock, od, opts...)
+	oracle, err := component.NewOracle(ctx, ot, core.GethBlock, od, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	od.cUUID = oracle.UUID()
+	return oracle, nil
 }
 
 func (oracle *GethBlockODef) ConfigureRoutine() error {
@@ -81,7 +91,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 		return errors.New("start height cannot be more than the latest height from network")
 	}
 
-	ticker := time.NewTicker(time.Duration(oracle.cfg.PollInterval) * time.Millisecond)
+	ticker := time.NewTicker(oracle.cfg.PollInterval * time.Millisecond) //nolint:durationcheck // inapplicable
 	height := startHeight
 
 	for {
@@ -101,8 +111,8 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 			blockAsserted, blockAssertedOk := blockAsInterface.(*types.Block)
 
 			if err != nil || !blockAssertedOk {
-				logging.WithContext(ctx).Error("problem fetching or asserting block", zap.NamedError("blockFetch", err),
-					zap.Bool("blockAsserted", blockAssertedOk))
+				// logging.WithContext(ctx).Error("problem fetching or asserting block", zap.NamedError("blockFetch", err),
+				// 	zap.Bool("blockAsserted", blockAssertedOk))
 				continue
 			}
 
@@ -188,19 +198,32 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 		return err
 	}
 
-	ticker := time.NewTicker(time.Duration(oracle.cfg.PollInterval) * time.Millisecond)
+	logging.WithContext(ctx).
+		Debug("Starting poll routine", zap.Duration("poll_interval", oracle.cfg.PollInterval),
+			zap.String(core.CUUIDKey, oracle.cUUID.String()))
+
+	ticker := time.NewTicker(oracle.cfg.PollInterval * time.Millisecond) //nolint:durationcheck // inapplicable
 	for {
 		select {
 		case <-ticker.C:
 
 			height := oracle.getHeightToProcess(ctx)
+			if height != nil {
+				logging.WithContext(ctx).Debug("Polling block for processing",
+					zap.Int("Height", int(height.Int64())),
+					zap.String(core.CUUIDKey, oracle.cUUID.String()))
+			}
 
 			headerAsInterface, err := oracle.fetchData(ctx, height, core.FetchHeader)
 			headerAsserted, headerAssertedOk := headerAsInterface.(*types.Header)
 
+			if err != nil && err.Error() == notFoundMsg {
+				continue
+			}
+
 			if err != nil || !headerAssertedOk {
 				logging.WithContext(ctx).Error("problem fetching or asserting header", zap.NamedError("headerFetch", err),
-					zap.Bool("headerAsserted", headerAssertedOk))
+					zap.Bool("headerAsserted", headerAssertedOk), zap.String(core.CUUIDKey, oracle.cUUID.String()))
 				continue
 			}
 
@@ -209,13 +232,13 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 
 			if err != nil || !blockAssertedOk {
 				logging.WithContext(ctx).Error("problem fetching or asserting block", zap.NamedError("blockFetch", err),
-					zap.Bool("blockAsserted", blockAssertedOk))
+					zap.Bool("blockAsserted", blockAssertedOk), zap.String(core.CUUIDKey, oracle.cUUID.String()))
 				continue
 			}
 
-			// TODO - Add support for database persistence
 			componentChan <- core.TransitData{
 				Timestamp: time.Now(),
+				PType:     core.Live,
 				Type:      core.GethBlock,
 				Value:     *blockAsserted,
 			}
@@ -232,9 +255,13 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 				height.Add(headerAsserted.Number, big.NewInt(1))
 			}
 
+			logging.NoContext().Debug("New height", zap.Int("Height", int(height.Int64())),
+				zap.String(core.CUUIDKey, oracle.cUUID.String()))
+
 			oracle.currHeight = height
 
 		case <-ctx.Done():
+			logging.NoContext().Info("Geth.block oracle routine ending", zap.String(core.CUUIDKey, oracle.cUUID.String()))
 			return nil
 		}
 	}

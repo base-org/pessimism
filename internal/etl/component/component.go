@@ -7,15 +7,18 @@ import (
 )
 
 const (
-	killSignal = 0
+	killSig = 0
 )
 
 // Component ... Generalized interface that all pipeline components must adhere to
 type Component interface {
-	// ID ...
-	ID() core.ComponentUUID
-	// Type ...
+	// UUID ...
+	UUID() core.ComponentUUID
+	// Type ... Returns component enum type
 	Type() core.ComponentType
+
+	// AddRelay ... Adds an engine relay to component egress routing
+	AddRelay(relay *core.EngineInputRelay) error
 
 	// AddEgress ...
 	AddEgress(core.ComponentUUID, chan core.TransitData) error
@@ -74,8 +77,8 @@ func (meta *metaData) ActivityState() ActivityState {
 	return meta.state
 }
 
-// ID ... Returns component's ComponentUUID
-func (meta *metaData) ID() core.ComponentUUID {
+// UUID ... Returns component's ComponentUUID
+func (meta *metaData) UUID() core.ComponentUUID {
 	return meta.id
 }
 

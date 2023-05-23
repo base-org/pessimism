@@ -109,13 +109,79 @@ func Test_Add_Remove_Egress(t *testing.T) {
 				return handler
 			},
 
-			testLogic: func(t *testing.T, egress *egressHandler) {
+			testLogic: func(t *testing.T, eh *egressHandler) {
 
 				cID := core.MakeComponentUUID(69, 69, 69, 69)
-				err := egress.RemoveEgress(cID)
+				err := eh.RemoveEgress(cID)
 
 				assert.Error(t, err, "Ensuring that an error is thrown when trying to remove a non-existent egress")
 				assert.Equal(t, err.Error(), fmt.Sprintf(egressNotFoundErr, cID.PID.String()))
+			},
+		},
+		{
+			name:        "Passed Engine Egress Test",
+			description: "When a relay is passed to AddRelay, it should be used during transit operations",
+
+			constructionLogic: newEgressHandler,
+
+			testLogic: func(t *testing.T, eh *egressHandler) {
+				relayChan := make(chan core.InvariantInput)
+
+				pUUID := core.NilPipelineUUID()
+
+				relay := core.NewEngineRelay(pUUID, relayChan)
+
+				handler := newEgressHandler()
+
+				err := handler.AddRelay(relay)
+				assert.NoError(t, err)
+
+				testData := core.TransitData{Network: 2, Value: "goodbye closed-source blocksec monitoring"}
+				expectedInput := core.InvariantInput{
+					PUUID: pUUID,
+					Input: testData,
+				}
+
+				go func(t *testing.T) {
+					assert.NoError(t, handler.Send(testData))
+				}(t)
+
+				actualInput := <-relayChan
+
+				assert.Equal(t, actualInput, expectedInput)
+
+			},
+		},
+		{
+			name:        "Failed Engine Egress Test",
+			description: "When relay already exists and AddRelay function is called, an error should be returned",
+
+			constructionLogic: func() *egressHandler {
+				relayChan := make(chan core.InvariantInput)
+
+				pUUID := core.NilPipelineUUID()
+
+				relay := core.NewEngineRelay(pUUID, relayChan)
+
+				handler := newEgressHandler()
+
+				if err := handler.AddRelay(relay); err != nil {
+					panic(err)
+				}
+
+				return handler
+			},
+
+			testLogic: func(t *testing.T, eh *egressHandler) {
+				relayChan := make(chan core.InvariantInput)
+
+				pUUID := core.NilPipelineUUID()
+
+				relay := core.NewEngineRelay(pUUID, relayChan)
+
+				err := eh.AddRelay(relay)
+
+				assert.Error(t, err)
 			},
 		},
 	}

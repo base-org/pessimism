@@ -32,3 +32,15 @@ func Test_Pipeline_ID(t *testing.T) {
 
 	assert.Equal(t, expectedStr, actualStr)
 }
+
+func Test_InvSession_ID(t *testing.T) {
+	expectedID := InvSessionPID([3]byte{1, 2, 1})
+	actualID := MakeInvSessionUUID(1, 2, 1)
+
+	assert.Equal(t, expectedID, actualID.PID)
+
+	expectedStr := "layer1:live:tx_caller"
+	actualStr := actualID.PID.String()
+
+	assert.Equal(t, expectedStr, actualStr)
+}
