@@ -57,7 +57,7 @@ paths:
                 $ref: '#/components/schemas/SessionGetResponse'
               examples:
                 default:
-                  $ref: '#/components/examples/get-inv-result-success'
+                  $ref: '#/components/examples/get-session-success'
                 allsessions:
                   $ref: '#/components/examples/get-all-sessions-success'
         '400':
@@ -103,7 +103,7 @@ paths:
                 $ref: '#/components/schemas/InvariantResponse'
               examples:
                 default:
-                  $ref: '#/components/examples/get-session-success'
+                  $ref: '#/components/examples/get-inv-result-success'
         '400':
           description: 'Unsuccessful request unmarshaling or validation.'
           content:
