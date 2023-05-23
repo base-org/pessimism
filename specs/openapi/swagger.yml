@@ -32,7 +32,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/HealthResponse'
 
-  /v0/invariant/:
+  /v0/invariant:
     get:
       tags:
         - invariant
@@ -55,25 +55,25 @@ paths:
                 default:
                   $ref: '#/components/examples/get-inv-result-success'
 
-        '404':
+        '400':
           description: 'Unsuccessful request unmarshaling or validation.'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InvariantResponse'
+                $ref: '#/components/schemas/SessionGetResponse'
               examples:
                 default:
-                  $ref: '#/components/examples/get-inv-result-failed-unmarshal'
+                  $ref: '#/components/examples/get-session-dne'
              
         '500':
           description: 'Unsuccessful request processing thats resulted in an internal server.'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InvariantResponse'
+                $ref: '#/components/schemas/SessionGetResponse'
               examples:
                 default:
-                  $ref: '#/components/examples/get-inv-result-failed-unmarshal'  
+                  $ref: '#/components/examples/get-session-internal-err'  
 
     post:
       tags:
@@ -99,9 +99,9 @@ paths:
                 $ref: '#/components/schemas/InvariantResponse'
               examples:
                 default:
-                  $ref: '#/components/examples/get-inv-result-success'
+                  $ref: '#/components/examples/get-session-success'
 
-        '404':
+        '400':
           description: 'Unsuccessful request unmarshaling or validation.'
           content:
             application/json:
@@ -109,7 +109,7 @@ paths:
                 $ref: '#/components/schemas/InvariantResponse'
               examples:
                 default:
-                  $ref: '#/components/examples/get-inv-result-failed-unmarshal'
+                  $ref: '#/components/examples/get-session-dne'
              
         '500':
           description: 'Unsuccessful request processing thats resulted in an internal server.'
@@ -123,10 +123,38 @@ paths:
 
 components:
   examples:
+  
+    get-session-internal-err:
+      value:
+        data:
+          status: NOTOK
+          result: {"error": "internal server error occured while processing request"}
+
+    get-session-dne:
+      value:
+        data:
+          status: NOTOK
+          result: {"error": "session does not exist"}
+
     get-session-success:
       value:
         data:
-          
+          status: OK
+          result:
+            uuid: 0x420
+            network: layer1
+            type: live
+            invariant: balance_enforcement
+            alert_destination: slack
+            invariant_params:
+              address: 0x420
+              upperBound: 100
+              lowerBound: 0
+            status: running
+            created_at: 2021-09-01T00:00:00Z
+            updated_at: 2021-09-01T00:00:00Z
+            deleted_at: 2021-09-01T00:00:00Z
+            deleted: false
 
     get-inv-result-success:
       value:
@@ -147,6 +175,48 @@ components:
           result: {"error": "internal server error occured while processing request"}
     
   schemas:
+
+    SessionGetResponse:
+      type: object
+      properties:
+        uuid:
+          type: string
+          description: 'Invariant session uuid'
+        network:
+          type: string
+          description: 'Network type'
+          enum: ["layer1", "layer2"]
+        type:
+          type: string
+          description: 'Session type'
+          enum: ["live", "backtest"]
+        invariant:
+          type: string
+          description: 'Invariant type'
+          enum: ["balance_enforcement"]
+        alert_destination:
+          type: string
+          description: 'Alert destination'
+          enum: ["slack"]
+        invariant_params:
+          $ref: '#/components/schemas/InvConfig'
+        status:
+          type: string
+          description: 'Session status'
+          enum: ["running", "stopped"]
+        created_at:
+          type: string
+          description: 'Session creation timestamp'
+        updated_at:
+          type: string
+          description: 'Session update timestamp'
+        deleted_at:
+          type: string
+          description: 'Session deletion timestamp'
+        deleted:
+          type: boolean
+          description: 'Indicates whether the session is deleted or not'
+
     OkInvResultObj:
       type: object
       properties:
@@ -249,47 +319,6 @@ components:
       required:
         - method
         - params
-
-    SessionGetResponse:
-      type: object
-      properties:
-        uuid:
-          type: string
-          description: 'Invariant session uuid'
-        network:
-          type: string
-          description: 'Network type'
-          enum: ["layer1", "layer2"]
-        type:
-          type: string
-          description: 'Session type'
-          enum: ["live", "backtest"]
-        invariant:
-          type: string
-          description: 'Invariant type'
-          enum: ["balance_enforcement"]
-        alert_destination:
-          type: string
-          description: 'Alert destination'
-          enum: ["slack"]
-        invariant_params:
-          $ref: '#/components/schemas/InvConfig'
-        status:
-          type: string
-          description: 'Session status'
-          enum: ["running", "stopped"]
-        created_at:
-          type: string
-          description: 'Session creation timestamp'
-        updated_at:
-          type: string
-          description: 'Session update timestamp'
-        deleted_at:
-          type: string
-          description: 'Session deletion timestamp'
-        deleted:
-          type: boolean
-          description: 'Indicates whether the session is deleted or not'
 
     HealthResponse:
       type: object
