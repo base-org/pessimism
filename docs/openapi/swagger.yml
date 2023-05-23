@@ -12,8 +12,6 @@ info:
 externalDocs:
   description: Find out more about Pessimism's architecture
   url: 'https://github.com/base-org/pessimism/docs/ARCHITECTURE.md'
-servers:
-  - url: 'http://127.0.0.1:8080'
 tags:
   - name: invariant
     description: 'Invariant endpoints'
