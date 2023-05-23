@@ -92,8 +92,12 @@ paths:
             schema:
               $ref: '#/components/schemas/InvOperationParameters'
             examples:
-              default:
-                $ref: '#/components/examples/get-inv-result-success'
+              run:
+                $ref: '#/components/examples/run-inv-example'
+              update:
+                $ref: '#/components/examples/update-inv-example'
+              delete:
+                $ref: '#/components/examples/delete-inv-example'
       responses:
         '200':
           description: 'Successful operation.'
@@ -103,7 +107,7 @@ paths:
                 $ref: '#/components/schemas/InvariantResponse'
               examples:
                 default:
-                  $ref: '#/components/examples/run-inv-example'
+                  $ref: '#/components/examples/get-inv-result-success'
         '400':
           description: 'Unsuccessful request unmarshaling or validation.'
           content:
@@ -125,51 +129,63 @@ paths:
 
 components:
   examples:
+    update-inv-example:
+      value:
+        method: update
+        params:
+          uuid: 0x420
+          invariant_params:
+            address: 0x420
+            upperBound: 666
+            lowerBound: 222
+
+    delete-inv-example:
+      value:
+        method: delete
+        params:
+          uuid: 0x420
+
     run-inv-example:
       value:
-        data: 
-          method: run
-          params:
-            network: layer1
-            type: live
-            invariant: balance_enforcement
-            alert_destination: slack
-            invariant_params:
-              address: 0x420
-              upperBound: 100
-              lowerBound: 0
+        method: run
+        params:
+          network: layer1
+          type: live
+          invariant: balance_enforcement
+          alert_destination: slack
+          invariant_params:
+            address: 0x420
+            upperBound: 100
+            lowerBound: 0
 
     get-session-internal-err:
       value:
-        data:
-          status: NOTOK
-          result: {'error': 'internal server error occured while processing request'}
+        status: NOTOK
+        result: {'error': 'internal server error occured while processing request'}
 
     get-session-dne:
       value:
-        data:
-          status: NOTOK
-          result: {'error': 'session does not exist'}
+        status: NOTOK
+        result: {'error': 'session does not exist'}
 
     get-session-success:
       value:
-        data:
-          status: OK
-          result:
-            uuid: 0x420
-            network: layer1
-            type: live
-            invariant: balance_enforcement
-            alert_destination: slack
-            invariant_params:
-              address: 0x420
-              upperBound: 100
-              lowerBound: 0
-            status: running
-            created_at: 2021-09-01T00:00:00Z
-            updated_at: 2021-09-01T00:00:00Z
-            deleted_at: 2021-09-01T00:00:00Z
-            deleted: false
+        status: OK
+        result:
+          uuid: 0x420
+          network: layer1
+          type: live
+          invariant: balance_enforcement
+          alert_destination: slack
+          invariant_params:
+            address: 0x420
+            upperBound: 100
+            lowerBound: 0
+          status: running
+          created_at: 2021-09-01T00:00:00Z
+          updated_at: 2021-09-01T00:00:00Z
+          deleted_at: 2021-09-01T00:00:00Z
+          deleted: false
 
     get-all-sessions-success:
       value: {"status": "OK", "result": [{"uuid": "0x420", "network": "layer1", "type": "live", "invariant": "balance_enforcement", "alert_destination": "slack", "invariant_params": {"address": "0x420", "upperBound": 100, "lowerBound": 0}, "status": "running", "created_at": "2021-09-01T00:00:00Z", "updated_at": "2021-09-01T00:00:00Z", "deleted_at": "2021-09-01T00:00:00Z", "deleted": false}]}
