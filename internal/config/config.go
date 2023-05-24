@@ -69,13 +69,11 @@ func NewConfig(fileName FilePath) *Config {
 		},
 
 		ServerConfig: &server.Config{
-			Host:            getEnvStr("SERVER_HOST"),
-			Port:            getEnvInt("SERVER_PORT"),
-			ListenLimit:     getEnvInt("SERVER_LISTEN_LIMIT"),
-			KeepAlive:       getEnvInt("SERVER_KEEP_ALIVE_TIME"),
-			ReadTimeout:     getEnvInt("SERVER_READ_TIMEOUT"),
-			WriteTimeout:    getEnvInt("SERVER_WRITE_TIMEOUT"),
-			ShutdownTimeout: getEnvInt("SERVER_SHUTDOWN_TIME"),
+			Host:         getEnvStr("SERVER_HOST"),
+			Port:         getEnvInt("SERVER_PORT"),
+			KeepAlive:    getEnvInt("SERVER_KEEP_ALIVE_TIME"),
+			ReadTimeout:  getEnvInt("SERVER_READ_TIMEOUT"),
+			WriteTimeout: getEnvInt("SERVER_WRITE_TIMEOUT"),
 		},
 	}
 
