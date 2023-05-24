@@ -1,3 +1,4 @@
+# Go test workflow
 name: go-test
 
 on:
