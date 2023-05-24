@@ -7,12 +7,18 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
+// InvariantMethod ... Represents the invariant operation method
 type InvariantMethod int
 
 const (
 	Run InvariantMethod = iota
+	// NOTE - Update is not implemented yet
+	Update
+	// NOTE - Stop is not implemented yet
+	Stop
 )
 
+// InvResponseStatus ... Represents the invariant operation response status
 type InvResponseStatus string
 
 const (
@@ -20,6 +26,7 @@ const (
 	NotOK InvResponseStatus = "NOTOK"
 )
 
+// InvRequestParams ... Request params for invariant operation
 type InvRequestParams struct {
 	Network string `json:"network"`
 	PType   string `json:"pipeline_type"`
@@ -52,33 +59,36 @@ func (irp *InvRequestParams) InvariantType() core.InvariantType {
 	return core.StringToInvariantType(irp.InvType)
 }
 
+// GeneratePipelineConfig ... Generates a pipeline config using the request params
+func (irp *InvRequestParams) GeneratePipelineConfig(endpoint string, pollInterval time.Duration,
+	regType core.RegisterType) *core.PipelineConfig {
+	return &core.PipelineConfig{
+		Network:      irp.NetworkType(),
+		DataType:     regType,
+		PipelineType: irp.PiplineType(),
+		OracleCfg: &core.OracleConfig{
+			RPCEndpoint:  endpoint,
+			PollInterval: pollInterval,
+			StartHeight:  irp.StartHeight,
+			EndHeight:    irp.EndHeight,
+		},
+	}
+}
+
+// InvRequestBody ... Request body for invariant operation request
 type InvRequestBody struct {
 	Method InvariantMethod  `json:"method"`
 	Params InvRequestParams `json:"params"`
 }
 
+// InvResult ... Result of invariant operation
 type InvResult = map[string]string
 
+// InvResponse ... Response for invariant operation request
 type InvResponse struct {
 	Code   int               `json:"status_code"`
 	Status InvResponseStatus `json:"status"`
 
 	Result InvResult `json:"result"`
 	Error  string    `json:"error"`
-}
-
-// GeneratePipelineConfig ... Generates a pipeline config using the request params
-func (params *InvRequestParams) GeneratePipelineConfig(endpoint string, pollInterval time.Duration,
-	regType core.RegisterType) *core.PipelineConfig {
-	return &core.PipelineConfig{
-		Network:      params.NetworkType(),
-		DataType:     regType,
-		PipelineType: params.PiplineType(),
-		OracleCfg: &core.OracleConfig{
-			RPCEndpoint:  endpoint,
-			PollInterval: pollInterval,
-			StartHeight:  params.StartHeight,
-			EndHeight:    params.EndHeight,
-		},
-	}
 }

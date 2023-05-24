@@ -31,8 +31,6 @@ const (
 	Backtest PipelineType = iota + 1
 	Live
 	MockTest
-
-	Unknown
 )
 
 func StringToPipelineType(stringType string) PipelineType {
@@ -47,7 +45,7 @@ func StringToPipelineType(stringType string) PipelineType {
 		return MockTest
 	}
 
-	return Unknown
+	return PipelineType(0)
 }
 
 func (pt PipelineType) String() string {

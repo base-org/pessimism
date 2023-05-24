@@ -36,7 +36,7 @@ func Test_Graph(t *testing.T) {
 			testLogic: func(t *testing.T, g ComponentGraph) {
 				cUUID := core.MakeComponentUUID(69, 69, 69, 69)
 
-				component, err := p_registry.NewBlackHoleTxPipe(context.Background(), component.WithID(cUUID))
+				component, err := p_registry.NewBlackHoleTxPipe(context.Background(), component.WithCUUID(cUUID))
 				assert.NoError(t, err)
 
 				err = g.AddComponent(cUUID, component)
@@ -72,7 +72,7 @@ func Test_Graph(t *testing.T) {
 					panic(err)
 				}
 
-				comp2, err := p_registry.NewCreateContractTxPipe(context.Background(), component.WithID(testCUUID1))
+				comp2, err := p_registry.NewCreateContractTxPipe(context.Background(), component.WithCUUID(testCUUID1))
 				if err != nil {
 					panic(err)
 				}
@@ -111,7 +111,7 @@ func Test_Graph(t *testing.T) {
 					panic(err)
 				}
 
-				comp2, err := p_registry.NewCreateContractTxPipe(context.Background(), component.WithID(testCUUID1))
+				comp2, err := p_registry.NewCreateContractTxPipe(context.Background(), component.WithCUUID(testCUUID1))
 				if err != nil {
 					panic(err)
 				}
@@ -150,7 +150,7 @@ func Test_Graph(t *testing.T) {
 					panic(err)
 				}
 
-				comp2, err := p_registry.NewCreateContractTxPipe(context.Background(), component.WithID(testCUUID1))
+				comp2, err := p_registry.NewCreateContractTxPipe(context.Background(), component.WithCUUID(testCUUID1))
 				if err != nil {
 					panic(err)
 				}

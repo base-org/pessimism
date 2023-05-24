@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/base-org/pessimism/internal/client"
+	pess_common "github.com/base-org/pessimism/internal/common"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/state"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/params"
+
 	"go.uber.org/zap"
 )
 
@@ -48,12 +49,8 @@ func NewAddressBalanceOracle(ctx context.Context, ot core.PipelineType,
 	return o, nil
 }
 
-func weiToEther(wei *big.Int) *big.Float {
-	return new(big.Float).Quo(new(big.Float).SetInt(wei), big.NewFloat(params.Ether))
-}
-
-// ConfigureRoutine ... Sets up the oracle client connection and persists puuid to defintion state
-func (oracle *AddressBalanceODef) ConfigureRoutine(cUUID core.ComponentUUID, pUUID core.PipelineUUID) error {
+// ConfigureRoutine ... Sets up the oracle client connection and persists puuid to definition state
+func (oracle *AddressBalanceODef) ConfigureRoutine(pUUID core.PipelineUUID) error {
 	oracle.pUUID = pUUID
 
 	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
@@ -66,8 +63,10 @@ func (oracle *AddressBalanceODef) ConfigureRoutine(cUUID core.ComponentUUID, pUU
 }
 
 // BackTestRoutine ...
-func (oracle *AddressBalanceODef) BackTestRoutine(ctx context.Context, componentChan chan core.TransitData,
-	startHeight *big.Int, endHeight *big.Int) error {
+// NOTE - This oracle does not support backtesting
+// TODO (#59) : Add account balance backtesting support
+func (oracle *AddressBalanceODef) BackTestRoutine(_ context.Context, _ chan core.TransitData,
+	_ *big.Int, _ *big.Int) error {
 	return fmt.Errorf(noBackTestSupportError)
 }
 
@@ -79,12 +78,14 @@ func (oracle *AddressBalanceODef) ReadRoutine(ctx context.Context, componentChan
 		return err
 	}
 
-	ticker := time.NewTicker(oracle.cfg.PollInterval * time.Millisecond)
+	ticker := time.NewTicker(oracle.cfg.PollInterval * time.Millisecond) //nolint:durationcheck // inapplicable
 	for {
 		select {
-		case <-ticker.C:
+		case <-ticker.C: // Polling
 			logging.NoContext().Debug("Getting addresess",
 				zap.String(core.PUUIDKey, oracle.pUUID.String()))
+
+			// Get addresses from shared state store for pipeline uuid
 			addresses, err := stateStore.Get(ctx, oracle.pUUID.String())
 			if err != nil {
 				logging.WithContext(ctx).Error(err.Error())
@@ -92,10 +93,12 @@ func (oracle *AddressBalanceODef) ReadRoutine(ctx context.Context, componentChan
 			}
 
 			for _, address := range addresses {
+				// Convert to go-ethereum address type
 				gethAddress := common.HexToAddress(address)
-
 				logging.NoContext().Debug("Balance query",
 					zap.String(core.AddrKey, gethAddress.String()))
+
+				// Get balance using go-ethereum client
 				weiBalance, err := oracle.client.BalanceAt(ctx, gethAddress, nil)
 				if err != nil {
 					logging.WithContext(ctx).Error(err.Error())
@@ -103,7 +106,9 @@ func (oracle *AddressBalanceODef) ReadRoutine(ctx context.Context, componentChan
 				}
 
 				// Convert wei to ether
-				ethBalance, _ := weiToEther(weiBalance).Float64()
+				// NOTE - There is a possibility of precision loss here
+				// TODO (#58) : Verify precision loss
+				ethBalance, _ := pess_common.WeiToEther(weiBalance).Float64()
 
 				logging.NoContext().Debug("Balance",
 					zap.String(core.AddrKey, gethAddress.String()),
@@ -113,11 +118,12 @@ func (oracle *AddressBalanceODef) ReadRoutine(ctx context.Context, componentChan
 					zap.String(core.AddrKey, gethAddress.String()),
 					zap.Float64("balance", ethBalance))
 
+				// Send parsed float64 balance value to downstream component channel
 				componentChan <- core.NewTransitData(core.AccountBalance, ethBalance,
 					core.WithAddress(gethAddress))
 			}
 
-		case <-ctx.Done():
+		case <-ctx.Done(): // Shutdown
 			return nil
 		}
 	}

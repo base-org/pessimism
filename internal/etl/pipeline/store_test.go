@@ -20,12 +20,12 @@ var (
 
 func getTestPipeLine(ctx context.Context) Pipeline {
 
-	blackHolePipe, err := pipe_registry.NewBlackHoleTxPipe(ctx, component.WithID(cID1))
+	blackHolePipe, err := pipe_registry.NewBlackHoleTxPipe(ctx, component.WithCUUID(cID1))
 	if err != nil {
 		panic(err)
 	}
 
-	contractCreatePipe, err := pipe_registry.NewCreateContractTxPipe(ctx, component.WithID(cID2))
+	contractCreatePipe, err := pipe_registry.NewCreateContractTxPipe(ctx, component.WithCUUID(cID2))
 	if err != nil {
 		panic(err)
 	}

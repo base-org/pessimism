@@ -12,7 +12,7 @@ import (
 
 // OracleDefinition ... Provides a generalized interface for developers to bind their own functionality to
 type OracleDefinition interface {
-	ConfigureRoutine(cUUID core.ComponentUUID, pUUID core.PipelineUUID) error
+	ConfigureRoutine(pUUID core.PipelineUUID) error
 	BackTestRoutine(ctx context.Context, componentChan chan core.TransitData,
 		startHeight *big.Int, endHeight *big.Int) error
 	ReadRoutine(ctx context.Context, componentChan chan core.TransitData) error
@@ -72,7 +72,7 @@ func (o *Oracle) Close() error {
 func (o *Oracle) EventLoop() error {
 	// TODO(#24) - Add Internal Component Activity State Tracking
 
-	err := o.definition.ConfigureRoutine(o.id, o.pUUID)
+	err := o.definition.ConfigureRoutine(o.pUUID)
 	if err != nil {
 		return err
 	}

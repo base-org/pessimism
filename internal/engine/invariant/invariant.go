@@ -16,7 +16,7 @@ type Invariant interface {
 	UUID() core.InvSessionUUID
 	WithUUID(sUUID core.InvSessionUUID)
 	InputType() core.RegisterType
-	Invalidate(core.TransitData) (*core.InvalOutcome, error)
+	Invalidate(core.TransitData) (*core.InvalOutcome, bool, error)
 }
 
 // BaseInvariantOpt ... Functional option for BaseInvariant
@@ -25,24 +25,24 @@ type BaseInvariantOpt = func(bi *BaseInvariant) *BaseInvariant
 // WithAddressing ... Toggles addressing property for invariant
 func WithAddressing() BaseInvariantOpt {
 	return func(bi *BaseInvariant) *BaseInvariant {
-		bi.addresing = true
+		bi.addressing = true
 		return bi
 	}
 }
 
 // BaseInvariant ... Base invariant implementation
 type BaseInvariant struct {
-	addresing bool
-	sUUID     core.InvSessionUUID
-	inType    core.RegisterType
+	addressing bool
+	sUUID      core.InvSessionUUID
+	inType     core.RegisterType
 }
 
 // NewBaseInvariant ... Initializer
 func NewBaseInvariant(inType core.RegisterType,
 	opts ...BaseInvariantOpt) Invariant {
 	bi := &BaseInvariant{
-		inType:    inType,
-		addresing: false,
+		inType:     inType,
+		addressing: false,
 	}
 
 	for _, opt := range opts {
@@ -68,11 +68,11 @@ func (bi *BaseInvariant) InputType() core.RegisterType {
 }
 
 // Invalidate ... Invalidates the invariant; defaults to no-op
-func (bi *BaseInvariant) Invalidate(core.TransitData) (*core.InvalOutcome, error) {
-	return nil, nil
+func (bi *BaseInvariant) Invalidate(core.TransitData) (*core.InvalOutcome, bool, error) {
+	return nil, false, nil
 }
 
 // Addressing ... Returns the boolean addressing property for the invariant
 func (bi *BaseInvariant) Addressing() bool {
-	return bi.addresing
+	return bi.addressing
 }

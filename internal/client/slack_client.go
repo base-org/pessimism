@@ -7,8 +7,9 @@ package client
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/base-org/pessimism/internal/logging"
@@ -16,7 +17,7 @@ import (
 
 // SlackClient ... Interface for slack client
 type SlackClient interface {
-	PostData(str string) (*SlackAPIResponse, error)
+	PostData(context.Context, string) (*SlackAPIResponse, error)
 }
 
 // slackClient ... Slack client
@@ -26,8 +27,7 @@ type slackClient struct {
 }
 
 // NewSlackClient ... Initializer
-func NewSlackClient(url string) slackClient {
-
+func NewSlackClient(url string) SlackClient {
 	if url == "" {
 		logging.NoContext().Warn("No Slack webhook URL not provided")
 	}
@@ -67,15 +67,15 @@ type SlackAPIResponse struct {
 }
 
 // PostAlert ... handles posting data to slack
-func (sc slackClient) PostData(str string) (*SlackAPIResponse, error) {
-
+func (sc slackClient) PostData(ctx context.Context, str string) (*SlackAPIResponse, error) {
 	// make & marshal payload
 	payload, err := newSlackPayload(str).marshal()
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, sc.url, bytes.NewReader(payload))
+	req, err := http.NewRequestWithContext(ctx,
+		http.MethodPost, sc.url, bytes.NewReader(payload))
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (sc slackClient) PostData(str string) (*SlackAPIResponse, error) {
 	defer resp.Body.Close()
 
 	// read response
-	bytes, err := ioutil.ReadAll(resp.Body)
+	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

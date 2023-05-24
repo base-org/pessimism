@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
+// TransitOption ... Option used to initialize transit data
 type TransitOption = func(TransitData) TransitData
 
 // WithAddress ... Injects address to transit data
@@ -29,15 +30,17 @@ type TransitData struct {
 	Value   any
 }
 
+// NewTransitData ... Initializes transit data with supplied options
+// NOTE - transit data is used as a standard data representation
+// for commmunication between all ETL components and the risk engine
 func NewTransitData(rt RegisterType, val any, opts ...TransitOption) TransitData {
 	td := TransitData{
 		Timestamp: time.Now(),
-
-		Type:  rt,
-		Value: val,
+		Type:      rt,
+		Value:     val,
 	}
 
-	for _, opt := range opts {
+	for _, opt := range opts { // Apply options
 		opt(td)
 	}
 
@@ -86,8 +89,11 @@ const (
 	AddressKey = "address"
 )
 
+// InvSessionParams ... Parameters used to initialize an invariant session
+// NOTE: This type is used by the ETL and the API
 type InvSessionParams map[string]interface{}
 
+// Address ... Returns the address from the invariant session params
 func (sp *InvSessionParams) Address() string {
 	rawAddr, found := (*sp)[AddressKey]
 	if !found {
@@ -102,6 +108,7 @@ func (sp *InvSessionParams) Address() string {
 	return addr
 }
 
+// InvalOutcome ... Represents an invalidation outcome
 type InvalOutcome struct {
 	TimeStamp time.Time
 	Message   string

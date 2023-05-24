@@ -19,7 +19,7 @@ func Test_Store(t *testing.T) {
 			name:        "Test_GetAlertDestination",
 			description: "Test GetAlertDestination",
 			testLogic: func(t *testing.T) {
-				am := alert.NewAlertStore()
+				am := alert.NewStore()
 
 				sUUID := core.MakeInvSessionUUID(core.Layer1, core.Live, core.BalanceEnforcement)
 				alertDestination := core.Slack
@@ -36,7 +36,7 @@ func Test_Store(t *testing.T) {
 			name:        "Test_AddAlertDestination",
 			description: "Test AddAlertDestination",
 			testLogic: func(t *testing.T) {
-				am := alert.NewAlertStore()
+				am := alert.NewStore()
 
 				sUUID := core.MakeInvSessionUUID(core.Layer1, core.Live, core.BalanceEnforcement)
 				alertDestination := core.Slack
@@ -50,10 +50,10 @@ func Test_Store(t *testing.T) {
 			},
 		},
 		{
-			name:        "Test_NewAlertStore",
-			description: "Test NewAlertStore logic",
+			name:        "Test_NewStore",
+			description: "Test NewStore logic",
 			testLogic: func(t *testing.T) {
-				am := alert.NewAlertStore()
+				am := alert.NewStore()
 				assert.NotNil(t, am, "failed to instantiate alert store")
 			},
 		},

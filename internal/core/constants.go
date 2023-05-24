@@ -17,6 +17,7 @@ const (
 	UnknownType = "unknown"
 )
 
+// String ... Converts a network to a string
 func (n Network) String() string {
 	switch n {
 	case Layer1:
@@ -29,6 +30,7 @@ func (n Network) String() string {
 	return UnknownType
 }
 
+// StringToNetwork ... Converts a string to a network
 func StringToNetwork(stringType string) Network {
 	switch stringType {
 	case "layer1":
@@ -54,16 +56,16 @@ const (
 	EthClientTimeout Timeouts = 20 // in seconds
 )
 
+// InvariantType ... Represents the type of invariant
 type InvariantType uint8
 
 const (
-	ExampleInv InvariantType = iota
+	ExampleInv = iota + 1
 	TxCaller
 	BalanceEnforcement
-
-	UnknownInvariant
 )
 
+// String ... Converts an invariant type to a string
 func (it InvariantType) String() string {
 	switch it {
 	case ExampleInv:
@@ -80,6 +82,7 @@ func (it InvariantType) String() string {
 	}
 }
 
+// StringToInvariantType ... Converts a string to an invariant type
 func StringToInvariantType(stringType string) InvariantType {
 	switch stringType {
 	case "example":
@@ -92,8 +95,40 @@ func StringToInvariantType(stringType string) InvariantType {
 		return BalanceEnforcement
 
 	default:
-		return UnknownInvariant
+		return InvariantType(0)
 	}
+}
+
+// AlertDestination ... The destination for an alert
+type AlertDestination uint8
+
+const (
+	Slack        AlertDestination = iota + 1
+	CounterParty                  // 2
+)
+
+func (ad AlertDestination) String() string {
+	switch ad {
+	case Slack:
+		return "slack"
+	case CounterParty:
+		return "counterparty"
+	default:
+		return "unknown"
+	}
+}
+
+// StringToAlertingDestType ... Converts a string to an alerting destination type
+func StringToAlertingDestType(stringType string) AlertDestination {
+	switch stringType {
+	case "slack":
+		return Slack
+
+	case "counterparty":
+		return CounterParty
+	}
+
+	return AlertDestination(0)
 }
 
 // ID keys used for logging

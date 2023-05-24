@@ -15,14 +15,15 @@ import (
 	"go.uber.org/zap"
 )
 
+// Manager ... Engine manager interface
 type Manager interface {
 	Transit() chan core.InvariantInput
 	EventLoop(ctx context.Context) error
 
 	// TODO( ) : Session deletion logic
-	DeleteInvariantSession(_ core.InvSessionUUID) (core.InvSessionUUID, error)
-	DeployInvariantSession(n core.Network, pUUUID core.PipelineUUID, it core.InvariantType,
-		pt core.PipelineType, invParams core.InvSessionParams) (core.InvSessionUUID, error)
+	DeleteInvariantSession(core.InvSessionUUID) (core.InvSessionUUID, error)
+	DeployInvariantSession(core.Network, core.PipelineUUID, core.InvariantType,
+		core.PipelineType, core.InvSessionParams) (core.InvSessionUUID, error)
 }
 
 /*
@@ -99,7 +100,10 @@ func (em *engineManager) DeployInvariantSession(n core.Network, pUUUID core.Pipe
 			zap.String(core.AddrKey, invParams.Address()))
 
 		// Set address to shared state store for the pipeline to utilize
-		stateStore.Set(em.ctx, pUUUID.String(), invParams.Address())
+		_, err = stateStore.Set(em.ctx, pUUUID.String(), invParams.Address())
+		if err != nil {
+			return core.NilInvariantUUID(), err
+		}
 	}
 
 	return sessionID, nil
@@ -126,14 +130,11 @@ func (em *engineManager) EventLoop(ctx context.Context) error {
 
 // executeInvariants ... Executes all invariants associated with the input etl pipeline
 func (em *engineManager) executeInvariants(ctx context.Context, data core.InvariantInput) {
-
 	if data.Input.Address != nil { // Address based invariant
 		em.executeAddressInvariants(ctx, data)
-
 	} else { // Non Address based invariant
 		em.executeNonAddressInvariants(ctx, data)
 	}
-
 }
 
 // executeAddressInvariants ... Executes all address specific invariants associated with the input etl pipeline
@@ -157,7 +158,6 @@ func (em *engineManager) executeAddressInvariants(ctx context.Context, data core
 	}
 
 	em.executeInvariant(ctx, data, inv)
-
 }
 
 // executeNonAddressInvariants ... Executes all non address specific invariants associated with the input etl pipeline
@@ -187,18 +187,11 @@ func (em *engineManager) executeNonAddressInvariants(ctx context.Context, data c
 func (em *engineManager) executeInvariant(ctx context.Context, data core.InvariantInput, inv invariant.Invariant) {
 	logger := logging.WithContext(ctx)
 
-	alert, err := em.engine.Execute(ctx, data.Input, inv)
-	if err != nil {
-		logger.Error("Could not execute invariant",
-			zap.String(core.PUUIDKey, data.PUUID.String()),
-			zap.String(core.SUUIDKey, inv.UUID().String()),
-			zap.String(core.AddrKey, data.Input.Address.String()))
-		return
-	}
+	// Execute invariant using risk engine and return alert if invalidation occurs
+	alert, invalid := em.engine.Execute(ctx, data.Input, inv)
 
-	if alert != nil {
+	if invalid {
 		logger.Warn("Invariant alert", zap.String(core.SUUIDKey, inv.UUID().String()))
 		em.alertTransit <- *alert
 	}
-
 }

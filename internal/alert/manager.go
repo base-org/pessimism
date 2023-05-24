@@ -21,20 +21,24 @@ type AlertingManager interface {
 
 // alertManager ... Alert manager implementation
 type alertManager struct {
-	sc                  client.SlackClient
-	invariantAlertStore AlertStore
-	interpolator        Interpolator
+	ctx          context.Context
+	sc           client.SlackClient
+	store        Store
+	interpolator Interpolator
 
 	alertTransit chan core.Alert
 }
 
 // NewManager ... Instantiates a new alert manager
-func NewManager(sc client.SlackClient) (AlertingManager, func()) {
+func NewManager(ctx context.Context, sc client.SlackClient) (AlertingManager, func()) {
+	// NOTE - Consider constructing dependencies in higher level
+	// abstraction and passing them in
 	am := &alertManager{
-		sc:                  sc,
-		interpolator:        NewInterpolator(),
-		invariantAlertStore: NewAlertStore(),
-		alertTransit:        make(chan core.Alert, 0),
+		ctx:          ctx,
+		sc:           sc,
+		interpolator: NewInterpolator(),
+		store:        NewStore(),
+		alertTransit: make(chan core.Alert),
 	}
 
 	shutDown := func() {
@@ -46,7 +50,7 @@ func NewManager(sc client.SlackClient) (AlertingManager, func()) {
 
 // AddInvariantSession ... Adds an invariant session to the alert manager store
 func (am *alertManager) AddInvariantSession(sUUID core.InvSessionUUID, alertDestination core.AlertDestination) error {
-	return am.invariantAlertStore.AddAlertDestination(sUUID, alertDestination)
+	return am.store.AddAlertDestination(sUUID, alertDestination)
 }
 
 // Transit ... Returns inter-subsystem transit channel for receiving alerts
@@ -56,10 +60,9 @@ func (am *alertManager) Transit() chan core.Alert {
 
 // handleSlackPost ... Handles posting an alert to slack channel
 func (am *alertManager) handleSlackPost(alert core.Alert) error {
-
 	slackMsg := am.interpolator.InterpolateSlackMessage(alert.SUUID, alert.Content)
 
-	resp, err := am.sc.PostData(slackMsg)
+	resp, err := am.sc.PostData(am.ctx, slackMsg)
 	if err != nil {
 		return err
 	}
@@ -84,7 +87,7 @@ func (am *alertManager) EventLoop(ctx context.Context) error {
 			logger.Info("received alert",
 				zap.String(core.SUUIDKey, alert.SUUID.String()))
 
-			alertDest, err := am.invariantAlertStore.GetAlertDestination(alert.SUUID)
+			alertDest, err := am.store.GetAlertDestination(alert.SUUID)
 			if err != nil {
 				logger.Error("Could not determine alerting destination", zap.Error(err))
 			}
@@ -97,12 +100,14 @@ func (am *alertManager) EventLoop(ctx context.Context) error {
 				if err != nil {
 					logger.Error("Could not post alert to slack", zap.Error(err))
 				}
-			}
 
-			if alertDest == core.Slack {
+			case core.CounterParty:
+				logger.Error("Attempting to post alert to counterparty which is not yet supported")
 
+			default:
+				logger.Error("Attempting to post alert to unknown destination",
+					zap.String("destination", alertDest.String()))
 			}
 		}
 	}
-
 }

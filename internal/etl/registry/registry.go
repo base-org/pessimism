@@ -12,17 +12,19 @@ const (
 	noEntryErr = "could not find entry in registry for encoded register type %s"
 )
 
+// Registry ... Interface for registry
 type Registry interface {
 	GetDependencyPath(rt core.RegisterType) (core.RegisterDependencyPath, error)
 	GetRegister(rt core.RegisterType) (*core.DataRegister, error)
 }
 
+// componentRegistry ...
 type componentRegistry struct {
 	registers map[core.RegisterType]*core.DataRegister
 }
 
+// NewRegistry ... Initializer
 func NewRegistry() Registry {
-
 	registers := map[core.RegisterType]*core.DataRegister{
 		core.GethBlock: {
 			Addressing:           false,
@@ -61,10 +63,7 @@ func NewRegistry() Registry {
 // makeDeps ... Makes dependency slice
 func makeDeps(types ...core.RegisterType) []core.RegisterType {
 	deps := make([]core.RegisterType, len(types))
-
-	for i := range types {
-		deps[i] = types[i]
-	}
+	copy(deps, types)
 
 	return deps
 }
@@ -76,7 +75,6 @@ func noDeps() []core.RegisterType {
 
 // GetDependencyPath ... Returns in-order slice of ETL pipeline path
 func (cr *componentRegistry) GetDependencyPath(rt core.RegisterType) (core.RegisterDependencyPath, error) {
-
 	destRegister, err := cr.GetRegister(rt)
 	if err != nil {
 		return core.RegisterDependencyPath{}, err

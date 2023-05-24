@@ -13,7 +13,7 @@ const (
 // Component ... Generalized interface that all pipeline components must adhere to
 type Component interface {
 	PUUID() core.PipelineUUID
-	WithPUUID(pUUID core.PipelineUUID)
+	SetPUUID(pUUID core.PipelineUUID)
 
 	// UUID ...
 	UUID() core.ComponentUUID
@@ -88,7 +88,7 @@ func (meta *metaData) ActivityState() ActivityState {
 func (meta *metaData) UUID() core.ComponentUUID {
 	return meta.id
 }
-func (meta *metaData) WithPUUID(pUUID core.PipelineUUID) {
+func (meta *metaData) SetPUUID(pUUID core.PipelineUUID) {
 	meta.pUUID = pUUID
 }
 
@@ -123,8 +123,8 @@ func (meta *metaData) emitStateChange(as ActivityState) {
 // Option ... Component type agnostic option
 type Option = func(*metaData)
 
-// WithID ... Passes component UUID to component metadata field
-func WithID(id core.ComponentUUID) Option {
+// WithCUUID ... Passes component UUID to component metadata field
+func WithCUUID(id core.ComponentUUID) Option {
 	return func(meta *metaData) {
 		meta.id = id
 	}

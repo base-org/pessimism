@@ -11,9 +11,10 @@ import (
 type mockOracleDefinition struct {
 }
 
-func (md *mockOracleDefinition) ConfigureRoutine(core.ComponentUUID, core.PipelineUUID) error {
+func (md *mockOracleDefinition) ConfigureRoutine(core.PipelineUUID) error {
 	return nil
 }
+
 func (md *mockOracleDefinition) BackTestRoutine(_ context.Context, _ chan core.TransitData,
 	_ *big.Int, _ *big.Int) error {
 	return nil

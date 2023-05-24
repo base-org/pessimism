@@ -194,7 +194,7 @@ func inferComponent(ctx context.Context, cfg *core.PipelineConfig, id core.Compo
 		}
 
 		return init(ctx, cfg.PipelineType, cfg.OracleCfg,
-			component.WithID(id))
+			component.WithCUUID(id))
 
 	case core.Pipe:
 		init, success := register.ComponentConstructor.(component.PipeConstructorFunc)
@@ -202,7 +202,7 @@ func inferComponent(ctx context.Context, cfg *core.PipelineConfig, id core.Compo
 			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Pipe.String()))
 		}
 
-		return init(ctx, component.WithID(id))
+		return init(ctx, component.WithCUUID(id))
 
 	case core.Aggregator:
 		return nil, fmt.Errorf("aggregator component has yet to be implemented")

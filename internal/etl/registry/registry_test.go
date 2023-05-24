@@ -23,9 +23,7 @@ func Test_ComponentRegistry(t *testing.T) {
 			function:    "GetRegister",
 			description: "When trying to get an invalid register, an error should be returned",
 
-			constructionLogic: func() registry.Registry {
-				return registry.NewRegistry()
-			},
+			constructionLogic: registry.NewRegistry,
 			testLogic: func(t *testing.T, testRegistry registry.Registry) {
 
 				invalidType := core.RegisterType(255)
@@ -40,9 +38,7 @@ func Test_ComponentRegistry(t *testing.T) {
 			function:    "GetRegister",
 			description: "When trying to get a register provided a valid register type, a register should be returned",
 
-			constructionLogic: func() registry.Registry {
-				return registry.NewRegistry()
-			},
+			constructionLogic: registry.NewRegistry,
 			testLogic: func(t *testing.T, testRegistry registry.Registry) {
 
 				reg, err := testRegistry.GetRegister(core.GethBlock)
@@ -57,9 +53,7 @@ func Test_ComponentRegistry(t *testing.T) {
 			function:    "GetRegister",
 			description: "When trying to get a register dependency path provided a valid register type, a path should be returned",
 
-			constructionLogic: func() registry.Registry {
-				return registry.NewRegistry()
-			},
+			constructionLogic: registry.NewRegistry,
 			testLogic: func(t *testing.T, testRegistry registry.Registry) {
 
 				path, err := testRegistry.GetDependencyPath(core.ContractCreateTX)

@@ -29,12 +29,12 @@ const (
 // initializeServer ... Performs dependency injection to build server struct
 func initializeServer(ctx context.Context, cfg *config.Config, alertMan alert.AlertingManager,
 	etlMan pipeline.Manager, engineMan engine.Manager) (*server.Server, func(), error) {
-
 	apiService := service.New(ctx, cfg.SvcConfig, alertMan, etlMan, engineMan)
 	handler, err := handlers.New(ctx, apiService)
 	if err != nil {
 		return nil, nil, err
 	}
+
 	server, cleanup, err := server.New(ctx, cfg.ServerConfig, handler)
 	if err != nil {
 		return nil, nil, err
@@ -45,7 +45,7 @@ func initializeServer(ctx context.Context, cfg *config.Config, alertMan alert.Al
 // initializeAlerting ... Performs dependency injection to build alerting struct
 func initializeAlerting(ctx context.Context, cfg *config.Config) (alert.AlertingManager, func()) {
 	sc := client.NewSlackClient(cfg.SlackURL)
-	return alert.NewManager(sc)
+	return alert.NewManager(ctx, sc)
 }
 
 // main ... Application driver

@@ -5,20 +5,22 @@ import (
 	"fmt"
 )
 
-type StateKey int
+type Key int
 
 const (
-	Default StateKey = iota
+	Default Key = iota
 )
 
-type StateDB interface {
+// Store ... Interface for a state store
+type Store interface {
 	Get(ctx context.Context, key string) ([]string, error)
 	Set(ctx context.Context, key string, value string) (string, error)
 	Remove(ctx context.Context, key string) error
 }
 
-func FromContext(ctx context.Context) (StateDB, error) {
-	if store, ok := ctx.Value(Default).(StateDB); ok {
+// FromContext ... Fetches a state store from context
+func FromContext(ctx context.Context) (Store, error) {
+	if store, ok := ctx.Value(Default).(Store); ok {
 		return store, nil
 	}
 

@@ -26,7 +26,8 @@ type addressingMap struct {
 }
 
 // GetSessionUUIDByPair ... Gets the session UUID by the pair of address and pipeline UUID
-func (am *addressingMap) GetSessionUUIDByPair(address common.Address, pUUID core.PipelineUUID) (core.InvSessionUUID, error) {
+func (am *addressingMap) GetSessionUUIDByPair(address common.Address,
+	pUUID core.PipelineUUID) (core.InvSessionUUID, error) {
 	if _, found := am.m[address]; !found {
 		return core.NilInvariantUUID(), fmt.Errorf("address provided is not tracked %s", address.String())
 	}

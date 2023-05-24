@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/base-org/pessimism/internal/core"
-	pess_core "github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/logging"
 	"go.uber.org/zap"
@@ -39,22 +38,22 @@ func NewBalanceInvariant(cfg *BalanceInvConfig) invariant.Invariant {
 	return &BalanceInvariant{
 		cfg: cfg,
 
-		Invariant: invariant.NewBaseInvariant(pess_core.AccountBalance, invariant.WithAddressing()),
+		Invariant: invariant.NewBaseInvariant(core.AccountBalance, invariant.WithAddressing()),
 	}
 }
 
 // Invalidate ... Checks if the balance is within the bounds
 // specified in the config
-func (bi *BalanceInvariant) Invalidate(td pess_core.TransitData) (*core.InvalOutcome, error) {
+func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
 	logging.NoContext().Debug("Checking invalidation for balance invariant", zap.String("data", fmt.Sprintf("%v", td)))
 
 	if td.Type != bi.InputType() {
-		return nil, fmt.Errorf("invalid type supplied")
+		return nil, false, fmt.Errorf("invalid type supplied")
 	}
 
 	balance, ok := td.Value.(float64)
 	if !ok {
-		return nil, fmt.Errorf("could not cast transit data value to float type")
+		return nil, false, fmt.Errorf("could not cast transit data value to float type")
 	}
 
 	invalidated := false
@@ -92,9 +91,9 @@ func (bi *BalanceInvariant) Invalidate(td pess_core.TransitData) (*core.InvalOut
 				upper, lower,
 				bi.UUID(), bi.cfg.Address),
 			SUUID: bi.UUID(),
-		}, nil
+		}, true, nil
 	}
 
 	// No invalidation
-	return nil, nil
+	return nil, false, nil
 }
