@@ -160,25 +160,7 @@ func (em *engineManager) executeAddressInvariants(ctx context.Context, data core
 
 }
 
-func (em *engineManager) executeInvariant(ctx context.Context, data core.InvariantInput, inv invariant.Invariant) {
-	logger := logging.WithContext(ctx)
-
-	alert, err := em.engine.Execute(ctx, data.Input, inv)
-	if err != nil {
-		logger.Error("Could not execute invariant",
-			zap.String(core.PUUIDKey, data.PUUID.String()),
-			zap.String(core.SUUIDKey, inv.UUID().String()),
-			zap.String(core.AddrKey, data.Input.Address.String()))
-		return
-	}
-
-	if alert != nil {
-		logger.Warn("Invariant alert", zap.String(core.SUUIDKey, inv.UUID().String()))
-		em.alertTransit <- *alert
-	}
-
-}
-
+// executeNonAddressInvariants ... Executes all non address specific invariants associated with the input etl pipeline
 func (em *engineManager) executeNonAddressInvariants(ctx context.Context, data core.InvariantInput) {
 	logger := logging.WithContext(ctx)
 
@@ -199,4 +181,24 @@ func (em *engineManager) executeNonAddressInvariants(ctx context.Context, data c
 	for _, inv := range invs {
 		em.executeInvariant(ctx, data, inv)
 	}
+}
+
+// executeInvariant ... Executes a single invariant using the risk engine
+func (em *engineManager) executeInvariant(ctx context.Context, data core.InvariantInput, inv invariant.Invariant) {
+	logger := logging.WithContext(ctx)
+
+	alert, err := em.engine.Execute(ctx, data.Input, inv)
+	if err != nil {
+		logger.Error("Could not execute invariant",
+			zap.String(core.PUUIDKey, data.PUUID.String()),
+			zap.String(core.SUUIDKey, inv.UUID().String()),
+			zap.String(core.AddrKey, data.Input.Address.String()))
+		return
+	}
+
+	if alert != nil {
+		logger.Warn("Invariant alert", zap.String(core.SUUIDKey, inv.UUID().String()))
+		em.alertTransit <- *alert
+	}
+
 }
