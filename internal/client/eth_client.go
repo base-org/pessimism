@@ -2,6 +2,12 @@
 
 package client
 
+/*
+	NOTE
+	geth client docs: https://pkg.go.dev/github.com/ethereum/go-ethereum/ethclient
+	geth api docs: https://geth.ethereum.org/docs/rpc/server
+*/
+
 import (
 	"context"
 	"math/big"

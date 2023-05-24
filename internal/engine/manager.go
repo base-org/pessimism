@@ -31,7 +31,7 @@ type Manager interface {
 	invariant sessions to other pipelines
 */
 
-// Manager ... Engine management abstraction
+// engineManager ... Engine management abstraction
 type engineManager struct {
 	ctx          context.Context
 	etlTransit   chan core.InvariantInput
@@ -67,12 +67,12 @@ func (em *engineManager) Transit() chan core.InvariantInput {
 }
 
 // TODO() :
-// DeleteInvariantSession ...
+// DeleteInvariantSession ... Deletes an invariant session
 func (em *engineManager) DeleteInvariantSession(_ core.InvSessionUUID) (core.InvSessionUUID, error) {
 	return core.NilInvariantUUID(), nil
 }
 
-// DeployInvariantSession ...
+// DeployInvariantSession ... Deploys an invariant session to be processed by the engine
 func (em *engineManager) DeployInvariantSession(n core.Network, pUUUID core.PipelineUUID, it core.InvariantType,
 	pt core.PipelineType, invParams core.InvSessionParams) (core.InvSessionUUID, error) {
 	inv, err := registry.GetInvariant(it, invParams)
@@ -88,7 +88,7 @@ func (em *engineManager) DeployInvariantSession(n core.Network, pUUUID core.Pipe
 		return core.NilInvariantUUID(), err
 	}
 
-	if inv.Addressing() {
+	if inv.Addressing() { // Address based invariant
 		stateStore, err := state.FromContext(em.ctx)
 		if err != nil {
 			return core.NilInvariantUUID(), err
@@ -98,25 +98,26 @@ func (em *engineManager) DeployInvariantSession(n core.Network, pUUUID core.Pipe
 			zap.String(core.PUUIDKey, pUUUID.String()),
 			zap.String(core.AddrKey, invParams.Address()))
 
+		// Set address to shared state store for the pipeline to utilize
 		stateStore.Set(em.ctx, pUUUID.String(), invParams.Address())
 	}
 
 	return sessionID, nil
 }
 
-// EventLoop ...
+// EventLoop ... Event loop for the engine manager
 func (em *engineManager) EventLoop(ctx context.Context) error {
 	logger := logging.WithContext(ctx)
 
 	for {
 		select {
-		case data := <-em.etlTransit:
+		case data := <-em.etlTransit: // ETL transit
 			logger.Debug("Received invariant input",
 				zap.String("input", fmt.Sprintf("%+v", data)))
 
 			em.executeInvariants(ctx, data)
 
-		case <-ctx.Done():
+		case <-ctx.Done(): // Shutdown
 			logger.Debug("engineManager received shutdown signal")
 			return nil
 		}
@@ -135,6 +136,7 @@ func (em *engineManager) executeInvariants(ctx context.Context, data core.Invari
 
 }
 
+// executeAddressInvariants ... Executes all address specific invariants associated with the input etl pipeline
 func (em *engineManager) executeAddressInvariants(ctx context.Context, data core.InvariantInput) {
 	logger := logging.WithContext(ctx)
 
