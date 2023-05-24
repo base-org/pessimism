@@ -12,6 +12,7 @@ import (
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/state"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/params"
 	"go.uber.org/zap"
 )
 
@@ -47,6 +48,11 @@ func NewAddressBalanceOracle(ctx context.Context, ot core.PipelineType,
 	return o, nil
 }
 
+func weiToEther(wei *big.Int) *big.Float {
+	return new(big.Float).Quo(new(big.Float).SetInt(wei), big.NewFloat(params.Ether))
+}
+
+// ConfigureRoutine ... Sets up the oracle client connection and persists puuid to defintion state
 func (oracle *AddressBalanceODef) ConfigureRoutine(cUUID core.ComponentUUID, pUUID core.PipelineUUID) error {
 	oracle.pUUID = pUUID
 
@@ -57,12 +63,6 @@ func (oracle *AddressBalanceODef) ConfigureRoutine(cUUID core.ComponentUUID, pUU
 	logging.WithContext(ctxTimeout).Info("Setting up Account Balance client")
 
 	return oracle.client.DialContext(ctxTimeout, oracle.cfg.RPCEndpoint)
-}
-
-// BackTestRoutine ...
-func (oracle *AddressBalanceODef) MergeRoutine(ctx context.Context, componentChan chan core.TransitData,
-	startHeight *big.Int, endHeight *big.Int) error {
-	return fmt.Errorf(noBackTestSupportError)
 }
 
 // BackTestRoutine ...
@@ -96,13 +96,24 @@ func (oracle *AddressBalanceODef) ReadRoutine(ctx context.Context, componentChan
 
 				logging.NoContext().Debug("Balance query",
 					zap.String(core.AddrKey, gethAddress.String()))
-				balance, err := oracle.client.BalanceAt(ctx, gethAddress, nil)
+				weiBalance, err := oracle.client.BalanceAt(ctx, gethAddress, nil)
 				if err != nil {
 					logging.WithContext(ctx).Error(err.Error())
 					continue
 				}
 
-				componentChan <- core.NewTransitData(core.AccountBalance, balance,
+				// Convert wei to ether
+				ethBalance, _ := weiToEther(weiBalance).Float64()
+
+				logging.NoContext().Debug("Balance",
+					zap.String(core.AddrKey, gethAddress.String()),
+					zap.Int64("wei balance ", weiBalance.Int64()))
+
+				logging.NoContext().Debug("Balance",
+					zap.String(core.AddrKey, gethAddress.String()),
+					zap.Float64("balance", ethBalance))
+
+				componentChan <- core.NewTransitData(core.AccountBalance, ethBalance,
 					core.WithAddress(gethAddress))
 			}
 

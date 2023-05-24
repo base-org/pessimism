@@ -43,7 +43,7 @@ func NewInterpolator() Interpolator {
 // InterpolateSlackMessage ... Interpolates a slack message with the given invariant session UUID and message
 func (_ *interpolator) InterpolateSlackMessage(sUUID core.InvSessionUUID, message string) string {
 	return fmt.Sprintf(slackMsgFmt,
-		fmt.Sprintf(codeBlockFmt, sUUID.PID.InvType().String()),
+		sUUID.PID.InvType().String(),
 		sUUID.PID.Network(),
 		sUUID.String(),
 		fmt.Sprintf(codeBlockFmt, message))

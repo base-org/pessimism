@@ -2,25 +2,20 @@ package registry
 
 import (
 	"fmt"
-	"math/big"
 	"time"
 
 	"github.com/base-org/pessimism/internal/core"
 	pess_core "github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/logging"
-)
-
-const (
-	lessThan    = -1
-	greaterThan = 1
+	"go.uber.org/zap"
 )
 
 // BalanceInvConfig  ...
 type BalanceInvConfig struct {
 	Address    string   `json:"address"`
-	UpperBound *big.Int `json:"upper"`
-	LowerBound *big.Int `json:"lower"`
+	UpperBound *float64 `json:"upper"`
+	LowerBound *float64 `json:"lower"`
 }
 
 // BalanceInvariant ...
@@ -31,9 +26,9 @@ type BalanceInvariant struct {
 }
 
 const reportMsg = `
-	Current value: %d
-	Upper bound: %d
-	Lower bound: %d
+	Current value: %3f
+	Upper bound: %s
+	Lower bound: %s
 
 	Session UUID: %s
 	Session Address: %s 
@@ -51,36 +46,50 @@ func NewBalanceInvariant(cfg *BalanceInvConfig) invariant.Invariant {
 // Invalidate ... Checks if the balance is within the bounds
 // specified in the config
 func (bi *BalanceInvariant) Invalidate(td pess_core.TransitData) (*core.InvalOutcome, error) {
-	logging.NoContext().Debug("Checking invalidation")
+	logging.NoContext().Debug("Checking invalidation for balance invariant", zap.String("data", fmt.Sprintf("%v", td)))
 
 	if td.Type != bi.InputType() {
 		return nil, fmt.Errorf("invalid type supplied")
 	}
 
-	balance, ok := td.Value.(*big.Int)
-	if !ok || balance == nil {
-		return nil, fmt.Errorf("could not cast transit data value to int type")
+	balance, ok := td.Value.(float64)
+	if !ok {
+		return nil, fmt.Errorf("could not cast transit data value to float type")
 	}
 
 	invalidated := false
 
 	// balance > upper bound
 	if bi.cfg.UpperBound != nil &&
-		bi.cfg.UpperBound.Cmp(balance) == lessThan {
+		*bi.cfg.UpperBound < balance {
 		invalidated = true
 	}
 
 	// balance < lower bound
 	if bi.cfg.LowerBound != nil &&
-		bi.cfg.LowerBound.Cmp(balance) == greaterThan {
+		*bi.cfg.LowerBound > balance {
 		invalidated = true
 	}
 
 	if invalidated {
+		var upper, lower string
+
+		if bi.cfg.UpperBound != nil {
+			upper = fmt.Sprintf("%2f", *bi.cfg.UpperBound)
+		} else {
+			upper = "∞"
+		}
+
+		if bi.cfg.LowerBound != nil {
+			lower = fmt.Sprintf("%2f", *bi.cfg.LowerBound)
+		} else {
+			lower = "-∞"
+		}
+
 		return &core.InvalOutcome{
 			TimeStamp: time.Now(),
 			Message: fmt.Sprintf(reportMsg, balance,
-				bi.cfg.UpperBound, bi.cfg.LowerBound,
+				upper, lower,
 				bi.UUID(), bi.cfg.Address),
 			SUUID: bi.UUID(),
 		}, nil
