@@ -53,3 +53,41 @@ Unit tests can ran using the following project level command(s):
 
 ### Integration Tests
 TBD
+
+
+## Spawning an invariant session
+
+### Curl Example
+The following curl command can be used to spawn a `balance_enforcement` invariant session on the `layer1` network. The invariant will check the balance of the address `0xfC0157aA4F5DB7177830ACddB3D5a9BB5BE9cc5e` every 10 blocks and alert to slack if the balance is ever less than 1 or greater than 2.
+
+```
+curl --location --request POST 'http://localhost:8080/v0/invariant' \
+--header 'Content-Type: text/plain' \
+--data-raw '{
+  "method": 0,
+  "params": {
+    "network": "layer1",
+    "pipeline_type": "live",
+    "type": "balance_enforcement", 
+    "start_height": null,
+    "alert_destination": "slack",
+    "invariant_params": {
+        "address": "0xfC0157aA4F5DB7177830ACddB3D5a9BB5BE9cc5e",
+        "lower": 1,
+        "upper": 2
+   }
+}
+}'
+```
+
+Which should hopefully return something like:
+```
+{
+    "status_code" : 202,
+    "status" : "OK",
+    "result" : {
+        "suuid" : "layer1:live:balance_enforcement::1631991901901231381836998",
+    },
+}
+        
+```

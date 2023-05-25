@@ -114,8 +114,6 @@ graph LR;
 **NOTE - This component type is still in-development**
 Aggregators are used to solve the problem where a pipe or an invariant input will require multiple data points to perform an execution sequence. Since aggregators are subscribing to more than one data stream with different output frequencies, they must employ a synchronization policy for collecting and propagating multi-data inputs within a highly asynchronous environment.
 
-Every conveyor should have a:
-
 #### Attributes
 * Able to read heterogenous transit data from multiple component ingressses (>=1)  
 * A synchronization policy that defines how different transit data from multiple ingress streams will be aggregated into a collectivly bound single piece of data
@@ -153,7 +151,15 @@ A registry submodule is used to store all ETL data register definitions that pro
 - `DataType` - The output data type of the component node. This is used for data serialization/deserialization by both the ETL and Risk Engine subsystems.
 - `ComponentType` - The type of component being invoked (_ie. Oracle_). 
 - `ComponentConstructor` - Constructor function used to create unique component instances. All components must implement the `Component` interface.
- `Dependencies` - Ordered slice of data register dependencies that are necessary for the component to operate. For example, a component that requires a geth block would have a dependency list of `[geth.block]`. This dependency list is used to ensure that the ETL can properly construct a component graph that satisfies all component dependencies. 
+- `Dependencies` - Ordered slice of data register dependencies that are necessary for the component to operate. For example, a component that requires a geth block would have a dependency list of `[geth.block]`. This dependency list is used to ensure that the ETL can properly construct a component graph that satisfies all component dependencies. 
+
+
+### Geth Block Oracle Register
+A `GethBlock` register refers to a block output extracted from a go-ethereum node. This register is used for creating `Oracle` components that poll and extract block data from a go-ethereum node in real-time.
+
+### Geth Account Balance Oracle Register
+An `AccountBalance` register refers to a native ETH balance output extracted from a go-ethereum node. This register is used for creating `Oracle` components that poll and extract native ETH balance data for some state persisted addreses from a go-ethereum node in real-time.
+Unlike, the `GethBlock` register, this register requires knowledge of an address set that's shared with the risk engine to properly function and is therefore addressable. Because of this, any invariant that uses this register must also be addressable.
 
 ## Managed ETL
 
@@ -215,6 +221,7 @@ Once a collision is detected, the ETL will attempt to deduplicate the pipeline b
 1. Stopping the event loop of `P1`
 2. Removing the `PID` of `P1` from the pipeline manager
 3. Merging shared state from `P1` to `P0`
+
 ## ETL Manager
 `EtlManager` is used for connecting lower-level objects (_Component Graph, Pipeline_) together in a way to express meaningful ETL administration logic; ie:
 - Creating a new pipeline
