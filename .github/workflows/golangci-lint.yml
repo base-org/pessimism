@@ -1,3 +1,4 @@
+# Linting with golangci-lint
 name: golangci-lint
 on:
 

@@ -58,14 +58,14 @@ The invariant input is a struct that contains the following fields:
 An invariant is a logical execution module that defines some set of invalidation criteria. The invariant is responsible for processing the input data and determining if an invalidation has occured. If an invalidation has occured, the invariant will return a `InvalidationOutcome` that contains relevant metadata necessary for the `EngineManager` to create an `Alert`.
 
 ### Addressing
-All invariants have a boolean propety `Addressing` which determines if the invariant is addressable. To be addressable, an invariant must only execute under when provided input data specific to a single address.
+All invariants have a boolean propety `Addressing` which determines if the invariant is addressable. To be addressable, an invariant must only execute under the context of a single address. This is only possible when the invariant input data is addressable. 
 
 For example, a `balance_enforcement` invariant session will be addressable because it only executes invalidation logic for the native ETH balance of a single address. 
 
 ### Execution Type
 A risk engine has an associated execution type that defines how the risk engine will execute the invariant. There are two types of execution:
-1. Hardcoded - The invariant invalidation is hardcoded directly into the risk engine
-2. Dynamic - The invariant invalidation is dynamically loaded into the risk engine. **As of now, this is not supported.**
+1. `Hardcoded` - The invariant invalidation is hardcoded directly into the risk engine
+2. `Dynamic` - The invariant invalidation is dynamically loaded into the risk engine. **As of now, this is not supported.**
 
 ## Hardcoded Invariant Types
 As of now, there are two types of hardcoded invariants that a user can deploy active sessions for:

@@ -14,6 +14,7 @@ Currently, there are three total component types:
 The diagram below showcases how interactivity between components occurs:
 
 ```mermaid
+<code class="language-mermaid">
 graph LR;
     A((Component0)) -->|dataX| C[Ingress];
     
@@ -27,7 +28,7 @@ graph LR;
 
     G --> K((Component2));
     H --> J((Component3));
-
+</code>
 ```
 
 #### Egress Handler

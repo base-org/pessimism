@@ -18,7 +18,6 @@ import (
 type Config struct {
 	Host            string
 	Port            int
-	ListenLimit     int
 	KeepAlive       int
 	ReadTimeout     int
 	WriteTimeout    int
@@ -69,6 +68,7 @@ func initializeServer(config *Config, handler http.Handler) *Server {
 		serverHTTP: &http.Server{
 			Addr:         fmt.Sprintf("%s:%d", config.Host, config.Port),
 			Handler:      handler,
+			IdleTimeout:  time.Duration(config.KeepAlive) * time.Second,
 			ReadTimeout:  time.Duration(config.ReadTimeout) * time.Second,
 			WriteTimeout: time.Duration(config.WriteTimeout) * time.Second,
 		},
