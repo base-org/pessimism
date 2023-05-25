@@ -14,5 +14,10 @@ The API will be supported to allow Pessimism users via client:
 3. Remove invariant sessions
 
 ## Diagram
+The following diagram illustrates the core interaction flow between the three primary subsystems, API, and external data sources:
 ![high level component diagram](./assets/high_level_diagram.png)
 
+## Shared State
+To provide context about specific data values (ie. addresses to monitor) between subsystems, Pessimism uses a shared state store. The shared state store will be a non-persistent storage layer.
+
+**NOTE: As of now, the shared state store only supports an in-memory representation and fails to leverage more proper cache solutions like Redis**

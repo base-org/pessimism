@@ -14,7 +14,6 @@ Currently, there are three total component types:
 The diagram below showcases how interactivity between components occurs:
 
 ```mermaid
-<code class="language-mermaid">
 graph LR;
     A((Component0)) -->|dataX| C[Ingress];
     
@@ -28,7 +27,6 @@ graph LR;
 
     G --> K((Component2));
     H --> J((Component3));
-</code>
 ```
 
 #### Egress Handler
@@ -143,7 +141,7 @@ We can either specify that the invariant will run every-time there's an update o
 }
 ```
 
-This can be extended to any number of heterogenous data sources.
+This should be extendable to any number of heterogenous data sources.
 
 
 ## Registry
@@ -152,6 +150,38 @@ A registry submodule is used to store all ETL data register definitions that pro
 - `ComponentType` - The type of component being invoked (_ie. Oracle_). 
 - `ComponentConstructor` - Constructor function used to create unique component instances. All components must implement the `Component` interface.
 - `Dependencies` - Ordered slice of data register dependencies that are necessary for the component to operate. For example, a component that requires a geth block would have a dependency list of `[geth.block]`. This dependency list is used to ensure that the ETL can properly construct a component graph that satisfies all component dependencies. 
+
+## Addressing
+Some component's require knowledge of a specific address to properly function. For example, an oracle that polls a geth node for native ETH balance amounts would need knowledge of the address to poll. To support this, the ETL leverages a shared state store between the ETL and Risk Engine subsystems.
+
+Shown below is how the ETL and Risk Engine interact with the shared state store using a `BalanceOracle` component as an example:
+```mermaid
+graph LR;
+
+    subgraph SB["State Store"]
+        state
+    end
+
+    subgraph EM["Engine Subsystem"]
+
+        SessionHander --> |"Set(PUUID, address)"|state
+        SessionHander --> |"Delete(PUUID, address)"|state
+    end
+
+    subgraph ETL["ETL Subsystem"]
+
+        BO --> |"{4} []address"|GETH[("go-ethereum 
+                            node")]
+
+        GETH --> |"{3} []balance"|BO
+
+        BO("Balance
+        Oracle") --> |"{1} Get(PUUID)"|state
+        BO -."eventLoop()".-> BO
+
+        state --> |"{2} []address"|BO
+    end
+```
 
 
 ### Geth Block Oracle Register
