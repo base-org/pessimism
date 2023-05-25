@@ -57,7 +57,7 @@ func (ei *ExampleInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome,
 		return &core.InvalOutcome{
 			TimeStamp: time.Now(),
 			Message:   fmt.Sprintf("Creation tx detected from %s", from.String()),
-			SUUID:     ei.UUID(),
+			SUUID:     ei.SUUID(),
 		}, true, nil
 	}
 

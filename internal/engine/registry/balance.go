@@ -24,6 +24,7 @@ type BalanceInvariant struct {
 	invariant.Invariant
 }
 
+// reportMsg ... Message to be sent to the alerting system
 const reportMsg = `
 	Current value: %3f
 	Upper bound: %s
@@ -89,8 +90,8 @@ func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome,
 			TimeStamp: time.Now(),
 			Message: fmt.Sprintf(reportMsg, balance,
 				upper, lower,
-				bi.UUID(), bi.cfg.Address),
-			SUUID: bi.UUID(),
+				bi.SUUID(), bi.cfg.Address),
+			SUUID: bi.SUUID(),
 		}, true, nil
 	}
 

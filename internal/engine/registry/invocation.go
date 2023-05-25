@@ -55,7 +55,7 @@ func (it *InvocationTrackerInvariant) Invalidate(td core.TransitData) (*core.Inv
 			return &core.InvalOutcome{
 				TimeStamp: time.Now(),
 				Message:   fmt.Sprintf("Invocation detected from %s", from.String()),
-				SUUID:     it.UUID(),
+				SUUID:     it.SUUID(),
 			}, true, nil
 		}
 	}

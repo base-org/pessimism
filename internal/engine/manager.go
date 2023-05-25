@@ -67,7 +67,6 @@ func (em *engineManager) Transit() chan core.InvariantInput {
 	return em.etlTransit
 }
 
-// TODO() :
 // DeleteInvariantSession ... Deletes an invariant session
 func (em *engineManager) DeleteInvariantSession(_ core.InvSessionUUID) (core.InvSessionUUID, error) {
 	return core.NilInvariantUUID(), nil
@@ -82,7 +81,7 @@ func (em *engineManager) DeployInvariantSession(n core.Network, pUUUID core.Pipe
 	}
 
 	sessionID := core.MakeInvSessionUUID(n, pt, it)
-	inv.WithUUID(sessionID)
+	inv.SetSUUID(sessionID)
 
 	err = em.store.AddInvSession(sessionID, pUUUID, inv)
 	if err != nil {
@@ -164,6 +163,7 @@ func (em *engineManager) executeAddressInvariants(ctx context.Context, data core
 func (em *engineManager) executeNonAddressInvariants(ctx context.Context, data core.InvariantInput) {
 	logger := logging.WithContext(ctx)
 
+	// Fetch all invariants associated with the pipeline
 	invUUIDs, err := em.store.GetInvSessionsForPipeline(data.PUUID)
 	if err != nil {
 		logger.Error("Could not fetch invariants for pipeline",
@@ -171,6 +171,7 @@ func (em *engineManager) executeNonAddressInvariants(ctx context.Context, data c
 			zap.String(core.PUUIDKey, data.PUUID.String()))
 	}
 
+	// Fetch all invariants by SUUIDs
 	invs, err := em.store.GetInvariantsByUUIDs(invUUIDs...)
 	if err != nil {
 		logger.Error("Could not fetch invariants for pipeline",
@@ -178,7 +179,7 @@ func (em *engineManager) executeNonAddressInvariants(ctx context.Context, data c
 			zap.String(core.PUUIDKey, data.PUUID.String()))
 	}
 
-	for _, inv := range invs {
+	for _, inv := range invs { // Execute all invariants associated with the pipeline
 		em.executeInvariant(ctx, data, inv)
 	}
 }
@@ -188,10 +189,16 @@ func (em *engineManager) executeInvariant(ctx context.Context, data core.Invaria
 	logger := logging.WithContext(ctx)
 
 	// Execute invariant using risk engine and return alert if invalidation occurs
-	alert, invalid := em.engine.Execute(ctx, data.Input, inv)
+	outcome, invalid := em.engine.Execute(ctx, data.Input, inv)
 
 	if invalid {
-		logger.Warn("Invariant alert", zap.String(core.SUUIDKey, inv.UUID().String()))
-		em.alertTransit <- *alert
+		alert := core.Alert{
+			Timestamp: outcome.TimeStamp,
+			SUUID:     outcome.SUUID,
+			Content:   outcome.Message,
+		}
+
+		logger.Warn("Invariant alert", zap.String(core.SUUIDKey, inv.SUUID().String()))
+		em.alertTransit <- alert
 	}
 }
