@@ -1,7 +1,7 @@
 # pessimism
 __Because you can't always be optimistic__
 
-_Pessimism_ is a public good monitoring service that allows for Optimism bedrock blockchains _(Base Layer 2, Optimism)_ to be continously assessed for real-time threats using customly defined user invariant rulesets.
+_Pessimism_ is a public good monitoring service that allows for [Op-Stack](https://stack.optimism.io/) and EVM compatible blockchains to be continously assessed for real-time threats using customly defined user invariant rulesets. To learn about Pessimism's architecture, please advise the documentation. 
 
 <!-- Badge row 1 - status -->
 
@@ -57,7 +57,7 @@ TBD
 
 ## Spawning an invariant session
 
-### Curl Example
+## Balance Enforcement Curl Example
 The following curl command can be used to spawn a `balance_enforcement` invariant session on the `layer1` network. The invariant will check the balance of the address `0xfC0157aA4F5DB7177830ACddB3D5a9BB5BE9cc5e` every 10 blocks and alert to slack if the balance is ever less than 1 or greater than 2.
 
 ```
