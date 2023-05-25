@@ -1,5 +1,4 @@
 # ETL
-
 The Pessimism ETL is a generalized abstraction for a DAG-based component system that continuously transforms chain data into inputs for consumption by a Risk Engine in the form of intertwined data “pipelines”. This DAG based representation of ETL operations is done to ensure that the application can optimally scale to support many active invariants. This design allows for the reuse of modularized ETL components and de-duplication of conflicting pipelines under certain logical circumstances. 
 
 
@@ -31,7 +30,6 @@ graph LR;
 
 ```
 
-
 #### Egress Handler
 All component types use an `egressHandler` struct for routing transit data to actively subscribed downstream ETL components.
 ```mermaid
@@ -59,12 +57,7 @@ A `ComponentPID` is encoded using the following four byte sequence:
              id         type     type      type
 ```
 
-### Activity State Channel
-All components have an internal activity state to represent their current status of operation. Currently, the only supported values are:
-I. _Inactive_ - Refers to a component with no actively running event loop routine.
-II. _Live_ - Refers to a component with an actively running event loop routine.
-III. _Crashed_ - Refers to a component that's suffered some failure and subsequent `eventLoop` routine death. 
-
+### State Update Handling
 **NOTE - State handling policies by management abstractions has yet to be properly fleshed out**
 
 
@@ -117,16 +110,52 @@ graph LR;
 * Interval polling user provided chain addresses for native ETH amounts
 
 ### (TBD) Aggregator
+**NOTE - This component type is still in-development**
 Aggregators are used to solve the problem where a pipe or an invariant input will require multiple data points to perform an execution sequence. Since aggregators are subscribing to more than one data stream with different output frequencies, they must employ a synchronization policy for collecting and propagating multi-data inputs within a highly asynchronous environment.
+
+Every conveyor should have a:
+
+#### Attributes
+* Able to read heterogenous transit data from multiple component ingressses (>=1)  
+* A synchronization policy that defines how different transit data from multiple ingress streams will be aggregated into a collectivly bound single piece of data
+* EgressHandler to handle downstream transit data routing to other components or destinations
+
+#### Single Value Subscription
+_Only send output at the update of a single ingress stream_
+
+Single Value Subscription refers to a synchronization policy where a bucketed multi-data tuple is submitted every time there’s an update to a single input data queue.
+
+For example we can have an invariant that subscribes to blocks from two heterogenous chains (layer1, layer2) or `{ChainA, ChainB}`, let's assume `BLOCK_TIME(ChainA)> BLOCK_TIME(ChainB)`.
+
+We can either specify that the invariant will run every-time there's an update or a new block from `ChainA`:
+```
+{
+   "A:latest_blocks": [xi] where cardinality = 1,
+   "B:latest_blocks": [yj, ..., yn] where cardinality >= 1,
+}
+
+```
+
+ Or we can specify the inverse, every-time there's a new block from `ChainB`:
+```
+{
+   "A:latest_blocks": [NULL OR xi] where cardinality <= 1,
+   "B:latest_blocks": [yj] where cardinality = 1,
+}
+```
+
+This can be extended to any number of heterogenous data sources.
+
 
 ## Registry
 A registry submodule is used to store all ETL data register definitions that provide the blueprint for a unique ETL component type. A register definition consists of:
-- `DataType` - The output data type of the component node
-- `ComponentType` - The type of component being generated (_ie. Oracle_)
-- `ComponentConstructor` - Constructor function used to create unique component instances
- `Dependencies` - Ordered slice of data register dependencies that are necessary 
+- `DataType` - The output data type of the component node. This is used for data serialization/deserialization by both the ETL and Risk Engine subsystems.
+- `ComponentType` - The type of component being invoked (_ie. Oracle_). 
+- `ComponentConstructor` - Constructor function used to create unique component instances. All components must implement the `Component` interface.
+ `Dependencies` - Ordered slice of data register dependencies that are necessary for the component to operate. For example, a component that requires a geth block would have a dependency list of `[geth.block]`. This dependency list is used to ensure that the ETL can properly construct a component graph that satisfies all component dependencies. 
 
-## Managed ETL Pipeline DAG
+## Managed ETL
+
 ### Component Graph
 The ETL uses a `ComponentGraph` construct to represent and store critical component inter-connectivity data _(ie. component node entries and graph edges)_.
 
@@ -156,14 +185,14 @@ It's important to note that the component graph used in the ETL is represented a
 
 ### Pipeline
 Pipelines are used to represent some full component path in a DAG based `ComponentGraph`. 
-Pipelines are also used for spawning concurrent component event loops routines. 
+Pipelines are also used for spawning concurrent component event loops routines.
 
-### UUID
-All pipelines have a UUID that stores critical identification data. Pipeline UUIDs are used by higher order abstractions to:
+### Pipeline UUID (PUUID)
+All pipelines have a PUUID that stores critical identification data. Pipeline UUIDs are used by higher order abstractions to:
 * Route invariant inputs between the ETL and Risk Engine
 * Understand when pipeline collisions between `PIDs` occur
 
-Pipeline UUID's constitute of both a randomly generated `UUID` and a deterministic `PID`. This is done to ensure uniqueness of each component instance while also ensuring collision based properties so that components can be reused when viable.
+Pipeline UUID's constitute of both a randomly generated `UUID` and a deterministic `PID`. This is done to ensure uniqueness of each component instance while also ensuring collision based properties so that overlaping components can be deduplicated when viable. 
 
 A `PipelinePID` is encoded using the following 9 byte array sequence:
 ```
@@ -173,10 +202,21 @@ A `PipelinePID` is encoded using the following 9 byte array sequence:
              type                 component PID sequence            component PID sequence
 ```
 
-## Manager
-A management abstraction `EtlManager` is used for connecting lower-level objects (_Component Graph, Pipeline_) together in a way to express meaningful ETL administration logic. 
+### Collision Analysis
+**NOTE - This section is still in-development**
+Pipeline collisions occur when two pipelines with the same `PID` are generated. This can occur when two pipelines have identical component sequences and valid stateful properties.
 
-Currently, the `EtlManager` is used to:
-- `CreateDataPipeline` - Construct unique data pipelines provided a pipeline config
-- `RunPipeline` - Run data pipelines provided a pipeline UUID
-- `EventLoop` - Actively process component state changes
+For some pipeline collision to occur between two pipelines (`P0`, `P1`), the following properties must hold true:
+1. `P0` must have the same `PID` as `P1`
+2. `P0` and `P1` must be live pipelines that aren't performing backtests or backfilling operations
+
+Once a collision is detected, the ETL will attempt to deduplicate the pipeline by:
+1. Stopping the event loop of `P1`
+2. Removing the `PID` of `P1` from the pipeline manager
+3. Merging shared state from `P1` to `P0`
+## ETL Manager
+`EtlManager` is used for connecting lower-level objects (_Component Graph, Pipeline_) together in a way to express meaningful ETL administration logic; ie:
+- Creating a new pipeline
+- Removing a pipeline
+- Merging some pipelines
+- Updating a pipeline 
