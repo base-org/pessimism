@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Pessimism REST API
+  title: Pessimism JSON-RPC API
   description: >-
-    This document specifies the REST API for the Pessimism application software. <br><br>
+    This document specifies the JSON-RPC API for the Pessimism application software. <br><br>
     **NOTE - This spec is still WIP and will be updated/changed as the application evolves.
     It's also worth noting that this spec is not a complete representation of the application's current functionality.**
   license:
@@ -11,7 +11,7 @@ info:
   version: 0.0.1
 externalDocs:
   description: Find out more about Pessimism's architecture
-  url: 'https://github.com/base-org/pessimism/docs/ARCHITECTURE.md'
+  url: 'https://github.com/base-org/pessimism/blob/master/docs/ARCHITECTURE.md'
 tags:
   - name: invariant
     description: 'Invariant endpoints'
@@ -40,7 +40,7 @@ paths:
         - invariant
       summary: Returns an invariant session.
       description: >-
-        Returns invariant session metadata for some specified session uuid. If no uuid is specified, then all sessions are returned.
+        Returns invariant session metadata for some specified session uuid. If no uuid is specified, then all sessions are returned. **NOTE - This is currently unimplemented.**
       parameters:
         - name: uuid
           in: query
@@ -83,7 +83,9 @@ paths:
       tags:
         - invariant
       summary: Performs some invariant based system option (ie. starting invariant session, removing session and deleting session)
-      description: Returns operation status.
+      description: >-
+        Returns operation status. Currently only supports running a new invariant session. Updating and deleting are still
+        unimplemented.
       requestBody:
         description: Invariant input
         required: true
