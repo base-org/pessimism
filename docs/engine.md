@@ -1,7 +1,7 @@
 # Risk Engine
 
 ## Overview
-The risk engine is responsible for handling and executing active invariants. It is the primary downstream consumer of ETL output. The risk engine will receive data from the ETL and execute the invariants associated with the data. If an invalidation occurs, the risk engine will return an `InvalidationOutcome` to the `EngineManager`. The `EngineManager` will then create an `Alert` using the `InvalidationOutcome` and publish it to the Alerting system.
+The Risk Engine is responsible for handling and executing active invariants. It is the primary downstream consumer of ETL output. The Risk Engine will receive data from the ETL and execute the invariants associated with the data. If an invalidation occurs, the Risk Engine will return an `InvalidationOutcome` to the `EngineManager`. The `EngineManager` will then create an `Alert` using the `InvalidationOutcome` and publish it to the Alerting system.
 
 The Risk Engine will execute the invariants associated with some ingested input data and return an `InvalidationOutcome` to the `EngineManager`. The `EngineManager` will then create an `Alert` using the `InvalidationOutcome` and publish it to the Alerting system.
 
@@ -66,20 +66,24 @@ type Invariant interface {
 }
 
 ``` 
+### Invariant Input Type
+The invariant input type is a `RegisterType` that defines the type of data that the invariant will receive as input. The invariant input type is defined by the `InputType()` method of the `Invariant` interface. The invariant input type is used by the `RiskEngine` to determine if the input data is compatible with the invariant. If the input data is not compatible with the invariant, the `RiskEngine` will not execute the invariant and will return an error.
+
 
 ### Addressing
-All invariants have a boolean propety `Addressing` which determines if the invariant is addressable. To be addressable, an invariant must only execute under the context of a single address. This is only possible when the invariant input data is addressable. 
+All invariants have a boolean propety `Addressing` which determines if the invariant is addressable. To be addressable, an invariant must only execute under the context of a single address.
 
 For example, a `balance_enforcement` invariant session will be addressable because it only executes invalidation logic for the native ETH balance of a single address. 
 
 ### Execution Type
 A risk engine has an associated execution type that defines how the risk engine will execute the invariant. There are two types of execution:
-1. `Hardcoded` - The invariant invalidation is hardcoded directly into the risk engine
-2. `Dynamic` - The invariant invalidation is dynamically loaded into the risk engine. **As of now, this is not supported.**
+1. `Hardcoded` - The invariant invalidation logic is hardcoded directly into the risk engine registry using native Go code. These invariants can only be changed by modifying the application source code of the engine registry.
+2. `Dynamic` - The invariant invalidation logic is dynamically loaded and executed by a risk engine. These invariants can be changed without modifying the application source code of the engine registry.
+**As of now, this is not supported.**
 
 ## Hardcoded Invariant Types
 As of now, there are two types of hardcoded invariants that a user can deploy active sessions for:
--  `invocation` - Invariant that is triggered when a specific function is invoked **Not currently Supported**
+-  `invocation` - Invariant that is triggered when a specific smart contract function is invoked **Not currently supported**
 - `balance` - Invariant that checks an address's balance changes and ensures that the balance does not exceed a certain threshold
 
 ### How to add a new invariant
@@ -88,6 +92,6 @@ As of now, there are two types of hardcoded invariants that a user can deploy ac
 3. Add a new entry to the `InvariantType` enum in `internal/core/constants.go`
 2. Add a new entry to the registry in `internal/engine/registry/registry.go`
 
-## Dynanmic Invariant Types
+## Dynamic Invariant Types
 **Not currently supported**
-Dynamic invariants are invariants that are dynamically loaded into the risk engine. This allows users to deploy custom programmable invariants that are not hardcoded into the risk engine. This is not currently supported.
+Dynamic invariants are programmable entities that can be deployed as arbitrary code by a user. They are represented via some code standard that is dynamically executable by a Risk Engine. Unlike `Hardcoded` invariants, dynamic invariants can be deployed and executed without modifying the source code of the Pessimism application.

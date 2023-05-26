@@ -1,7 +1,6 @@
 # ETL
 The Pessimism ETL is a generalized abstraction for a DAG-based component system that continuously transforms chain data into inputs for consumption by a Risk Engine in the form of intertwined data “pipelines”. This DAG based representation of ETL operations is done to ensure that the application can optimally scale to support many active invariants. This design allows for the reuse of modularized ETL components and de-duplication of conflicting pipelines under certain logical circumstances. 
 
-
 ## Component
 A component refers to a graph node within the ETL system. Every component performs some operation for transforming data from any data source into a consumable input for the Risk Engine to ingest. 
 Currently, there are three total component types:
@@ -9,7 +8,6 @@ Currently, there are three total component types:
 2. `Oracle` - Used to poll and collect data from some counter-party source _(e.g. Querying real-time account balance amounts)_
 3. `Aggregator` - Used to synchronize events between asynchronous data sources _(e.g. Synchronizing L1/L2 blocks to understand real-time changes in bridging TVL)_
  
-
 ### Inter-Connectivity 
 The diagram below showcases how interactivity between components occurs:
 
@@ -40,8 +38,7 @@ flowchart TD;
 #### Ingress Handler
 All component types also use an `ingressHandler` struct for ingesting active transit data from upstream ETL components.
 
-
-### UUID
+### Component UUID (CUUID)
 All components have a UUID that stores critical identification data. Component IDs are used by higher order abstractions to:
 * Represent a component DAG 
 * Understand when component duplicates occur in the system
@@ -58,7 +55,6 @@ A `ComponentPID` is encoded using the following four byte sequence:
 
 ### State Update Handling
 **NOTE - State handling policies by management abstractions has yet to be properly fleshed out**
-
 
 ### Pipe
 Pipes are used to perform arbitrary transformations on some provided upstream input data. 
@@ -110,10 +106,10 @@ graph LR;
 
 ### (TBD) Aggregator
 **NOTE - This component type is still in-development**
-Aggregators are used to solve the problem where a pipe or an invariant input will require multiple data points to perform an execution sequence. Since aggregators are subscribing to more than one data stream with different output frequencies, they must employ a synchronization policy for collecting and propagating multi-data inputs within a highly asynchronous environment.
+Aggregators are used to solve the problem where a pipe or an invariant input will require multiple sources of data to perform an execution sequence. Since aggregators are subscribing to more than one data stream with different output frequencies, they must employ a synchronization policy for collecting and propagating multi-data inputs within a highly asynchronous environment.
 
 #### Attributes
-* Able to read heterogenous transit data from multiple component ingressses (>=1)  
+* Able to read heterogenous transit data from an arbitrary number of component ingresses
 * A synchronization policy that defines how different transit data from multiple ingress streams will be aggregated into a collectivly bound single piece of data
 * EgressHandler to handle downstream transit data routing to other components or destinations
 
@@ -147,7 +143,7 @@ This should be extendable to any number of heterogenous data sources.
 ## Registry
 A registry submodule is used to store all ETL data register definitions that provide the blueprint for a unique ETL component type. A register definition consists of:
 - `DataType` - The output data type of the component node. This is used for data serialization/deserialization by both the ETL and Risk Engine subsystems.
-- `ComponentType` - The type of component being invoked (_ie. Oracle_). 
+- `ComponentType` - The type of component being invoked (_e.g. Oracle_). 
 - `ComponentConstructor` - Constructor function used to create unique component instances. All components must implement the `Component` interface.
 - `Dependencies` - Ordered slice of data register dependencies that are necessary for the component to operate. For example, a component that requires a geth block would have a dependency list of `[geth.block]`. This dependency list is used to ensure that the ETL can properly construct a component graph that satisfies all component dependencies. 
 
@@ -170,10 +166,10 @@ graph LR;
 
     subgraph ETL["ETL Subsystem"]
 
-        BO --> |"{4} []address"|GETH[("go-ethereum 
+        BO --> |"{3} []address"|GETH[("go-ethereum 
                             node")]
 
-        GETH --> |"{3} []balance"|BO
+        GETH --> |"{4} []balance"|BO
 
         BO("Balance
         Oracle") --> |"{1} Get(PUUID)"|state
@@ -217,7 +213,7 @@ graph TB;
     class A,D orange
 ```
 
-It's important to note that the component graph used in the ETL is represented as a _(DAG)_ Directed Acylcic Graph; meaning that no bipartite edge relationships should exist between two components (`c1`, `c2`) where `c1-->c2` && `c2-->c1`. While there are no explicit checks for this in the code software, it should be impossible given that all components declare entrypoint register dependencies within their metadata, meaning that a component could only be susceptible to bipartite connectivity in the circumstance where a component registry definition declares inversal input->output of an existing component. 
+It's important to note that the component graph used in the ETL is represented as a _DAG_ (Directed Acyclic Graph), meaning that no bipartite edge relationships should exist between two components (`c1`, `c2`) where `c1-->c2` && `c2-->c1`. While there are no explicit checks for this in the code software, it should be impossible given that all components declare entrypoint register dependencies within their metadata, meaning that a component could only be susceptible to bipartite connectivity in the circumstance where a component registry definition declares inversal input->output of an existing component. 
 
 
 ### Pipeline
@@ -235,7 +231,7 @@ A `PipelinePID` is encoded using the following 9 byte array sequence:
 ```
             0        1                                        5                                        9
             |--------|----------------------------------------|----------------------------------------|
-             pipeline             first pipeline path               last pipeline path
+             Pipeline             first pipeline path               last pipeline path
              type                 component PID sequence            component PID sequence
 ```
 
