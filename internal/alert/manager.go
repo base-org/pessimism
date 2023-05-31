@@ -102,8 +102,8 @@ func (am *alertManager) EventLoop(ctx context.Context) error {
 					logger.Error("Could not post alert to slack", zap.Error(err))
 				}
 
-			case core.CounterParty:
-				logger.Error("Attempting to post alert to counterparty which is not yet supported")
+			case core.ThirdParty:
+				logger.Error("Attempting to post alert to third_party which is not yet supported")
 
 			default:
 				logger.Error("Attempting to post alert to unknown destination",

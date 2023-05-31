@@ -50,7 +50,7 @@ func New(ctx context.Context, cfg *Config, apiHandlers handlers.Handlers) (*Serv
 	return restServer, stop, nil
 }
 
-// spawnServer ... Starts a counterparty listen and serve API routine
+// spawnServer ... Starts a listen and serve API routine
 func spawnServer(server *Server) {
 	logging.NoContext().Info("Starting REST API HTTP server",
 		zap.String("address", server.serverHTTP.Addr))

@@ -103,16 +103,16 @@ func StringToInvariantType(stringType string) InvariantType {
 type AlertDestination uint8
 
 const (
-	Slack        AlertDestination = iota + 1
-	CounterParty                  // 2
+	Slack      AlertDestination = iota + 1
+	ThirdParty                  // 2
 )
 
 func (ad AlertDestination) String() string {
 	switch ad {
 	case Slack:
 		return "slack"
-	case CounterParty:
-		return "counterparty"
+	case ThirdParty:
+		return "third_party"
 	default:
 		return "unknown"
 	}
@@ -124,8 +124,8 @@ func StringToAlertingDestType(stringType string) AlertDestination {
 	case "slack":
 		return Slack
 
-	case "counterparty":
-		return CounterParty
+	case "third_party":
+		return ThirdParty
 	}
 
 	return AlertDestination(0)
