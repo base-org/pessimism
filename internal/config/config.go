@@ -23,6 +23,7 @@ const (
 	Production  Env = "production"
 	Local       Env = "local"
 
+	// trueEnvVal ... Represents the encoded string value for true (ie. 1)
 	trueEnvVal = "1"
 )
 
