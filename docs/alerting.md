@@ -43,4 +43,4 @@ The Slack alert destination is a configurable destination that allows alerts to 
 
 ### Cooldown
 **NOTE: This is currently unimplemented**
-To ensure that alerts aren't spammed to destinations once invoked, a time based cooldown value should exist that specifies how long an invariantSession must wait before it can propagate a trigged alert again.
+To ensure that alerts aren't spammed to destinations once invoked, a time based cooldown value should exist that specifies how long an invariantSession must wait before it can propagate a trigged alert again. This value should be configurable by the user via a JSON-RPC request.

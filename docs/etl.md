@@ -1,11 +1,11 @@
 # ETL
-The Pessimism ETL is a generalized abstraction for a DAG-based component system that continuously transforms chain data into inputs for consumption by a Risk Engine in the form of intertwined data “pipelines”. This DAG based representation of ETL operations is done to ensure that the application can optimally scale to support many active invariants. This design allows for the reuse of modularized ETL components and de-duplication of conflicting pipelines under certain logical circumstances. 
+The Pessimism ETL is a generalized abstraction for a DAG-based component system that continuously transforms chain data into inputs for consumption by a Risk Engine in the form of intertwined data “pipelines”. This DAG based representation of ETL operations is done to ensure that the application can optimally scale to support many active invariants. This design allows for the reuse of modularized ETL components and de-duplication of conflicting pipelines under certain key logical circumstances. 
 
 ## Component
 A component refers to a graph node within the ETL system. Every component performs some operation for transforming data from any data source into a consumable input for the Risk Engine to ingest. 
 Currently, there are three total component types:
 1. `Pipe` - Used to perform local arbitrary computations _(e.g. Extracting L1Withdrawal transactions from a block)_
-2. `Oracle` - Used to poll and collect data from some counter-party source _(e.g. Querying real-time account balance amounts)_
+2. `Oracle` - Used to poll and collect data from some third-party source _(e.g. Querying real-time account balance amounts from an op-geth execution client)_
 3. `Aggregator` - Used to synchronize events between asynchronous data sources _(e.g. Synchronizing L1/L2 blocks to understand real-time changes in bridging TVL)_
  
 ### Inter-Connectivity 
@@ -213,12 +213,29 @@ graph TB;
     class A,D orange
 ```
 
-It's important to note that the component graph used in the ETL is represented as a _DAG_ (Directed Acyclic Graph), meaning that no bipartite edge relationships should exist between two components (`c1`, `c2`) where `c1-->c2` && `c2-->c1`. While there are no explicit checks for this in the code software, it should be impossible given that all components declare entrypoint register dependencies within their metadata, meaning that a component could only be susceptible to bipartite connectivity in the circumstance where a component registry definition declares inversal input->output of an existing component. 
+**NOTE:** The component graph used in the ETL is represented as a _DAG_ (Directed Acyclic Graph), meaning that no bipartite edge relationships should exist between two components (`c1`, `c2`) where `c1-->c2` && `c2-->c1`. While there are no explicit checks for this in the code software, it should be impossible given that all components declare entrypoint register dependencies within their metadata, meaning that a component could only be susceptible to bipartite connectivity in the circumstance where a component registry definition declares inversal input->output of an existing component. 
 
 
 ### Pipeline
-Pipelines are used to represent some full component path in a DAG based `ComponentGraph`. 
-Pipelines are also used for spawning concurrent component event loops routines.
+Pipelines are used to represent some full component path in a DAG based `ComponentGraph`. A pipeline is a sequence of components that are connected together in a way to express meaningful ETL operations for extracting some invariant input for consumption by the Risk Engine.
+
+### Pipeline States
+- `Backfill` - Backfill denotes that the pipeline is currently performing a backfill operation. This means the pipeline is sequentially reading data from some starting height to the most recent block height. This is useful for building state dependendent pipelines that require some knowledge of prior history to make live assessments. For example, detecting imbalances between the native ETH deposit supply on the L1 portal contract and the TVL unlocked on the L2 chain would require indexing the prior history of L1 deposits to construct correct supply values. 
+- `Live` - Live denotes that the pipeline is currently performing live operations. This means the pipeline is reading data from the most recent block height.
+- `Stopped` - Stopped denotes that the pipeline is currently not performing any operations. This means the pipeline is neither reading nor processing any data.
+- `Paused` - Paused denotes that the pipeline is currently not performing any operations. This means the pipeline is neither reading nor processing any data. The difference between `Stopped` and `Paused` is that a `Paused` pipeline can be resumed at any time while a `Stopped` pipeline must be restarted.
+- `Error` - Error denotes that the pipeline is currently in an error state. This means the pipeline is neither reading nor processing any data. The difference between `Stopped` and `Error` is that a `Error` pipeline can be resumed at any time while a `Stopped` pipeline must be restarted.
+
+### Pipeline Types
+There are two types of pipelines:
+
+**Live**
+A live pipeline is a pipeline that is actively running and performing ETL operations on some data fetched in real-time. For example, a live pipeline could be used to extract newly curated block data from a go-ethereum node.
+
+
+**Backtest**
+A backtest pipeline is a pipeline that is used to sequentially backtest some component sequence from some starting to ending block height. For example, a backtest pipeline could be used to backtest a _balance_enforcement_ invariant between L1 block heights `0` to `1000`. 
+
 
 ### Pipeline UUID (PUUID)
 All pipelines have a PUUID that stores critical identification data. Pipeline UUIDs are used by higher order abstractions to:
@@ -247,6 +264,7 @@ Once a collision is detected, the ETL will attempt to deduplicate the pipeline b
 1. Stopping the event loop of `P1`
 2. Removing the `PID` of `P1` from the pipeline manager
 3. Merging shared state from `P1` to `P0`
+
 
 ## ETL Manager
 `EtlManager` is used for connecting lower-level objects (_Component Graph, Pipeline_) together in a way to express meaningful ETL administration logic; ie:
