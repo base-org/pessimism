@@ -17,7 +17,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 	defaultRequestBody := func() models.InvRequestBody {
 		return models.InvRequestBody{
-			Method: models.Run,
+			Method: "run",
 
 			Params: models.InvRequestParams{
 				Network: "layer1",

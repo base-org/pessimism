@@ -10,7 +10,7 @@ import (
 
 // ProcessInvariantRequest ... Processes an invariant request type
 func (svc *PessimismService) ProcessInvariantRequest(ir models.InvRequestBody) (core.InvSessionUUID, error) {
-	if ir.Method == models.Run { // Deploy invariant session
+	if ir.MethodType() == models.Run { // Deploy invariant session
 		return svc.runInvariantSession(ir.Params)
 	}
 	// TODO - Add support for other run types

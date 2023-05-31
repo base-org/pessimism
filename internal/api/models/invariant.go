@@ -18,6 +18,19 @@ const (
 	Stop
 )
 
+func StringToInvariantMethod(s string) InvariantMethod {
+	switch s {
+	case "run":
+		return Run
+	case "update":
+		return Update
+	case "stop":
+		return Stop
+	default:
+		return Run
+	}
+}
+
 // InvResponseStatus ... Represents the invariant operation response status
 type InvResponseStatus string
 
@@ -77,8 +90,13 @@ func (irp *InvRequestParams) GeneratePipelineConfig(endpoint string, pollInterva
 
 // InvRequestBody ... Request body for invariant operation request
 type InvRequestBody struct {
-	Method InvariantMethod  `json:"method"`
+	Method string           `json:"method"`
 	Params InvRequestParams `json:"params"`
+}
+
+// MethodType ... Returns the invariant method type
+func (irb *InvRequestBody) MethodType() InvariantMethod {
+	return StringToInvariantMethod(irb.Method)
 }
 
 // InvResult ... Result of invariant operation

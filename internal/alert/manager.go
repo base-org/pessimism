@@ -67,7 +67,7 @@ func (am *alertManager) handleSlackPost(alert core.Alert) error {
 		return err
 	}
 
-	if !resp.Ok {
+	if !resp.Ok && resp.Err != "" {
 		return fmt.Errorf(resp.Err)
 	}
 
@@ -90,6 +90,7 @@ func (am *alertManager) EventLoop(ctx context.Context) error {
 			alertDest, err := am.store.GetAlertDestination(alert.SUUID)
 			if err != nil {
 				logger.Error("Could not determine alerting destination", zap.Error(err))
+				continue
 			}
 
 			switch alertDest {
