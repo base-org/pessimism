@@ -2,11 +2,9 @@ package engine
 
 import (
 	"fmt"
-	"testing"
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
-	"github.com/stretchr/testify/assert"
 )
 
 // SessionStore ...
@@ -82,13 +80,4 @@ func (ss *sessionStore) AddInvSession(sUUID core.InvSessionUUID,
 func (ss *sessionStore) RemoveInvSession(_ core.InvSessionUUID,
 	_ core.PipelineUUID, _ invariant.Invariant) error {
 	return nil
-}
-
-func TestSessionStore(t *testing.T) {
-	// Setup
-	ss := NewSessionStore()
-
-	// Test GetInvSessionByUUID
-	_, err := ss.GetInvSessionByUUID(core.NilInvariantUUID())
-	assert.Error(t, err, "should error")
 }
