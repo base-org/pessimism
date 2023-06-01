@@ -63,7 +63,8 @@ func main() {
 	logger.Info("Bootstrapping pessimsim monitoring application")
 	compRegistry := registry.NewRegistry()
 
-	alertingManager, shutdownAlerting := initializeAlerting(appCtx, cfg)
+	alertCtx, alertCtxCancel := context.WithCancel(appCtx)
+	alertingManager, shutdownAlerting := initializeAlerting(alertCtx, cfg)
 
 	engineManager, shutDownEngine := engine.NewManager(appCtx, alertingManager.Transit())
 	etlManager, shutDownETL := pipeline.NewManager(appCtx, compRegistry, engineManager.Transit())
@@ -95,7 +96,7 @@ func main() {
 	go func() { // AlertManager driver thread
 		defer appWg.Done()
 
-		if err := alertingManager.EventLoop(engineCtx); err != nil {
+		if err := alertingManager.EventLoop(alertCtx); err != nil {
 			logger.Error("alert manager event loop error", zap.Error(err))
 		}
 	}()
@@ -113,8 +114,11 @@ func main() {
 		}
 
 		apiServer.Stop(func() {
+			// NOTE - Subsystems are shutdown in reverse order of initialization
+
 			logger.Info("Shutting down pessimism application")
 
+			alertCtxCancel()   // Shutdown alerting subsystem event-loop
 			shutdownAlerting() // Shutdown alerting subsystem
 
 			engineCtxCancel() // Shutdown risk engine event-loop
