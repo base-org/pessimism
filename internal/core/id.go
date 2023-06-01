@@ -71,6 +71,16 @@ type InvSessionUUID struct {
 	UUID UUID
 }
 
+// Network ... Returns network decoding from encoded pid byte
+func (pid InvSessionPID) Network() Network {
+	return Network(pid[0])
+}
+
+// InvType ... Returns invariant type decoding from encoded pid byte
+func (pid InvSessionPID) InvType() InvariantType {
+	return InvariantType(pid[2])
+}
+
 // NOTE - This is useful for error handling with functions that
 // also return a ComponentID
 // NilCompID ... Returns a zero'd out or empty component UUID
@@ -149,55 +159,55 @@ func MakeInvSessionUUID(n Network, pt PipelineType, invType InvariantType) InvSe
 }
 
 // String ... Returns string representation of a component PID
-func (id ComponentPID) String() string {
+func (pid ComponentPID) String() string {
 	return fmt.Sprintf("%s:%s:%s:%s",
-		Network(id[0]).String(),
-		PipelineType(id[1]).String(),
-		ComponentType(id[2]).String(),
-		RegisterType(id[3]).String(),
+		Network(pid[0]).String(),
+		PipelineType(pid[1]).String(),
+		ComponentType(pid[2]).String(),
+		RegisterType(pid[3]).String(),
 	)
 }
 
 // String ... Returns string representation of a component UUID
-func (id ComponentUUID) String() string {
+func (uuid ComponentUUID) String() string {
 	return fmt.Sprintf("%s::%s",
-		id.PID.String(),
-		id.UUID.ShortString(),
+		uuid.PID.String(),
+		uuid.UUID.ShortString(),
 	)
 }
 
 // Type ... Returns component type byte value from component UUID
-func (id ComponentUUID) Type() ComponentType {
-	return ComponentType(id.PID[2])
+func (uuid ComponentUUID) Type() ComponentType {
+	return ComponentType(uuid.PID[2])
 }
 
 // String ... Returns string representation of a pipeline PID
-func (id PipelinePID) String() string {
-	pt := PipelineType(id[0]).String()
-	cID1 := ComponentPID(*(*[4]byte)(id[1:5])).String()
-	cID2 := ComponentPID(*(*[4]byte)(id[5:9])).String()
+func (pid PipelinePID) String() string {
+	pt := PipelineType(pid[0]).String()
+	cID1 := ComponentPID(*(*[4]byte)(pid[1:5])).String()
+	cID2 := ComponentPID(*(*[4]byte)(pid[5:9])).String()
 
 	return fmt.Sprintf("%s::%s::%s", pt, cID1, cID2)
 }
 
 // String ... Returns string representation of a pipeline UUID
-func (id PipelineUUID) String() string {
+func (uuid PipelineUUID) String() string {
 	return fmt.Sprintf("%s:::%s",
-		id.PID.String(), id.UUID.ShortString(),
+		uuid.PID.String(), uuid.UUID.ShortString(),
 	)
 }
 
 // String ... Returns string representation of an invariant sesion PID
-func (id InvSessionPID) String() string {
+func (pid InvSessionPID) String() string {
 	return fmt.Sprintf("%s:%s:%s",
-		Network(id[0]).String(),
-		PipelineType(id[1]).String(),
-		InvariantType(id[2]).String(),
+		Network(pid[0]).String(),
+		PipelineType(pid[1]).String(),
+		InvariantType(pid[2]).String(),
 	)
 }
 
 // String ... Returns string reprsentation of an invariant session UUID
-func (id InvSessionUUID) String() string {
+func (uuid InvSessionUUID) String() string {
 	return fmt.Sprintf("%s::%s",
-		id.PID.String(), id.UUID.ShortString())
+		uuid.PID.String(), uuid.UUID.ShortString())
 }

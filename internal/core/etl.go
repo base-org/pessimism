@@ -33,6 +33,21 @@ const (
 	MockTest
 )
 
+func StringToPipelineType(stringType string) PipelineType {
+	switch stringType {
+	case "backtest":
+		return Backtest
+
+	case "live":
+		return Live
+
+	case "mocktest":
+		return MockTest
+	}
+
+	return PipelineType(0)
+}
+
 func (pt PipelineType) String() string {
 	switch pt {
 	case Backtest:

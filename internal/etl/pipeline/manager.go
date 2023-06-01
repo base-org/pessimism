@@ -14,14 +14,14 @@ import (
 	"go.uber.org/zap"
 )
 
-// Manager ...
+// Manager ... ETL manager interface
 type Manager interface {
 	CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error)
 	RunPipeline(pID core.PipelineUUID) error
 	EventLoop(ctx context.Context) error
 }
 
-// etlManager ... Holds
+// etlManager ... ETL manager
 type etlManager struct {
 	ctx context.Context
 
@@ -31,17 +31,19 @@ type etlManager struct {
 	engineChan    chan core.InvariantInput
 	compEventChan chan component.StateChange
 
-	wg sync.WaitGroup
+	registry registry.Registry
+	wg       sync.WaitGroup
 }
 
 // NewManager ... Initializer
-func NewManager(ctx context.Context, ec chan core.InvariantInput) (Manager, func()) {
+func NewManager(ctx context.Context, cRegistry registry.Registry, ec chan core.InvariantInput) (Manager, func()) {
 	dag := NewComponentGraph()
 
 	m := &etlManager{
 		ctx:           ctx,
 		dag:           dag,
 		etlStore:      newEtlStore(),
+		registry:      cRegistry,
 		engineChan:    ec,
 		compEventChan: make(chan component.StateChange),
 		wg:            sync.WaitGroup{},
@@ -75,12 +77,11 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.Pipelin
 	// code logic fails, then some rollback will need be triggered to undo prior applied state operations
 	logger := logging.WithContext(em.ctx)
 
-	register, err := registry.GetRegister(cfg.DataType)
+	depPath, err := em.registry.GetDependencyPath(cfg.DataType)
 	if err != nil {
 		return core.NilPipelineUUID(), err
 	}
 
-	depPath := register.GetDependencyPath()
 	pUUID := depPath.GeneratePipelineUUID(cfg.PipelineType, cfg.Network)
 
 	components, err := em.getComponents(cfg, depPath)
@@ -96,6 +97,7 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.Pipelin
 		return core.NilPipelineUUID(), err
 	}
 
+	// Bind communication route between pipeline and risk engine
 	if err := pipeline.AddEngineRelay(em.engineChan); err != nil {
 		return core.NilPipelineUUID(), err
 	}
@@ -153,10 +155,9 @@ func (em *etlManager) EventLoop(ctx context.Context) error {
 func (em *etlManager) getComponents(cfg *core.PipelineConfig,
 	depPath core.RegisterDependencyPath) ([]component.Component, error) {
 	components := make([]component.Component, 0)
-	prevID := core.NilComponentUUID()
+	prevUUID := core.NilComponentUUID()
 
 	for _, register := range depPath.Path {
-		// TODO(#30): Pipeline Collisions Occur When They Shouldn't
 		cUUID := core.MakeComponentUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
 
 		c, err := inferComponent(em.ctx, cfg, cUUID, register)
@@ -164,13 +165,14 @@ func (em *etlManager) getComponents(cfg *core.PipelineConfig,
 			return []component.Component{}, err
 		}
 
-		if prevID != core.NilComponentUUID() { // IE we've passed the pipeline's last path node; start adding edges (n, n-1)
-			if err := em.dag.AddEdge(cUUID, prevID); err != nil {
+		// IE we've passed the pipeline's last path node; start adding edges (cUUID --> prevID)
+		if prevUUID != core.NilComponentUUID() {
+			if err := em.dag.AddEdge(cUUID, prevUUID); err != nil {
 				return []component.Component{}, err
 			}
 		}
 
-		prevID = c.UUID()
+		prevUUID = c.UUID()
 		components = append(components, c)
 	}
 
@@ -192,7 +194,7 @@ func inferComponent(ctx context.Context, cfg *core.PipelineConfig, id core.Compo
 		}
 
 		return init(ctx, cfg.PipelineType, cfg.OracleCfg,
-			component.WithID(id))
+			component.WithCUUID(id))
 
 	case core.Pipe:
 		init, success := register.ComponentConstructor.(component.PipeConstructorFunc)
@@ -200,7 +202,7 @@ func inferComponent(ctx context.Context, cfg *core.PipelineConfig, id core.Compo
 			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Pipe.String()))
 		}
 
-		return init(ctx, component.WithID(id))
+		return init(ctx, component.WithCUUID(id))
 
 	case core.Aggregator:
 		return nil, fmt.Errorf("aggregator component has yet to be implemented")

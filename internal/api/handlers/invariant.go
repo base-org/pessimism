@@ -29,7 +29,7 @@ func (ph *PessimismHandler) RunInvariant(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	invUUID, err := ph.service.ProcessInvariantRequest(body)
+	sUUID, err := ph.service.ProcessInvariantRequest(body)
 	if err != nil {
 		logging.WithContext(ph.ctx).
 			Error("Could not process invariant request", zap.Error(err))
@@ -38,5 +38,5 @@ func (ph *PessimismHandler) RunInvariant(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	renderInvariantResponse(w, r, models.NewInvAcceptedResp(invUUID))
+	renderInvariantResponse(w, r, models.NewInvAcceptedResp(sUUID))
 }

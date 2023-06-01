@@ -12,6 +12,9 @@ const (
 
 // Component ... Generalized interface that all pipeline components must adhere to
 type Component interface {
+	PUUID() core.PipelineUUID
+	SetPUUID(pUUID core.PipelineUUID)
+
 	// UUID ...
 	UUID() core.ComponentUUID
 	// Type ... Returns component enum type
@@ -43,7 +46,9 @@ type Component interface {
 
 // metaData ... Component-agnostic agnostic struct that stores component metadata and routing state
 type metaData struct {
-	id     core.ComponentUUID
+	id    core.ComponentUUID
+	pUUID core.PipelineUUID
+
 	cType  core.ComponentType
 	output core.RegisterType
 	state  ActivityState
@@ -60,7 +65,9 @@ type metaData struct {
 // newMetaData ... Initializer
 func newMetaData(ct core.ComponentType, ot core.RegisterType) *metaData {
 	return &metaData{
-		id:             core.NilComponentUUID(),
+		id:    core.NilComponentUUID(),
+		pUUID: core.NilPipelineUUID(),
+
 		cType:          ct,
 		egressHandler:  newEgressHandler(),
 		ingressHandler: newIngressHandler(),
@@ -80,6 +87,15 @@ func (meta *metaData) ActivityState() ActivityState {
 // UUID ... Returns component's ComponentUUID
 func (meta *metaData) UUID() core.ComponentUUID {
 	return meta.id
+}
+func (meta *metaData) SetPUUID(pUUID core.PipelineUUID) {
+	meta.pUUID = pUUID
+}
+
+// UUID ... Returns component's PipelineUUID
+// NOTE - This assumes that component collisions are impossible
+func (meta *metaData) PUUID() core.PipelineUUID {
+	return meta.pUUID
 }
 
 // Type ... Returns component's type
@@ -107,8 +123,8 @@ func (meta *metaData) emitStateChange(as ActivityState) {
 // Option ... Component type agnostic option
 type Option = func(*metaData)
 
-// WithID ... Passes component UUID to component metadata field
-func WithID(id core.ComponentUUID) Option {
+// WithCUUID ... Passes component UUID to component metadata field
+func WithCUUID(id core.ComponentUUID) Option {
 	return func(meta *metaData) {
 		meta.id = id
 	}
