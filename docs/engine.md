@@ -66,14 +66,20 @@ type Invariant interface {
 }
 
 ``` 
+
 ### Invariant Input Type
 The invariant input type is a `RegisterType` that defines the type of data that the invariant will receive as input. The invariant input type is defined by the `InputType()` method of the `Invariant` interface. The invariant input type is used by the `RiskEngine` to determine if the input data is compatible with the invariant. If the input data is not compatible with the invariant, the `RiskEngine` will not execute the invariant and will return an error.
-
 
 ### Addressing
 All invariants have a boolean propety `Addressing` which determines if the invariant is addressable. To be addressable, an invariant must only execute under the context of a single address.
 
 For example, a `balance_enforcement` invariant session will be addressable because it only executes invalidation logic for the native ETH balance of a single address. 
+
+### Invariant States
+State is used to represent the current state of an invariant. The state of an invariant is represented by a `InvariantState` type. The following states are supported:
+- `Running` - The invariant is currently running and is being executed by the `RiskEngine`
+- `Inactive` - The invariant is currently inactive and is not being executed by the `RiskEngine`
+- `Paused` - The invariant is currently paused and is not being executed by the `RiskEngine`
 
 ### Execution Type
 A risk engine has an associated execution type that defines how the risk engine will execute the invariant. There are two types of execution:

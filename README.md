@@ -20,7 +20,6 @@ _Pessimism_ is a public good monitoring service that allows for [Op-Stack](https
 Pessimism is currently experimental and very much in development. It means Pessimism is currently unstable, so code will change and builds can break over the coming months. If you come across problems, it would help greatly to open issues so that we can fix them as quickly as possible.
 
 ## Setup
-
 To use the template, run the following the command(s):
 1. Create local config file (`config.env`) to store all necessary environmental variables. There's already an example `config.env.template` in the repo that stores default env vars.
 
@@ -54,7 +53,6 @@ Unit tests can ran using the following project level command(s):
 ### Integration Tests
 TBD
 
-
 ## Spawning an invariant session
 
 ## Balance Enforcement Curl Example
@@ -64,7 +62,7 @@ The following curl command can be used to spawn a `balance_enforcement` invarian
 curl --location --request POST 'http://localhost:8080/v0/invariant' \
 --header 'Content-Type: text/plain' \
 --data-raw '{
-  "method": 0,
+  "method": "run",
   "params": {
     "network": "layer1",
     "pipeline_type": "live",
@@ -80,7 +78,7 @@ curl --location --request POST 'http://localhost:8080/v0/invariant' \
 }'
 ```
 
-Which should hopefully return something like:
+Which should return something like:
 ```
 {
     "status_code" : 202,
@@ -89,5 +87,4 @@ Which should hopefully return something like:
         "suuid" : "layer1:live:balance_enforcement::1631991901901231381836998",
     },
 }
-        
 ```
