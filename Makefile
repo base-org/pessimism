@@ -1,4 +1,4 @@
-APP_NAME = pessimism
+BIN_NAME = pessimism
 
 LINTER_VERSION = v1.52.1
 LINTER_URL = https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh
@@ -12,13 +12,17 @@ COLOR_END = \033[0;39m
 
 TEST_LIMIT = 10s
 
+build-image:
+	@echo "$(BLUE)» building docker image... $(COLOR_END)"
+	@docker build -t $(BIN_NAME) -f Dockerfile .
+
 build-app:
 	@echo "$(BLUE)» building application binary... $(COLOR_END)"
-	@CGO_ENABLED=0 go build -a -tags netgo -o bin/$(APP_NAME) ./cmd/pessimism/
+	@CGO_ENABLED=0 go build -a -tags netgo -o bin/$(BIN_NAME) ./cmd/pessimism/
 	@echo "Binary successfully built"
 
 run-app: 
-	@./bin/${APP_NAME}
+	@./bin/${BIN_NAME}
 
 .PHONY: go-gen-mocks
 go-gen-mocks:
