@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -87,10 +88,10 @@ func (eir *EngineInputRelay) RelayTransitData(td TransitData) error {
 
 const (
 	AddressKey = "address"
+	NestedArgs = "args"
 )
 
 // InvSessionParams ... Parameters used to initialize an invariant session
-// NOTE: This type is used by the ETL and the API
 type InvSessionParams map[string]interface{}
 
 // Address ... Returns the address from the invariant session params
@@ -108,10 +109,59 @@ func (sp *InvSessionParams) Address() string {
 	return addr
 }
 
+// Address ... Returns the address from the invariant session params
+func (sp *InvSessionParams) NestedArgs() []string {
+	rawArgs, found := (*sp)[NestedArgs]
+	if !found {
+		return []string{}
+	}
+
+	args, success := rawArgs.([]interface{})
+	if !success {
+		return []string{}
+	}
+
+	var strArgs []string
+	for _, arg := range args {
+		strArgs = append(strArgs, arg.(string))
+	}
+
+	return strArgs
+}
+
 // InvalOutcome ... Represents an invalidation outcome
 type InvalOutcome struct {
 	TimeStamp time.Time
 	Message   string
 
 	SUUID InvSessionUUID
+}
+
+// StateKey ... Represents a key in the state store
+type StateKey struct {
+	Nested bool // Indicates whether the key is nested
+	Prefix uint8
+	Key    string
+}
+
+// WithPUUID ... Adds a pipeline UUID to the state key prefix and returns a new state key
+func (sk StateKey) WithPUUID(pUUID PipelineUUID) StateKey {
+
+	return StateKey{
+		sk.Nested,
+		sk.Prefix,
+		pUUID.String() + ":" + sk.Key,
+	}
+}
+
+const (
+	// PrefixPipeline ...
+	PipelinePrefix = iota
+	AddressPrefix
+	EventPrefix
+)
+
+// String ... Returns a string representation of the state key
+func (sk StateKey) String() string {
+	return fmt.Sprintf("%d:%s", sk.Prefix, sk.Key)
 }

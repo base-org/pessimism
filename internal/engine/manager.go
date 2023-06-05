@@ -22,8 +22,8 @@ type Manager interface {
 
 	// TODO( ) : Session deletion logic
 	DeleteInvariantSession(core.InvSessionUUID) (core.InvSessionUUID, error)
-	DeployInvariantSession(core.Network, core.PipelineUUID, core.InvariantType,
-		core.PipelineType, core.InvSessionParams) (core.InvSessionUUID, error)
+	DeployInvariantSession(n core.Network, pUUUID core.PipelineUUID, it core.InvariantType,
+		pt core.PipelineType, invParams core.InvSessionParams, register *core.DataRegister) (core.InvSessionUUID, error)
 }
 
 /*
@@ -74,7 +74,7 @@ func (em *engineManager) DeleteInvariantSession(_ core.InvSessionUUID) (core.Inv
 
 // DeployInvariantSession ... Deploys an invariant session to be processed by the engine
 func (em *engineManager) DeployInvariantSession(n core.Network, pUUUID core.PipelineUUID, it core.InvariantType,
-	pt core.PipelineType, invParams core.InvSessionParams) (core.InvSessionUUID, error) {
+	pt core.PipelineType, invParams core.InvSessionParams, register *core.DataRegister) (core.InvSessionUUID, error) {
 	inv, err := registry.GetInvariant(it, invParams)
 	if err != nil {
 		return core.NilInvariantUUID(), err
@@ -94,15 +94,21 @@ func (em *engineManager) DeployInvariantSession(n core.Network, pUUUID core.Pipe
 			return core.NilInvariantUUID(), err
 		}
 
+		key := register.StateKeys[0].WithPUUID(pUUUID)
+		stateStore.SetSlice(em.ctx, key, invParams.Address())
+
+		if register.StateKeys[0].Nested { // Nested addressing
+			args := invParams.NestedArgs()
+
+			for _, arg := range args {
+				key2 := state.MakeKey(core.EventPrefix, invParams.Address(), false).WithPUUID(pUUUID)
+				stateStore.SetSlice(em.ctx, key2, arg)
+			}
+		}
+
 		logging.NoContext().Debug("Setting to state store",
 			zap.String(core.PUUIDKey, pUUUID.String()),
 			zap.String(core.AddrKey, invParams.Address()))
-
-		// Set address to shared state store for the pipeline to utilize
-		_, err = stateStore.Set(em.ctx, pUUUID.String(), invParams.Address())
-		if err != nil {
-			return core.NilInvariantUUID(), err
-		}
 	}
 
 	return sessionID, nil
@@ -198,7 +204,10 @@ func (em *engineManager) executeInvariant(ctx context.Context, data core.Invaria
 			Content:   outcome.Message,
 		}
 
-		logger.Warn("Invariant alert", zap.String(core.SUUIDKey, inv.SUUID().String()))
+		logger.Warn("Invariant alert",
+			zap.String(core.SUUIDKey, inv.SUUID().String()),
+			zap.String("message", outcome.Message))
+
 		em.alertTransit <- alert
 	}
 }

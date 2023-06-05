@@ -16,6 +16,7 @@ import (
 
 // Manager ... ETL manager interface
 type Manager interface {
+	GetRegister(rt core.RegisterType) (*core.DataRegister, error)
 	CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error)
 	RunPipeline(pID core.PipelineUUID) error
 	EventLoop(ctx context.Context) error
@@ -69,6 +70,11 @@ func NewManager(ctx context.Context, cRegistry registry.Registry, ec chan core.I
 	}
 
 	return m, shutDown
+}
+
+// GetRegister ... Returns a data register for a given register type
+func (em *etlManager) GetRegister(rt core.RegisterType) (*core.DataRegister, error) {
+	return em.registry.GetRegister(rt)
 }
 
 // CreateDataPipeline ... Creates an ETL data pipeline provided a pipeline configuration
@@ -193,7 +199,7 @@ func inferComponent(ctx context.Context, cfg *core.PipelineConfig, id core.Compo
 			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Oracle.String()))
 		}
 
-		return init(ctx, cfg.PipelineType, cfg.OracleCfg,
+		return init(ctx, cfg.PipelineType, cfg.OracleCfg, register,
 			component.WithCUUID(id))
 
 	case core.Pipe:

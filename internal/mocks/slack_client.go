@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	context "context"
 	reflect "reflect"
 
 	client "github.com/base-org/pessimism/internal/client"
@@ -35,16 +36,16 @@ func (m *MockSlackClient) EXPECT() *MockSlackClientMockRecorder {
 }
 
 // PostData mocks base method.
-func (m *MockSlackClient) PostData(arg0 string) (*client.SlackAPIResponse, error) {
+func (m *MockSlackClient) PostData(arg0 context.Context, arg1 string) (*client.SlackAPIResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PostData", arg0)
+	ret := m.ctrl.Call(m, "PostData", arg0, arg1)
 	ret0, _ := ret[0].(*client.SlackAPIResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // PostData indicates an expected call of PostData.
-func (mr *MockSlackClientMockRecorder) PostData(arg0 interface{}) *gomock.Call {
+func (mr *MockSlackClientMockRecorder) PostData(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostData", reflect.TypeOf((*MockSlackClient)(nil).PostData), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostData", reflect.TypeOf((*MockSlackClient)(nil).PostData), arg0, arg1)
 }

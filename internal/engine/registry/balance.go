@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// BalanceInvConfig  ...
+// BalanceInvConfig  ... Configuration for the balance invariant
 type BalanceInvConfig struct {
 	Address    string   `json:"address"`
 	UpperBound *float64 `json:"upper"`

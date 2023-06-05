@@ -3,19 +3,27 @@ package state
 import (
 	"context"
 	"fmt"
+
+	"github.com/base-org/pessimism/internal/core"
 )
 
-type Key int
+type CtxKey uint8
 
 const (
-	Default Key = iota
+	Default CtxKey = iota
 )
 
 // Store ... Interface for a state store
+// TODO() - Add optional redis store implementation
 type Store interface {
-	Get(ctx context.Context, key string) ([]string, error)
-	Set(ctx context.Context, key string, value string) (string, error)
-	Remove(ctx context.Context, key string) error
+	GetSlice(context.Context, core.StateKey) ([]string, error)
+	GetNestedSubset(ctx context.Context, key core.StateKey) (map[string][]string, error)
+
+	SetSlice(context.Context, core.StateKey, string) (string, error)
+	// SetNestedSlice(context.Context, core.StateKey, core.StateKey, string) (string, error)
+
+	Remove(context.Context, core.StateKey) error
+	// RemoveNestedSlice(context.Context, core.StateKey, core.StateKey) error
 }
 
 // FromContext ... Fetches a state store from context
@@ -25,4 +33,13 @@ func FromContext(ctx context.Context) (Store, error) {
 	}
 
 	return nil, fmt.Errorf("could not load state object from context")
+}
+
+// MakeKey ... Creates a state key
+func MakeKey(prefix uint8, key string, nesting bool) core.StateKey {
+	return core.StateKey{
+		Nested: nesting,
+		Key:    key,
+		Prefix: prefix,
+	}
 }

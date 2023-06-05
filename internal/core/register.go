@@ -8,6 +8,7 @@ const (
 	GethBlock
 	ContractCreateTX
 	BlackholeTX
+	EventLog
 )
 
 // String ... Returns string representation of a
@@ -15,16 +16,21 @@ const (
 func (rt RegisterType) String() string {
 	switch rt {
 	case AccountBalance:
-		return "account.balance"
+		return "account_balance"
 
 	case GethBlock:
-		return "geth.block"
+		return "geth_block"
 
+	// TODO - Deprecate
 	case ContractCreateTX:
 		return "contract.create.tx"
 
+	// TODO - Deprecate
 	case BlackholeTX:
 		return "blackhole.tx"
+
+	case EventLog:
+		return "event_log"
 	}
 
 	return UnknownType
@@ -34,6 +40,7 @@ func (rt RegisterType) String() string {
 // can be produced and consumed by heterogenous components
 type DataRegister struct {
 	Addressing bool
+	StateKeys  []StateKey
 
 	DataType             RegisterType
 	ComponentType        ComponentType

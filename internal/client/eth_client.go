@@ -12,6 +12,7 @@ import (
 	"context"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -30,6 +31,7 @@ type EthClientInterface interface {
 	BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error)
 
 	BalanceAt(ctx context.Context, account common.Address, number *big.Int) (*big.Int, error)
+	FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error)
 }
 
 // NewEthClient ... Initializer
@@ -64,4 +66,9 @@ func (ec *EthClient) BlockByNumber(ctx context.Context, number *big.Int) (*types
 // BalanceAt ... Wraps go-ethereum node balanceAt RPC call
 func (ec *EthClient) BalanceAt(ctx context.Context, account common.Address, number *big.Int) (*big.Int, error) {
 	return ec.client.BalanceAt(ctx, account, number)
+}
+
+// FilterLogs ... Wraps go-ethereum node balanceAt RPC call
+func (ec *EthClient) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
+	return ec.client.FilterLogs(ctx, query)
 }

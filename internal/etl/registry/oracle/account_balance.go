@@ -20,6 +20,7 @@ import (
 // TODO(#21): Verify config validity during Oracle construction
 // AddressBalanceODef ... Address register oracle definition used to drive oracle component
 type AddressBalanceODef struct {
+	register   *core.DataRegister
 	pUUID      core.PipelineUUID
 	cfg        *core.OracleConfig
 	client     client.EthClientInterface
@@ -86,7 +87,9 @@ func (oracle *AddressBalanceODef) ReadRoutine(ctx context.Context, componentChan
 				zap.String(core.PUUIDKey, oracle.pUUID.String()))
 
 			// Get addresses from shared state store for pipeline uuid
-			addresses, err := stateStore.Get(ctx, oracle.pUUID.String())
+			addrKey := oracle.register.StateKeys[0].WithPUUID(oracle.pUUID)
+
+			addresses, err := stateStore.GetSlice(ctx, addrKey)
 			if err != nil {
 				logging.WithContext(ctx).Error(err.Error())
 				continue

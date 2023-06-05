@@ -57,7 +57,7 @@ const (
 
 type (
 	// OracleConstructorFunc ... Type declaration that a registry oracle component constructor must adhere to
-	OracleConstructorFunc = func(context.Context, core.PipelineType, *core.OracleConfig, ...Option) (Component, error)
+	OracleConstructorFunc = func(context.Context, core.PipelineType, *core.OracleConfig, *core.DataRegister, ...Option) (Component, error)
 
 	// PipeConstructorFunc ... Type declaration that a registry pipe component constructor must adhere to
 	PipeConstructorFunc = func(context.Context, ...Option) (Component, error)

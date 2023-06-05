@@ -45,11 +45,13 @@ func (svc *PessimismService) runInvariantSession(params models.InvRequestParams)
 		return core.NilInvariantUUID(), err
 	}
 
+	inRegister, err := svc.etlManager.GetRegister(pConfig.DataType)
+
 	logger.Info("Created etl pipeline",
 		zap.String(core.PUUIDKey, pUUID.String()))
 
 	invID, err := svc.engineManager.DeployInvariantSession(params.NetworkType(), pUUID, params.InvariantType(),
-		params.PiplineType(), params.SessionParams)
+		params.PiplineType(), params.SessionParams, inRegister)
 	if err != nil {
 		return core.NilInvariantUUID(), err
 	}
