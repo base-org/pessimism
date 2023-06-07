@@ -2,7 +2,6 @@ package invariant
 
 import (
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/etl/registry"
 )
 
 // ExecutionType ... Enum for execution type
@@ -15,7 +14,6 @@ const (
 
 // Invariant ... Interface that all invariant implementations must adhere to
 type Invariant interface {
-	Addressing() bool
 	InputType() core.RegisterType
 	Invalidate(core.TransitData) (*core.InvalOutcome, bool, error)
 	SUUID() core.InvSessionUUID
@@ -72,14 +70,4 @@ func (bi *BaseInvariant) InputType() core.RegisterType {
 // Invalidate ... Invalidates the invariant; defaults to no-op
 func (bi *BaseInvariant) Invalidate(core.TransitData) (*core.InvalOutcome, bool, error) {
 	return nil, false, nil
-}
-
-// Addressing ... Returns the boolean addressing property for the invariant
-func (bi *BaseInvariant) Addressing() bool {
-	reg, err := registry.NewRegistry().GetRegister(bi.inType)
-	if err != nil {
-		return false
-	}
-
-	return reg.Addressing
 }

@@ -64,6 +64,21 @@ func (mr *EtlManagerMockRecorder) EventLoop(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventLoop", reflect.TypeOf((*EtlManager)(nil).EventLoop), arg0)
 }
 
+// GetRegister mocks base method.
+func (m *EtlManager) GetRegister(arg0 core.RegisterType) (*core.DataRegister, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRegister", arg0)
+	ret0, _ := ret[0].(*core.DataRegister)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRegister indicates an expected call of GetRegister.
+func (mr *EtlManagerMockRecorder) GetRegister(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegister", reflect.TypeOf((*EtlManager)(nil).GetRegister), arg0)
+}
+
 // RunPipeline mocks base method.
 func (m *EtlManager) RunPipeline(arg0 core.PipelineUUID) error {
 	m.ctrl.T.Helper()

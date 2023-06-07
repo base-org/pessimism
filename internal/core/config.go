@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// OracleConfig ... Configuration passed through to an oracle component constructor
-type OracleConfig struct {
+// ClientConfig ... Configuration passed through to an oracle component constructor
+type ClientConfig struct {
 	RPCEndpoint  string
 	PollInterval time.Duration
 	NumOfRetries int
@@ -19,15 +19,15 @@ type PipelineConfig struct {
 	Network      Network
 	DataType     RegisterType
 	PipelineType PipelineType
-	OracleCfg    *OracleConfig
+	ClientConfig *ClientConfig
 }
 
 // Backfill ... Returns true if the oracle is configured to backfill
-func (oc *OracleConfig) Backfill() bool {
+func (oc *ClientConfig) Backfill() bool {
 	return oc.StartHeight != nil
 }
 
 // Backtest ... Returns true if the oracle is configured to backtest
-func (oc *OracleConfig) Backtest() bool {
+func (oc *ClientConfig) Backtest() bool {
 	return oc.EndHeight != nil
 }

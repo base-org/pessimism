@@ -12,9 +12,6 @@ import (
 const (
 	noEntryErr = "could not find entry in registry for encoded register type %s"
 
-	withAddressing = true
-	noAddressing   = false
-
 	withNesting = true
 	noNesting   = false
 )
@@ -34,56 +31,31 @@ type componentRegistry struct {
 func NewRegistry() Registry {
 	registers := map[core.RegisterType]*core.DataRegister{
 		core.GethBlock: {
-			Addressing:           noAddressing,
+			Addressing:           false,
 			DataType:             core.GethBlock,
 			ComponentType:        core.Oracle,
 			ComponentConstructor: oracle.NewGethBlockOracle,
 
 			Dependencies: noDeps(),
-			StateKeys:    noState(),
-		},
-		core.ContractCreateTX: {
-			Addressing:           noAddressing,
-			DataType:             core.ContractCreateTX,
-			ComponentType:        core.Pipe,
-			ComponentConstructor: pipe.NewCreateContractTxPipe,
-
-			Dependencies: makeDeps(core.GethBlock),
-			StateKeys:    noState(),
-		},
-		core.BlackholeTX: {
-			Addressing:           noAddressing,
-			DataType:             core.BlackholeTX,
-			ComponentType:        core.Pipe,
-			ComponentConstructor: pipe.NewBlackHoleTxPipe,
-
-			Dependencies: makeDeps(core.GethBlock),
-			StateKeys:    noState(),
+			StateKey:     noState(),
 		},
 		core.AccountBalance: {
-			Addressing:           withAddressing,
+			Addressing:           true,
 			DataType:             core.AccountBalance,
 			ComponentType:        core.Oracle,
 			ComponentConstructor: oracle.NewAddressBalanceOracle,
 
-			// TODO() - Add dependency for geth block
 			Dependencies: noDeps(),
-			StateKeys: []core.StateKey{
-				state.MakeKey(core.AddressPrefix, "addresses", noNesting),
-			},
+			StateKey:     state.MakeKey(core.AccountBalance, core.AddressKey, noNesting),
 		},
 		core.EventLog: {
-			Addressing:           withAddressing,
+			Addressing:           true,
 			DataType:             core.EventLog,
-			ComponentType:        core.Oracle,
-			ComponentConstructor: oracle.NewEventOracle,
+			ComponentType:        core.Pipe,
+			ComponentConstructor: pipe.NewEventParserPipe,
 
-			// TODO() - Add dependency for geth block
-			Dependencies: noDeps(),
-			StateKeys: []core.StateKey{
-				state.MakeKey(core.AddressPrefix, "addresses", withNesting),
-				state.MakeKey(core.EventPrefix, "event_log", withNesting),
-			},
+			Dependencies: makeDeps(core.GethBlock),
+			StateKey:     state.MakeKey(core.AddressPrefix, core.AddressKey, withNesting),
 		},
 	}
 
@@ -103,10 +75,10 @@ func noDeps() []core.RegisterType {
 	return []core.RegisterType{}
 }
 
-// noState ... Returns empty state keys, indicating no state dependencies
+// noState ... Returns empty state key, indicating no state dependencies
 // for cross subsystem communication (i.e. ETL -> Risk Engine)
-func noState() []core.StateKey {
-	return []core.StateKey{}
+func noState() core.StateKey {
+	return core.NilStateKey()
 }
 
 // GetDependencyPath ... Returns in-order slice of ETL pipeline path

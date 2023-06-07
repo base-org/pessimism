@@ -133,8 +133,6 @@ func (sp *InvSessionParams) NestedArgs() []string {
 type InvalOutcome struct {
 	TimeStamp time.Time
 	Message   string
-
-	SUUID InvSessionUUID
 }
 
 // StateKey ... Represents a key in the state store
@@ -144,9 +142,12 @@ type StateKey struct {
 	Key    string
 }
 
+func (sk StateKey) IsNested() bool {
+	return sk.Nested
+}
+
 // WithPUUID ... Adds a pipeline UUID to the state key prefix and returns a new state key
 func (sk StateKey) WithPUUID(pUUID PipelineUUID) StateKey {
-
 	return StateKey{
 		sk.Nested,
 		sk.Prefix,
@@ -154,11 +155,20 @@ func (sk StateKey) WithPUUID(pUUID PipelineUUID) StateKey {
 	}
 }
 
+// NilStateKey ... Returns a nil state key
+func NilStateKey() StateKey {
+	return StateKey{
+		false,
+		0,
+		"",
+	}
+}
+
 const (
 	// PrefixPipeline ...
 	PipelinePrefix = iota
 	AddressPrefix
-	EventPrefix
+	NestedPrefix
 )
 
 // String ... Returns a string representation of the state key

@@ -22,13 +22,13 @@ const (
 // GethBlockODef ...GethBlock register oracle definition used to drive oracle component
 type GethBlockODef struct {
 	cUUID      core.ComponentUUID
-	cfg        *core.OracleConfig
+	cfg        *core.ClientConfig
 	client     client.EthClientInterface
 	currHeight *big.Int
 }
 
 // NewGethBlockODef ... Initializer for geth.block oracle definition
-func NewGethBlockODef(cfg *core.OracleConfig, client client.EthClientInterface, h *big.Int) *GethBlockODef {
+func NewGethBlockODef(cfg *core.ClientConfig, client client.EthClientInterface, h *big.Int) *GethBlockODef {
 	return &GethBlockODef{
 		cfg:        cfg,
 		client:     client,
@@ -37,12 +37,11 @@ func NewGethBlockODef(cfg *core.OracleConfig, client client.EthClientInterface, 
 }
 
 // NewGethBlockOracle ... Initializer for geth.block oracle component
-func NewGethBlockOracle(ctx context.Context, ot core.PipelineType,
-	cfg *core.OracleConfig, opts ...component.Option) (component.Component, error) {
+func NewGethBlockOracle(ctx context.Context, cfg *core.ClientConfig, opts ...component.Option) (component.Component, error) {
 	client := client.NewEthClient()
 	od := NewGethBlockODef(cfg, client, nil)
 
-	oracle, err := component.NewOracle(ctx, ot, core.GethBlock, od, opts...)
+	oracle, err := component.NewOracle(ctx, core.GethBlock, od, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +50,7 @@ func NewGethBlockOracle(ctx context.Context, ot core.PipelineType,
 	return oracle, nil
 }
 
+// ConfigureRoutine ... Sets up the oracle client connection and persists puuid to definition state
 func (oracle *GethBlockODef) ConfigureRoutine(core.PipelineUUID) error {
 	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
 		time.Second*time.Duration(core.EthClientTimeout))

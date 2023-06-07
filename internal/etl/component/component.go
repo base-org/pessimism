@@ -49,18 +49,22 @@ type Component interface {
 	// OutputType ... Returns component output data type
 	OutputType() core.RegisterType
 
+	StateKey() core.StateKey
+
 	// TODO(#24): Add Internal Component Activity State Tracking
 	ActivityState() ActivityState
 }
 
-// metaData ... Component-agnostic agnostic struct that stores component metadata and routing state
+// metaData ... Component agnostic struct that stores component metadata and routing state
 type metaData struct {
 	id    core.ComponentUUID
 	pUUID core.PipelineUUID
 
-	cType  core.ComponentType
-	output core.RegisterType
-	state  ActivityState
+	cType    core.ComponentType
+	output   core.RegisterType
+	state    ActivityState
+	cacheKey core.StateKey
+	inTypes  []core.RegisterType
 
 	closeChan chan int
 	stateChan chan StateChange
@@ -91,6 +95,11 @@ func newMetaData(ct core.ComponentType, ot core.RegisterType) *metaData {
 // ActivityState ... Returns component current activity state
 func (meta *metaData) ActivityState() ActivityState {
 	return meta.state
+}
+
+// StateKey ... Returns component's state key
+func (meta *metaData) StateKey() core.StateKey {
+	return meta.cacheKey
 }
 
 // UUID ... Returns component's ComponentUUID
@@ -143,5 +152,19 @@ func WithCUUID(id core.ComponentUUID) Option {
 func WithEventChan(sc chan StateChange) Option {
 	return func(md *metaData) {
 		md.stateChan = sc
+	}
+}
+
+// WithInTypes	... Passes input types to component metadata field
+func WithInTypes(its []core.RegisterType) Option {
+	return func(md *metaData) {
+		md.inTypes = its
+	}
+}
+
+// WithStateKey ... Passes state key to component metadata field
+func WithStateKey(key core.StateKey) Option {
+	return func(md *metaData) {
+		md.cacheKey = key
 	}
 }

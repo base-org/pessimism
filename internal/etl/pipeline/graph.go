@@ -128,7 +128,7 @@ func (graph *cGraph) RemoveComponent(_ core.ComponentUUID) error {
 	return nil
 }
 
-// addComponent ... Adds component node entry to edge mapping
+// AddComponent ... Adds component node entry to edge mapping
 func (graph *cGraph) AddComponent(cUIID core.ComponentUUID, comp component.Component) error {
 	if _, exists := graph.edgeMap[cUIID]; exists {
 		return fmt.Errorf(cUUIDExistsErr, cUIID)

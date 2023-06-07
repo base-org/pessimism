@@ -20,10 +20,9 @@ type Store interface {
 	GetNestedSubset(ctx context.Context, key core.StateKey) (map[string][]string, error)
 
 	SetSlice(context.Context, core.StateKey, string) (string, error)
-	// SetNestedSlice(context.Context, core.StateKey, core.StateKey, string) (string, error)
+	// MergeSlice(ctx context.Context, key1, key2 core.StateKey) error
 
 	Remove(context.Context, core.StateKey) error
-	// RemoveNestedSlice(context.Context, core.StateKey, core.StateKey) error
 }
 
 // FromContext ... Fetches a state store from context
@@ -36,10 +35,10 @@ func FromContext(ctx context.Context) (Store, error) {
 }
 
 // MakeKey ... Creates a state key
-func MakeKey(prefix uint8, key string, nesting bool) core.StateKey {
+func MakeKey(prefix core.RegisterType, key string, nesting bool) core.StateKey {
 	return core.StateKey{
 		Nested: nesting,
 		Key:    key,
-		Prefix: prefix,
+		Prefix: uint8(prefix),
 	}
 }

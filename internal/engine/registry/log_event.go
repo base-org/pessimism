@@ -25,10 +25,11 @@ type EventInvariant struct {
 
 // eventReportMsg ... Message to be sent to the alerting system
 const eventReportMsg = `
-	Session UUID: %s
-	Session Address: %s 
-	Event: %s
+	_Monitored Event Triggered_
+
+	Contract Address: %s 
 	Transaction Hash: %s
+	Event: %s
 `
 
 // NewEventInvariant ... Initializer
@@ -54,6 +55,6 @@ func (bi *EventInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, b
 
 	invalidated := true
 	return &core.InvalOutcome{
-		Message: fmt.Sprintf(eventReportMsg, bi.SUUID(), log.Address, string(log.Data), log.TxHash.Hex()),
+		Message: fmt.Sprintf(eventReportMsg, log.Address, log.TxHash.Hex(), bi.cfg.Args[0]),
 	}, invalidated, nil
 }

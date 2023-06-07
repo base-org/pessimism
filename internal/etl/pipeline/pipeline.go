@@ -9,11 +9,16 @@ import (
 	"go.uber.org/zap"
 )
 
+// Pipeline ... Pipeline interface
 type Pipeline interface {
+	Config() *core.PipelineConfig
 	UUID() core.PipelineUUID
 	Close() error
 	Components() []component.Component
 	RunPipeline(wg *sync.WaitGroup) error
+
+	// NOTE - Having a single return value for this function is not ideal
+	// long-term if pipelines need to support multiple state keys
 
 	AddEngineRelay(engineChan chan core.InvariantInput) error
 }
@@ -21,6 +26,7 @@ type Pipeline interface {
 type Option = func(*pipeline)
 
 type pipeline struct {
+	cfg  *core.PipelineConfig
 	uuid core.PipelineUUID
 
 	aState ActivityState
@@ -29,9 +35,10 @@ type pipeline struct {
 	components []component.Component
 }
 
-// NewPipeLine ... Initializer
-func NewPipeLine(pUUID core.PipelineUUID, comps []component.Component, opts ...Option) (Pipeline, error) {
+// NewPipeline ... Initializer
+func NewPipeline(cfg *core.PipelineConfig, pUUID core.PipelineUUID, comps []component.Component, opts ...Option) (Pipeline, error) {
 	pl := &pipeline{
+		cfg:        cfg,
 		uuid:       pUUID,
 		components: comps,
 		aState:     Booting,
@@ -42,6 +49,11 @@ func NewPipeLine(pUUID core.PipelineUUID, comps []component.Component, opts ...O
 	}
 
 	return pl, nil
+}
+
+// Config ... Returns pipeline config
+func (pl *pipeline) Config() *core.PipelineConfig {
+	return pl.cfg
 }
 
 // Components ... Returns slice of all constituent components
@@ -57,8 +69,12 @@ func (pl *pipeline) UUID() core.PipelineUUID {
 // AddEngineRelay ... Adds a relay to the pipeline that forces it to send transformed invariant input
 // to a risk engine
 func (pl *pipeline) AddEngineRelay(engineChan chan core.InvariantInput) error {
-	lastComponent := pl.components[len(pl.components)-1]
+	lastComponent := pl.components[0]
 	eir := core.NewEngineRelay(pl.uuid, engineChan)
+
+	logging.NoContext().Debug("Adding engine relay to pipeline",
+		zap.String(core.CUUIDKey, lastComponent.UUID().String()),
+		zap.String(core.PUUIDKey, pl.uuid.String()))
 
 	return lastComponent.AddRelay(eir)
 }

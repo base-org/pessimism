@@ -21,14 +21,6 @@ func (rt RegisterType) String() string {
 	case GethBlock:
 		return "geth_block"
 
-	// TODO - Deprecate
-	case ContractCreateTX:
-		return "contract.create.tx"
-
-	// TODO - Deprecate
-	case BlackholeTX:
-		return "blackhole.tx"
-
 	case EventLog:
 		return "event_log"
 	}
@@ -40,12 +32,16 @@ func (rt RegisterType) String() string {
 // can be produced and consumed by heterogenous components
 type DataRegister struct {
 	Addressing bool
-	StateKeys  []StateKey
+	StateKey   StateKey
 
 	DataType             RegisterType
 	ComponentType        ComponentType
 	ComponentConstructor interface{}
 	Dependencies         []RegisterType
+}
+
+func (dr *DataRegister) Stateful() bool {
+	return dr.StateKey != NilStateKey()
 }
 
 // RegisterDependencyPath ... Represents an inclusive acyclic sequential

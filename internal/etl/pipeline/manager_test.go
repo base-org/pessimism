@@ -26,7 +26,8 @@ func Test_Manager(t *testing.T) {
 			description: "inferComponent function should generate pipe component instance provided valid params",
 
 			constructionLogic: func() Manager {
-				m, _ := NewManager(context.Background(), registry.NewRegistry(), nil)
+				reg := registry.NewRegistry()
+				m, _ := NewManager(context.Background(), NewAnalyzer(reg), reg, nil)
 				return m
 			},
 

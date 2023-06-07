@@ -59,20 +59,11 @@ func (ss *stateStore) Remove(_ context.Context, key core.StateKey) error {
 	return nil
 }
 
-// Merge ... Merges two keys together
-func (ss *stateStore) Merge(_ context.Context, key1, key2 string) error {
-	ss.Lock()
-	defer ss.Unlock()
-
-	ss.sliceStore[key2] = append(ss.sliceStore[key2], ss.sliceStore[key1]...)
-	delete(ss.sliceStore, key1)
-
-	return nil
-}
-
-// GetNestedSubset ... Fetches a subset of a nested slice provided a nested key/value pair (ie. filters the state object into a subset object that
+// GetNestedSubset ... Fetches a subset of a nested slice provided a nested
+// key/value pair (ie. filters the state object into a subset object that
 // contains only the values that match the nested key/value pair)
-func (ss *stateStore) GetNestedSubset(ctx context.Context, key core.StateKey) (map[string][]string, error) {
+func (ss *stateStore) GetNestedSubset(_ context.Context,
+	key core.StateKey) (map[string][]string, error) {
 	ss.RLock()
 	defer ss.RUnlock()
 
@@ -89,7 +80,6 @@ func (ss *stateStore) GetNestedSubset(ctx context.Context, key core.StateKey) (m
 
 		nestedValues := ss.sliceStore[val]
 		nestedMap[val] = nestedValues
-
 	}
 
 	return nestedMap, nil

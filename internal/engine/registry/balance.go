@@ -91,7 +91,6 @@ func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome,
 			Message: fmt.Sprintf(reportMsg, balance,
 				upper, lower,
 				bi.SUUID(), bi.cfg.Address),
-			SUUID: bi.SUUID(),
 		}, true, nil
 	}
 

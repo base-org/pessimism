@@ -46,6 +46,9 @@ func (svc *PessimismService) runInvariantSession(params models.InvRequestParams)
 	}
 
 	inRegister, err := svc.etlManager.GetRegister(pConfig.DataType)
+	if err != nil {
+		return core.NilInvariantUUID(), err
+	}
 
 	logger.Info("Created etl pipeline",
 		zap.String(core.PUUIDKey, pUUID.String()))

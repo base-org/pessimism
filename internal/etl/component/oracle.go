@@ -32,12 +32,11 @@ type Oracle struct {
 }
 
 // NewOracle ... Initializer
-func NewOracle(ctx context.Context, pt core.PipelineType, outType core.RegisterType,
+func NewOracle(ctx context.Context, outType core.RegisterType,
 	od OracleDefinition, opts ...Option) (Component, error) {
 	o := &Oracle{
 		ctx:           ctx,
 		definition:    od,
-		oracleType:    pt,
 		oracleChannel: core.NewTransitChannel(),
 		wg:            &sync.WaitGroup{},
 

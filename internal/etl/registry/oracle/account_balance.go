@@ -20,29 +20,31 @@ import (
 // TODO(#21): Verify config validity during Oracle construction
 // AddressBalanceODef ... Address register oracle definition used to drive oracle component
 type AddressBalanceODef struct {
-	register   *core.DataRegister
 	pUUID      core.PipelineUUID
-	cfg        *core.OracleConfig
+	cfg        *core.ClientConfig
 	client     client.EthClientInterface
 	currHeight *big.Int
+	sk         core.StateKey
 }
 
 // NewAddressBalanceODef ... Initializer for address.balance oracle definition
-func NewAddressBalanceODef(cfg *core.OracleConfig, client client.EthClientInterface, h *big.Int) *AddressBalanceODef {
+func NewAddressBalanceODef(cfg *core.ClientConfig, client client.EthClientInterface,
+	h *big.Int, sk core.StateKey) *AddressBalanceODef {
 	return &AddressBalanceODef{
 		cfg:        cfg,
 		client:     client,
 		currHeight: h,
+		sk:         sk,
 	}
 }
 
 // NewAddressBalanceOracle ... Initializer for address.balance oracle component
 func NewAddressBalanceOracle(ctx context.Context, ot core.PipelineType,
-	cfg *core.OracleConfig, opts ...component.Option) (component.Component, error) {
+	cfg *core.ClientConfig, sk core.StateKey, opts ...component.Option) (component.Component, error) {
 	client := client.NewEthClient()
 
-	od := NewAddressBalanceODef(cfg, client, nil)
-	o, err := component.NewOracle(ctx, ot, core.GethBlock, od, opts...)
+	od := NewAddressBalanceODef(cfg, client, nil, sk)
+	o, err := component.NewOracle(ctx, core.GethBlock, od, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -53,6 +55,7 @@ func NewAddressBalanceOracle(ctx context.Context, ot core.PipelineType,
 // ConfigureRoutine ... Sets up the oracle client connection and persists puuid to definition state
 func (oracle *AddressBalanceODef) ConfigureRoutine(pUUID core.PipelineUUID) error {
 	oracle.pUUID = pUUID
+	oracle.sk = oracle.sk.WithPUUID(pUUID)
 
 	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
 		time.Second*time.Duration(core.EthClientTimeout))
@@ -87,9 +90,8 @@ func (oracle *AddressBalanceODef) ReadRoutine(ctx context.Context, componentChan
 				zap.String(core.PUUIDKey, oracle.pUUID.String()))
 
 			// Get addresses from shared state store for pipeline uuid
-			addrKey := oracle.register.StateKeys[0].WithPUUID(oracle.pUUID)
 
-			addresses, err := stateStore.GetSlice(ctx, addrKey)
+			addresses, err := stateStore.GetSlice(ctx, oracle.sk)
 			if err != nil {
 				logging.WithContext(ctx).Error(err.Error())
 				continue

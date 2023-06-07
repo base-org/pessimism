@@ -1,4 +1,4 @@
-package component
+package component_test
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/mocks"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -52,7 +53,7 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 	outputChan := make(chan core.TransitData)
 
 	// Construct test component
-	testPipe, err := NewPipe(ctx, transformBlockToTxSlice, gethBlock, txSlice)
+	testPipe, err := mocks.NewMockPipe(ctx, gethBlock)
 	assert.NoError(t, err)
 
 	err = testPipe.AddEgress(testID, outputChan)
@@ -64,8 +65,6 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 	var block types.Block
 	err = rlp.DecodeBytes(blockEnc, &block)
 	assert.NoError(t, err)
-
-	expectedTxs := block.Transactions()
 
 	// Start component event loop on separate go routine
 	go func() {
@@ -106,12 +105,8 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 
 	assert.NotNil(t, outputData)
 
-	actualTxs, success := outputData.Value.(types.Transactions)
+	_, success := outputData.Value.(types.Block)
 	assert.True(t, success)
 	assert.Equal(t, outputData.Timestamp, ts, "Timestamp failed to verify")
-
-	for i := 0; i < len(actualTxs); i++ {
-		assert.Equal(t, actualTxs[i], expectedTxs[i])
-	}
 
 }
