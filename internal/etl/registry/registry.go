@@ -55,7 +55,7 @@ func NewRegistry() Registry {
 			ComponentConstructor: pipe.NewEventParserPipe,
 
 			Dependencies: makeDeps(core.GethBlock),
-			StateKey:     state.MakeKey(core.AddressPrefix, core.AddressKey, withNesting),
+			StateKey:     state.MakeKey(core.EventLog, core.AddressKey, withNesting),
 		},
 	}
 

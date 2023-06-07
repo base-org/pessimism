@@ -30,7 +30,7 @@ type EventDefinition struct {
 // ConfigureRoutine ... Sets up the oracle client connection and persists puuid to definition state
 func (ed *EventDefinition) ConfigureRoutine(pUUID core.PipelineUUID) error {
 	ed.pUUID = pUUID
-	ed.sk = state.MakeKey(core.AddressPrefix, core.AddressKey, false).
+	ed.sk = state.MakeKey(core.EventLog, core.AddressKey, true).
 		WithPUUID(pUUID)
 
 	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
@@ -79,11 +79,11 @@ func (ce *contractEvents) HasSignature(sig common.Hash) bool {
 }
 
 // getEventsToMonitor ... Gets the smart contract events to monitor from the state store
-func (ed *EventDefinition) getEventsToMonitor(ctx context.Context,
+func (ed *EventDefinition) getEventsToMonitor(ctx context.Context, rt core.RegisterType,
 	addresses []string, ss state.Store) ([]contractEvents, error) {
 	var events []contractEvents
 	for _, address := range addresses {
-		addressKey := state.MakeKey(core.NestedPrefix, core.AddressKey, false).WithPUUID(ed.pUUID)
+		addressKey := state.MakeKey(rt, address, false).WithPUUID(ed.pUUID)
 		sigs, err := ss.GetSlice(ctx, addressKey)
 		if err != nil {
 			logging.WithContext(ctx).Error(err.Error())
@@ -125,7 +125,7 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 		return []core.TransitData{}, err
 	}
 
-	eventsToMonitor, err := ed.getEventsToMonitor(ctx, addresses, stateStore)
+	eventsToMonitor, err := ed.getEventsToMonitor(ctx, core.EventLog, addresses, stateStore)
 	if err != nil {
 		return []core.TransitData{}, err
 	}

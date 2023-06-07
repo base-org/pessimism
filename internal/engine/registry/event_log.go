@@ -51,10 +51,12 @@ func (bi *EventInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, b
 		return nil, false, fmt.Errorf("invalid type supplied")
 	}
 
-	log, _ := td.Value.(types.Log)
+	log, success := td.Value.(types.Log)
+	if !success {
+		return nil, false, fmt.Errorf("invalid type supplied")
+	}
 
-	invalidated := true
 	return &core.InvalOutcome{
 		Message: fmt.Sprintf(eventReportMsg, log.Address, log.TxHash.Hex(), bi.cfg.Args[0]),
-	}, invalidated, nil
+	}, true, nil
 }

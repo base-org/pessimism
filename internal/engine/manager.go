@@ -92,7 +92,7 @@ func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
 		args := invParams.NestedArgs()
 
 		for _, arg := range args {
-			key2 := state.MakeKey(core.NestedPrefix, invParams.Address(), false).WithPUUID(pUUID)
+			key2 := state.MakeKey(register.DataType, invParams.Address(), false).WithPUUID(pUUID)
 			_, err = stateStore.SetSlice(em.ctx, key2, arg)
 			if err != nil {
 				return err
@@ -115,10 +115,10 @@ func (em *engineManager) DeployInvariantSession(n core.Network, pUUUID core.Pipe
 		return core.NilInvariantUUID(), err
 	}
 
-	sessionID := core.MakeInvSessionUUID(n, pt, it)
-	inv.SetSUUID(sessionID)
+	sUUID := core.MakeInvSessionUUID(n, pt, it)
+	inv.SetSUUID(sUUID)
 
-	err = em.store.AddInvSession(sessionID, pUUUID, inv)
+	err = em.store.AddInvSession(sUUID, pUUUID, inv)
 	if err != nil {
 		return core.NilInvariantUUID(), err
 	}
@@ -130,7 +130,7 @@ func (em *engineManager) DeployInvariantSession(n core.Network, pUUUID core.Pipe
 		}
 	}
 
-	return sessionID, nil
+	return sUUID, nil
 }
 
 // EventLoop ... Event loop for the engine manager

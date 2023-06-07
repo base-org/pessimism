@@ -8,21 +8,25 @@ import (
 	"github.com/base-org/pessimism/internal/state"
 )
 
+// Analyzer ... Interface for analyzing pipelines
 type Analyzer interface {
 	Mergable(p1 Pipeline, p2 Pipeline) bool
 	MergePipelines(ctx context.Context, p1 Pipeline, p2 Pipeline) (Pipeline, error)
 }
 
+// analyzer ... Implementation of Analyzer
 type analyzer struct {
 	dRegistry registry.Registry
 }
 
+// NewAnalyzer ... Initializer
 func NewAnalyzer(dRegistry registry.Registry) Analyzer {
 	return &analyzer{
 		dRegistry: dRegistry,
 	}
 }
 
+// Mergable ... Returns true if pipelines are mergable
 func (a *analyzer) Mergable(p1 Pipeline, p2 Pipeline) bool {
 	if len(p1.Components()) != len(p2.Components()) {
 		return false
@@ -73,8 +77,8 @@ func (a *analyzer) MergePipelines(ctx context.Context, p1 Pipeline, p2 Pipeline)
 			if compi.StateKey().IsNested() {
 
 				for _, item := range sliceItems {
-					nestedKey := state.MakeKey(core.NestedPrefix, item, false).WithPUUID(p1.UUID())
-					nestedKeyj := state.MakeKey(core.NestedPrefix, item, false).WithPUUID(p2.UUID())
+					nestedKey := state.MakeKey(compi.OutputType(), item, false).WithPUUID(p1.UUID())
+					nestedKeyj := state.MakeKey(compj.OutputType(), item, false).WithPUUID(p2.UUID())
 
 					nestedValues, err := ss.GetSlice(ctx, nestedKey)
 
