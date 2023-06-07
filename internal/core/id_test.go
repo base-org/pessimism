@@ -13,7 +13,7 @@ func Test_Component_ID(t *testing.T) {
 
 	assert.Equal(t, expectedPID, actualID.PID)
 
-	expectedStr := "layer1:backtest:oracle:account.balance"
+	expectedStr := "layer1:backtest:oracle:account_balance"
 	actualStr := actualID.PID.String()
 
 	assert.Equal(t, expectedStr, actualStr)
@@ -27,7 +27,7 @@ func Test_Pipeline_ID(t *testing.T) {
 
 	assert.Equal(t, expectedID, actualID.PID)
 
-	expectedStr := "backtest::layer1:backtest:oracle:account.balance::layer1:backtest:oracle:account.balance"
+	expectedStr := "backtest::layer1:backtest:oracle:account_balance::layer1:backtest:oracle:account_balance"
 	actualStr := actualID.PID.String()
 
 	assert.Equal(t, expectedStr, actualStr)

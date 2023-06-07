@@ -6,8 +6,6 @@ type RegisterType uint8
 const (
 	AccountBalance RegisterType = iota + 1
 	GethBlock
-	ContractCreateTX
-	BlackholeTX
 	EventLog
 )
 

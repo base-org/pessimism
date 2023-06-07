@@ -23,8 +23,8 @@ func (md *mockPipeDefinition) Transform(ctx context.Context, data core.TransitDa
 
 // NewMockPipe ... Takes in a register type that specifies the mocked output type
 // Useful for testing inter-component connectivity and higher level component management abstractions
-func NewMockPipe(ctx context.Context, ot core.RegisterType) (component.Component, error) {
+func NewMockPipe(ctx context.Context, it core.RegisterType, ot core.RegisterType) (component.Component, error) {
 	od := &mockPipeDefinition{}
 
-	return component.NewPipe(ctx, od, core.BlackholeTX, ot)
+	return component.NewPipe(ctx, od, it, ot)
 }

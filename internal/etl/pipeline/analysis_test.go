@@ -34,14 +34,20 @@ func Test_Mergable(t *testing.T) {
 				assert.NoError(t, err)
 
 				comps := []component.Component{mockOracle}
-				testPUUID := core.MakePipelineUUID(0, core.MakeComponentUUID(0, 0, 0, 0), core.MakeComponentUUID(0, 0, 0, 0))
-				p1, err := pipeline.NewPipeline(&core.PipelineConfig{}, testPUUID, comps)
+				testPUUID := core.MakePipelineUUID(0, core.MakeComponentUUID(core.Live, 0, 0, 0), core.MakeComponentUUID(core.Live, 0, 0, 0))
+				testPUUID2 := core.MakePipelineUUID(0, core.MakeComponentUUID(core.Live, 0, 0, 0), core.MakeComponentUUID(core.Live, 0, 0, 0))
+
+				testCfg := &core.PipelineConfig{
+					PipelineType: core.Live,
+					ClientConfig: &core.ClientConfig{},
+				}
+
+				p1, err := pipeline.NewPipeline(testCfg, testPUUID, comps)
 				assert.NoError(t, err)
 
-				p2, err := pipeline.NewPipeline(&core.PipelineConfig{}, core.NilPipelineUUID(), comps)
+				p2, err := pipeline.NewPipeline(testCfg, testPUUID2, comps)
 				assert.NoError(t, err)
 
-				// Test
 				assert.True(t, a.Mergable(p1, p2))
 			},
 		},

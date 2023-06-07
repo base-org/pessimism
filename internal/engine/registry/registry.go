@@ -14,35 +14,6 @@ func GetInvariant(it core.InvariantType, cfg any) (invariant.Invariant, error) {
 	var inv invariant.Invariant
 
 	switch it {
-	case core.ExampleInv:
-
-		cfg, err := json.Marshal(cfg)
-		if err != nil {
-			return nil, err
-		}
-		// convert json to struct
-		invConfg := ExampleInvConfig{}
-		err = json.Unmarshal(cfg, &invConfg)
-		if err != nil {
-			return nil, err
-		}
-
-		inv = NewExampleInvariant(&invConfg)
-
-	case core.TxCaller:
-
-		cfg, err := json.Marshal(cfg)
-		if err != nil {
-			return nil, err
-		}
-		// convert json to struct
-		invConfg := InvocationInvConfig{}
-		err = json.Unmarshal(cfg, &invConfg)
-		if err != nil {
-			return nil, err
-		}
-
-		inv = NewInvocationTrackerInvariant(&invConfg)
 
 	case core.BalanceEnforcement:
 

@@ -73,7 +73,7 @@ func Test_Graph(t *testing.T) {
 					panic(err)
 				}
 
-				comp2, err := p_registry.NewEventParserPipe(context.Background(), &core.ClientConfig{}, component.WithCUUID(testCUUID1))
+				comp2, err := p_registry.NewEventParserPipe(context.Background(), &core.ClientConfig{})
 				if err != nil {
 					panic(err)
 				}

@@ -2,7 +2,6 @@ package component_test
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"sync"
 	"testing"
@@ -14,31 +13,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/assert"
-)
-
-func transformBlockToTxSlice(td core.TransitData) ([]core.TransitData, error) {
-
-	parsedBlock, success := td.Value.(types.Block)
-	if !success {
-		return nil, fmt.Errorf("Could not parse transit value to Geth block")
-	}
-
-	txs := parsedBlock.Transactions()
-
-	tfTd := core.TransitData{
-		Timestamp: td.Timestamp,
-		Type:      txSlice,
-		Value:     txs,
-	}
-
-	log.Printf("%+v", tfTd)
-	return []core.TransitData{tfTd}, nil
-}
-
-const (
-	txSlice core.RegisterType = 100
-
-	gethBlock core.RegisterType = 69
 )
 
 func Test_Pipe_OPBlockToTransactions(t *testing.T) {
@@ -53,7 +27,7 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 	outputChan := make(chan core.TransitData)
 
 	// Construct test component
-	testPipe, err := mocks.NewMockPipe(ctx, gethBlock)
+	testPipe, err := mocks.NewMockPipe(ctx, core.GethBlock, core.EventLog)
 	assert.NoError(t, err)
 
 	err = testPipe.AddEgress(testID, outputChan)
@@ -77,7 +51,7 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 
 	inputData := core.TransitData{
 		Timestamp: ts,
-		Type:      gethBlock,
+		Type:      core.GethBlock,
 		Value:     block,
 	}
 	var outputData core.TransitData
@@ -95,7 +69,7 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 
 	}()
 
-	entryChan, err := testPipe.GetIngress(gethBlock)
+	entryChan, err := testPipe.GetIngress(core.GethBlock)
 	assert.NoError(t, err)
 
 	entryChan <- inputData

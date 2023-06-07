@@ -29,5 +29,5 @@ func (md *mockOracleDefinition) ReadRoutine(_ context.Context, _ chan core.Trans
 func NewMockOracle(ctx context.Context, ot core.RegisterType) (component.Component, error) {
 	od := &mockOracleDefinition{}
 
-	return component.NewOracle(ctx, 0, od)
+	return component.NewOracle(ctx, ot, od)
 }

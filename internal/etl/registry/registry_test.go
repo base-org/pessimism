@@ -56,13 +56,13 @@ func Test_ComponentRegistry(t *testing.T) {
 			constructionLogic: registry.NewRegistry,
 			testLogic: func(t *testing.T, testRegistry registry.Registry) {
 
-				path, err := testRegistry.GetDependencyPath(core.ContractCreateTX)
+				path, err := testRegistry.GetDependencyPath(core.EventLog)
 
 				assert.NoError(t, err)
 				assert.Len(t, path.Path, 2)
 
 				assert.Equal(t, path.Path[1].DataType, core.GethBlock)
-				assert.Equal(t, path.Path[0].DataType, core.ContractCreateTX)
+				assert.Equal(t, path.Path[0].DataType, core.EventLog)
 			},
 		},
 	}
