@@ -12,8 +12,9 @@ import (
 
 // EventInvConfig  ...
 type EventInvConfig struct {
-	Address string   `json:"address"`
-	Args    []string `json:"args"`
+	ContractName string   `json:"contract_name"`
+	Address      string   `json:"address"`
+	Args         []string `json:"args"`
 }
 
 // EventInvariant ...
@@ -27,6 +28,7 @@ type EventInvariant struct {
 const eventReportMsg = `
 	_Monitored Event Triggered_
 
+	Contract Name: %s
 	Contract Address: %s 
 	Transaction Hash: %s
 	Event: %s
@@ -44,10 +46,10 @@ func NewEventInvariant(cfg *EventInvConfig) invariant.Invariant {
 
 // Invalidate ... Checks if the balance is within the bounds
 // specified in the config
-func (bi *EventInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
+func (ei *EventInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
 	logging.NoContext().Debug("Checking invalidation for balance invariant", zap.String("data", fmt.Sprintf("%v", td)))
 
-	if td.Type != bi.InputType() {
+	if td.Type != ei.InputType() {
 		return nil, false, fmt.Errorf("invalid type supplied")
 	}
 
@@ -57,6 +59,6 @@ func (bi *EventInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, b
 	}
 
 	return &core.InvalOutcome{
-		Message: fmt.Sprintf(eventReportMsg, log.Address, log.TxHash.Hex(), bi.cfg.Args[0]),
+		Message: fmt.Sprintf(eventReportMsg, ei.cfg.ContractName, log.Address, log.TxHash.Hex(), ei.cfg.Args[0]),
 	}, true, nil
 }

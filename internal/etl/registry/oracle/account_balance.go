@@ -39,8 +39,8 @@ func NewAddressBalanceODef(cfg *core.ClientConfig, client client.EthClientInterf
 }
 
 // NewAddressBalanceOracle ... Initializer for address.balance oracle component
-func NewAddressBalanceOracle(ctx context.Context, ot core.PipelineType,
-	cfg *core.ClientConfig, sk core.StateKey, opts ...component.Option) (component.Component, error) {
+func NewAddressBalanceOracle(ctx context.Context, cfg *core.ClientConfig,
+	sk core.StateKey, opts ...component.Option) (component.Component, error) {
 	client := client.NewEthClient()
 
 	od := NewAddressBalanceODef(cfg, client, nil, sk)

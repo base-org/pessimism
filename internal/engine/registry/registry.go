@@ -14,9 +14,7 @@ func GetInvariant(it core.InvariantType, cfg any) (invariant.Invariant, error) {
 	var inv invariant.Invariant
 
 	switch it {
-
 	case core.BalanceEnforcement:
-
 		cfg, err := json.Marshal(cfg)
 		if err != nil {
 			return nil, err

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/state"
 )
@@ -26,30 +27,39 @@ func NewAnalyzer(dRegistry registry.Registry) Analyzer {
 	}
 }
 
-// Mergable ... Returns true if pipelines are mergable
+// Mergable ... Returns true if pipelines can be merged or deduped
 func (a *analyzer) Mergable(p1 Pipeline, p2 Pipeline) bool {
+	// Invalid if pipelines are not the same length
 	if len(p1.Components()) != len(p2.Components()) {
 		return false
 	}
 
+	// Invalid if pipelines are not live
 	if p1.Config().PipelineType != core.Live ||
 		p2.Config().PipelineType != core.Live {
 		return false
 	}
 
+	// Invalid if either pipeline requires a backfill
+	// NOTE - This is a temporary solution to prevent backfills from being
+	// merged; resulting incorrect data being sent to the risk engine.
+	// In the future, this should only check the current state of each pipeline
+	// to ensure that the backfill has been completed for both.
 	if p1.Config().ClientConfig.Backfill() ||
 		p2.Config().ClientConfig.Backfill() {
 		return false
 	}
 
+	// Invalid if pipelines do not share the same PID
 	if p1.UUID().PID != p2.UUID().PID {
 		return false
 	}
 
+	// Invalid if pipelines do not share the same state key
 	return p1.UUID() != p2.UUID()
-
 }
 
+// MergePipelines ... Merges two pipelines into one (p1 --merge-> p2)
 func (a *analyzer) MergePipelines(ctx context.Context, p1 Pipeline, p2 Pipeline) (Pipeline, error) {
 	for i, compi := range p1.Components() {
 		compj := p2.Components()[i]
@@ -59,44 +69,75 @@ func (a *analyzer) MergePipelines(ctx context.Context, p1 Pipeline, p2 Pipeline)
 			return nil, err
 		}
 
-		if reg.Stateful() { // Merge state items from p2 into p1
-			ss, err := state.FromContext(ctx)
+		if reg.Stateful() { // Merge state items from compi into compj
+			err = a.mergeComponentState(ctx, compi, compj, p1.UUID(), p2.UUID())
 			if err != nil {
 				return nil, err
-			}
-
-			sliceItems, err := ss.GetSlice(ctx, compi.StateKey())
-			if err != nil {
-				return nil, err
-			}
-
-			for _, item := range sliceItems {
-				ss.SetSlice(ctx, compj.StateKey(), item)
-			}
-
-			if compi.StateKey().IsNested() {
-
-				for _, item := range sliceItems {
-					nestedKey := state.MakeKey(compi.OutputType(), item, false).WithPUUID(p1.UUID())
-					nestedKeyj := state.MakeKey(compj.OutputType(), item, false).WithPUUID(p2.UUID())
-
-					nestedValues, err := ss.GetSlice(ctx, nestedKey)
-
-					for _, value := range nestedValues {
-						_, err = ss.SetSlice(ctx, nestedKeyj, value)
-						if err != nil {
-							return nil, err
-						}
-					}
-
-					err = ss.Remove(ctx, nestedKey)
-					if err != nil {
-						return nil, err
-					}
-				}
 			}
 		}
 	}
 	return p2, nil
+}
 
+// mergeComponentState ... Merges state items from p2 into p1
+func (a *analyzer) mergeComponentState(ctx context.Context, compi, compj component.Component,
+	p1, p2 core.PipelineUUID) error {
+	ss, err := state.FromContext(ctx)
+	if err != nil {
+		return err
+	}
+
+	items, err := ss.GetSlice(ctx, compi.StateKey())
+	if err != nil {
+		return err
+	}
+
+	for _, item := range items {
+		_, err := ss.SetSlice(ctx, compj.StateKey(), item)
+		if err != nil {
+			return err
+		}
+	}
+
+	if compi.StateKey().IsNested() {
+		err = a.MergeNestedStateKeys(ctx, compi, compj, p1, p2, ss)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// MergeNestedStateKeys ... Merges nested state keys from p1 into p2
+func (a *analyzer) MergeNestedStateKeys(ctx context.Context, c1, c2 component.Component,
+	p1, p2 core.PipelineUUID, ss state.Store) error {
+	items, err := ss.GetSlice(ctx, c1.StateKey())
+	if err != nil {
+		return err
+	}
+
+	for _, item := range items {
+		nestedKey := state.MakeKey(c1.OutputType(), item, false).WithPUUID(p1)
+		nestedKeyj := state.MakeKey(c2.OutputType(), item, false).WithPUUID(p2)
+
+		nestedValues, err := ss.GetSlice(ctx, nestedKey)
+		if err != nil {
+			return err
+		}
+
+		for _, value := range nestedValues {
+			_, err = ss.SetSlice(ctx, nestedKeyj, value)
+			if err != nil {
+				return err
+			}
+		}
+
+		err = ss.Remove(ctx, nestedKey)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

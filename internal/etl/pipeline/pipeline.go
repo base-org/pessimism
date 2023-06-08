@@ -36,7 +36,8 @@ type pipeline struct {
 }
 
 // NewPipeline ... Initializer
-func NewPipeline(cfg *core.PipelineConfig, pUUID core.PipelineUUID, comps []component.Component, opts ...Option) (Pipeline, error) {
+func NewPipeline(cfg *core.PipelineConfig, pUUID core.PipelineUUID, comps []component.Component,
+	opts ...Option) (Pipeline, error) {
 	pl := &pipeline{
 		cfg:        cfg,
 		uuid:       pUUID,

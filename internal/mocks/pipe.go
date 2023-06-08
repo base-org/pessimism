@@ -17,7 +17,7 @@ func (md *mockPipeDefinition) ConfigureRoutine(core.PipelineUUID) error {
 }
 
 // Transform ... Mocked transform function that returns an empty slice
-func (md *mockPipeDefinition) Transform(ctx context.Context, data core.TransitData) ([]core.TransitData, error) {
+func (md *mockPipeDefinition) Transform(_ context.Context, _ core.TransitData) ([]core.TransitData, error) {
 	return []core.TransitData{}, nil
 }
 

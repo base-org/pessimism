@@ -140,9 +140,18 @@ func (graph *cGraph) AddComponent(cUIID core.ComponentUUID, comp component.Compo
 }
 
 // AddComponents ... Inserts all components from some slice into edge mapping
-func (graph *cGraph) AddComponents(cSlice []component.Component) error {
-	for _, c := range cSlice {
+func (graph *cGraph) AddComponents(components []component.Component) error {
+	// Add all component entries to graph
+	for _, c := range components {
 		if err := graph.AddComponent(c.UUID(), c); err != nil {
+			return err
+		}
+	}
+
+	// Add edges between components
+	for i := 1; i < len(components); i++ {
+		err := graph.AddEdge(components[i].UUID(), components[i-1].UUID())
+		if err != nil {
 			return err
 		}
 	}

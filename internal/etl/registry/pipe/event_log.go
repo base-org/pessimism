@@ -45,7 +45,6 @@ func (ed *EventDefinition) ConfigureRoutine(pUUID core.PipelineUUID) error {
 		return err
 	}
 	return nil
-
 }
 
 // NewEventParserPipe ... Initializer
@@ -105,7 +104,8 @@ func (ed *EventDefinition) getEventsToMonitor(ctx context.Context, rt core.Regis
 	return events, nil
 }
 
-// Transform ... Gets the events from the block, filters them and returns them if they are in the list of events to monitor
+// Transform ... Gets the events from the block, filters them and
+// returns them if they are in the list of events to monitor
 func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) ([]core.TransitData, error) {
 	asBlock, success := td.Value.(types.Block)
 	if !success {
@@ -138,6 +138,9 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 	}
 
 	logs, err := ed.client.FilterLogs(context.Background(), query)
+	if err != nil {
+		return []core.TransitData{}, err
+	}
 
 	returnVals := make([]core.TransitData, 0)
 	for _, log := range logs {

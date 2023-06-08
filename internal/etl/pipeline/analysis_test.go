@@ -51,6 +51,37 @@ func Test_Mergable(t *testing.T) {
 				assert.True(t, a.Mergable(p1, p2))
 			},
 		},
+		{
+			name:        "Failure Pipeline Merge",
+			function:    "Mergable",
+			description: "Mergable function should return false when PID's do not match",
+			testConstructor: func() pipeline.Analyzer {
+				dRegistry := registry.NewRegistry()
+				return pipeline.NewAnalyzer(dRegistry)
+			},
+			testLogic: func(t *testing.T, a pipeline.Analyzer) {
+				// Setup test pipelines
+				mockOracle, err := mocks.NewMockOracle(context.Background(), core.GethBlock)
+				assert.NoError(t, err)
+
+				comps := []component.Component{mockOracle}
+				testPUUID := core.MakePipelineUUID(0, core.MakeComponentUUID(core.Backtest, 0, 0, 0), core.MakeComponentUUID(core.Live, 0, 0, 0))
+				testPUUID2 := core.MakePipelineUUID(0, core.MakeComponentUUID(core.Live, 0, 0, 0), core.MakeComponentUUID(core.Live, 0, 0, 0))
+
+				testCfg := &core.PipelineConfig{
+					PipelineType: core.Live,
+					ClientConfig: &core.ClientConfig{},
+				}
+
+				p1, err := pipeline.NewPipeline(testCfg, testPUUID, comps)
+				assert.NoError(t, err)
+
+				p2, err := pipeline.NewPipeline(testCfg, testPUUID2, comps)
+				assert.NoError(t, err)
+
+				assert.False(t, a.Mergable(p1, p2))
+			},
+		},
 	}
 
 	for _, test := range tests {

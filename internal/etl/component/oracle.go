@@ -23,7 +23,6 @@ type Oracle struct {
 	ctx context.Context
 
 	definition    OracleDefinition
-	oracleType    core.PipelineType
 	oracleChannel chan core.TransitData
 
 	wg *sync.WaitGroup

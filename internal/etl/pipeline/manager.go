@@ -37,7 +37,8 @@ type etlManager struct {
 }
 
 // NewManager ... Initializer
-func NewManager(ctx context.Context, analyzer Analyzer, cRegistry registry.Registry, ec chan core.InvariantInput) (Manager, func()) {
+func NewManager(ctx context.Context, analyzer Analyzer, cRegistry registry.Registry,
+	ec chan core.InvariantInput) (Manager, func()) {
 	dag := NewComponentGraph()
 
 	m := &etlManager{
@@ -102,18 +103,13 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.Pipelin
 		return core.NilPipelineUUID(), err
 	}
 
-	pipelines := em.store.GetExistingPipelinesByPID(pUUID.PID)
+	mPUUID, err := em.getMergeUUID(pUUID, pipeline)
+	if err != nil {
+		return core.NilPipelineUUID(), err
+	}
 
-	for _, pl := range pipelines {
-		p, err := em.store.GetPipelineFromPUUID(pl)
-		if err != nil {
-			return core.NilPipelineUUID(), err
-		}
-
-		if em.analyzer.Mergable(pipeline, p) { // Deploy invariants to existing pipelines instead
-			// This is a bit hacky since we aren't actually merging the pipelines
-			return p.UUID(), nil
-		}
+	if mPUUID != core.NilPipelineUUID() { // Pipeline is mergable
+		return pUUID, nil
 	}
 
 	// Bind communication route between pipeline and risk engine
@@ -129,10 +125,6 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.Pipelin
 
 	if len(components) == 1 {
 		return pUUID, nil
-	}
-
-	for i := 1; i < len(components); i++ {
-		em.dag.AddEdge(components[i].UUID(), components[i-1].UUID())
 	}
 
 	return pUUID, nil
@@ -182,6 +174,24 @@ func (em *etlManager) getComponents(cfg *core.PipelineConfig,
 	return components, nil
 }
 
+func (em *etlManager) getMergeUUID(pUUID core.PipelineUUID, pipeline Pipeline) (core.PipelineUUID, error) {
+	pipelines := em.store.GetExistingPipelinesByPID(pUUID.PID)
+
+	for _, pl := range pipelines {
+		p, err := em.store.GetPipelineFromPUUID(pl)
+		if err != nil {
+			return core.NilPipelineUUID(), err
+		}
+
+		if em.analyzer.Mergable(pipeline, p) { // Deploy invariants to existing pipelines instead
+			// This is a bit hacky since we aren't actually merging the pipelines
+			return p.UUID(), nil
+		}
+	}
+
+	return core.NilPipelineUUID(), nil
+}
+
 // inferComponent ... Constructs a component provided a data register definition
 func inferComponent(ctx context.Context, cfg *core.PipelineConfig, cUUID core.ComponentUUID,
 	register *core.DataRegister) (component.Component, error) {
@@ -218,7 +228,4 @@ func inferComponent(ctx context.Context, cfg *core.PipelineConfig, cUUID core.Co
 	default:
 		return nil, fmt.Errorf(unknownCompType, register.ComponentType.String())
 	}
-}
-
-func (em *etlManager) mergePipelines(p1, p2 Pipeline) {
 }
