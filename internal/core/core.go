@@ -24,7 +24,6 @@ type TransitData struct {
 	Timestamp time.Time
 
 	Network Network
-	PType   PipelineType
 	Type    RegisterType
 
 	Address *common.Address
@@ -46,6 +45,12 @@ func NewTransitData(rt RegisterType, val any, opts ...TransitOption) TransitData
 	}
 
 	return td
+}
+
+// Addressed ... Indicates whether the transit data has an
+// associated address field
+func (td *TransitData) Addressed() bool {
+	return td.Address != nil
 }
 
 // NewTransitChannel ... Builds new tranit channel

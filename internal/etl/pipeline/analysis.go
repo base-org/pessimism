@@ -41,8 +41,8 @@ func (a *analyzer) Mergable(p1 Pipeline, p2 Pipeline) bool {
 	}
 
 	// Invalid if either pipeline requires a backfill
-	// NOTE - This is a temporary solution to prevent backfills from being
-	// merged; resulting incorrect data being sent to the risk engine.
+	// NOTE - This is a temporary solution to prevent live backfills on two pipelines
+	// from being merged.
 	// In the future, this should only check the current state of each pipeline
 	// to ensure that the backfill has been completed for both.
 	if p1.Config().ClientConfig.Backfill() ||

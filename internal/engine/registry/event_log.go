@@ -5,12 +5,10 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
-	"github.com/base-org/pessimism/internal/logging"
 	"github.com/ethereum/go-ethereum/core/types"
-	"go.uber.org/zap"
 )
 
-// EventInvConfig  ...
+// EventInvConfig  ... Configuration for the event invariant
 type EventInvConfig struct {
 	ContractName string   `json:"contract_name"`
 	Address      string   `json:"address"`
@@ -47,15 +45,18 @@ func NewEventInvariant(cfg *EventInvConfig) invariant.Invariant {
 // Invalidate ... Checks if the balance is within the bounds
 // specified in the config
 func (ei *EventInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
-	logging.NoContext().Debug("Checking invalidation for balance invariant", zap.String("data", fmt.Sprintf("%v", td)))
 
 	if td.Type != ei.InputType() {
 		return nil, false, fmt.Errorf("invalid type supplied")
 	}
 
+	if td.Address.String() != ei.cfg.Address {
+		return nil, false, fmt.Errorf("invalid address supplied")
+	}
+
 	log, success := td.Value.(types.Log)
 	if !success {
-		return nil, false, fmt.Errorf("invalid type supplied")
+		return nil, false, fmt.Errorf("could not convert transit data to log")
 	}
 
 	return &core.InvalOutcome{

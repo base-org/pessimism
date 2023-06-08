@@ -13,7 +13,7 @@ func (svc *PessimismService) ProcessInvariantRequest(ir models.InvRequestBody) (
 	if ir.MethodType() == models.Run { // Deploy invariant session
 		return svc.runInvariantSession(ir.Params)
 	}
-	// TODO - Add support for other run types
+	// TODO - Add support for other method types (ie. delete. update)
 
 	return core.NilInvariantUUID(), nil
 }

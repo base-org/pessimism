@@ -22,7 +22,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			Params: models.InvRequestParams{
 				Network: "layer1",
 				PType:   "live",
-				InvType: "example",
+				InvType: "contract_event",
 
 				StartHeight: nil,
 				EndHeight:   nil,
@@ -92,6 +92,38 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 		},
 		{
 			name:        "Deploy to Risk Engine Failure",
+			description: "When ProcessInvariantRequest is called that results in a etl registry fetch failure, an error should be returned",
+			function:    "ProcessInvariantRequest",
+
+			constructionLogic: func() testSuite {
+				cfg := svc.Config{}
+
+				ts := createTestSuite(ctrl, cfg)
+
+				ts.mockEtlMan.EXPECT().
+					CreateDataPipeline(gomock.Any()).
+					Return(core.NilPipelineUUID(), nil).
+					Times(1)
+
+				ts.mockEtlMan.EXPECT().
+					GetRegister(gomock.Any()).
+					Return(nil, testErr1()).
+					Times(1)
+
+				return ts
+			},
+
+			testLogic: func(t *testing.T, ts testSuite) {
+
+				_, err := ts.apiSvc.ProcessInvariantRequest(defaultRequestBody())
+
+				assert.Error(t, err)
+				assert.Equal(t, err.Error(), testErr1().Error())
+
+			},
+		},
+		{
+			name:        "Deploy to Risk Engine Failure",
 			description: "When ProcessInvariantRequest is called that results in a risk engine deploy failure, an error should be returned",
 			function:    "ProcessInvariantRequest",
 
@@ -103,6 +135,11 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
 					Return(core.NilPipelineUUID(), nil).
+					Times(1)
+
+				ts.mockEtlMan.EXPECT().
+					GetRegister(gomock.Any()).
+					Return(&core.DataRegister{}, nil).
 					Times(1)
 
 				ts.mockEngineMan.EXPECT().
@@ -143,6 +180,11 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 					Return(core.NilPipelineUUID(), nil).
 					Times(1)
 
+				ts.mockEtlMan.EXPECT().
+					GetRegister(gomock.Any()).
+					Return(&core.DataRegister{}, nil).
+					Times(1)
+
 				ts.mockEngineMan.EXPECT().
 					DeployInvariantSession(gomock.Any(), gomock.Any(),
 						gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
@@ -179,6 +221,11 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
 					Return(core.NilPipelineUUID(), nil).
+					Times(1)
+
+				ts.mockEtlMan.EXPECT().
+					GetRegister(gomock.Any()).
+					Return(&core.DataRegister{}, nil).
 					Times(1)
 
 				ts.mockEngineMan.EXPECT().

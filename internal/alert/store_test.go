@@ -16,7 +16,7 @@ func Test_Store(t *testing.T) {
 		testLogic   func(t *testing.T)
 	}{
 		{
-			name:        "Test_GetAlertDestination",
+			name:        "Test Get Alert Destintation Success",
 			description: "Test GetAlertDestination",
 			testLogic: func(t *testing.T) {
 				am := alert.NewStore()
@@ -33,8 +33,8 @@ func Test_Store(t *testing.T) {
 			},
 		},
 		{
-			name:        "Test_AddAlertDestination",
-			description: "Test AddAlertDestination",
+			name:        "Test Add Alert Destination Success",
+			description: "Test adding of arbitary alert destinations",
 			testLogic: func(t *testing.T) {
 				am := alert.NewStore()
 
@@ -50,7 +50,7 @@ func Test_Store(t *testing.T) {
 			},
 		},
 		{
-			name:        "Test_NewStore",
+			name:        "Test NewStore",
 			description: "Test NewStore logic",
 			testLogic: func(t *testing.T) {
 				am := alert.NewStore()

@@ -154,8 +154,9 @@ func (em *engineManager) EventLoop(ctx context.Context) error {
 
 // executeInvariants ... Executes all invariants associated with the input etl pipeline
 func (em *engineManager) executeInvariants(ctx context.Context, data core.InvariantInput) {
-	if data.Input.Address != nil { // Address based invariant
+	if data.Input.Addressed() { // Address based invariant
 		em.executeAddressInvariants(ctx, data)
+
 	} else { // Non Address based invariant
 		em.executeNonAddressInvariants(ctx, data)
 	}

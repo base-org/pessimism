@@ -163,7 +163,7 @@ func (em *etlManager) getComponents(cfg *core.PipelineConfig,
 	for _, register := range depPath.Path {
 		cUUID := core.MakeComponentUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
 
-		c, err := inferComponent(em.ctx, cfg, cUUID, register)
+		c, err := inferComponent(em.ctx, cfg.ClientConfig, cUUID, register)
 		if err != nil {
 			return []component.Component{}, err
 		}
@@ -193,7 +193,7 @@ func (em *etlManager) getMergeUUID(pUUID core.PipelineUUID, pipeline Pipeline) (
 }
 
 // inferComponent ... Constructs a component provided a data register definition
-func inferComponent(ctx context.Context, cfg *core.PipelineConfig, cUUID core.ComponentUUID,
+func inferComponent(ctx context.Context, cc *core.ClientConfig, cUUID core.ComponentUUID,
 	register *core.DataRegister) (component.Component, error) {
 	logging.WithContext(ctx).Debug("constructing component",
 		zap.String("type", register.ComponentType.String()),
@@ -212,7 +212,7 @@ func inferComponent(ctx context.Context, cfg *core.PipelineConfig, cUUID core.Co
 			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Oracle.String()))
 		}
 
-		return init(ctx, cfg.ClientConfig, opts...)
+		return init(ctx, cc, opts...)
 
 	case core.Pipe:
 		init, success := register.ComponentConstructor.(component.PipeConstructorFunc)
@@ -220,7 +220,7 @@ func inferComponent(ctx context.Context, cfg *core.PipelineConfig, cUUID core.Co
 			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Pipe.String()))
 		}
 
-		return init(ctx, cfg.ClientConfig, opts...)
+		return init(ctx, cc, opts...)
 
 	case core.Aggregator:
 		return nil, fmt.Errorf("aggregator component has yet to be implemented")

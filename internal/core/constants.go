@@ -63,7 +63,7 @@ const (
 	ExampleInv = iota + 1
 	TxCaller
 	BalanceEnforcement
-	Event
+	ContractEvent
 )
 
 // String ... Converts an invariant type to a string
@@ -72,7 +72,7 @@ func (it InvariantType) String() string {
 	case BalanceEnforcement:
 		return "balance_enforcement"
 
-	case Event:
+	case ContractEvent:
 		return "contract_event"
 
 	default:
@@ -87,7 +87,7 @@ func StringToInvariantType(stringType string) InvariantType {
 		return BalanceEnforcement
 
 	case "contract_event":
-		return Event
+		return ContractEvent
 
 	default:
 		return InvariantType(0)

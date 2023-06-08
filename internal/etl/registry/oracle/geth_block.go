@@ -239,7 +239,6 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 
 			componentChan <- core.TransitData{
 				Timestamp: time.Now(),
-				PType:     core.Live,
 				Type:      core.GethBlock,
 				Value:     *blockAsserted,
 			}

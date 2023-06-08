@@ -38,7 +38,8 @@ func Test_Manager(t *testing.T) {
 
 				assert.NoError(t, err)
 
-				c, err := inferComponent(context.Background(), nil, cUUID, register)
+				cc := &core.ClientConfig{}
+				c, err := inferComponent(context.Background(), cc, cUUID, register)
 				assert.NoError(t, err)
 
 				assert.Equal(t, c.UUID(), cUUID)

@@ -17,14 +17,10 @@ type Pipeline interface {
 	Components() []component.Component
 	RunPipeline(wg *sync.WaitGroup) error
 
-	// NOTE - Having a single return value for this function is not ideal
-	// long-term if pipelines need to support multiple state keys
-
 	AddEngineRelay(engineChan chan core.InvariantInput) error
 }
 
-type Option = func(*pipeline)
-
+// pipeline ... Pipeline implementation
 type pipeline struct {
 	cfg  *core.PipelineConfig
 	uuid core.PipelineUUID
@@ -36,17 +32,12 @@ type pipeline struct {
 }
 
 // NewPipeline ... Initializer
-func NewPipeline(cfg *core.PipelineConfig, pUUID core.PipelineUUID, comps []component.Component,
-	opts ...Option) (Pipeline, error) {
+func NewPipeline(cfg *core.PipelineConfig, pUUID core.PipelineUUID, comps []component.Component) (Pipeline, error) {
 	pl := &pipeline{
 		cfg:        cfg,
 		uuid:       pUUID,
 		components: comps,
 		aState:     Booting,
-	}
-
-	for _, opt := range opts {
-		opt(pl)
 	}
 
 	return pl, nil
@@ -85,6 +76,9 @@ func (pl *pipeline) AddEngineRelay(engineChan chan core.InvariantInput) error {
 func (pl *pipeline) RunPipeline(wg *sync.WaitGroup) error {
 	for _, comp := range pl.components {
 		wg.Add(1)
+		// NOTE - This is a hack and a bit leaky since
+		// we're teaching callee level absractions about the pipelines
+		// which they execute within.
 		comp.SetPUUID(pl.uuid)
 
 		go func(c component.Component, wg *sync.WaitGroup) {
@@ -106,7 +100,7 @@ func (pl *pipeline) RunPipeline(wg *sync.WaitGroup) error {
 	return nil
 }
 
-// Close ...
+// Close ... Closes all components in the pipeline
 func (pl *pipeline) Close() error {
 	for _, comp := range pl.components {
 		if comp.ActivityState() != component.Terminated {

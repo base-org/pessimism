@@ -28,7 +28,7 @@ func GetInvariant(it core.InvariantType, cfg any) (invariant.Invariant, error) {
 
 		inv = NewBalanceInvariant(&invConfg)
 
-	case core.Event:
+	case core.ContractEvent:
 		cfg, err := json.Marshal(cfg)
 		if err != nil {
 			return nil, err

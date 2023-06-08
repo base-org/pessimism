@@ -9,6 +9,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	testPUUID = core.MakePipelineUUID(0,
+		core.MakeComponentUUID(core.Live, 0, 0, 0),
+		core.MakeComponentUUID(core.Live, 0, 0, 0))
+)
+
 func Test_GetSessionUUIDByPair(t *testing.T) {
 	am := engine.NewAddressingMap()
 
@@ -26,23 +32,23 @@ func Test_GetSessionUUIDByPair(t *testing.T) {
 
 }
 
-// func Test_Insert(t *testing.T) {
-// 	am := engine.NewAddressingMap()
+func Test_Insert(t *testing.T) {
+	am := engine.NewAddressingMap()
 
-// 	pUUID := core.NilPipelineUUID()
-// 	sUUID := core.NilInvariantUUID()
-// 	address := common.HexToAddress("0x24")
+	pUUID := core.NilPipelineUUID()
+	sUUID := core.NilInvariantUUID()
+	address := common.HexToAddress("0x24")
 
-// 	err := am.Insert(pUUID, sUUID, address)
-// 	assert.NoError(t, err, "should not error")
+	err := am.Insert(pUUID, sUUID, address)
+	assert.NoError(t, err, "should not error")
 
-// 	// Test for found
-// 	sUUID, err = am.GetSessionUUIDByPair(address, pUUID)
-// 	assert.NoError(t, err, "should not error")
-// 	assert.Equal(t, core.NilInvariantUUID().PID, sUUID.PID, "should be equal")
+	// Test for found
+	sUUID, err = am.GetSessionUUIDByPair(address, pUUID)
+	assert.NoError(t, err, "should not error")
+	assert.Equal(t, core.NilInvariantUUID(), sUUID, "should be equal")
 
-// 	// Test for not found
-// 	sUUID, err = am.GetSessionUUIDByPair(address, core.NilPipelineUUID())
-// 	assert.Error(t, err, "should error")
-// 	assert.Equal(t, core.NilInvariantUUID().PID, sUUID.PID, "should be equal")
-// }
+	// Test for not found
+	sUUID, err = am.GetSessionUUIDByPair(address, testPUUID)
+	assert.Error(t, err, "should error")
+	assert.Equal(t, core.NilInvariantUUID(), sUUID, "should be equal")
+}

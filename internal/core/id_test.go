@@ -39,7 +39,7 @@ func Test_InvSession_ID(t *testing.T) {
 
 	assert.Equal(t, expectedID, actualID.PID)
 
-	expectedStr := "layer1:live:example"
+	expectedStr := "layer1:live:unknown"
 	actualStr := actualID.PID.String()
 
 	assert.Equal(t, expectedStr, actualStr)
