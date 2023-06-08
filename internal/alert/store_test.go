@@ -34,7 +34,7 @@ func Test_Store(t *testing.T) {
 		},
 		{
 			name:        "Test Add Alert Destination Success",
-			description: "Test adding of arbitary alert destinations",
+			description: "Test adding of arbitrary alert destinations",
 			testLogic: func(t *testing.T) {
 				am := alert.NewStore()
 

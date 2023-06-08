@@ -45,7 +45,6 @@ func NewEventInvariant(cfg *EventInvConfig) invariant.Invariant {
 // Invalidate ... Checks if the balance is within the bounds
 // specified in the config
 func (ei *EventInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
-
 	if td.Type != ei.InputType() {
 		return nil, false, fmt.Errorf("invalid type supplied")
 	}

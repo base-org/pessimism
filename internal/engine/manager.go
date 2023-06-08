@@ -156,7 +156,6 @@ func (em *engineManager) EventLoop(ctx context.Context) error {
 func (em *engineManager) executeInvariants(ctx context.Context, data core.InvariantInput) {
 	if data.Input.Addressed() { // Address based invariant
 		em.executeAddressInvariants(ctx, data)
-
 	} else { // Non Address based invariant
 		em.executeNonAddressInvariants(ctx, data)
 	}
