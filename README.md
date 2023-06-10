@@ -55,7 +55,7 @@ TBD
 
 ## Spawning an invariant session
 
-## Balance Enforcement Curl Example
+### Balance Enforcement Curl Example
 The following curl command can be used to spawn a `balance_enforcement` invariant session on the `layer1` network. The invariant will check the balance of the address `0xfC0157aA4F5DB7177830ACddB3D5a9BB5BE9cc5e` every 10 blocks and alert to slack if the balance is ever less than 1 or greater than 2.
 
 ```
