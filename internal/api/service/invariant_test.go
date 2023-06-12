@@ -17,12 +17,12 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 	defaultRequestBody := func() models.InvRequestBody {
 		return models.InvRequestBody{
-			Method: models.Run,
+			Method: "run",
 
 			Params: models.InvRequestParams{
-				Network: core.Layer1,
-				PType:   core.Live,
-				InvType: core.ExampleInv,
+				Network: "layer1",
+				PType:   "live",
+				InvType: "example",
 
 				StartHeight: nil,
 				EndHeight:   nil,
@@ -54,7 +54,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			testLogic: func(t *testing.T, ts testSuite) {
 
 				testParams := defaultRequestBody()
-				testParams.Params.InvType = 42
+				testParams.Params.InvType = "bleh"
 
 				_, err := ts.apiSvc.ProcessInvariantRequest(testParams)
 
@@ -133,6 +133,11 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				ts := createTestSuite(ctrl, cfg)
 
+				ts.mockAlertMan.EXPECT().
+					AddInvariantSession(gomock.Any(), gomock.Any()).
+					Return(nil).
+					Times(1)
+
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
 					Return(core.NilPipelineUUID(), nil).
@@ -146,7 +151,8 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				ts.mockEtlMan.EXPECT().
 					RunPipeline(core.NilPipelineUUID()).
-					Return(testErr3())
+					Return(testErr3()).
+					Times(1)
 
 				return ts
 			},
@@ -183,7 +189,13 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				ts.mockEtlMan.EXPECT().
 					RunPipeline(core.NilPipelineUUID()).
-					Return(nil)
+					Return(nil).
+					Times(1)
+
+				ts.mockAlertMan.EXPECT().
+					AddInvariantSession(gomock.Any(), gomock.Any()).
+					Return(nil).
+					Times(1)
 
 				return ts
 			},

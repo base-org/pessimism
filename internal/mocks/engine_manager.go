@@ -51,7 +51,7 @@ func (mr *EngineManagerMockRecorder) DeleteInvariantSession(arg0 interface{}) *g
 }
 
 // DeployInvariantSession mocks base method.
-func (m *EngineManager) DeployInvariantSession(arg0 core.Network, arg1 core.PipelineUUID, arg2 core.InvariantType, arg3 core.PipelineType, arg4 interface{}) (core.InvSessionUUID, error) {
+func (m *EngineManager) DeployInvariantSession(arg0 core.Network, arg1 core.PipelineUUID, arg2 core.InvariantType, arg3 core.PipelineType, arg4 core.InvSessionParams) (core.InvSessionUUID, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeployInvariantSession", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(core.InvSessionUUID)

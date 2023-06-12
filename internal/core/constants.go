@@ -9,12 +9,15 @@ type Network uint8
 const (
 	Layer1 = iota + 1
 	Layer2
+
+	UnknownNetwork
 )
 
 const (
 	UnknownType = "unknown"
 )
 
+// String ... Converts a network to a string
 func (n Network) String() string {
 	switch n {
 	case Layer1:
@@ -25,6 +28,19 @@ func (n Network) String() string {
 	}
 
 	return UnknownType
+}
+
+// StringToNetwork ... Converts a string to a network
+func StringToNetwork(stringType string) Network {
+	switch stringType {
+	case "layer1":
+		return Layer1
+
+	case "layer2":
+		return Layer2
+	}
+
+	return UnknownNetwork
 }
 
 type FetchType int
@@ -40,13 +56,16 @@ const (
 	EthClientTimeout Timeouts = 20 // in seconds
 )
 
-type InvariantType int
+// InvariantType ... Represents the type of invariant
+type InvariantType uint8
 
 const (
-	ExampleInv InvariantType = iota
+	ExampleInv = iota + 1
 	TxCaller
+	BalanceEnforcement
 )
 
+// String ... Converts an invariant type to a string
 func (it InvariantType) String() string {
 	switch it {
 	case ExampleInv:
@@ -55,13 +74,67 @@ func (it InvariantType) String() string {
 	case TxCaller:
 		return "tx_caller"
 
+	case BalanceEnforcement:
+		return "balance_enforcement"
+
 	default:
 		return "unknown"
 	}
 }
 
+// StringToInvariantType ... Converts a string to an invariant type
+func StringToInvariantType(stringType string) InvariantType {
+	switch stringType {
+	case "example":
+		return ExampleInv
+
+	case "tx_caller":
+		return TxCaller
+
+	case "balance_enforcement":
+		return BalanceEnforcement
+
+	default:
+		return InvariantType(0)
+	}
+}
+
+// AlertDestination ... The destination for an alert
+type AlertDestination uint8
+
+const (
+	Slack      AlertDestination = iota + 1
+	ThirdParty                  // 2
+)
+
+func (ad AlertDestination) String() string {
+	switch ad {
+	case Slack:
+		return "slack"
+	case ThirdParty:
+		return "third_party"
+	default:
+		return "unknown"
+	}
+}
+
+// StringToAlertingDestType ... Converts a string to an alerting destination type
+func StringToAlertingDestType(stringType string) AlertDestination {
+	switch stringType {
+	case "slack":
+		return Slack
+
+	case "third_party":
+		return ThirdParty
+	}
+
+	return AlertDestination(0)
+}
+
 // ID keys used for logging
 const (
+	AddrKey logging.LogKey = "address"
+
 	CUUIDKey logging.LogKey = "cuuid"
 	PUUIDKey logging.LogKey = "puuid"
 	SUUIDKey logging.LogKey = "suuid"

@@ -2,8 +2,9 @@ package registry
 
 import (
 	"fmt"
+	"time"
 
-	pess_core "github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/ethereum/go-ethereum/common"
@@ -25,34 +26,40 @@ func NewExampleInvariant(cfg *ExampleInvConfig) invariant.Invariant {
 	return &ExampleInvariant{
 		cfg: cfg,
 
-		Invariant: invariant.NewBaseInvariant(pess_core.ContractCreateTX),
+		Invariant: invariant.NewBaseInvariant(core.ContractCreateTX),
 	}
 }
 
-func (ei *ExampleInvariant) InputType() pess_core.RegisterType {
-	return pess_core.ContractCreateTX
+func (ei *ExampleInvariant) InputType() core.RegisterType {
+	return core.ContractCreateTX
 }
 
-func (ei *ExampleInvariant) Invalidate(td pess_core.TransitData) (bool, error) {
+func (ei *ExampleInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
 	logging.NoContext().Debug("Checking invalidation")
 
-	if td.Type != pess_core.ContractCreateTX {
-		return false, fmt.Errorf("invalid type supplied")
+	if td.Type != core.ContractCreateTX {
+		return nil, false, fmt.Errorf("invalid type supplied")
 	}
 
 	tx, ok := td.Value.(*types.Transaction)
 	if !ok {
-		return false, fmt.Errorf("could not cast transit data to geth transaction type")
+		return nil, false, fmt.Errorf("could not cast transit data to geth transaction type")
 	}
 
 	logging.NoContext().Info("Comparing addresses")
 	from, err := types.Sender(types.LatestSignerForChainID(tx.ChainId()), tx)
 	if err != nil {
-		return false, err
+		return nil, false, err
 	}
 
 	logging.NoContext().Info("Comparing", zap.String("From", from.String()), zap.String("To", ei.cfg.FromAddress))
-	result := (from == common.HexToAddress(ei.cfg.FromAddress))
+	if from == common.HexToAddress(ei.cfg.FromAddress) {
+		return &core.InvalOutcome{
+			TimeStamp: time.Now(),
+			Message:   fmt.Sprintf("Creation tx detected from %s", from.String()),
+			SUUID:     ei.SUUID(),
+		}, true, nil
+	}
 
-	return result, nil
+	return nil, false, nil
 }

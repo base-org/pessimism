@@ -68,6 +68,7 @@ func (pl *pipeline) AddEngineRelay(engineChan chan core.InvariantInput) error {
 func (pl *pipeline) RunPipeline(wg *sync.WaitGroup) error {
 	for _, comp := range pl.components {
 		wg.Add(1)
+		comp.SetPUUID(pl.uuid)
 
 		go func(c component.Component, wg *sync.WaitGroup) {
 			defer wg.Done()
