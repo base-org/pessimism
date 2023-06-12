@@ -5,19 +5,22 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 // EventInvConfig  ... Configuration for the event invariant
 type EventInvConfig struct {
 	ContractName string   `json:"contract_name"`
 	Address      string   `json:"address"`
-	Args         []string `json:"args"`
+	Sigs         []string `json:"args"`
 }
 
 // EventInvariant ...
 type EventInvariant struct {
-	cfg *EventInvConfig
+	cfg  *EventInvConfig
+	sigs []common.Hash
 
 	invariant.Invariant
 }
@@ -34,8 +37,14 @@ const eventReportMsg = `
 
 // NewEventInvariant ... Initializer
 func NewEventInvariant(cfg *EventInvConfig) invariant.Invariant {
+	var sigs []common.Hash
+	for _, sig := range cfg.Sigs {
+		sigs = append(sigs, crypto.Keccak256Hash([]byte(sig)))
+	}
+
 	return &EventInvariant{
-		cfg: cfg,
+		cfg:  cfg,
+		sigs: sigs,
 
 		Invariant: invariant.NewBaseInvariant(core.EventLog,
 			invariant.WithAddressing()),
@@ -58,7 +67,20 @@ func (ei *EventInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, b
 		return nil, false, fmt.Errorf("could not convert transit data to log")
 	}
 
+	var invalidated = false
+
+	for _, sig := range ei.sigs {
+		if log.Topics[0] == sig {
+			invalidated = true
+			break
+		}
+	}
+
+	if !invalidated {
+		return nil, false, nil
+	}
+
 	return &core.InvalOutcome{
-		Message: fmt.Sprintf(eventReportMsg, ei.cfg.ContractName, log.Address, log.TxHash.Hex(), ei.cfg.Args[0]),
+		Message: fmt.Sprintf(eventReportMsg, ei.cfg.ContractName, log.Address, log.TxHash.Hex(), ei.cfg.Sigs[0]),
 	}, true, nil
 }
