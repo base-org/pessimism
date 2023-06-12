@@ -1,42 +1,85 @@
 package invariant
 
-import "github.com/base-org/pessimism/internal/core"
+import (
+	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/etl/registry"
+)
 
+// ExecutionType ... Enum for execution type
 type ExecutionType int
 
 const (
+	// HardCoded ... Hard coded execution type (ie native application code)
 	HardCoded ExecutionType = iota
 )
 
+// Invariant ... Interface that all invariant implementations must adhere to
 type Invariant interface {
-	UUID() core.InvSessionUUID
-	WithUUID(sUUID core.InvSessionUUID)
+	Addressing() bool
 	InputType() core.RegisterType
-	Invalidate(core.TransitData) (bool, error)
+	Invalidate(core.TransitData) (*core.InvalOutcome, bool, error)
+	SUUID() core.InvSessionUUID
+	SetSUUID(core.InvSessionUUID)
 }
 
-type BaseInvariant struct {
-	sUUID  core.InvSessionUUID
-	inType core.RegisterType
-}
+// BaseInvariantOpt ... Functional option for BaseInvariant
+type BaseInvariantOpt = func(bi *BaseInvariant) *BaseInvariant
 
-func NewBaseInvariant(inType core.RegisterType) Invariant {
-	return &BaseInvariant{
-		inType: inType,
+// WithAddressing ... Toggles addressing property for invariant
+func WithAddressing() BaseInvariantOpt {
+	return func(bi *BaseInvariant) *BaseInvariant {
+		bi.addressing = true
+		return bi
 	}
 }
-func (bi *BaseInvariant) UUID() core.InvSessionUUID {
-	return bi.sUUID
+
+// BaseInvariant ... Base invariant implementation
+type BaseInvariant struct {
+	addressing bool
+	sUUID      core.InvSessionUUID
+	inType     core.RegisterType
 }
 
-func (bi *BaseInvariant) WithUUID(sUUID core.InvSessionUUID) {
+// NewBaseInvariant ... Initializer
+func NewBaseInvariant(inType core.RegisterType,
+	opts ...BaseInvariantOpt) Invariant {
+	bi := &BaseInvariant{
+		inType: inType,
+	}
+
+	for _, opt := range opts {
+		opt(bi)
+	}
+
+	return bi
+}
+
+// SetSUUID ... Sets the invariant session UUID
+func (bi *BaseInvariant) SetSUUID(sUUID core.InvSessionUUID) {
 	bi.sUUID = sUUID
 }
 
+// SUUID ... Returns the invariant session UUID
+func (bi *BaseInvariant) SUUID() core.InvSessionUUID {
+	return bi.sUUID
+}
+
+// InputType ... Returns the input type for the invariant
 func (bi *BaseInvariant) InputType() core.RegisterType {
 	return bi.inType
 }
 
-func (bi *BaseInvariant) Invalidate(core.TransitData) (bool, error) {
-	return false, nil
+// Invalidate ... Invalidates the invariant; defaults to no-op
+func (bi *BaseInvariant) Invalidate(core.TransitData) (*core.InvalOutcome, bool, error) {
+	return nil, false, nil
+}
+
+// Addressing ... Returns the boolean addressing property for the invariant
+func (bi *BaseInvariant) Addressing() bool {
+	reg, err := registry.NewRegistry().GetRegister(bi.inType)
+	if err != nil {
+		return false
+	}
+
+	return reg.Addressing
 }

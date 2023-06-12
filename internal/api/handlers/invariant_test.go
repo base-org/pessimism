@@ -75,7 +75,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			testLogic: func(t *testing.T, ts testSuite) {
 				w := httptest.NewRecorder()
 
-				testBody, _ := json.Marshal(models.InvRequestBody{Method: models.Run})
+				testBody, _ := json.Marshal(models.InvRequestBody{Method: "run"})
 
 				testBytes := bytes.NewBuffer(testBody)
 				r := httptest.NewRequest(http.MethodGet, testAddress, testBytes)
@@ -114,7 +114,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			testLogic: func(t *testing.T, ts testSuite) {
 				w := httptest.NewRecorder()
 
-				testBody, _ := json.Marshal(models.InvRequestBody{Method: models.Run})
+				testBody, _ := json.Marshal(models.InvRequestBody{Method: "run"})
 
 				testBytes := bytes.NewBuffer(testBody)
 				r := httptest.NewRequest(http.MethodGet, testAddress, testBytes)

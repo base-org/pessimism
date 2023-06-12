@@ -7,7 +7,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
-	"github.com/base-org/pessimism/internal/etl/registry"
+	pipe_registry "github.com/base-org/pessimism/internal/etl/registry/pipe"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,12 +20,12 @@ var (
 
 func getTestPipeLine(ctx context.Context) Pipeline {
 
-	blackHolePipe, err := registry.NewBlackHoleTxPipe(ctx, component.WithID(cID1))
+	blackHolePipe, err := pipe_registry.NewBlackHoleTxPipe(ctx, component.WithCUUID(cID1))
 	if err != nil {
 		panic(err)
 	}
 
-	contractCreatePipe, err := registry.NewCreateContractTxPipe(ctx, component.WithID(cID2))
+	contractCreatePipe, err := pipe_registry.NewCreateContractTxPipe(ctx, component.WithCUUID(cID2))
 	if err != nil {
 		panic(err)
 	}

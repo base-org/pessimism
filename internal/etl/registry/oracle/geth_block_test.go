@@ -1,4 +1,4 @@
-package registry
+package oracle
 
 import (
 	"context"
@@ -39,7 +39,7 @@ func Test_ConfigureRoutine_Error(t *testing.T) {
 		testObj,
 		nil,
 	)
-	err := testOdef.ConfigureRoutine()
+	err := testOdef.ConfigureRoutine(core.NilPipelineUUID())
 	assert.Error(t, err)
 	assert.EqualError(t, err, "error handle test")
 }
@@ -66,7 +66,7 @@ func Test_ConfigureRoutine_Pass(t *testing.T) {
 		testObj,
 		nil,
 	)
-	err := testOdef.ConfigureRoutine()
+	err := testOdef.ConfigureRoutine(core.NilPipelineUUID())
 	assert.NoError(t, err)
 }
 

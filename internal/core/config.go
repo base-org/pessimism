@@ -22,10 +22,12 @@ type PipelineConfig struct {
 	OracleCfg    *OracleConfig
 }
 
+// Backfill ... Returns true if the oracle is configured to backfill
 func (oc *OracleConfig) Backfill() bool {
 	return oc.StartHeight != nil
 }
 
+// Backtest ... Returns true if the oracle is configured to backtest
 func (oc *OracleConfig) Backtest() bool {
 	return oc.EndHeight != nil
 }
