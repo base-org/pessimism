@@ -1,7 +1,7 @@
 # pessimism
 __Because you can't always be optimistic__
 
-_Pessimism_ is a public good monitoring service that allows for Optimism bedrock blockchains _(Base Layer 2, Optimism)_ to be continously assessed for real-time threats using customly defined user invariant rulesets.
+_Pessimism_ is a public good monitoring service that allows for [Op-Stack](https://stack.optimism.io/) and EVM compatible blockchains to be continously assessed for real-time threats using customly defined user invariant rulesets. To learn about Pessimism's architecture, please advise the documentation. 
 
 <!-- Badge row 1 - status -->
 
@@ -20,7 +20,6 @@ _Pessimism_ is a public good monitoring service that allows for Optimism bedrock
 Pessimism is currently experimental and very much in development. It means Pessimism is currently unstable, so code will change and builds can break over the coming months. If you come across problems, it would help greatly to open issues so that we can fix them as quickly as possible.
 
 ## Setup
-
 To use the template, run the following the command(s):
 1. Create local config file (`config.env`) to store all necessary environmental variables. There's already an example `config.env.template` in the repo that stores default env vars.
 
@@ -53,3 +52,39 @@ Unit tests can ran using the following project level command(s):
 
 ### Integration Tests
 TBD
+
+## Spawning an invariant session
+
+### Balance Enforcement Curl Example
+The following curl command can be used to spawn a `balance_enforcement` invariant session on the `layer1` network. The invariant will check the balance of the address `0xfC0157aA4F5DB7177830ACddB3D5a9BB5BE9cc5e` every 10 blocks and alert to slack if the balance is ever less than 1 or greater than 2.
+
+```
+curl --location --request POST 'http://localhost:8080/v0/invariant' \
+--header 'Content-Type: text/plain' \
+--data-raw '{
+  "method": "run",
+  "params": {
+    "network": "layer1",
+    "pipeline_type": "live",
+    "type": "balance_enforcement", 
+    "start_height": null,
+    "alert_destination": "slack",
+    "invariant_params": {
+        "address": "0xfC0157aA4F5DB7177830ACddB3D5a9BB5BE9cc5e",
+        "lower": 1,
+        "upper": 2
+   }
+}
+}'
+```
+
+Which should return something like:
+```
+{
+    "status_code" : 202,
+    "status" : "OK",
+    "result" : {
+        "suuid" : "layer1:live:balance_enforcement::1631991901901231381836998",
+    },
+}
+```
