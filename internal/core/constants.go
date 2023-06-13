@@ -63,19 +63,17 @@ const (
 	ExampleInv = iota + 1
 	TxCaller
 	BalanceEnforcement
+	ContractEvent
 )
 
 // String ... Converts an invariant type to a string
 func (it InvariantType) String() string {
 	switch it {
-	case ExampleInv:
-		return "example"
-
-	case TxCaller:
-		return "tx_caller"
-
 	case BalanceEnforcement:
 		return "balance_enforcement"
+
+	case ContractEvent:
+		return "contract_event"
 
 	default:
 		return "unknown"
@@ -85,14 +83,11 @@ func (it InvariantType) String() string {
 // StringToInvariantType ... Converts a string to an invariant type
 func StringToInvariantType(stringType string) InvariantType {
 	switch stringType {
-	case "example":
-		return ExampleInv
-
-	case "tx_caller":
-		return TxCaller
-
 	case "balance_enforcement":
 		return BalanceEnforcement
+
+	case "contract_event":
+		return ContractEvent
 
 	default:
 		return InvariantType(0)
@@ -107,6 +102,7 @@ const (
 	ThirdParty                  // 2
 )
 
+// String ... Converts an alerting destination type to a string
 func (ad AlertDestination) String() string {
 	switch ad {
 	case Slack:

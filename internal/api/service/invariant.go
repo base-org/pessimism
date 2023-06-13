@@ -13,7 +13,7 @@ func (svc *PessimismService) ProcessInvariantRequest(ir models.InvRequestBody) (
 	if ir.MethodType() == models.Run { // Deploy invariant session
 		return svc.runInvariantSession(ir.Params)
 	}
-	// TODO - Add support for other run types
+	// TODO - Add support for other method types (ie. delete. update)
 
 	return core.NilInvariantUUID(), nil
 }
@@ -45,11 +45,16 @@ func (svc *PessimismService) runInvariantSession(params models.InvRequestParams)
 		return core.NilInvariantUUID(), err
 	}
 
+	inRegister, err := svc.etlManager.GetRegister(pConfig.DataType)
+	if err != nil {
+		return core.NilInvariantUUID(), err
+	}
+
 	logger.Info("Created etl pipeline",
 		zap.String(core.PUUIDKey, pUUID.String()))
 
 	invID, err := svc.engineManager.DeployInvariantSession(params.NetworkType(), pUUID, params.InvariantType(),
-		params.PiplineType(), params.SessionParams)
+		params.PiplineType(), params.SessionParams, inRegister)
 	if err != nil {
 		return core.NilInvariantUUID(), err
 	}

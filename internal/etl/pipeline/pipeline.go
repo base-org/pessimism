@@ -9,7 +9,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// Pipeline ... Pipeline interface
 type Pipeline interface {
+	Config() *core.PipelineConfig
 	UUID() core.PipelineUUID
 	Close() error
 	Components() []component.Component
@@ -18,9 +20,9 @@ type Pipeline interface {
 	AddEngineRelay(engineChan chan core.InvariantInput) error
 }
 
-type Option = func(*pipeline)
-
+// pipeline ... Pipeline implementation
 type pipeline struct {
+	cfg  *core.PipelineConfig
 	uuid core.PipelineUUID
 
 	aState ActivityState
@@ -29,19 +31,21 @@ type pipeline struct {
 	components []component.Component
 }
 
-// NewPipeLine ... Initializer
-func NewPipeLine(pUUID core.PipelineUUID, comps []component.Component, opts ...Option) (Pipeline, error) {
+// NewPipeline ... Initializer
+func NewPipeline(cfg *core.PipelineConfig, pUUID core.PipelineUUID, comps []component.Component) (Pipeline, error) {
 	pl := &pipeline{
+		cfg:        cfg,
 		uuid:       pUUID,
 		components: comps,
 		aState:     Booting,
 	}
 
-	for _, opt := range opts {
-		opt(pl)
-	}
-
 	return pl, nil
+}
+
+// Config ... Returns pipeline config
+func (pl *pipeline) Config() *core.PipelineConfig {
+	return pl.cfg
 }
 
 // Components ... Returns slice of all constituent components
@@ -57,8 +61,12 @@ func (pl *pipeline) UUID() core.PipelineUUID {
 // AddEngineRelay ... Adds a relay to the pipeline that forces it to send transformed invariant input
 // to a risk engine
 func (pl *pipeline) AddEngineRelay(engineChan chan core.InvariantInput) error {
-	lastComponent := pl.components[len(pl.components)-1]
+	lastComponent := pl.components[0]
 	eir := core.NewEngineRelay(pl.uuid, engineChan)
+
+	logging.NoContext().Debug("Adding engine relay to pipeline",
+		zap.String(core.CUUIDKey, lastComponent.UUID().String()),
+		zap.String(core.PUUIDKey, pl.uuid.String()))
 
 	return lastComponent.AddRelay(eir)
 }
@@ -68,6 +76,9 @@ func (pl *pipeline) AddEngineRelay(engineChan chan core.InvariantInput) error {
 func (pl *pipeline) RunPipeline(wg *sync.WaitGroup) error {
 	for _, comp := range pl.components {
 		wg.Add(1)
+		// NOTE - This is a hack and a bit leaky since
+		// we're teaching callee level absractions about the pipelines
+		// which they execute within.
 		comp.SetPUUID(pl.uuid)
 
 		go func(c component.Component, wg *sync.WaitGroup) {
@@ -89,7 +100,7 @@ func (pl *pipeline) RunPipeline(wg *sync.WaitGroup) error {
 	return nil
 }
 
-// Close ...
+// Close ... Closes all components in the pipeline
 func (pl *pipeline) Close() error {
 	for _, comp := range pl.components {
 		if comp.ActivityState() != component.Terminated {

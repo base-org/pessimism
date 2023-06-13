@@ -6,8 +6,7 @@ type RegisterType uint8
 const (
 	AccountBalance RegisterType = iota + 1
 	GethBlock
-	ContractCreateTX
-	BlackholeTX
+	EventLog
 )
 
 // String ... Returns string representation of a
@@ -15,16 +14,13 @@ const (
 func (rt RegisterType) String() string {
 	switch rt {
 	case AccountBalance:
-		return "account.balance"
+		return "account_balance"
 
 	case GethBlock:
-		return "geth.block"
+		return "geth_block"
 
-	case ContractCreateTX:
-		return "contract.create.tx"
-
-	case BlackholeTX:
-		return "blackhole.tx"
+	case EventLog:
+		return "event_log"
 	}
 
 	return UnknownType
@@ -34,11 +30,16 @@ func (rt RegisterType) String() string {
 // can be produced and consumed by heterogenous components
 type DataRegister struct {
 	Addressing bool
+	StateKey   StateKey
 
 	DataType             RegisterType
 	ComponentType        ComponentType
 	ComponentConstructor interface{}
 	Dependencies         []RegisterType
+}
+
+func (dr *DataRegister) Stateful() bool {
+	return dr.StateKey != NilStateKey()
 }
 
 // RegisterDependencyPath ... Represents an inclusive acyclic sequential

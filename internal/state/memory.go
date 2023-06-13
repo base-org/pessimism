@@ -4,11 +4,17 @@ import (
 	"context"
 	"fmt"
 	"sync"
+
+	"github.com/base-org/pessimism/internal/core"
 )
+
+/*
+	NOTE - This is a temporary implementation of the state store.
+*/
 
 // stateStore ... In memory state store
 type stateStore struct {
-	store map[string][]string
+	sliceStore map[string][]string
 
 	sync.RWMutex
 }
@@ -16,17 +22,17 @@ type stateStore struct {
 // NewMemState ... Initializer
 func NewMemState() Store {
 	return &stateStore{
-		store:   make(map[string][]string, 0),
-		RWMutex: sync.RWMutex{},
+		sliceStore: make(map[string][]string, 0),
+		RWMutex:    sync.RWMutex{},
 	}
 }
 
 // Get ... Fetches a string value slice from the store
-func (ss *stateStore) Get(_ context.Context, key string) ([]string, error) {
+func (ss *stateStore) GetSlice(_ context.Context, key core.StateKey) ([]string, error) {
 	ss.RLock()
 	defer ss.RUnlock()
 
-	val, exists := ss.store[key]
+	val, exists := ss.sliceStore[key.String()]
 	if !exists {
 		return []string{}, fmt.Errorf("could not find state store value for key %s", key)
 	}
@@ -34,32 +40,47 @@ func (ss *stateStore) Get(_ context.Context, key string) ([]string, error) {
 	return val, nil
 }
 
-// Set ... Appends a value to the store slice
-func (ss *stateStore) Set(_ context.Context, key string, value string) (string, error) {
+// SetSlice ... Appends a value to the store slice
+func (ss *stateStore) SetSlice(_ context.Context, key core.StateKey, value string) (string, error) {
 	ss.Lock()
 	defer ss.Unlock()
 
-	ss.store[key] = append(ss.store[key], value)
+	ss.sliceStore[key.String()] = append(ss.sliceStore[key.String()], value)
 
 	return value, nil
 }
 
 // Remove ... Removes a key entry from the store
-func (ss *stateStore) Remove(_ context.Context, key string) error {
+func (ss *stateStore) Remove(_ context.Context, key core.StateKey) error {
 	ss.Lock()
 	defer ss.Unlock()
 
-	delete(ss.store, key)
+	delete(ss.sliceStore, key.String())
 	return nil
 }
 
-// Merge ... Merges two keys together
-func (ss *stateStore) Merge(_ context.Context, key1, key2 string) error {
-	ss.Lock()
-	defer ss.Unlock()
+// GetNestedSubset ... Fetches a subset of a nested slice provided a nested
+// key/value pair (ie. filters the state object into a subset object that
+// contains only the values that match the nested key/value pair)
+func (ss *stateStore) GetNestedSubset(_ context.Context,
+	key core.StateKey) (map[string][]string, error) {
+	ss.RLock()
+	defer ss.RUnlock()
 
-	ss.store[key2] = append(ss.store[key2], ss.store[key1]...)
-	delete(ss.store, key1)
+	values, exists := ss.sliceStore[key.String()]
+	if !exists {
+		return map[string][]string{}, fmt.Errorf("could not find state store value for key %s", key)
+	}
 
-	return nil
+	var nestedMap = make(map[string][]string, 0)
+	for _, val := range values {
+		if _, exists := ss.sliceStore[val]; !exists {
+			return map[string][]string{}, fmt.Errorf("could not find state store value for key %s", key)
+		}
+
+		nestedValues := ss.sliceStore[val]
+		nestedMap[val] = nestedValues
+	}
+
+	return nestedMap, nil
 }

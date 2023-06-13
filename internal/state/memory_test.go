@@ -2,6 +2,7 @@ package state_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/base-org/pessimism/internal/state"
@@ -9,6 +10,12 @@ import (
 )
 
 func Test_MemState(t *testing.T) {
+
+	testKey := state.MakeKey(0, "test", false)
+	testValue := "0xabc"
+	testValue2 := "0xdef"
+
+	innerTestKey := state.MakeKey(0, "inner", false)
 
 	var tests = []struct {
 		name        string
@@ -24,13 +31,13 @@ func Test_MemState(t *testing.T) {
 			function:     "Set",
 			construction: state.NewMemState,
 			testLogic: func(t *testing.T, ss state.Store) {
-				_, err := ss.Set(context.Background(), "test", "test")
+				_, err := ss.SetSlice(context.Background(), testKey, testValue)
 				assert.NoError(t, err)
 
-				val, err := ss.Get(context.Background(), "test")
+				val, err := ss.GetSlice(context.Background(), testKey)
 
 				assert.NoError(t, err)
-				assert.Equal(t, []string{"test"}, val)
+				assert.Equal(t, []string{testValue}, val)
 			},
 		},
 		{
@@ -39,25 +46,7 @@ func Test_MemState(t *testing.T) {
 			function:     "Get",
 			construction: state.NewMemState,
 			testLogic: func(t *testing.T, ss state.Store) {
-				_, err := ss.Get(context.Background(), "test")
-				assert.Error(t, err)
-			},
-		},
-		{
-			name:        "Test_Get_Success",
-			description: "Test set when value is prepopulated",
-			function:    "Get",
-			construction: func() state.Store {
-				ss := state.NewMemState()
-				_, err := ss.Set(context.Background(), "0x123", "0xabc")
-				if err != nil {
-					panic(err)
-				}
-
-				return ss
-			},
-			testLogic: func(t *testing.T, ss state.Store) {
-				_, err := ss.Get(context.Background(), "test")
+				_, err := ss.GetSlice(context.Background(), testKey)
 				assert.Error(t, err)
 			},
 		},
@@ -67,7 +56,7 @@ func Test_MemState(t *testing.T) {
 			function:    "Remove",
 			construction: func() state.Store {
 				ss := state.NewMemState()
-				_, err := ss.Set(context.Background(), "0x123", "0xabc")
+				_, err := ss.SetSlice(context.Background(), testKey, testValue)
 				if err != nil {
 					panic(err)
 				}
@@ -75,14 +64,39 @@ func Test_MemState(t *testing.T) {
 				return ss
 			},
 			testLogic: func(t *testing.T, ss state.Store) {
-				err := ss.Remove(context.Background(), "0x123")
+				err := ss.Remove(context.Background(), testKey)
 				assert.NoError(t, err, "should not error")
+			},
+		},
+		{
+			name:        "Test_GetNestedSubset_Success",
+			description: "Test get nested subset",
+			function:    "GetNestedSubset",
+			construction: func() state.Store {
+				ss := state.NewMemState()
+				_, err := ss.SetSlice(context.Background(), testKey, innerTestKey.String())
+				if err != nil {
+					panic(err)
+				}
+
+				_, err = ss.SetSlice(context.Background(), innerTestKey, testValue2)
+				if err != nil {
+					panic(err)
+				}
+				return ss
+			},
+			testLogic: func(t *testing.T, ss state.Store) {
+				subGraph, err := ss.GetNestedSubset(context.Background(), testKey)
+				assert.NoError(t, err, "should not error")
+
+				assert.Contains(t, subGraph, innerTestKey.String(), "should contain inner key")
 			},
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	// TODO - Consider making generic test helpers for this
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("%d-%s-%s", i, test.name, test.function), func(t *testing.T) {
 			testState := test.construction()
 			test.testLogic(t, testState)
 		})

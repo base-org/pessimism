@@ -13,6 +13,7 @@ type Type int
 
 const (
 	HardCoded Type = iota
+	Dynamic
 )
 
 // RiskEngine ... Execution engine interface

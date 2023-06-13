@@ -79,7 +79,7 @@ func (irp *InvRequestParams) GeneratePipelineConfig(endpoint string, pollInterva
 		Network:      irp.NetworkType(),
 		DataType:     regType,
 		PipelineType: irp.PiplineType(),
-		OracleCfg: &core.OracleConfig{
+		ClientConfig: &core.ClientConfig{
 			RPCEndpoint:  endpoint,
 			PollInterval: pollInterval,
 			StartHeight:  irp.StartHeight,

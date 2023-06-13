@@ -62,12 +62,13 @@ func main() {
 	logger := logging.WithContext(appCtx)
 	logger.Info("Bootstrapping pessimsim monitoring application")
 	compRegistry := registry.NewRegistry()
+	analyzer := pipeline.NewAnalyzer(compRegistry)
 
 	alertCtx, alertCtxCancel := context.WithCancel(appCtx)
 	alertingManager, shutdownAlerting := initializeAlerting(alertCtx, cfg)
 
 	engineManager, shutDownEngine := engine.NewManager(appCtx, alertingManager.Transit())
-	etlManager, shutDownETL := pipeline.NewManager(appCtx, compRegistry, engineManager.Transit())
+	etlManager, shutDownETL := pipeline.NewManager(appCtx, analyzer, compRegistry, engineManager.Transit())
 
 	logger.Info("Starting and running risk engine manager instance")
 	engineCtx, engineCtxCancel := context.WithCancel(appCtx)

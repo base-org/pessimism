@@ -26,18 +26,20 @@ func Test_Manager(t *testing.T) {
 			description: "inferComponent function should generate pipe component instance provided valid params",
 
 			constructionLogic: func() Manager {
-				m, _ := NewManager(context.Background(), registry.NewRegistry(), nil)
+				reg := registry.NewRegistry()
+				m, _ := NewManager(context.Background(), NewAnalyzer(reg), reg, nil)
 				return m
 			},
 
 			testLogic: func(t *testing.T, m Manager) {
 				cUUID := core.MakeComponentUUID(1, 1, 1, 1)
 
-				register, err := registry.NewRegistry().GetRegister(core.ContractCreateTX)
+				register, err := registry.NewRegistry().GetRegister(core.GethBlock)
 
 				assert.NoError(t, err)
 
-				c, err := inferComponent(context.Background(), nil, cUUID, register)
+				cc := &core.ClientConfig{}
+				c, err := inferComponent(context.Background(), cc, cUUID, register)
 				assert.NoError(t, err)
 
 				assert.Equal(t, c.UUID(), cUUID)
