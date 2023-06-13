@@ -170,9 +170,7 @@ func NilStateKey() StateKey {
 }
 
 const (
-	// PrefixPipeline ...
-	PipelinePrefix = iota
-	AddressPrefix
+	AddressPrefix = iota + 1
 	NestedPrefix
 )
 

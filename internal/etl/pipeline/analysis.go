@@ -55,8 +55,7 @@ func (a *analyzer) Mergable(p1 Pipeline, p2 Pipeline) bool {
 		return false
 	}
 
-	// Invalid if pipelines do not share the same state key
-	return p1.UUID() != p2.UUID()
+	return true
 }
 
 // MergePipelines ... Merges two pipelines into one (p1 --merge-> p2)

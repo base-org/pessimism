@@ -27,7 +27,7 @@ type EventDefinition struct {
 	cfg    *core.ClientConfig
 }
 
-// ConfigureRoutine ... Sets up the oracle client connection and persists puuid to definition state
+// ConfigureRoutine ... Sets up the pipe client connection and persists puuid to definition state
 func (ed *EventDefinition) ConfigureRoutine(pUUID core.PipelineUUID) error {
 	ed.pUUID = pUUID
 	ed.sk = state.MakeKey(core.EventLog, core.AddressKey, true).
@@ -82,8 +82,8 @@ func (ed *EventDefinition) getEventsToMonitor(ctx context.Context, rt core.Regis
 	addresses []string, ss state.Store) ([]contractEvents, error) {
 	var events []contractEvents
 	for _, address := range addresses {
-		addressKey := state.MakeKey(rt, address, false).WithPUUID(ed.pUUID)
-		sigs, err := ss.GetSlice(ctx, addressKey)
+		addrKey := state.MakeKey(rt, address, false).WithPUUID(ed.pUUID)
+		sigs, err := ss.GetSlice(ctx, addrKey)
 		if err != nil {
 			logging.WithContext(ctx).Error(err.Error())
 			return []contractEvents{}, err
@@ -142,16 +142,16 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 		return []core.TransitData{}, err
 	}
 
-	returnVals := make([]core.TransitData, 0)
+	result := make([]core.TransitData, 0)
 	for _, log := range logs {
 		for _, event := range eventsToMonitor {
 			// Check if event is in the list of events to monitor
 			if event.address == log.Address && event.HasSignature(log.Topics[0]) {
-				returnVals = append(returnVals,
+				result = append(result,
 					core.NewTransitData(core.EventLog, log, core.WithAddress(log.Address)))
 			}
 		}
 	}
 
-	return returnVals, nil
+	return result, nil
 }
