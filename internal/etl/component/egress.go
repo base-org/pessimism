@@ -57,7 +57,7 @@ func (eh *egressHandler) SendBatch(dataSlice []core.TransitData) error {
 }
 
 // AddEgress ... Inserts a new egress given an ID and channel; fail on key collision
-func (eh *egressHandler) AddEgress(componentID core.ComponentUUID, outChan chan core.TransitData) error {
+func (eh *egressHandler) AddEgress(componentID core.CUUID, outChan chan core.TransitData) error {
 	if _, found := eh.egresses[componentID.PID]; found {
 		return fmt.Errorf(egressAlreadyExistsErr, componentID.String())
 	}
@@ -67,7 +67,7 @@ func (eh *egressHandler) AddEgress(componentID core.ComponentUUID, outChan chan 
 }
 
 // RemoveEgress ... Removes an egress given an ID; fail if no key found
-func (eh *egressHandler) RemoveEgress(componentID core.ComponentUUID) error {
+func (eh *egressHandler) RemoveEgress(componentID core.CUUID) error {
 	if _, found := eh.egresses[componentID.PID]; !found {
 		return fmt.Errorf(egressNotFoundErr, componentID.PID.String())
 	}

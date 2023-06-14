@@ -21,7 +21,7 @@ func Test_Store(t *testing.T) {
 			testLogic: func(t *testing.T) {
 				am := alert.NewStore()
 
-				sUUID := core.MakeInvSessionUUID(core.Layer1, core.Live, core.BalanceEnforcement)
+				sUUID := core.MakeSUUID(core.Layer1, core.Live, core.BalanceEnforcement)
 				alertDestination := core.Slack
 
 				err := am.AddAlertDestination(sUUID, alertDestination)
@@ -38,7 +38,7 @@ func Test_Store(t *testing.T) {
 			testLogic: func(t *testing.T) {
 				am := alert.NewStore()
 
-				sUUID := core.MakeInvSessionUUID(core.Layer1, core.Live, core.BalanceEnforcement)
+				sUUID := core.MakeSUUID(core.Layer1, core.Live, core.BalanceEnforcement)
 				alertDestination := core.Slack
 
 				err := am.AddAlertDestination(sUUID, alertDestination)

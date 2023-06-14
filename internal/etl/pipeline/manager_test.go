@@ -32,7 +32,7 @@ func Test_Manager(t *testing.T) {
 			},
 
 			testLogic: func(t *testing.T, m Manager) {
-				cUUID := core.MakeComponentUUID(1, 1, 1, 1)
+				cUUID := core.MakeCUUID(1, 1, 1, 1)
 
 				register, err := registry.NewRegistry().GetRegister(core.GethBlock)
 

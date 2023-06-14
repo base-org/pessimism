@@ -11,8 +11,8 @@ import (
 	"github.com/golang/mock/gomock"
 )
 
-func testSUUID1() core.InvSessionUUID {
-	return core.MakeInvSessionUUID(1, 1, 1)
+func testSUUID1() core.SUUID {
+	return core.MakeSUUID(1, 1, 1)
 }
 
 func testError1() error {

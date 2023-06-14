@@ -20,7 +20,7 @@ import (
 // TODO(#21): Verify config validity during Oracle construction
 // AddressBalanceODef ... Address register oracle definition used to drive oracle component
 type AddressBalanceODef struct {
-	pUUID      core.PipelineUUID
+	pUUID      core.PUUID
 	cfg        *core.ClientConfig
 	client     client.EthClientInterface
 	currHeight *big.Int
@@ -53,7 +53,7 @@ func NewAddressBalanceOracle(ctx context.Context, cfg *core.ClientConfig,
 }
 
 // ConfigureRoutine ... Sets up the oracle client connection and persists puuid to definition state
-func (oracle *AddressBalanceODef) ConfigureRoutine(pUUID core.PipelineUUID) error {
+func (oracle *AddressBalanceODef) ConfigureRoutine(pUUID core.PUUID) error {
 	oracle.pUUID = pUUID
 	oracle.sk = oracle.sk.WithPUUID(pUUID)
 

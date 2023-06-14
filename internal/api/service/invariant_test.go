@@ -75,7 +75,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
-					Return(core.NilPipelineUUID(), testErr1()).
+					Return(core.NilPUUID(), testErr1()).
 					Times(1)
 
 				return ts
@@ -102,7 +102,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
-					Return(core.NilPipelineUUID(), nil).
+					Return(core.NilPUUID(), nil).
 					Times(1)
 
 				ts.mockEtlMan.EXPECT().
@@ -134,7 +134,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
-					Return(core.NilPipelineUUID(), nil).
+					Return(core.NilPUUID(), nil).
 					Times(1)
 
 				ts.mockEtlMan.EXPECT().
@@ -145,7 +145,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 				ts.mockEngineMan.EXPECT().
 					DeployInvariantSession(gomock.Any(), gomock.Any(),
 						gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(core.NilInvariantUUID(), testErr2()).
+					Return(core.NilSUUID(), testErr2()).
 					Times(1)
 
 				return ts
@@ -177,7 +177,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
-					Return(core.NilPipelineUUID(), nil).
+					Return(core.NilPUUID(), nil).
 					Times(1)
 
 				ts.mockEtlMan.EXPECT().
@@ -188,11 +188,11 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 				ts.mockEngineMan.EXPECT().
 					DeployInvariantSession(gomock.Any(), gomock.Any(),
 						gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-					Return(core.NilInvariantUUID(), nil).
+					Return(core.NilSUUID(), nil).
 					Times(1)
 
 				ts.mockEtlMan.EXPECT().
-					RunPipeline(core.NilPipelineUUID()).
+					RunPipeline(core.NilPUUID()).
 					Return(testErr3()).
 					Times(1)
 
@@ -220,7 +220,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
-					Return(core.NilPipelineUUID(), nil).
+					Return(core.NilPUUID(), nil).
 					Times(1)
 
 				ts.mockEtlMan.EXPECT().
@@ -235,7 +235,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 					Times(1)
 
 				ts.mockEtlMan.EXPECT().
-					RunPipeline(core.NilPipelineUUID()).
+					RunPipeline(core.NilPUUID()).
 					Return(nil).
 					Times(1)
 

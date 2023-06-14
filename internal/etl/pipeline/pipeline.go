@@ -12,7 +12,7 @@ import (
 // Pipeline ... Pipeline interface
 type Pipeline interface {
 	Config() *core.PipelineConfig
-	UUID() core.PipelineUUID
+	UUID() core.PUUID
 	Close() error
 	Components() []component.Component
 	RunPipeline(wg *sync.WaitGroup) error
@@ -23,7 +23,7 @@ type Pipeline interface {
 // pipeline ... Pipeline implementation
 type pipeline struct {
 	cfg  *core.PipelineConfig
-	uuid core.PipelineUUID
+	uuid core.PUUID
 
 	aState ActivityState
 	pType  core.PipelineType //nolint:unused // will be implemented soon
@@ -32,7 +32,7 @@ type pipeline struct {
 }
 
 // NewPipeline ... Initializer
-func NewPipeline(cfg *core.PipelineConfig, pUUID core.PipelineUUID, comps []component.Component) (Pipeline, error) {
+func NewPipeline(cfg *core.PipelineConfig, pUUID core.PUUID, comps []component.Component) (Pipeline, error) {
 	pl := &pipeline{
 		cfg:        cfg,
 		uuid:       pUUID,
@@ -54,7 +54,7 @@ func (pl *pipeline) Components() []component.Component {
 }
 
 // UUID ... Returns pipeline UUID
-func (pl *pipeline) UUID() core.PipelineUUID {
+func (pl *pipeline) UUID() core.PUUID {
 	return pl.uuid
 }
 

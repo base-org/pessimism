@@ -22,7 +22,7 @@ func Test_Pipe_Event_Flow(t *testing.T) {
 	ts := time.Date(1969, time.April, 1, 4, 20, 0, 0, time.Local)
 
 	// Setup component dependencies
-	testID := core.MakeComponentUUID(6, 9, 6, 9)
+	testID := core.MakeCUUID(6, 9, 6, 9)
 
 	outputChan := make(chan core.TransitData)
 

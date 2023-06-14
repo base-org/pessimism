@@ -10,7 +10,7 @@ import (
 
 type PipeDefinition interface {
 	Transform(ctx context.Context, data core.TransitData) ([]core.TransitData, error)
-	ConfigureRoutine(pUUID core.PipelineUUID) error
+	ConfigureRoutine(pUUID core.PUUID) error
 }
 
 // Pipe ... Component used to represent any arbitrary computation; pipes must can read from all component types

@@ -19,13 +19,13 @@ type Component interface {
 		pipelines at once. In that case, we would need to store a slice
 		of PUUIDs instead.
 	*/
-	// PUUID ... Returns component's PipelineUUID
-	PUUID() core.PipelineUUID
-	// SetPUUID ... Sets component's PipelineUUID
-	SetPUUID(pUUID core.PipelineUUID)
+	// PUUID ... Returns component's PUUID
+	PUUID() core.PUUID
+	// SetPUUID ... Sets component's PUUID
+	SetPUUID(pUUID core.PUUID)
 
 	// UUID ...
-	UUID() core.ComponentUUID
+	UUID() core.CUUID
 	// Type ... Returns component enum type
 	Type() core.ComponentType
 
@@ -33,9 +33,9 @@ type Component interface {
 	AddRelay(relay *core.EngineInputRelay) error
 
 	// AddEgress ...
-	AddEgress(core.ComponentUUID, chan core.TransitData) error
+	AddEgress(core.CUUID, chan core.TransitData) error
 	// RemoveEgress ...
-	RemoveEgress(core.ComponentUUID) error
+	RemoveEgress(core.CUUID) error
 
 	// Close ... Signifies a component to stop operating
 	Close() error
@@ -57,8 +57,8 @@ type Component interface {
 
 // metaData ... Component agnostic struct that stores component metadata and routing state
 type metaData struct {
-	id    core.ComponentUUID
-	pUUID core.PipelineUUID
+	id    core.CUUID
+	pUUID core.PUUID
 
 	cType    core.ComponentType
 	output   core.RegisterType
@@ -78,8 +78,8 @@ type metaData struct {
 // newMetaData ... Initializer
 func newMetaData(ct core.ComponentType, ot core.RegisterType) *metaData {
 	return &metaData{
-		id:    core.NilComponentUUID(),
-		pUUID: core.NilPipelineUUID(),
+		id:    core.NilCUUID(),
+		pUUID: core.NilPUUID(),
 
 		cType:          ct,
 		egressHandler:  newEgressHandler(),
@@ -102,17 +102,17 @@ func (meta *metaData) StateKey() core.StateKey {
 	return meta.cacheKey
 }
 
-// UUID ... Returns component's ComponentUUID
-func (meta *metaData) UUID() core.ComponentUUID {
+// UUID ... Returns component's CUUID
+func (meta *metaData) UUID() core.CUUID {
 	return meta.id
 }
-func (meta *metaData) SetPUUID(pUUID core.PipelineUUID) {
+func (meta *metaData) SetPUUID(pUUID core.PUUID) {
 	meta.pUUID = pUUID
 }
 
-// UUID ... Returns component's PipelineUUID
+// UUID ... Returns component's PUUID
 // NOTE - This assumes that component collisions are impossible
-func (meta *metaData) PUUID() core.PipelineUUID {
+func (meta *metaData) PUUID() core.PUUID {
 	return meta.pUUID
 }
 
@@ -142,7 +142,7 @@ func (meta *metaData) emitStateChange(as ActivityState) {
 type Option = func(*metaData)
 
 // WithCUUID ... Passes component UUID to component metadata field
-func WithCUUID(id core.ComponentUUID) Option {
+func WithCUUID(id core.CUUID) Option {
 	return func(meta *metaData) {
 		meta.id = id
 	}

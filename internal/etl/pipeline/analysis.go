@@ -80,7 +80,7 @@ func (a *analyzer) MergePipelines(ctx context.Context, p1 Pipeline, p2 Pipeline)
 
 // mergeComponentState ... Merges state items from p2 into p1
 func (a *analyzer) mergeComponentState(ctx context.Context, compi, compj component.Component,
-	p1, p2 core.PipelineUUID) error {
+	p1, p2 core.PUUID) error {
 	ss, err := state.FromContext(ctx)
 	if err != nil {
 		return err
@@ -110,7 +110,7 @@ func (a *analyzer) mergeComponentState(ctx context.Context, compi, compj compone
 
 // MergeNestedStateKeys ... Merges nested state keys from p1 into p2
 func (a *analyzer) MergeNestedStateKeys(ctx context.Context, c1, c2 component.Component,
-	p1, p2 core.PipelineUUID, ss state.Store) error {
+	p1, p2 core.PUUID, ss state.Store) error {
 	items, err := ss.GetSlice(ctx, c1.StateKey())
 	if err != nil {
 		return err

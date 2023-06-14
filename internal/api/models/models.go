@@ -7,7 +7,7 @@ import (
 )
 
 // NewInvAcceptedResp ...Returns an invariant response with status accepted
-func NewInvAcceptedResp(id core.InvSessionUUID) *InvResponse {
+func NewInvAcceptedResp(id core.SUUID) *InvResponse {
 	return &InvResponse{
 		Status: OK,
 		Code:   http.StatusAccepted,

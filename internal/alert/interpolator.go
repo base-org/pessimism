@@ -26,7 +26,7 @@ const (
 
 // Interpolator ... Interface for interpolating messages
 type Interpolator interface {
-	InterpolateSlackMessage(sUUID core.InvSessionUUID, message string) string
+	InterpolateSlackMessage(sUUID core.SUUID, message string) string
 }
 
 // interpolator ... Interpolator implementation
@@ -38,7 +38,7 @@ func NewInterpolator() Interpolator {
 }
 
 // InterpolateSlackMessage ... Interpolates a slack message with the given invariant session UUID and message
-func (*interpolator) InterpolateSlackMessage(sUUID core.InvSessionUUID, message string) string {
+func (*interpolator) InterpolateSlackMessage(sUUID core.SUUID, message string) string {
 	return fmt.Sprintf(SlackMsgFmt,
 		sUUID.PID.InvType().String(),
 		sUUID.PID.Network(),

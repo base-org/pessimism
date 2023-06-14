@@ -39,7 +39,7 @@ func Test_ConfigureRoutine_Error(t *testing.T) {
 		testObj,
 		nil,
 	)
-	err := testOdef.ConfigureRoutine(core.NilPipelineUUID())
+	err := testOdef.ConfigureRoutine(core.NilPUUID())
 	assert.Error(t, err)
 	assert.EqualError(t, err, "error handle test")
 }
@@ -66,7 +66,7 @@ func Test_ConfigureRoutine_Pass(t *testing.T) {
 		testObj,
 		nil,
 	)
-	err := testOdef.ConfigureRoutine(core.NilPipelineUUID())
+	err := testOdef.ConfigureRoutine(core.NilPUUID())
 	assert.NoError(t, err)
 }
 

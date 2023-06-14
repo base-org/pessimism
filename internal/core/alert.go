@@ -12,8 +12,8 @@ type AlertingPolicy struct {
 // Alert ... An alert
 type Alert struct {
 	Dest      AlertDestination
-	PUUID     PipelineUUID
-	SUUID     InvSessionUUID
+	PUUID     PUUID
+	SUUID     SUUID
 	Timestamp time.Time
 	Ptype     PipelineType
 

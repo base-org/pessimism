@@ -13,6 +13,6 @@ func TestSessionStore(t *testing.T) {
 	ss := engine.NewSessionStore()
 
 	// Test GetInvSessionByUUID
-	_, err := ss.GetInvSessionByUUID(core.NilInvariantUUID())
+	_, err := ss.GetInvSessionByUUID(core.NilSUUID())
 	assert.Error(t, err, "should error")
 }

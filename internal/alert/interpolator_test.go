@@ -9,7 +9,7 @@ import (
 )
 
 func Test_InterpolateSlackMessage(t *testing.T) {
-	sUUID := core.NilInvariantUUID()
+	sUUID := core.NilSUUID()
 
 	msg := "Friedrich Nietzsche"
 

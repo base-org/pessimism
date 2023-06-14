@@ -46,7 +46,7 @@ type ComponentPID [4]byte
 
 // Represents a non-deterministic ID that's assigned to
 // every uniquely constructed ETL component
-type ComponentUUID struct {
+type CUUID struct {
 	PID  ComponentPID
 	UUID UUID
 }
@@ -56,7 +56,7 @@ type PipelinePID [9]byte
 
 // Represents a non-deterministic ID that's assigned to
 // every uniquely constructed ETL pipeline
-type PipelineUUID struct {
+type PUUID struct {
 	PID  PipelinePID
 	UUID UUID
 }
@@ -66,7 +66,7 @@ type InvSessionPID [3]byte
 
 // Represents a non-deterministic ID that's assigned to
 // every uniquely constructed invariant session
-type InvSessionUUID struct {
+type SUUID struct {
 	PID  InvSessionPID
 	UUID UUID
 }
@@ -83,32 +83,32 @@ func (pid InvSessionPID) InvType() InvariantType {
 
 // NOTE - This is useful for error handling with functions that
 // also return a ComponentID
-// NilCompID ... Returns a zero'd out or empty component UUID
-func NilComponentUUID() ComponentUUID {
-	return ComponentUUID{
+// NilCUUID ... Returns a zero'd out or empty component UUID
+func NilCUUID() CUUID {
+	return CUUID{
 		PID:  ComponentPID{0},
 		UUID: nilUUID(),
 	}
 }
 
-// NilCompID ... Returns a zero'd out or empty pipeline UUID
-func NilPipelineUUID() PipelineUUID {
-	return PipelineUUID{
+// NilPUUID ... Returns a zero'd out or empty pipeline UUID
+func NilPUUID() PUUID {
+	return PUUID{
 		PID:  PipelinePID{0},
 		UUID: nilUUID(),
 	}
 }
 
-// NilInvariantUUID ... Returns a zero'd out or empty invariant UUID
-func NilInvariantUUID() InvSessionUUID {
-	return InvSessionUUID{
+// NilSUUID ... Returns a zero'd out or empty invariant UUID
+func NilSUUID() SUUID {
+	return SUUID{
 		PID:  InvSessionPID{0},
 		UUID: nilUUID(),
 	}
 }
 
-// MakeComponentUUID ... Constructs a component PID sequence & random UUID
-func MakeComponentUUID(pt PipelineType, ct ComponentType, rt RegisterType, n Network) ComponentUUID {
+// MakeCUUID ... Constructs a component PID sequence & random UUID
+func MakeCUUID(pt PipelineType, ct ComponentType, rt RegisterType, n Network) CUUID {
 	cID := ComponentPID{
 		byte(n),
 		byte(pt),
@@ -116,14 +116,14 @@ func MakeComponentUUID(pt PipelineType, ct ComponentType, rt RegisterType, n Net
 		byte(rt),
 	}
 
-	return ComponentUUID{
+	return CUUID{
 		PID:  cID,
 		UUID: newUUID(),
 	}
 }
 
-// MakePipelineUUID ... Constructs a pipeline PID sequence & random UUID
-func MakePipelineUUID(pt PipelineType, firstCID, lastCID ComponentUUID) PipelineUUID {
+// MakePUUID ... Constructs a pipeline PID sequence & random UUID
+func MakePUUID(pt PipelineType, firstCID, lastCID CUUID) PUUID {
 	cID1, cID2 := firstCID.PID, lastCID.PID
 
 	pID := PipelinePID{
@@ -138,21 +138,21 @@ func MakePipelineUUID(pt PipelineType, firstCID, lastCID ComponentUUID) Pipeline
 		cID2[3],
 	}
 
-	return PipelineUUID{
+	return PUUID{
 		PID:  pID,
 		UUID: newUUID(),
 	}
 }
 
-// MakeInvSessionUUID ... Constructs an invariant PID sequence & random UUID
-func MakeInvSessionUUID(n Network, pt PipelineType, invType InvariantType) InvSessionUUID {
+// MakeSUUID ... Constructs an invariant PID sequence & random UUID
+func MakeSUUID(n Network, pt PipelineType, invType InvariantType) SUUID {
 	pID := InvSessionPID{
 		byte(n),
 		byte(pt),
 		byte(invType),
 	}
 
-	return InvSessionUUID{
+	return SUUID{
 		PID:  pID,
 		UUID: newUUID(),
 	}
@@ -169,7 +169,7 @@ func (pid ComponentPID) String() string {
 }
 
 // String ... Returns string representation of a component UUID
-func (uuid ComponentUUID) String() string {
+func (uuid CUUID) String() string {
 	return fmt.Sprintf("%s::%s",
 		uuid.PID.String(),
 		uuid.UUID.ShortString(),
@@ -177,7 +177,7 @@ func (uuid ComponentUUID) String() string {
 }
 
 // Type ... Returns component type byte value from component UUID
-func (uuid ComponentUUID) Type() ComponentType {
+func (uuid CUUID) Type() ComponentType {
 	return ComponentType(uuid.PID[2])
 }
 
@@ -191,7 +191,7 @@ func (pid PipelinePID) String() string {
 }
 
 // String ... Returns string representation of a pipeline UUID
-func (uuid PipelineUUID) String() string {
+func (uuid PUUID) String() string {
 	return fmt.Sprintf("%s:::%s",
 		uuid.PID.String(), uuid.UUID.ShortString(),
 	)
@@ -207,7 +207,7 @@ func (pid InvSessionPID) String() string {
 }
 
 // String ... Returns string reprsentation of an invariant session UUID
-func (uuid InvSessionUUID) String() string {
+func (uuid SUUID) String() string {
 	return fmt.Sprintf("%s::%s",
 		uuid.PID.String(), uuid.UUID.ShortString())
 }

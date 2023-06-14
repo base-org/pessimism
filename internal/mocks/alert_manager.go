@@ -36,7 +36,7 @@ func (m *AlertManager) EXPECT() *AlertManagerMockRecorder {
 }
 
 // AddInvariantSession mocks base method.
-func (m *AlertManager) AddInvariantSession(arg0 core.InvSessionUUID, arg1 core.AlertDestination) error {
+func (m *AlertManager) AddInvariantSession(arg0 core.SUUID, arg1 core.AlertDestination) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddInvariantSession", arg0, arg1)
 	ret0, _ := ret[0].(error)

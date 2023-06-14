@@ -17,8 +17,8 @@ import (
 // Manager ... ETL manager interface
 type Manager interface {
 	GetRegister(rt core.RegisterType) (*core.DataRegister, error)
-	CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error)
-	RunPipeline(pID core.PipelineUUID) error
+	CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, error)
+	RunPipeline(pID core.PUUID) error
 	EventLoop(ctx context.Context) error
 }
 
@@ -78,21 +78,21 @@ func (em *etlManager) GetRegister(rt core.RegisterType) (*core.DataRegister, err
 }
 
 // CreateDataPipeline ... Creates an ETL data pipeline provided a pipeline configuration
-func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error) {
+func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, error) {
 	// NOTE - If some of these early sub-system operations succeed but lower function
 	// code logic fails, then some rollback will need be triggered to undo prior applied state operations
 	logger := logging.WithContext(em.ctx)
 
 	depPath, err := em.registry.GetDependencyPath(cfg.DataType)
 	if err != nil {
-		return core.NilPipelineUUID(), err
+		return core.NilPUUID(), err
 	}
 
-	pUUID := depPath.GeneratePipelineUUID(cfg.PipelineType, cfg.Network)
+	pUUID := depPath.GeneratePUUID(cfg.PipelineType, cfg.Network)
 
 	components, err := em.getComponents(cfg, depPath)
 	if err != nil {
-		return core.NilPipelineUUID(), err
+		return core.NilPUUID(), err
 	}
 
 	logger.Debug("constructing pipeline",
@@ -100,25 +100,25 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.Pipelin
 
 	pipeline, err := NewPipeline(cfg, pUUID, components)
 	if err != nil {
-		return core.NilPipelineUUID(), err
+		return core.NilPUUID(), err
 	}
 
 	mPUUID, err := em.getMergeUUID(pUUID, pipeline)
 	if err != nil {
-		return core.NilPipelineUUID(), err
+		return core.NilPUUID(), err
 	}
 
-	if mPUUID != core.NilPipelineUUID() { // Pipeline is mergable
+	if mPUUID != core.NilPUUID() { // Pipeline is mergable
 		return pUUID, nil
 	}
 
 	// Bind communication route between pipeline and risk engine
 	if err := pipeline.AddEngineRelay(em.engineChan); err != nil {
-		return core.NilPipelineUUID(), err
+		return core.NilPUUID(), err
 	}
 
 	if err := em.dag.AddComponents(pipeline.Components()); err != nil {
-		return core.NilPipelineUUID(), err
+		return core.NilPUUID(), err
 	}
 
 	em.store.AddPipeline(pUUID, pipeline)
@@ -131,7 +131,7 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.Pipelin
 }
 
 // RunPipeline ... Runs pipeline session for some provided pUUID
-func (em *etlManager) RunPipeline(pUUID core.PipelineUUID) error {
+func (em *etlManager) RunPipeline(pUUID core.PUUID) error {
 	pipeline, err := em.store.GetPipelineFromPUUID(pUUID)
 	if err != nil {
 		return err
@@ -158,10 +158,10 @@ func (em *etlManager) EventLoop(ctx context.Context) error {
 func (em *etlManager) getComponents(cfg *core.PipelineConfig,
 	depPath core.RegisterDependencyPath) ([]component.Component, error) {
 	components := make([]component.Component, 0)
-	// prevUUID := core.NilComponentUUID()
+	// prevUUID := core.NilCUUID()
 
 	for _, register := range depPath.Path {
-		cUUID := core.MakeComponentUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
+		cUUID := core.MakeCUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
 
 		c, err := inferComponent(em.ctx, cfg.ClientConfig, cUUID, register)
 		if err != nil {
@@ -174,13 +174,13 @@ func (em *etlManager) getComponents(cfg *core.PipelineConfig,
 	return components, nil
 }
 
-func (em *etlManager) getMergeUUID(pUUID core.PipelineUUID, pipeline Pipeline) (core.PipelineUUID, error) {
+func (em *etlManager) getMergeUUID(pUUID core.PUUID, pipeline Pipeline) (core.PUUID, error) {
 	pipelines := em.store.GetExistingPipelinesByPID(pUUID.PID)
 
 	for _, pl := range pipelines {
 		p, err := em.store.GetPipelineFromPUUID(pl)
 		if err != nil {
-			return core.NilPipelineUUID(), err
+			return core.NilPUUID(), err
 		}
 
 		if em.analyzer.Mergable(pipeline, p) { // Deploy invariants to existing pipelines instead
@@ -189,11 +189,11 @@ func (em *etlManager) getMergeUUID(pUUID core.PipelineUUID, pipeline Pipeline) (
 		}
 	}
 
-	return core.NilPipelineUUID(), nil
+	return core.NilPUUID(), nil
 }
 
 // inferComponent ... Constructs a component provided a data register definition
-func inferComponent(ctx context.Context, cc *core.ClientConfig, cUUID core.ComponentUUID,
+func inferComponent(ctx context.Context, cc *core.ClientConfig, cUUID core.CUUID,
 	register *core.DataRegister) (component.Component, error) {
 	logging.WithContext(ctx).Debug("constructing component",
 		zap.String("type", register.ComponentType.String()),

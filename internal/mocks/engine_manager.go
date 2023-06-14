@@ -36,10 +36,10 @@ func (m *EngineManager) EXPECT() *EngineManagerMockRecorder {
 }
 
 // DeleteInvariantSession mocks base method.
-func (m *EngineManager) DeleteInvariantSession(arg0 core.InvSessionUUID) (core.InvSessionUUID, error) {
+func (m *EngineManager) DeleteInvariantSession(arg0 core.SUUID) (core.SUUID, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteInvariantSession", arg0)
-	ret0, _ := ret[0].(core.InvSessionUUID)
+	ret0, _ := ret[0].(core.SUUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -51,10 +51,10 @@ func (mr *EngineManagerMockRecorder) DeleteInvariantSession(arg0 interface{}) *g
 }
 
 // DeployInvariantSession mocks base method.
-func (m *EngineManager) DeployInvariantSession(arg0 core.Network, arg1 core.PipelineUUID, arg2 core.InvariantType, arg3 core.PipelineType, arg4 core.InvSessionParams, arg5 *core.DataRegister) (core.InvSessionUUID, error) {
+func (m *EngineManager) DeployInvariantSession(arg0 core.Network, arg1 core.PUUID, arg2 core.InvariantType, arg3 core.PipelineType, arg4 core.InvSessionParams, arg5 *core.DataRegister) (core.SUUID, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeployInvariantSession", arg0, arg1, arg2, arg3, arg4, arg5)
-	ret0, _ := ret[0].(core.InvSessionUUID)
+	ret0, _ := ret[0].(core.SUUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

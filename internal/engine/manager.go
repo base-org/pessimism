@@ -21,9 +21,9 @@ type Manager interface {
 	EventLoop(ctx context.Context) error
 
 	// TODO( ) : Session deletion logic
-	DeleteInvariantSession(core.InvSessionUUID) (core.InvSessionUUID, error)
-	DeployInvariantSession(n core.Network, pUUUID core.PipelineUUID, it core.InvariantType,
-		pt core.PipelineType, invParams core.InvSessionParams, register *core.DataRegister) (core.InvSessionUUID, error)
+	DeleteInvariantSession(core.SUUID) (core.SUUID, error)
+	DeployInvariantSession(n core.Network, pUUUID core.PUUID, it core.InvariantType,
+		pt core.PipelineType, invParams core.InvSessionParams, register *core.DataRegister) (core.SUUID, error)
 }
 
 /*
@@ -68,15 +68,15 @@ func (em *engineManager) Transit() chan core.InvariantInput {
 }
 
 // DeleteInvariantSession ... Deletes an invariant session
-func (em *engineManager) DeleteInvariantSession(_ core.InvSessionUUID) (core.InvSessionUUID, error) {
-	return core.NilInvariantUUID(), nil
+func (em *engineManager) DeleteInvariantSession(_ core.SUUID) (core.SUUID, error) {
+	return core.NilSUUID(), nil
 }
 
 // updateSharedState ... Updates the shared state store
 // with contextual information about the invariant session
 // to the ETL (e.g. address, events)
 func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
-	register *core.DataRegister, pUUID core.PipelineUUID) error {
+	register *core.DataRegister, pUUID core.PUUID) error {
 	stateStore, err := state.FromContext(em.ctx)
 	if err != nil {
 		return err
@@ -108,25 +108,25 @@ func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
 }
 
 // DeployInvariantSession ... Deploys an invariant session to be processed by the engine
-func (em *engineManager) DeployInvariantSession(n core.Network, pUUUID core.PipelineUUID, it core.InvariantType,
-	pt core.PipelineType, invParams core.InvSessionParams, register *core.DataRegister) (core.InvSessionUUID, error) {
+func (em *engineManager) DeployInvariantSession(n core.Network, pUUUID core.PUUID, it core.InvariantType,
+	pt core.PipelineType, invParams core.InvSessionParams, register *core.DataRegister) (core.SUUID, error) {
 	inv, err := registry.GetInvariant(it, invParams)
 	if err != nil {
-		return core.NilInvariantUUID(), err
+		return core.NilSUUID(), err
 	}
 
-	sUUID := core.MakeInvSessionUUID(n, pt, it)
+	sUUID := core.MakeSUUID(n, pt, it)
 	inv.SetSUUID(sUUID)
 
 	err = em.store.AddInvSession(sUUID, pUUUID, inv)
 	if err != nil {
-		return core.NilInvariantUUID(), err
+		return core.NilSUUID(), err
 	}
 
 	if register.Addressing {
 		err = em.updateSharedState(invParams, register, pUUUID)
 		if err != nil {
-			return core.NilInvariantUUID(), err
+			return core.NilSUUID(), err
 		}
 	}
 

@@ -12,7 +12,7 @@ import (
 
 // OracleDefinition ... Provides a generalized interface for developers to bind their own functionality to
 type OracleDefinition interface {
-	ConfigureRoutine(pUUID core.PipelineUUID) error
+	ConfigureRoutine(pUUID core.PUUID) error
 	BackTestRoutine(ctx context.Context, componentChan chan core.TransitData,
 		startHeight *big.Int, endHeight *big.Int) error
 	ReadRoutine(ctx context.Context, componentChan chan core.TransitData) error

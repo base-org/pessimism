@@ -21,7 +21,7 @@ const (
 // TODO(#21): Verify config validity during Oracle construction
 // GethBlockODef ...GethBlock register oracle definition used to drive oracle component
 type GethBlockODef struct {
-	cUUID      core.ComponentUUID
+	cUUID      core.CUUID
 	cfg        *core.ClientConfig
 	client     client.EthClientInterface
 	currHeight *big.Int
@@ -52,7 +52,7 @@ func NewGethBlockOracle(ctx context.Context, cfg *core.ClientConfig,
 }
 
 // ConfigureRoutine ... Sets up the oracle client connection and persists puuid to definition state
-func (oracle *GethBlockODef) ConfigureRoutine(core.PipelineUUID) error {
+func (oracle *GethBlockODef) ConfigureRoutine(core.PUUID) error {
 	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
 		time.Second*time.Duration(core.EthClientTimeout))
 	defer ctxCancel()

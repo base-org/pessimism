@@ -12,10 +12,10 @@ import (
 )
 
 var (
-	nilPID = core.MakePipelineUUID(0, core.NilComponentUUID(), core.NilComponentUUID())
+	nilPID = core.MakePUUID(0, core.NilCUUID(), core.NilCUUID())
 
-	cID1 = core.MakeComponentUUID(0, 0, 0, 0)
-	cID2 = core.MakeComponentUUID(0, 0, 0, 0)
+	cID1 = core.MakeCUUID(0, 0, 0, 0)
+	cID2 = core.MakeCUUID(0, 0, 0, 0)
 )
 
 func getTestPipeLine(ctx context.Context) Pipeline {
@@ -35,7 +35,7 @@ func getTestPipeLine(ctx context.Context) Pipeline {
 		p2,
 	}
 
-	pipeLine, err := NewPipeline(&core.PipelineConfig{}, core.NilPipelineUUID(), comps)
+	pipeLine, err := NewPipeline(&core.PipelineConfig{}, core.NilPUUID(), comps)
 	if err != nil {
 		panic(err)
 	}
@@ -63,23 +63,23 @@ func Test_EtlStore(t *testing.T) {
 				testRegistry := newEtlStore()
 				testPipeLine := getTestPipeLine(ctx)
 
-				testRegistry.AddPipeline(core.NilPipelineUUID(), testPipeLine)
+				testRegistry.AddPipeline(core.NilPUUID(), testPipeLine)
 				return testRegistry
 			},
 			testLogic: func(t *testing.T, store EtlStore) {
 				ctx := context.Background()
 				testPipeLine := getTestPipeLine(ctx)
 
-				pID2 := core.MakePipelineUUID(
+				pID2 := core.MakePUUID(
 					0,
-					core.MakeComponentUUID(0, 0, 0, 1),
-					core.MakeComponentUUID(0, 0, 0, 1),
+					core.MakeCUUID(0, 0, 0, 1),
+					core.MakeCUUID(0, 0, 0, 1),
 				)
 
 				store.AddPipeline(pID2, testPipeLine)
 
 				for _, comp := range testPipeLine.Components() {
-					pIDs, err := store.GetPipelineUUIDs(comp.UUID())
+					pIDs, err := store.GetPUUIDs(comp.UUID())
 
 					assert.NoError(t, err)
 					assert.Len(t, pIDs, 2)
@@ -102,16 +102,16 @@ func Test_EtlStore(t *testing.T) {
 				ctx := context.Background()
 				testPipeLine := getTestPipeLine(ctx)
 
-				pID := core.MakePipelineUUID(
+				pID := core.MakePUUID(
 					0,
-					core.MakeComponentUUID(0, 0, 0, 1),
-					core.MakeComponentUUID(0, 0, 0, 1),
+					core.MakeCUUID(0, 0, 0, 1),
+					core.MakeCUUID(0, 0, 0, 1),
 				)
 
 				store.AddPipeline(pID, testPipeLine)
 
 				for _, comp := range testPipeLine.Components() {
-					pIDs, err := store.GetPipelineUUIDs(comp.UUID())
+					pIDs, err := store.GetPUUIDs(comp.UUID())
 
 					assert.NoError(t, err)
 					assert.Len(t, pIDs, 1)
@@ -127,13 +127,13 @@ func Test_EtlStore(t *testing.T) {
 
 			constructionLogic: newEtlStore,
 			testLogic: func(t *testing.T, store EtlStore) {
-				cID := core.MakeComponentUUID(0, 0, 0, 0)
-				pID := core.MakePipelineUUID(0, cID, cID)
+				cID := core.MakeCUUID(0, 0, 0, 0)
+				pID := core.MakePUUID(0, cID, cID)
 
 				store.AddComponentLink(cID, pID)
 
-				expectedIDs := []core.PipelineUUID{pID}
-				actualIDs, err := store.GetPipelineUUIDs(cID)
+				expectedIDs := []core.PUUID{pID}
+				actualIDs, err := store.GetPUUIDs(cID)
 
 				assert.NoError(t, err)
 				assert.Equal(t, expectedIDs, actualIDs)
@@ -147,9 +147,9 @@ func Test_EtlStore(t *testing.T) {
 
 			constructionLogic: newEtlStore,
 			testLogic: func(t *testing.T, store EtlStore) {
-				cID := core.MakeComponentUUID(0, 0, 0, 0)
+				cID := core.MakeCUUID(0, 0, 0, 0)
 
-				_, err := store.GetPipelineUUIDs(cID)
+				_, err := store.GetPUUIDs(cID)
 
 				assert.Error(t, err)
 			},
@@ -161,8 +161,8 @@ func Test_EtlStore(t *testing.T) {
 
 			constructionLogic: newEtlStore,
 			testLogic: func(t *testing.T, store EtlStore) {
-				cID := core.MakeComponentUUID(0, 0, 0, 0)
-				pID := core.MakePipelineUUID(0, cID, cID)
+				cID := core.MakeCUUID(0, 0, 0, 0)
+				pID := core.MakePUUID(0, cID, cID)
 
 				_, err := store.GetPipelineFromPUUID(pID)
 				assert.Error(t, err)
@@ -179,14 +179,14 @@ func Test_EtlStore(t *testing.T) {
 				return store
 			},
 			testLogic: func(t *testing.T, store EtlStore) {
-				cID := core.MakeComponentUUID(0, 0, 0, 0)
-				pID := core.MakePipelineUUID(0, cID, cID)
+				cID := core.MakeCUUID(0, 0, 0, 0)
+				pID := core.MakePUUID(0, cID, cID)
 
 				pLine := getTestPipeLine(context.Background())
 
 				store.AddPipeline(pID, pLine)
 
-				pID2 := core.MakePipelineUUID(0, cID, cID)
+				pID2 := core.MakePUUID(0, cID, cID)
 				_, err := store.GetPipelineFromPUUID(pID2)
 
 				assert.Error(t, err)
@@ -203,8 +203,8 @@ func Test_EtlStore(t *testing.T) {
 				return store
 			},
 			testLogic: func(t *testing.T, store EtlStore) {
-				cID := core.MakeComponentUUID(0, 0, 0, 0)
-				pID := core.MakePipelineUUID(0, cID, cID)
+				cID := core.MakeCUUID(0, 0, 0, 0)
+				pID := core.MakePUUID(0, cID, cID)
 
 				expectedPline := getTestPipeLine(context.Background())
 
@@ -226,8 +226,8 @@ func Test_EtlStore(t *testing.T) {
 				return store
 			},
 			testLogic: func(t *testing.T, store EtlStore) {
-				cID := core.MakeComponentUUID(0, 0, 0, 0)
-				pID := core.MakePipelineUUID(0, cID, cID)
+				cID := core.MakeCUUID(0, 0, 0, 0)
+				pID := core.MakePUUID(0, cID, cID)
 
 				expectedPline := getTestPipeLine(context.Background())
 

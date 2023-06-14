@@ -12,7 +12,7 @@ type mockPipeDefinition struct {
 }
 
 // ConfigureRoutine ... Mocked configure routine function that returns nil
-func (md *mockPipeDefinition) ConfigureRoutine(core.PipelineUUID) error {
+func (md *mockPipeDefinition) ConfigureRoutine(core.PUUID) error {
 	return nil
 }
 
