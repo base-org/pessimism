@@ -45,8 +45,8 @@ func loadBootStrapFile(path string) ([]BootSession, error) {
 func bootStrap(ctx context.Context, svc service.Service, sessions []BootSession) error {
 	logger := logging.WithContext(ctx)
 
-	for _, param := range sessions {
-		sUUID, err := svc.RunInvariantSession(param)
+	for _, session := range sessions {
+		sUUID, err := svc.RunInvariantSession(session)
 		if err != nil {
 			return err
 		}

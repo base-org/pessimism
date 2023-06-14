@@ -29,21 +29,20 @@ type AddressBalanceODef struct {
 
 // NewAddressBalanceODef ... Initializer for address.balance oracle definition
 func NewAddressBalanceODef(cfg *core.ClientConfig, client client.EthClientInterface,
-	h *big.Int, sk core.StateKey) *AddressBalanceODef {
+	h *big.Int) *AddressBalanceODef {
 	return &AddressBalanceODef{
 		cfg:        cfg,
 		client:     client,
 		currHeight: h,
-		sk:         sk,
 	}
 }
 
 // NewAddressBalanceOracle ... Initializer for address.balance oracle component
 func NewAddressBalanceOracle(ctx context.Context, cfg *core.ClientConfig,
-	sk core.StateKey, opts ...component.Option) (component.Component, error) {
+	opts ...component.Option) (component.Component, error) {
 	client := client.NewEthClient()
 
-	od := NewAddressBalanceODef(cfg, client, nil, sk)
+	od := NewAddressBalanceODef(cfg, client, nil)
 	o, err := component.NewOracle(ctx, core.GethBlock, od, opts...)
 	if err != nil {
 		return nil, err
@@ -55,8 +54,6 @@ func NewAddressBalanceOracle(ctx context.Context, cfg *core.ClientConfig,
 // ConfigureRoutine ... Sets up the oracle client connection and persists puuid to definition state
 func (oracle *AddressBalanceODef) ConfigureRoutine(pUUID core.PUUID) error {
 	oracle.pUUID = pUUID
-	oracle.sk = oracle.sk.WithPUUID(pUUID)
-
 	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
 		time.Second*time.Duration(core.EthClientTimeout))
 	defer ctxCancel()
