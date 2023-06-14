@@ -53,6 +53,8 @@ func (cfg *Config) GetPollIntervalForNetwork(n core.Network) (time.Duration, err
 // Service ... Interface for API service
 type Service interface {
 	ProcessInvariantRequest(ir models.InvRequestBody) (core.InvSessionUUID, error)
+	RunInvariantSession(params models.InvRequestParams) (core.InvSessionUUID, error)
+
 	CheckHealth() *models.HealthCheck
 }
 
@@ -61,13 +63,13 @@ type PessimismService struct {
 	ctx context.Context
 	cfg *Config
 
-	alertManager  alert.AlertingManager
+	alertManager  alert.Manager
 	etlManager    pipeline.Manager
 	engineManager engine.Manager
 }
 
 // New ... Initializer
-func New(ctx context.Context, cfg *Config, alertManager alert.AlertingManager, etlManager pipeline.Manager,
+func New(ctx context.Context, cfg *Config, alertManager alert.Manager, etlManager pipeline.Manager,
 	engineManager engine.Manager) *PessimismService {
 	return &PessimismService{
 		ctx: ctx,

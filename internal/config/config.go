@@ -30,7 +30,8 @@ const (
 // Config ... Application level configuration defined by `FilePath` value
 // TODO - Consider renaming to "environment config"
 type Config struct {
-	Environment Env
+	Environment   Env
+	BootStrapPath string
 
 	// TODO - Consider moving this URL to a more appropriate location
 	SlackURL string
@@ -48,9 +49,9 @@ func NewConfig(fileName FilePath) *Config {
 	}
 
 	config := &Config{
-
-		Environment: Env(getEnvStr("ENV")),
-		SlackURL:    getEnvStrWithDefault("SLACK_URL", ""),
+		BootStrapPath: getEnvStrWithDefault("BOOTSTRAP_PATH", ""),
+		Environment:   Env(getEnvStr("ENV")),
+		SlackURL:      getEnvStrWithDefault("SLACK_URL", ""),
 
 		SvcConfig: &service.Config{
 			L1RpcEndpoint:  getEnvStr("L1_RPC_ENDPOINT"),
@@ -94,6 +95,11 @@ func (cfg *Config) IsDevelopment() bool {
 // IsLocal ... Returns true if the env is local
 func (cfg *Config) IsLocal() bool {
 	return cfg.Environment == Local
+}
+
+// IsBootstrap ... Returns true if a state bootstrap is required
+func (cfg *Config) IsBootstrap() bool {
+	return cfg.BootStrapPath != ""
 }
 
 // getEnvStr ... Reads env var from process environment, panics if not found

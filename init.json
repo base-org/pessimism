@@ -1,0 +1,13 @@
+[
+    {
+        "network": "layer1",
+        "pipeline_type": "live",
+        "type": "contract_event", 
+        "start_height": null,
+        "alert_destination": "slack",
+        "invariant_params": {
+            "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "args": ["Transfer(address,address,uint256)"]
+       }
+    }
+]

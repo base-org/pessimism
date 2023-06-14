@@ -27,10 +27,9 @@ const (
 )
 
 // initializeServer ... Performs dependency injection to build server struct
-func initializeServer(ctx context.Context, cfg *config.Config, alertMan alert.AlertingManager,
+func initializeServer(ctx context.Context, cfg *config.Config, svc service.Service, alertMan alert.Manager,
 	etlMan pipeline.Manager, engineMan engine.Manager) (*server.Server, func(), error) {
-	apiService := service.New(ctx, cfg.SvcConfig, alertMan, etlMan, engineMan)
-	handler, err := handlers.New(ctx, apiService)
+	handler, err := handlers.New(ctx, svc)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -43,7 +42,7 @@ func initializeServer(ctx context.Context, cfg *config.Config, alertMan alert.Al
 }
 
 // initializeAlerting ... Performs dependency injection to build alerting struct
-func initializeAlerting(ctx context.Context, cfg *config.Config) (alert.AlertingManager, func()) {
+func initializeAlerting(ctx context.Context, cfg *config.Config) (alert.Manager, func()) {
 	sc := client.NewSlackClient(cfg.SlackURL)
 	return alert.NewManager(ctx, sc)
 }
@@ -65,19 +64,21 @@ func main() {
 	analyzer := pipeline.NewAnalyzer(compRegistry)
 
 	alertCtx, alertCtxCancel := context.WithCancel(appCtx)
-	alertingManager, shutdownAlerting := initializeAlerting(alertCtx, cfg)
+	alertMan, shutdownAlerting := initializeAlerting(alertCtx, cfg)
 
-	engineManager, shutDownEngine := engine.NewManager(appCtx, alertingManager.Transit())
-	etlManager, shutDownETL := pipeline.NewManager(appCtx, analyzer, compRegistry, engineManager.Transit())
+	engineMan, shutDownEngine := engine.NewManager(appCtx, alertMan.Transit())
+	etlMan, shutDownETL := pipeline.NewManager(appCtx, analyzer, compRegistry, engineMan.Transit())
+
+	svc := service.New(appCtx, cfg.SvcConfig, alertMan, etlMan, engineMan)
 
 	logger.Info("Starting and running risk engine manager instance")
 	engineCtx, engineCtxCancel := context.WithCancel(appCtx)
 
 	appWg.Add(1)
-	go func() { // EtlManager driver thread
+	go func() { // etlMan driver thread
 		defer appWg.Done()
 
-		if err := etlManager.EventLoop(appCtx); err != nil {
+		if err := etlMan.EventLoop(appCtx); err != nil {
 			logger.Error("etl manager event loop error", zap.Error(err))
 		}
 	}()
@@ -85,10 +86,10 @@ func main() {
 	logger.Info("Starting and running ETL manager instance")
 
 	appWg.Add(1)
-	go func() { // EngineManager driver thread
+	go func() { // engineMan driver thread
 		defer appWg.Done()
 
-		if err := engineManager.EventLoop(engineCtx); err != nil {
+		if err := engineMan.EventLoop(engineCtx); err != nil {
 			logger.Error("engine manager event loop error", zap.Error(err))
 		}
 	}()
@@ -97,7 +98,7 @@ func main() {
 	go func() { // AlertManager driver thread
 		defer appWg.Done()
 
-		if err := alertingManager.EventLoop(alertCtx); err != nil {
+		if err := alertMan.EventLoop(alertCtx); err != nil {
 			logger.Error("alert manager event loop error", zap.Error(err))
 		}
 	}()
@@ -106,8 +107,8 @@ func main() {
 	go func() { // ApiServer driver thread
 		defer appWg.Done()
 
-		apiServer, shutDownServer, err := initializeServer(appCtx, cfg, alertingManager,
-			etlManager, engineManager)
+		apiServer, shutDownServer, err := initializeServer(appCtx, cfg, svc, alertMan,
+			etlMan, engineMan)
 
 		if err != nil {
 			logger.Error("Error obtained trying to start server", zap.Error(err))
@@ -134,6 +135,22 @@ func main() {
 			logger.Info("Shutdown API server")
 		})
 	}()
+
+	if cfg.IsBootstrap() {
+		logger.Debug("Bootstrapping application state")
+
+		sessions, err := loadBootStrapFile(cfg.BootStrapPath)
+		if err != nil {
+			logger.Error("Error loading bootstrap file", zap.Error(err))
+			panic(err)
+		}
+
+		if err := bootStrap(appCtx, svc, sessions); err != nil {
+			logger.Error("Error bootstrapping application state", zap.Error(err))
+			panic(err)
+		}
+
+	}
 
 	logger.Debug("Waiting for all application threads to end")
 	appWg.Wait()

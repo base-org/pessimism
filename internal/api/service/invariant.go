@@ -11,15 +11,15 @@ import (
 // ProcessInvariantRequest ... Processes an invariant request type
 func (svc *PessimismService) ProcessInvariantRequest(ir models.InvRequestBody) (core.InvSessionUUID, error) {
 	if ir.MethodType() == models.Run { // Deploy invariant session
-		return svc.runInvariantSession(ir.Params)
+		return svc.RunInvariantSession(ir.Params)
 	}
 	// TODO - Add support for other method types (ie. delete. update)
 
 	return core.NilInvariantUUID(), nil
 }
 
-// runInvariantSession ... Runs an invariant session provided
-func (svc *PessimismService) runInvariantSession(params models.InvRequestParams) (core.InvSessionUUID, error) {
+// runInvariantSession ... Runs an invariant session
+func (svc *PessimismService) RunInvariantSession(params models.InvRequestParams) (core.InvSessionUUID, error) {
 	logger := logging.WithContext(svc.ctx)
 
 	inv, err := registry.GetInvariant(params.InvariantType(), params.SessionParams)

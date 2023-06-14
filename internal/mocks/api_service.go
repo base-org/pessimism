@@ -63,3 +63,18 @@ func (mr *MockServiceMockRecorder) ProcessInvariantRequest(arg0 interface{}) *go
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessInvariantRequest", reflect.TypeOf((*MockService)(nil).ProcessInvariantRequest), arg0)
 }
+
+// RunInvariantSession mocks base method.
+func (m *MockService) RunInvariantSession(arg0 models.InvRequestParams) (core.InvSessionUUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RunInvariantSession", arg0)
+	ret0, _ := ret[0].(core.InvSessionUUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RunInvariantSession indicates an expected call of RunInvariantSession.
+func (mr *MockServiceMockRecorder) RunInvariantSession(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunInvariantSession", reflect.TypeOf((*MockService)(nil).RunInvariantSession), arg0)
+}
