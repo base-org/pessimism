@@ -65,7 +65,10 @@ func Test_ComponentRegistry(t *testing.T) {
 
 				nestedKey := state.MakeKey(core.EventLog, niceAddr, true).WithPUUID(core.NilPipelineUUID())
 
-				ss.SetSlice(ts.ctx, nestedKey, blansfer)
+				_, err = ss.SetSlice(ts.ctx, nestedKey, blansfer)
+				if err != nil {
+					panic(err)
+				}
 
 				ts.ctx = context.WithValue(ts.ctx, state.Default, ss)
 
