@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// BalanceInvConfig  ...
+// BalanceInvConfig  ... Configuration for the balance invariant
 type BalanceInvConfig struct {
 	Address    string   `json:"address"`
 	UpperBound *float64 `json:"upper"`
@@ -91,7 +91,6 @@ func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome,
 			Message: fmt.Sprintf(reportMsg, balance,
 				upper, lower,
 				bi.SUUID(), bi.cfg.Address),
-			SUUID: bi.SUUID(),
 		}, true, nil
 	}
 

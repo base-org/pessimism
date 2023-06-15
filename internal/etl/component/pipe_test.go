@@ -1,46 +1,21 @@
-package component
+package component_test
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/mocks"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/stretchr/testify/assert"
 )
 
-func transformBlockToTxSlice(td core.TransitData) ([]core.TransitData, error) {
-
-	parsedBlock, success := td.Value.(types.Block)
-	if !success {
-		return nil, fmt.Errorf("Could not parse transit value to Geth block")
-	}
-
-	txs := parsedBlock.Transactions()
-
-	tfTd := core.TransitData{
-		Timestamp: td.Timestamp,
-		Type:      txSlice,
-		Value:     txs,
-	}
-
-	log.Printf("%+v", tfTd)
-	return []core.TransitData{tfTd}, nil
-}
-
-const (
-	txSlice core.RegisterType = 100
-
-	gethBlock core.RegisterType = 69
-)
-
-func Test_Pipe_OPBlockToTransactions(t *testing.T) {
+func Test_Pipe_Event_Flow(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -52,7 +27,7 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 	outputChan := make(chan core.TransitData)
 
 	// Construct test component
-	testPipe, err := NewPipe(ctx, transformBlockToTxSlice, gethBlock, txSlice)
+	testPipe, err := mocks.NewMockPipe(ctx, core.GethBlock, core.EventLog)
 	assert.NoError(t, err)
 
 	err = testPipe.AddEgress(testID, outputChan)
@@ -65,8 +40,6 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 	err = rlp.DecodeBytes(blockEnc, &block)
 	assert.NoError(t, err)
 
-	expectedTxs := block.Transactions()
-
 	// Start component event loop on separate go routine
 	go func() {
 		if err := testPipe.EventLoop(); err != nil {
@@ -78,7 +51,7 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 
 	inputData := core.TransitData{
 		Timestamp: ts,
-		Type:      gethBlock,
+		Type:      core.GethBlock,
 		Value:     block,
 	}
 	var outputData core.TransitData
@@ -96,7 +69,7 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 
 	}()
 
-	entryChan, err := testPipe.GetIngress(gethBlock)
+	entryChan, err := testPipe.GetIngress(core.GethBlock)
 	assert.NoError(t, err)
 
 	entryChan <- inputData
@@ -106,12 +79,8 @@ func Test_Pipe_OPBlockToTransactions(t *testing.T) {
 
 	assert.NotNil(t, outputData)
 
-	actualTxs, success := outputData.Value.(types.Transactions)
+	_, success := outputData.Value.(types.Block)
 	assert.True(t, success)
 	assert.Equal(t, outputData.Timestamp, ts, "Timestamp failed to verify")
-
-	for i := 0; i < len(actualTxs); i++ {
-		assert.Equal(t, actualTxs[i], expectedTxs[i])
-	}
 
 }

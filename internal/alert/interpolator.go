@@ -20,9 +20,7 @@ const (
 	_Session UUID:_ %s
 
 	*Assessment Content:* 
-	%s
-	
-	¯\_(ツ)_/¯
+	%s	
 	`
 )
 
@@ -32,8 +30,7 @@ type Interpolator interface {
 }
 
 // interpolator ... Interpolator implementation
-type interpolator struct {
-}
+type interpolator struct{}
 
 // NewInterpolator ... Initializer
 func NewInterpolator() Interpolator {

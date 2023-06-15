@@ -8,8 +8,10 @@ import (
 	"go.uber.org/zap"
 )
 
-// TransformFunc ... Generic transformation function
-type TransformFunc func(data core.TransitData) ([]core.TransitData, error)
+type PipeDefinition interface {
+	Transform(ctx context.Context, data core.TransitData) ([]core.TransitData, error)
+	ConfigureRoutine(pUUID core.PipelineUUID) error
+}
 
 // Pipe ... Component used to represent any arbitrary computation; pipes must can read from all component types
 // E.G. (ORACLE || CONVEYOR || PIPE) -> PIPE
@@ -18,19 +20,19 @@ type Pipe struct {
 	ctx    context.Context
 	inType core.RegisterType
 
-	tform TransformFunc
+	def PipeDefinition
 
 	*metaData
 }
 
 // NewPipe ... Initializer
-func NewPipe(ctx context.Context, tform TransformFunc, inType core.RegisterType,
+func NewPipe(ctx context.Context, pd PipeDefinition, inType core.RegisterType,
 	outType core.RegisterType, opts ...Option) (Component, error) {
 	// TODO - Validate inTypes size
 
 	pipe := &Pipe{
 		ctx:    ctx,
-		tform:  tform,
+		def:    pd,
 		inType: inType,
 
 		metaData: newMetaData(core.Pipe, outType),
@@ -64,17 +66,19 @@ func (p *Pipe) EventLoop() error {
 		zap.String("ID", p.id.String()),
 	)
 
-	// p.emitStateChange(Live)
-
 	inChan, err := p.GetIngress(p.inType)
 	if err != nil {
+		return err
+	}
+
+	if err = p.def.ConfigureRoutine(p.pUUID); err != nil {
 		return err
 	}
 
 	for {
 		select {
 		case inputData := <-inChan:
-			outputData, err := p.tform(inputData)
+			outputData, err := p.def.Transform(p.ctx, inputData)
 			if err != nil {
 				// TODO - Introduce metrics service (`prometheus`) call
 				logger.Error(err.Error(), zap.String("ID", p.id.String()))

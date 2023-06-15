@@ -20,22 +20,22 @@ var (
 
 func getTestPipeLine(ctx context.Context) Pipeline {
 
-	blackHolePipe, err := pipe_registry.NewBlackHoleTxPipe(ctx, component.WithCUUID(cID1))
+	p1, err := pipe_registry.NewEventParserPipe(ctx, &core.ClientConfig{}, component.WithCUUID(cID1))
 	if err != nil {
 		panic(err)
 	}
 
-	contractCreatePipe, err := pipe_registry.NewCreateContractTxPipe(ctx, component.WithCUUID(cID2))
+	p2, err := pipe_registry.NewEventParserPipe(ctx, &core.ClientConfig{}, component.WithCUUID(cID2))
 	if err != nil {
 		panic(err)
 	}
 
 	comps := []component.Component{
-		blackHolePipe,
-		contractCreatePipe,
+		p1,
+		p2,
 	}
 
-	pipeLine, err := NewPipeLine(core.NilPipelineUUID(), comps)
+	pipeLine, err := NewPipeline(&core.PipelineConfig{}, core.NilPipelineUUID(), comps)
 	if err != nil {
 		panic(err)
 	}

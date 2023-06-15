@@ -6,10 +6,14 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/registry/oracle"
 	"github.com/base-org/pessimism/internal/etl/registry/pipe"
+	"github.com/base-org/pessimism/internal/state"
 )
 
 const (
 	noEntryErr = "could not find entry in registry for encoded register type %s"
+
+	withNesting = true
+	noNesting   = false
 )
 
 // Registry ... Interface for registry
@@ -31,29 +35,27 @@ func NewRegistry() Registry {
 			DataType:             core.GethBlock,
 			ComponentType:        core.Oracle,
 			ComponentConstructor: oracle.NewGethBlockOracle,
-			Dependencies:         noDeps(),
-		},
-		core.ContractCreateTX: {
-			Addressing:           false,
-			DataType:             core.ContractCreateTX,
-			ComponentType:        core.Pipe,
-			ComponentConstructor: pipe.NewCreateContractTxPipe,
-			Dependencies:         makeDeps(core.GethBlock),
-		},
-		core.BlackholeTX: {
-			Addressing:           false,
-			DataType:             core.BlackholeTX,
-			ComponentType:        core.Pipe,
-			ComponentConstructor: pipe.NewBlackHoleTxPipe,
-			Dependencies:         makeDeps(core.GethBlock),
-		},
 
+			Dependencies: noDeps(),
+			StateKey:     noState(),
+		},
 		core.AccountBalance: {
 			Addressing:           true,
 			DataType:             core.AccountBalance,
 			ComponentType:        core.Oracle,
 			ComponentConstructor: oracle.NewAddressBalanceOracle,
-			Dependencies:         noDeps(),
+
+			Dependencies: noDeps(),
+			StateKey:     state.MakeKey(core.AccountBalance, core.AddressKey, noNesting),
+		},
+		core.EventLog: {
+			Addressing:           true,
+			DataType:             core.EventLog,
+			ComponentType:        core.Pipe,
+			ComponentConstructor: pipe.NewEventParserPipe,
+
+			Dependencies: makeDeps(core.GethBlock),
+			StateKey:     state.MakeKey(core.EventLog, core.AddressKey, withNesting),
 		},
 	}
 
@@ -71,6 +73,12 @@ func makeDeps(types ...core.RegisterType) []core.RegisterType {
 // noDeps ... Returns empty dependency slice
 func noDeps() []core.RegisterType {
 	return []core.RegisterType{}
+}
+
+// noState ... Returns empty state key, indicating no state dependencies
+// for cross subsystem communication (i.e. ETL -> Risk Engine)
+func noState() core.StateKey {
+	return core.NilStateKey()
 }
 
 // GetDependencyPath ... Returns in-order slice of ETL pipeline path

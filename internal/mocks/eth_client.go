@@ -9,6 +9,7 @@ import (
 	big "math/big"
 	reflect "reflect"
 
+	ethereum "github.com/ethereum/go-ethereum"
 	common "github.com/ethereum/go-ethereum/common"
 	types "github.com/ethereum/go-ethereum/core/types"
 	gomock "github.com/golang/mock/gomock"
@@ -79,6 +80,21 @@ func (m *MockEthClientInterface) DialContext(arg0 context.Context, arg1 string) 
 func (mr *MockEthClientInterfaceMockRecorder) DialContext(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DialContext", reflect.TypeOf((*MockEthClientInterface)(nil).DialContext), arg0, arg1)
+}
+
+// FilterLogs mocks base method.
+func (m *MockEthClientInterface) FilterLogs(arg0 context.Context, arg1 ethereum.FilterQuery) ([]types.Log, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FilterLogs", arg0, arg1)
+	ret0, _ := ret[0].([]types.Log)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FilterLogs indicates an expected call of FilterLogs.
+func (mr *MockEthClientInterfaceMockRecorder) FilterLogs(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilterLogs", reflect.TypeOf((*MockEthClientInterface)(nil).FilterLogs), arg0, arg1)
 }
 
 // HeaderByNumber mocks base method.
