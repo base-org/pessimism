@@ -23,12 +23,12 @@ const (
 type GethBlockODef struct {
 	cUUID      core.ComponentUUID
 	cfg        *core.ClientConfig
-	client     client.EthClientInterface
+	client     client.EthClient
 	currHeight *big.Int
 }
 
 // NewGethBlockODef ... Initializer for geth.block oracle definition
-func NewGethBlockODef(cfg *core.ClientConfig, client client.EthClientInterface, h *big.Int) *GethBlockODef {
+func NewGethBlockODef(cfg *core.ClientConfig, client client.EthClient, h *big.Int) *GethBlockODef {
 	return &GethBlockODef{
 		cfg:        cfg,
 		client:     client,

@@ -32,9 +32,9 @@ type Component interface {
 	// AddRelay ... Adds an engine relay to component egress routing
 	AddRelay(relay *core.EngineInputRelay) error
 
-	// AddEgress ...
+	// AddEgress ... Adds an egress channel to component egress routing
 	AddEgress(core.ComponentUUID, chan core.TransitData) error
-	// RemoveEgress ...
+	// RemoveEgress ... Removes an egress channel from component egress routing
 	RemoveEgress(core.ComponentUUID) error
 
 	// Close ... Signifies a component to stop operating
@@ -49,6 +49,7 @@ type Component interface {
 	// OutputType ... Returns component output data type
 	OutputType() core.RegisterType
 
+	// StateKey ... Returns component's state key
 	StateKey() core.StateKey
 
 	// TODO(#24): Add Internal Component Activity State Tracking

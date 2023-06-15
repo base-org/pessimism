@@ -21,8 +21,8 @@ import (
 
 // EventDefinition ...
 type EventDefinition struct {
-	client client.EthClientInterface
-	sk     core.StateKey
+	client client.EthClient
+	Sk     core.StateKey
 	pUUID  core.PipelineUUID
 	cfg    *core.ClientConfig
 }
@@ -30,7 +30,8 @@ type EventDefinition struct {
 // ConfigureRoutine ... Sets up the pipe client connection and persists puuid to definition state
 func (ed *EventDefinition) ConfigureRoutine(pUUID core.PipelineUUID) error {
 	ed.pUUID = pUUID
-	ed.sk = state.MakeKey(core.EventLog, core.AddressKey, true).
+	// TODO(#69): State Key Representation is Insecure
+	ed.Sk = state.MakeKey(core.EventLog, core.AddressKey, true).
 		WithPUUID(pUUID)
 
 	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
@@ -47,61 +48,49 @@ func (ed *EventDefinition) ConfigureRoutine(pUUID core.PipelineUUID) error {
 	return nil
 }
 
-// NewEventParserPipe ... Initializer
-func NewEventParserPipe(ctx context.Context, cfg *core.ClientConfig,
-	opts ...component.Option) (component.Component, error) {
-	client := client.NewEthClient()
-
-	ed := &EventDefinition{
+// NewEventDefinition ... Initializer for pipe definition
+func NewEventDefinition(cfg *core.ClientConfig, client client.EthClient) *EventDefinition {
+	return &EventDefinition{
 		cfg:    cfg,
 		client: client,
 	}
+}
+
+// NewEventParserPipe ... Initializer
+func NewEventParserPipe(ctx context.Context, cfg *core.ClientConfig,
+	opts ...component.Option) (component.Component, error) {
+	ec := client.NewEthClient()
+	ed := NewEventDefinition(cfg, ec)
 
 	return component.NewPipe(ctx, ed, core.GethBlock, core.EventLog, opts...)
 }
 
-// contractEvents ... Struct to hold the contract address and the event signatures
-type contractEvents struct {
-	address common.Address
-	sigs    []common.Hash
-}
-
-// HasSignature ... Checks if the event has the signature
-func (ce *contractEvents) HasSignature(sig common.Hash) bool {
-	for _, s := range ce.sigs {
-		if s == sig {
-			return true
-		}
-	}
-
-	return false
-}
-
 // getEventsToMonitor ... Gets the smart contract events to monitor from the state store
 func (ed *EventDefinition) getEventsToMonitor(ctx context.Context, rt core.RegisterType,
-	addresses []string, ss state.Store) ([]contractEvents, error) {
-	var events []contractEvents
+	addresses []string, ss state.Store) (map[common.Address][]common.Hash, error) {
+	eventMap := make(map[common.Address][]common.Hash)
+
 	for _, address := range addresses {
 		addrKey := state.MakeKey(rt, address, false).WithPUUID(ed.pUUID)
 		sigs, err := ss.GetSlice(ctx, addrKey)
 		if err != nil {
 			logging.WithContext(ctx).Error(err.Error())
-			return []contractEvents{}, err
+			return nil, err
 		}
 
 		var parsedSigs []common.Hash
 		for _, sig := range sigs {
-			parsedSigs = append(parsedSigs, crypto.Keccak256Hash([]byte(sig)))
+			hash := crypto.Keccak256Hash([]byte(sig))
+			parsedSigs = append(parsedSigs, hash)
 		}
 
 		logging.WithContext(ctx).Debug(fmt.Sprintf("Address: %s, Sigs: %v", address, parsedSigs))
-		events = append(events, contractEvents{
-			address: common.HexToAddress(address),
-			sigs:    parsedSigs,
-		})
+
+		gethAddr := common.HexToAddress(address)
+		eventMap[gethAddr] = parsedSigs
 	}
 
-	return events, nil
+	return eventMap, nil
 }
 
 // Transform ... Gets the events from the block, filters them and
@@ -120,7 +109,7 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 	logging.NoContext().Debug("Getting addresess",
 		zap.String(core.PUUIDKey, ed.pUUID.String()))
 
-	addresses, err := stateStore.GetSlice(ctx, ed.sk)
+	addresses, err := stateStore.GetSlice(ctx, ed.Sk)
 	if err != nil {
 		return []core.TransitData{}, err
 	}
@@ -144,11 +133,15 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 
 	result := make([]core.TransitData, 0)
 	for _, log := range logs {
-		for _, event := range eventsToMonitor {
-			// Check if event is in the list of events to monitor
-			if event.address == log.Address && event.HasSignature(log.Topics[0]) {
+		if _, exists := eventsToMonitor[log.Address]; !exists {
+			continue
+		}
+
+		for _, eventSig := range eventsToMonitor[log.Address] {
+			if eventSig == log.Topics[0] {
 				result = append(result,
-					core.NewTransitData(core.EventLog, log, core.WithAddress(log.Address)))
+					core.NewTransitData(core.EventLog, log, core.WithAddress(log.Address)),
+				)
 			}
 		}
 	}

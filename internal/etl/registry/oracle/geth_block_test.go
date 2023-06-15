@@ -26,7 +26,7 @@ func Test_ConfigureRoutine_Error(t *testing.T) {
 	// setup mock
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	testObj := mocks.NewMockEthClientInterface(ctrl)
+	testObj := mocks.NewMockEthClient(ctrl)
 
 	// setup expectations
 	testObj.
@@ -53,7 +53,7 @@ func Test_ConfigureRoutine_Pass(t *testing.T) {
 	// setup mock
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	testObj := mocks.NewMockEthClientInterface(ctrl)
+	testObj := mocks.NewMockEthClient(ctrl)
 
 	// setup expectations
 	testObj.
@@ -79,7 +79,7 @@ func Test_GetCurrentHeightFromNetwork(t *testing.T) {
 	// setup mock
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	testObj := mocks.NewMockEthClientInterface(ctrl)
+	testObj := mocks.NewMockEthClient(ctrl)
 
 	header := types.Header{
 		ParentHash: common.HexToHash("0x123456789"),
@@ -108,7 +108,7 @@ func Test_GetHeightToProcess(t *testing.T) {
 	// setup mock
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	testObj := mocks.NewMockEthClientInterface(ctrl)
+	testObj := mocks.NewMockEthClient(ctrl)
 
 	// setup expectations
 	testObj.
@@ -161,7 +161,7 @@ func Test_Backroutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mocks.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClient(ctrl)
 
 				header := types.Header{
 					ParentHash: common.HexToHash("0x123456789"),
@@ -207,7 +207,7 @@ func Test_Backroutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mocks.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClient(ctrl)
 
 				// setup expectations
 				testObj.
@@ -276,7 +276,7 @@ func Test_Backroutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mocks.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClient(ctrl)
 
 				header := types.Header{
 					ParentHash: common.HexToHash("0x123456789"),
@@ -355,7 +355,7 @@ func Test_ReadRoutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mocks.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClient(ctrl)
 
 				// setup expectations
 				testObj.
@@ -392,7 +392,7 @@ func Test_ReadRoutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mocks.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClient(ctrl)
 
 				// setup expectations
 				testObj.
@@ -429,7 +429,7 @@ func Test_ReadRoutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mocks.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClient(ctrl)
 
 				header := types.Header{
 					ParentHash: common.HexToHash("0x123456789"),

@@ -22,13 +22,13 @@ import (
 type AddressBalanceODef struct {
 	pUUID      core.PipelineUUID
 	cfg        *core.ClientConfig
-	client     client.EthClientInterface
+	client     client.EthClient
 	currHeight *big.Int
 	sk         core.StateKey
 }
 
 // NewAddressBalanceODef ... Initializer for address.balance oracle definition
-func NewAddressBalanceODef(cfg *core.ClientConfig, client client.EthClientInterface,
+func NewAddressBalanceODef(cfg *core.ClientConfig, client client.EthClient,
 	h *big.Int, sk core.StateKey) *AddressBalanceODef {
 	return &AddressBalanceODef{
 		cfg:        cfg,
