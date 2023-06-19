@@ -17,8 +17,9 @@ import (
 
 // Manager ... Engine manager interface
 type Manager interface {
+	core.Subsystem
+
 	Transit() chan core.InvariantInput
-	EventLoop(ctx context.Context) error
 
 	// TODO( ) : Session deletion logic
 	DeleteInvariantSession(core.InvSessionUUID) (core.InvSessionUUID, error)
@@ -34,7 +35,9 @@ type Manager interface {
 
 // engineManager ... Engine management abstraction
 type engineManager struct {
-	ctx          context.Context
+	ctx    context.Context
+	cancel context.CancelFunc
+
 	etlTransit   chan core.InvariantInput
 	alertTransit chan core.Alert
 
@@ -45,9 +48,12 @@ type engineManager struct {
 
 // NewManager ... Initializer
 func NewManager(ctx context.Context,
-	alertTransit chan core.Alert) (Manager, func()) {
+	alertTransit chan core.Alert) Manager {
+	ctx, cancel := context.WithCancel(ctx)
+
 	em := &engineManager{
 		ctx:          ctx,
+		cancel:       cancel,
 		alertTransit: alertTransit,
 		etlTransit:   make(chan core.InvariantInput),
 		engine:       NewHardCodedEngine(),
@@ -55,11 +61,7 @@ func NewManager(ctx context.Context,
 		store:        NewSessionStore(),
 	}
 
-	shutDown := func() {
-		close(em.etlTransit)
-	}
-
-	return em, shutDown
+	return em
 }
 
 // Transit ... Returns inter-subsystem transit channel
@@ -134,8 +136,8 @@ func (em *engineManager) DeployInvariantSession(n core.Network, pUUUID core.Pipe
 }
 
 // EventLoop ... Event loop for the engine manager
-func (em *engineManager) EventLoop(ctx context.Context) error {
-	logger := logging.WithContext(ctx)
+func (em *engineManager) EventLoop() error {
+	logger := logging.WithContext(em.ctx)
 
 	for {
 		select {
@@ -143,13 +145,18 @@ func (em *engineManager) EventLoop(ctx context.Context) error {
 			logger.Debug("Received invariant input",
 				zap.String("input", fmt.Sprintf("%+v", data)))
 
-			em.executeInvariants(ctx, data)
+			em.executeInvariants(em.ctx, data)
 
-		case <-ctx.Done(): // Shutdown
+		case <-em.ctx.Done(): // Shutdown
 			logger.Debug("engineManager received shutdown signal")
 			return nil
 		}
 	}
+}
+
+func (em *engineManager) Shutdown() error {
+	em.cancel()
+	return nil
 }
 
 // executeInvariants ... Executes all invariants associated with the input etl pipeline

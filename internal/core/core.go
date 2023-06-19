@@ -178,3 +178,9 @@ const (
 func (sk StateKey) String() string {
 	return fmt.Sprintf("%d:%s", sk.Prefix, sk.Key)
 }
+
+// Subsystem ... Represents a subsystem
+type Subsystem interface {
+	EventLoop() error
+	Shutdown() error
+}

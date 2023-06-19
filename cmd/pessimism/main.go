@@ -3,16 +3,19 @@ package main
 import (
 	"context"
 	"os"
-	"sync"
 
 	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/handlers"
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/api/service"
+	"github.com/base-org/pessimism/internal/app"
 	"github.com/base-org/pessimism/internal/client"
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine"
 	"github.com/base-org/pessimism/internal/state"
 	"go.uber.org/zap"
+
+	"github.com/base-org/pessimism/internal/subsystem"
 
 	"github.com/base-org/pessimism/internal/config"
 
@@ -42,101 +45,70 @@ func initializeServer(ctx context.Context, cfg *config.Config, alertMan alert.Al
 	return server, cleanup, nil
 }
 
+/*
+	Subsystem initialization functions
+*/
+
 // initializeAlerting ... Performs dependency injection to build alerting struct
-func initializeAlerting(ctx context.Context, cfg *config.Config) (alert.AlertingManager, func()) {
+func initializeAlerting(ctx context.Context, cfg *config.Config) alert.AlertingManager {
 	sc := client.NewSlackClient(cfg.SlackURL)
 	return alert.NewManager(ctx, sc)
 }
 
+// initalizeETL ... Performs dependency injection to build etl struct
+func initalizeETL(ctx context.Context, transit chan core.InvariantInput) pipeline.Manager {
+	compRegistry := registry.NewRegistry()
+	analyzer := pipeline.NewAnalyzer(compRegistry)
+	return pipeline.NewManager(ctx, analyzer, compRegistry, transit)
+}
+
+// initializeEngine ... Performs dependency injection to build engine struct
+func initializeEngine(ctx context.Context, transit chan core.Alert) engine.Manager {
+	return engine.NewManager(ctx, transit)
+}
+
 // main ... Application driver
 func main() {
-	appWg := &sync.WaitGroup{}
-	appCtx, appCtxCancel := context.WithCancel(context.Background())
-
-	appCtx = context.WithValue(appCtx, state.Default, state.NewMemState())
+	ctx := context.WithValue(
+		context.Background(), state.Default, state.NewMemState())
 
 	cfg := config.NewConfig(cfgPath) // Load env vars
 
 	logging.NewLogger(cfg.LoggerConfig, cfg.IsProduction())
 
-	logger := logging.WithContext(appCtx)
+	logger := logging.WithContext(ctx)
 	logger.Info("Bootstrapping pessimsim monitoring application")
-	compRegistry := registry.NewRegistry()
-	analyzer := pipeline.NewAnalyzer(compRegistry)
 
-	alertCtx, alertCtxCancel := context.WithCancel(appCtx)
-	alertingManager, shutdownAlerting := initializeAlerting(alertCtx, cfg)
+	alrt := initializeAlerting(ctx, cfg)
+	eng := initializeEngine(ctx, alrt.Transit())
+	etl := initalizeETL(ctx, eng.Transit())
 
-	engineManager, shutDownEngine := engine.NewManager(appCtx, alertingManager.Transit())
-	etlManager, shutDownETL := pipeline.NewManager(appCtx, analyzer, compRegistry, engineManager.Transit())
+	subMan := subsystem.NewManager(etl, eng, alrt)
+	srver, shutdownServer, err := initializeServer(ctx, cfg, alrt, etl, eng)
+	if err != nil {
+		logger.Error("Error initializing server", zap.Error(err))
+		os.Exit(1)
+	}
 
-	logger.Info("Starting and running risk engine manager instance")
-	engineCtx, engineCtxCancel := context.WithCancel(appCtx)
+	pess := app.New(ctx, subMan, srver)
 
-	appWg.Add(1)
-	go func() { // EtlManager driver thread
-		defer appWg.Done()
+	logger.Info("Starting pessimism application")
+	if err := pess.Start(); err != nil {
+		logger.Error("Error starting pessimism application", zap.Error(err))
+		os.Exit(1)
+	}
 
-		if err := etlManager.EventLoop(appCtx); err != nil {
-			logger.Error("etl manager event loop error", zap.Error(err))
-		}
-	}()
-
-	logger.Info("Starting and running ETL manager instance")
-
-	appWg.Add(1)
-	go func() { // EngineManager driver thread
-		defer appWg.Done()
-
-		if err := engineManager.EventLoop(engineCtx); err != nil {
-			logger.Error("engine manager event loop error", zap.Error(err))
-		}
-	}()
-
-	appWg.Add(1)
-	go func() { // AlertManager driver thread
-		defer appWg.Done()
-
-		if err := alertingManager.EventLoop(alertCtx); err != nil {
-			logger.Error("alert manager event loop error", zap.Error(err))
-		}
-	}()
-
-	appWg.Add(1)
-	go func() { // ApiServer driver thread
-		defer appWg.Done()
-
-		apiServer, shutDownServer, err := initializeServer(appCtx, cfg, alertingManager,
-			etlManager, engineManager)
-
+	pess.ListenForShutdown(func() {
+		err := subMan.Shutdown()
 		if err != nil {
-			logger.Error("Error obtained trying to start server", zap.Error(err))
-			panic(err)
+			logger.Error("Error shutting down subsystems", zap.Error(err))
 		}
 
-		apiServer.Stop(func() {
-			// NOTE - Subsystems are shutdown in reverse order of initialization
-
-			logger.Info("Shutting down pessimism application")
-
-			alertCtxCancel()   // Shutdown alerting subsystem event-loop
-			shutdownAlerting() // Shutdown alerting subsystem
-
-			engineCtxCancel() // Shutdown risk engine event-loop
-			shutDownEngine()  // Shutdown risk engine subsystem
-			logger.Info("Shutdown risk engine subsystem")
-
-			appCtxCancel() // Shutdown ETL subsystem event loops
-			shutDownETL()  // Shutdown ETL subsystem
-			logger.Info("Shutdown ETL subsystem")
-
-			shutDownServer() // Shutdown API server
-			logger.Info("Shutdown API server")
-		})
-	}()
+		shutdownServer()
+	})
 
 	logger.Debug("Waiting for all application threads to end")
-	appWg.Wait()
+
 	logger.Info("Successful pessimism shutdown")
 	os.Exit(0)
 }

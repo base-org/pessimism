@@ -27,8 +27,7 @@ func Test_Manager(t *testing.T) {
 
 			constructionLogic: func() Manager {
 				reg := registry.NewRegistry()
-				m, _ := NewManager(context.Background(), NewAnalyzer(reg), reg, nil)
-				return m
+				return NewManager(context.Background(), NewAnalyzer(reg), reg, nil)
 			},
 
 			testLogic: func(t *testing.T, m Manager) {
