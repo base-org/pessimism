@@ -30,9 +30,9 @@ const (
 )
 
 // initializeServer ... Performs dependency injection to build server struct
-func initializeServer(ctx context.Context, cfg *config.Config, alertMan alert.AlertingManager,
-	etlMan pipeline.Manager, engineMan engine.Manager) (*server.Server, func(), error) {
-	apiService := service.New(ctx, cfg.SvcConfig, alertMan, etlMan, engineMan)
+func initializeServer(ctx context.Context, cfg *config.Config,
+	m subsystem.Manager) (*server.Server, func(), error) {
+	apiService := service.New(ctx, cfg.SvcConfig, m)
 	handler, err := handlers.New(ctx, apiService)
 	if err != nil {
 		return nil, nil, err
@@ -83,14 +83,14 @@ func main() {
 	eng := initializeEngine(ctx, alrt.Transit())
 	etl := initalizeETL(ctx, eng.Transit())
 
-	subMan := subsystem.NewManager(etl, eng, alrt)
-	srver, shutdownServer, err := initializeServer(ctx, cfg, alrt, etl, eng)
+	m := subsystem.NewManager(ctx, etl, eng, alrt)
+	srver, shutdownServer, err := initializeServer(ctx, cfg, m)
 	if err != nil {
 		logger.Error("Error initializing server", zap.Error(err))
 		os.Exit(1)
 	}
 
-	pess := app.New(ctx, subMan, srver)
+	pess := app.New(ctx, m, srver)
 
 	logger.Info("Starting pessimism application")
 	if err := pess.Start(); err != nil {
@@ -99,7 +99,7 @@ func main() {
 	}
 
 	pess.ListenForShutdown(func() {
-		err := subMan.Shutdown()
+		err := m.Shutdown()
 		if err != nil {
 			logger.Error("Error shutting down subsystems", zap.Error(err))
 		}

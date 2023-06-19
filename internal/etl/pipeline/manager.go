@@ -32,7 +32,7 @@ type etlManager struct {
 	dag      ComponentGraph
 	store    EtlStore
 
-	engineChan chan core.InvariantInput
+	engOutgress chan core.InvariantInput
 
 	registry registry.Registry
 	wg       sync.WaitGroup
@@ -40,17 +40,17 @@ type etlManager struct {
 
 // NewManager ... Initializer
 func NewManager(ctx context.Context, analyzer Analyzer, cRegistry registry.Registry,
-	ec chan core.InvariantInput) Manager {
+	eo chan core.InvariantInput) Manager {
 	dag := NewComponentGraph()
 
 	m := &etlManager{
-		analyzer:   analyzer,
-		ctx:        ctx,
-		dag:        dag,
-		store:      newEtlStore(),
-		registry:   cRegistry,
-		engineChan: ec,
-		wg:         sync.WaitGroup{},
+		analyzer:    analyzer,
+		ctx:         ctx,
+		dag:         dag,
+		store:       newEtlStore(),
+		registry:    cRegistry,
+		engOutgress: eo,
+		wg:          sync.WaitGroup{},
 	}
 
 	return m
@@ -97,7 +97,7 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.Pipelin
 	}
 
 	// Bind communication route between pipeline and risk engine
-	if err := pipeline.AddEngineRelay(em.engineChan); err != nil {
+	if err := pipeline.AddEngineRelay(em.engOutgress); err != nil {
 		return core.NilPipelineUUID(), err
 	}
 
@@ -154,6 +154,7 @@ func (em *etlManager) Shutdown() error {
 	}
 	logger.Debug("Waiting for all component routines to end")
 	em.wg.Wait()
+	em.cancel()
 
 	return nil
 }

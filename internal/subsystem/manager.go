@@ -5,14 +5,25 @@ import (
 	"sync"
 
 	"github.com/base-org/pessimism/internal/alert"
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine"
+	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/logging"
 	"go.uber.org/zap"
 )
 
-// Manager ... Subsystem manager struct
-type Manager struct {
+// Manager ... Subsystem manager interface
+type Manager interface {
+	StartEventRoutines(ctx context.Context)
+	StartInvSession(cfg *core.PipelineConfig, invCfg *core.SessionConfig) (core.InvSessionUUID, error)
+	Shutdown() error
+}
+
+// manager ... Subsystem manager struct
+type manager struct {
+	ctx context.Context
+
 	etl  pipeline.Manager
 	eng  engine.Manager
 	alrt alert.AlertingManager
@@ -21,10 +32,11 @@ type Manager struct {
 }
 
 // NewManager ... Initializer for the subsystem manager
-func NewManager(etl pipeline.Manager, eng engine.Manager,
+func NewManager(ctx context.Context, etl pipeline.Manager, eng engine.Manager,
 	alrt alert.AlertingManager,
-) *Manager {
-	return &Manager{
+) Manager {
+	return &manager{
+		ctx:       ctx,
 		etl:       etl,
 		eng:       eng,
 		alrt:      alrt,
@@ -32,7 +44,9 @@ func NewManager(etl pipeline.Manager, eng engine.Manager,
 	}
 }
 
-func (m *Manager) Shutdown() error {
+// Shutdown ... Shuts down all subsystems in primary data flow order
+// Ie. ETL -> Engine -> Alert
+func (m *manager) Shutdown() error {
 	if err := m.etl.Shutdown(); err != nil {
 		return err
 	}
@@ -41,15 +55,11 @@ func (m *Manager) Shutdown() error {
 		return err
 	}
 
-	if err := m.alrt.Shutdown(); err != nil {
-		return err
-	}
-
-	return nil
+	return m.alrt.Shutdown()
 }
 
 // StartEventRoutines ... Starts the event loop routines for the subsystems
-func (m *Manager) StartEventRoutines(ctx context.Context) {
+func (m *manager) StartEventRoutines(ctx context.Context) {
 	logger := logging.WithContext(ctx)
 
 	m.Add(1)
@@ -78,4 +88,47 @@ func (m *Manager) StartEventRoutines(ctx context.Context) {
 			logger.Error("ETL manager event loop error", zap.Error(err))
 		}
 	}()
+}
+
+// StartInvSession ... Deploys an invariant session
+func (m *manager) StartInvSession(cfg *core.PipelineConfig, invCfg *core.SessionConfig) (core.InvSessionUUID, error) {
+	logger := logging.WithContext(m.ctx)
+
+	pUUID, err := m.etl.CreateDataPipeline(cfg)
+	if err != nil {
+		return core.NilInvariantUUID(), err
+	}
+
+	reg, err := m.etl.GetRegister(cfg.DataType)
+	if err != nil {
+		return core.NilInvariantUUID(), err
+	}
+
+	logger.Info("Created etl pipeline",
+		zap.String(core.PUUIDKey, pUUID.String()))
+
+	deployCfg := &invariant.DeployConfig{
+		PUUID:     pUUID,
+		InvType:   invCfg.Type,
+		InvParams: invCfg.Params,
+		Network:   cfg.Network,
+		Register:  reg,
+	}
+
+	sUUID, err := m.eng.DeployInvariantSession(deployCfg)
+	if err != nil {
+		return core.NilInvariantUUID(), err
+	}
+	logger.Info("Deployed invariant session", zap.String(core.SUUIDKey, sUUID.String()))
+
+	err = m.alrt.AddInvariantSession(sUUID, invCfg.AlertDest)
+	if err != nil {
+		return core.NilInvariantUUID(), err
+	}
+
+	if err = m.etl.RunPipeline(pUUID); err != nil {
+		return core.NilInvariantUUID(), err
+	}
+
+	return sUUID, nil
 }

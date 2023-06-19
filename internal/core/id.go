@@ -61,6 +61,11 @@ type PipelineUUID struct {
 	UUID UUID
 }
 
+// PipelineType ... Returns pipeline type decoding from encoded pid byte
+func (uuid PipelineUUID) PipelineType() PipelineType {
+	return PipelineType(uuid.PID[0])
+}
+
 // InvSessionPID ... Invariant session Primary ID
 type InvSessionPID [3]byte
 

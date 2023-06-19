@@ -16,13 +16,12 @@ import (
 type Application struct {
 	ctx context.Context
 
-	sub    *subsystem.Manager
+	sub    subsystem.Manager
 	server *server.Server
 }
 
 // New ... Initializer
-func New(ctx context.Context, sub *subsystem.Manager, server *server.Server) *Application {
-
+func New(ctx context.Context, sub subsystem.Manager, server *server.Server) *Application {
 	return &Application{
 		ctx:    ctx,
 		sub:    sub,
