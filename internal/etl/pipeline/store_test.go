@@ -18,6 +18,7 @@ var (
 	cID2 = core.MakeComponentUUID(0, 0, 0, 0)
 )
 
+// getTestPipeLine ... Returns a test pipeline
 func getTestPipeLine(ctx context.Context) Pipeline {
 
 	p1, err := pipe_registry.NewEventParserPipe(ctx, &core.ClientConfig{}, component.WithCUUID(cID1))
@@ -60,7 +61,7 @@ func Test_EtlStore(t *testing.T) {
 			constructionLogic: func() EtlStore {
 				ctx := context.Background()
 
-				testRegistry := newEtlStore()
+				testRegistry := NewEtlStore()
 				testPipeLine := getTestPipeLine(ctx)
 
 				testRegistry.AddPipeline(core.NilPipelineUUID(), testPipeLine)
@@ -95,7 +96,7 @@ func Test_EtlStore(t *testing.T) {
 			description: "",
 
 			constructionLogic: func() EtlStore {
-				pr := newEtlStore()
+				pr := NewEtlStore()
 				return pr
 			},
 			testLogic: func(t *testing.T, store EtlStore) {
@@ -125,7 +126,7 @@ func Test_EtlStore(t *testing.T) {
 			function:    "getPipeLineIDs",
 			description: "",
 
-			constructionLogic: newEtlStore,
+			constructionLogic: NewEtlStore,
 			testLogic: func(t *testing.T, store EtlStore) {
 				cID := core.MakeComponentUUID(0, 0, 0, 0)
 				pID := core.MakePipelineUUID(0, cID, cID)
@@ -145,7 +146,7 @@ func Test_EtlStore(t *testing.T) {
 			function:    "getPipeLineIDs",
 			description: "",
 
-			constructionLogic: newEtlStore,
+			constructionLogic: NewEtlStore,
 			testLogic: func(t *testing.T, store EtlStore) {
 				cID := core.MakeComponentUUID(0, 0, 0, 0)
 
@@ -159,7 +160,7 @@ func Test_EtlStore(t *testing.T) {
 			function:    "getPipeline",
 			description: "",
 
-			constructionLogic: newEtlStore,
+			constructionLogic: NewEtlStore,
 			testLogic: func(t *testing.T, store EtlStore) {
 				cID := core.MakeComponentUUID(0, 0, 0, 0)
 				pID := core.MakePipelineUUID(0, cID, cID)
@@ -175,7 +176,7 @@ func Test_EtlStore(t *testing.T) {
 			description: "",
 
 			constructionLogic: func() EtlStore {
-				store := newEtlStore()
+				store := NewEtlStore()
 				return store
 			},
 			testLogic: func(t *testing.T, store EtlStore) {
@@ -199,7 +200,7 @@ func Test_EtlStore(t *testing.T) {
 			description: "",
 
 			constructionLogic: func() EtlStore {
-				store := newEtlStore()
+				store := NewEtlStore()
 				return store
 			},
 			testLogic: func(t *testing.T, store EtlStore) {
@@ -222,7 +223,7 @@ func Test_EtlStore(t *testing.T) {
 			description: "",
 
 			constructionLogic: func() EtlStore {
-				store := newEtlStore()
+				store := NewEtlStore()
 				return store
 			},
 			testLogic: func(t *testing.T, store EtlStore) {

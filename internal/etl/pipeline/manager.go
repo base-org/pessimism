@@ -40,14 +40,13 @@ type etlManager struct {
 
 // NewManager ... Initializer
 func NewManager(ctx context.Context, analyzer Analyzer, cRegistry registry.Registry,
+	store EtlStore, dag ComponentGraph,
 	eo chan core.InvariantInput) Manager {
-	dag := NewComponentGraph()
-
 	m := &etlManager{
 		analyzer:    analyzer,
 		ctx:         ctx,
 		dag:         dag,
-		store:       newEtlStore(),
+		store:       store,
 		registry:    cRegistry,
 		engOutgress: eo,
 		wg:          sync.WaitGroup{},

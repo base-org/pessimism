@@ -47,8 +47,8 @@ type engineManager struct {
 }
 
 // NewManager ... Initializer
-func NewManager(ctx context.Context,
-	alertOutgress chan core.Alert) Manager {
+func NewManager(ctx context.Context, engine RiskEngine, addr AddressingMap,
+	store SessionStore, alertOutgress chan core.Alert) Manager {
 	ctx, cancel := context.WithCancel(ctx)
 
 	em := &engineManager{
@@ -56,9 +56,9 @@ func NewManager(ctx context.Context,
 		cancel:        cancel,
 		alertOutgress: alertOutgress,
 		etlIngress:    make(chan core.InvariantInput),
-		engine:        NewHardCodedEngine(),
-		addresser:     NewAddressingMap(),
-		store:         NewSessionStore(),
+		engine:        engine,
+		addresser:     addr,
+		store:         store,
 	}
 
 	return em

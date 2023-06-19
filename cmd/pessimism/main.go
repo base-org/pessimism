@@ -59,12 +59,19 @@ func initializeAlerting(ctx context.Context, cfg *config.Config) alert.AlertingM
 func initalizeETL(ctx context.Context, transit chan core.InvariantInput) pipeline.Manager {
 	compRegistry := registry.NewRegistry()
 	analyzer := pipeline.NewAnalyzer(compRegistry)
-	return pipeline.NewManager(ctx, analyzer, compRegistry, transit)
+	store := pipeline.NewEtlStore()
+	dag := pipeline.NewComponentGraph()
+
+	return pipeline.NewManager(ctx, analyzer, compRegistry, store, dag, transit)
 }
 
 // initializeEngine ... Performs dependency injection to build engine struct
 func initializeEngine(ctx context.Context, transit chan core.Alert) engine.Manager {
-	return engine.NewManager(ctx, transit)
+	store := engine.NewSessionStore()
+	am := engine.NewAddressingMap()
+	re := engine.NewHardCodedEngine()
+
+	return engine.NewManager(ctx, re, am, store, transit)
 }
 
 // main ... Application driver
