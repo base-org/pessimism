@@ -8,13 +8,12 @@ import (
 )
 
 // TransitOption ... Option used to initialize transit data
-type TransitOption = func(TransitData) TransitData
+type TransitOption = func(*TransitData)
 
 // WithAddress ... Injects address to transit data
 func WithAddress(address common.Address) TransitOption {
-	return func(td TransitData) TransitData {
-		td.Address = &address
-		return td
+	return func(td *TransitData) {
+		td.Address = address
 	}
 }
 
@@ -26,7 +25,7 @@ type TransitData struct {
 	Network Network
 	Type    RegisterType
 
-	Address *common.Address
+	Address common.Address
 	Value   any
 }
 
@@ -41,7 +40,7 @@ func NewTransitData(rt RegisterType, val any, opts ...TransitOption) TransitData
 	}
 
 	for _, opt := range opts { // Apply options
-		opt(td)
+		opt(&td)
 	}
 
 	return td
@@ -50,7 +49,7 @@ func NewTransitData(rt RegisterType, val any, opts ...TransitOption) TransitData
 // Addressed ... Indicates whether the transit data has an
 // associated address field
 func (td *TransitData) Addressed() bool {
-	return td.Address != nil
+	return td.Address != common.Address{0}
 }
 
 // NewTransitChannel ... Builds new tranit channel
@@ -177,4 +176,10 @@ const (
 // String ... Returns a string representation of the state key
 func (sk StateKey) String() string {
 	return fmt.Sprintf("%d:%s", sk.Prefix, sk.Key)
+}
+
+// Subsystem ... Represents a subsystem
+type Subsystem interface {
+	EventLoop() error
+	Shutdown() error
 }
