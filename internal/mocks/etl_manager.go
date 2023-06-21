@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	context "context"
 	reflect "reflect"
 
 	core "github.com/base-org/pessimism/internal/core"
@@ -51,17 +50,17 @@ func (mr *EtlManagerMockRecorder) CreateDataPipeline(arg0 interface{}) *gomock.C
 }
 
 // EventLoop mocks base method.
-func (m *EtlManager) EventLoop(arg0 context.Context) error {
+func (m *EtlManager) EventLoop() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EventLoop", arg0)
+	ret := m.ctrl.Call(m, "EventLoop")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // EventLoop indicates an expected call of EventLoop.
-func (mr *EtlManagerMockRecorder) EventLoop(arg0 interface{}) *gomock.Call {
+func (mr *EtlManagerMockRecorder) EventLoop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventLoop", reflect.TypeOf((*EtlManager)(nil).EventLoop), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventLoop", reflect.TypeOf((*EtlManager)(nil).EventLoop))
 }
 
 // GetRegister mocks base method.
@@ -91,4 +90,18 @@ func (m *EtlManager) RunPipeline(arg0 core.PUUID) error {
 func (mr *EtlManagerMockRecorder) RunPipeline(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunPipeline", reflect.TypeOf((*EtlManager)(nil).RunPipeline), arg0)
+}
+
+// Shutdown mocks base method.
+func (m *EtlManager) Shutdown() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Shutdown")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Shutdown indicates an expected call of Shutdown.
+func (mr *EtlManagerMockRecorder) Shutdown() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*EtlManager)(nil).Shutdown))
 }

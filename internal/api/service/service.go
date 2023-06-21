@@ -7,11 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/engine"
-	"github.com/base-org/pessimism/internal/etl/pipeline"
+	"github.com/base-org/pessimism/internal/subsystem"
 )
 
 // Config ... Used to store necessary API service config values
@@ -63,20 +61,15 @@ type PessimismService struct {
 	ctx context.Context
 	cfg *Config
 
-	alertManager  alert.Manager
-	etlManager    pipeline.Manager
-	engineManager engine.Manager
+	m subsystem.Manager
 }
 
 // New ... Initializer
-func New(ctx context.Context, cfg *Config, alertManager alert.Manager, etlManager pipeline.Manager,
-	engineManager engine.Manager) *PessimismService {
+func New(ctx context.Context, cfg *Config, m subsystem.Manager) *PessimismService {
 	return &PessimismService{
 		ctx: ctx,
 		cfg: cfg,
 
-		alertManager:  alertManager,
-		etlManager:    etlManager,
-		engineManager: engineManager,
+		m: m,
 	}
 }

@@ -3,16 +3,19 @@ package main
 import (
 	"context"
 	"os"
-	"sync"
 
 	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/handlers"
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/api/service"
+	"github.com/base-org/pessimism/internal/app"
 	"github.com/base-org/pessimism/internal/client"
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine"
 	"github.com/base-org/pessimism/internal/state"
 	"go.uber.org/zap"
+
+	"github.com/base-org/pessimism/internal/subsystem"
 
 	"github.com/base-org/pessimism/internal/config"
 
@@ -27,8 +30,10 @@ const (
 )
 
 // initializeServer ... Performs dependency injection to build server struct
-func initializeServer(ctx context.Context, cfg *config.Config, svc service.Service) (*server.Server, func(), error) {
-	handler, err := handlers.New(ctx, svc)
+func initializeServer(ctx context.Context, cfg *config.Config,
+	m subsystem.Manager) (*server.Server, func(), error) {
+	apiService := service.New(ctx, cfg.SvcConfig, m)
+	handler, err := handlers.New(ctx, apiService)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -40,117 +45,92 @@ func initializeServer(ctx context.Context, cfg *config.Config, svc service.Servi
 	return server, cleanup, nil
 }
 
+/*
+	Subsystem initialization functions
+*/
+
 // initializeAlerting ... Performs dependency injection to build alerting struct
-func initializeAlerting(ctx context.Context, cfg *config.Config) (alert.Manager, func()) {
+func initializeAlerting(ctx context.Context, cfg *config.Config) alert.AlertingManager {
 	sc := client.NewSlackClient(cfg.SlackURL)
 	return alert.NewManager(ctx, sc)
 }
 
+// initalizeETL ... Performs dependency injection to build etl struct
+func initalizeETL(ctx context.Context, transit chan core.InvariantInput) pipeline.Manager {
+	compRegistry := registry.NewRegistry()
+	analyzer := pipeline.NewAnalyzer(compRegistry)
+	store := pipeline.NewEtlStore()
+	dag := pipeline.NewComponentGraph()
+
+	return pipeline.NewManager(ctx, analyzer, compRegistry, store, dag, transit)
+}
+
+// initializeEngine ... Performs dependency injection to build engine struct
+func initializeEngine(ctx context.Context, transit chan core.Alert) engine.Manager {
+	store := engine.NewSessionStore()
+	am := engine.NewAddressingMap()
+	re := engine.NewHardCodedEngine()
+
+	return engine.NewManager(ctx, re, am, store, transit)
+}
+
 // main ... Application driver
 func main() {
-	appWg := &sync.WaitGroup{}
-	appCtx, appCtxCancel := context.WithCancel(context.Background())
-
-	appCtx = context.WithValue(appCtx, state.Default, state.NewMemState())
+	ctx := context.WithValue(
+		context.Background(), state.Default, state.NewMemState())
 
 	cfg := config.NewConfig(cfgPath) // Load env vars
 
 	logging.NewLogger(cfg.LoggerConfig, cfg.IsProduction())
 
-	logger := logging.WithContext(appCtx)
+	logger := logging.WithContext(ctx)
 	logger.Info("Bootstrapping pessimsim monitoring application")
-	compRegistry := registry.NewRegistry()
-	analyzer := pipeline.NewAnalyzer(compRegistry)
 
-	alertCtx, alertCtxCancel := context.WithCancel(appCtx)
-	alertMan, shutdownAlerting := initializeAlerting(alertCtx, cfg)
+	alrt := initializeAlerting(ctx, cfg)
+	eng := initializeEngine(ctx, alrt.Transit())
+	etl := initalizeETL(ctx, eng.Transit())
 
-	engineMan, shutDownEngine := engine.NewManager(appCtx, alertMan.Transit())
-	etlMan, shutDownETL := pipeline.NewManager(appCtx, analyzer, compRegistry, engineMan.Transit())
+	m := subsystem.NewManager(ctx, etl, eng, alrt)
+	srver, shutdownServer, err := initializeServer(ctx, cfg, m)
+	if err != nil {
+		logger.Error("Error initializing server", zap.Error(err))
+		os.Exit(1)
+	}
 
-	svc := service.New(appCtx, cfg.SvcConfig, alertMan, etlMan, engineMan)
+	pess := app.New(ctx, m, srver)
 
-	logger.Info("Starting and running risk engine manager instance")
-	engineCtx, engineCtxCancel := context.WithCancel(appCtx)
+	logger.Info("Starting pessimism application")
+	if err := pess.Start(); err != nil {
+		logger.Error("Error starting pessimism application", zap.Error(err))
+		os.Exit(1)
+	}
 
-	appWg.Add(1)
-	go func() { // etlMan driver thread
-		defer appWg.Done()
-
-		if err := etlMan.EventLoop(appCtx); err != nil {
-			logger.Error("etl manager event loop error", zap.Error(err))
-		}
-	}()
-
-	logger.Info("Starting and running ETL manager instance")
-
-	appWg.Add(1)
-	go func() { // engineMan driver thread
-		defer appWg.Done()
-
-		if err := engineMan.EventLoop(engineCtx); err != nil {
-			logger.Error("engine manager event loop error", zap.Error(err))
-		}
-	}()
-
-	appWg.Add(1)
-	go func() { // AlertManager driver thread
-		defer appWg.Done()
-
-		if err := alertMan.EventLoop(alertCtx); err != nil {
-			logger.Error("alert manager event loop error", zap.Error(err))
-		}
-	}()
-
-	appWg.Add(1)
-	go func() { // ApiServer driver thread
-		defer appWg.Done()
-
-		apiServer, shutDownServer, err := initializeServer(appCtx, cfg, svc)
-
+	pess.ListenForShutdown(func() {
+		err := m.Shutdown()
 		if err != nil {
-			logger.Error("Error obtained trying to start server", zap.Error(err))
-			panic(err)
+			logger.Error("Error shutting down subsystems", zap.Error(err))
 		}
 
-		apiServer.Stop(func() {
-			// NOTE - Subsystems are shutdown in reverse order of initialization
-
-			logger.Info("Shutting down pessimism application")
-
-			alertCtxCancel()   // Shutdown alerting subsystem event-loop
-			shutdownAlerting() // Shutdown alerting subsystem
-
-			engineCtxCancel() // Shutdown risk engine event-loop
-			shutDownEngine()  // Shutdown risk engine subsystem
-			logger.Info("Shutdown risk engine subsystem")
-
-			appCtxCancel() // Shutdown ETL subsystem event loops
-			shutDownETL()  // Shutdown ETL subsystem
-			logger.Info("Shutdown ETL subsystem")
-
-			shutDownServer() // Shutdown API server
-			logger.Info("Shutdown API server")
-		})
-	}()
+		shutdownServer()
+	})
 
 	if cfg.IsBootstrap() {
 		logger.Debug("Bootstrapping application state")
 
-		sessions, err := loadBootStrapFile(cfg.BootStrapPath)
-		if err != nil {
-			logger.Error("Error loading bootstrap file", zap.Error(err))
-			panic(err)
-		}
+		// sessions, err := loadBootStrapFile(cfg.BootStrapPath)
+		// if err != nil {
+		// 	logger.Error("Error loading bootstrap file", zap.Error(err))
+		// 	panic(err)
+		// }
 
-		if err := bootStrap(appCtx, svc, sessions); err != nil {
-			logger.Error("Error bootstrapping application state", zap.Error(err))
-			panic(err)
-		}
+		// if err := bootStrap(appCtx, svc, sessions); err != nil {
+		// 	logger.Error("Error bootstrapping application state", zap.Error(err))
+		// 	panic(err)
+		// }
 	}
 
 	logger.Debug("Waiting for all application threads to end")
-	appWg.Wait()
+
 	logger.Info("Successful pessimism shutdown")
 	os.Exit(0)
 }

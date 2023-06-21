@@ -4,8 +4,6 @@ import (
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/registry"
-	"github.com/base-org/pessimism/internal/logging"
-	"go.uber.org/zap"
 )
 
 // ProcessInvariantRequest ... Processes an invariant request type
@@ -18,10 +16,8 @@ func (svc *PessimismService) ProcessInvariantRequest(ir models.InvRequestBody) (
 	return core.NilSUUID(), nil
 }
 
-// runInvariantSession ... Runs an invariant session
+// runInvariantSession ... Runs an invariant session provided
 func (svc *PessimismService) RunInvariantSession(params models.InvRequestParams) (core.SUUID, error) {
-	logger := logging.WithContext(svc.ctx)
-
 	inv, err := registry.GetInvariant(params.InvariantType(), params.SessionParams)
 	if err != nil {
 		return core.NilSUUID(), err
@@ -39,35 +35,12 @@ func (svc *PessimismService) RunInvariantSession(params models.InvRequestParams)
 	}
 
 	pConfig := params.GeneratePipelineConfig(endpoint, pollInterval, inv.InputType())
+	sConfig := params.SessionConfig()
 
-	pUUID, err := svc.etlManager.CreateDataPipeline(pConfig)
+	sUUID, err := svc.m.StartInvSession(pConfig, sConfig)
 	if err != nil {
 		return core.NilSUUID(), err
 	}
 
-	inRegister, err := svc.etlManager.GetRegister(pConfig.DataType)
-	if err != nil {
-		return core.NilSUUID(), err
-	}
-
-	logger.Info("Created etl pipeline",
-		zap.String(core.PUUIDKey, pUUID.String()))
-
-	invID, err := svc.engineManager.DeployInvariantSession(params.NetworkType(), pUUID, params.InvariantType(),
-		params.PiplineType(), params.SessionParams, inRegister)
-	if err != nil {
-		return core.NilSUUID(), err
-	}
-	logger.Info("Deployed invariant session", zap.String(core.SUUIDKey, invID.String()))
-
-	err = svc.alertManager.AddInvariantSession(invID, params.AlertingDestType())
-	if err != nil {
-		return core.NilSUUID(), err
-	}
-
-	if err = svc.etlManager.RunPipeline(pUUID); err != nil {
-		return core.NilSUUID(), err
-	}
-
-	return invID, nil
+	return sUUID, nil
 }

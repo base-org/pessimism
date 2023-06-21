@@ -5,10 +5,10 @@
 package mocks
 
 import (
-	context "context"
 	reflect "reflect"
 
 	core "github.com/base-org/pessimism/internal/core"
+	invariant "github.com/base-org/pessimism/internal/engine/invariant"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -55,28 +55,46 @@ func (m *EngineManager) DeployInvariantSession(arg0 core.Network, arg1 core.PUUI
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeployInvariantSession", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(core.SUUID)
+func (m *EngineManager) DeployInvariantSession(arg0 *invariant.DeployConfig) (core.InvSessionUUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeployInvariantSession", arg0)
+	ret0, _ := ret[0].(core.InvSessionUUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DeployInvariantSession indicates an expected call of DeployInvariantSession.
-func (mr *EngineManagerMockRecorder) DeployInvariantSession(arg0, arg1, arg2, arg3, arg4, arg5 interface{}) *gomock.Call {
+func (mr *EngineManagerMockRecorder) DeployInvariantSession(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployInvariantSession", reflect.TypeOf((*EngineManager)(nil).DeployInvariantSession), arg0, arg1, arg2, arg3, arg4, arg5)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployInvariantSession", reflect.TypeOf((*EngineManager)(nil).DeployInvariantSession), arg0)
 }
 
 // EventLoop mocks base method.
-func (m *EngineManager) EventLoop(arg0 context.Context) error {
+func (m *EngineManager) EventLoop() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EventLoop", arg0)
+	ret := m.ctrl.Call(m, "EventLoop")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // EventLoop indicates an expected call of EventLoop.
-func (mr *EngineManagerMockRecorder) EventLoop(arg0 interface{}) *gomock.Call {
+func (mr *EngineManagerMockRecorder) EventLoop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventLoop", reflect.TypeOf((*EngineManager)(nil).EventLoop), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventLoop", reflect.TypeOf((*EngineManager)(nil).EventLoop))
+}
+
+// Shutdown mocks base method.
+func (m *EngineManager) Shutdown() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Shutdown")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Shutdown indicates an expected call of Shutdown.
+func (mr *EngineManagerMockRecorder) Shutdown() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*EngineManager)(nil).Shutdown))
 }
 
 // Transit mocks base method.

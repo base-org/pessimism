@@ -12,16 +12,19 @@ import (
 	"go.uber.org/zap"
 )
 
-// Manager ... Interface for alert manager
-type Manager interface {
+// AlertingManager ... Interface for alert manager
+type AlertingManager interface {
 	AddInvariantSession(core.SUUID, core.AlertDestination) error
-	EventLoop(ctx context.Context) error
 	Transit() chan core.Alert
+
+	core.Subsystem
 }
 
 // alertManager ... Alert manager implementation
 type alertManager struct {
-	ctx          context.Context
+	ctx    context.Context
+	cancel context.CancelFunc
+
 	sc           client.SlackClient
 	store        Store
 	interpolator Interpolator
@@ -30,22 +33,23 @@ type alertManager struct {
 }
 
 // NewManager ... Instantiates a new alert manager
-func NewManager(ctx context.Context, sc client.SlackClient) (Manager, func()) {
+func NewManager(ctx context.Context, sc client.SlackClient) AlertingManager {
 	// NOTE - Consider constructing dependencies in higher level
 	// abstraction and passing them in
+
+	ctx, cancel := context.WithCancel(ctx)
+
 	am := &alertManager{
-		ctx:          ctx,
+		ctx:    ctx,
+		cancel: cancel,
+
 		sc:           sc,
 		interpolator: NewInterpolator(),
 		store:        NewStore(),
 		alertTransit: make(chan core.Alert),
 	}
 
-	shutDown := func() {
-		close(am.alertTransit)
-	}
-
-	return am, shutDown
+	return am
 }
 
 // AddInvariantSession ... Adds an invariant session to the alert manager store
@@ -75,12 +79,12 @@ func (am *alertManager) handleSlackPost(alert core.Alert) error {
 }
 
 // EventLoop ... Event loop for alert manager subsystem
-func (am *alertManager) EventLoop(ctx context.Context) error {
-	logger := logging.WithContext(ctx)
+func (am *alertManager) EventLoop() error {
+	logger := logging.WithContext(am.ctx)
 
 	for {
 		select {
-		case <-ctx.Done():
+		case <-am.ctx.Done():
 			return nil
 
 		case alert := <-am.alertTransit:
@@ -111,4 +115,9 @@ func (am *alertManager) EventLoop(ctx context.Context) error {
 			}
 		}
 	}
+}
+
+func (am *alertManager) Shutdown() error {
+	am.cancel()
+	return nil
 }

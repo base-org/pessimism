@@ -36,8 +36,8 @@ type etlStore struct {
 	compPipelines map[core.CUUID][]core.PUUID
 }
 
-// newEtlStore ... Initializer
-func newEtlStore() EtlStore {
+// NewEtlStore ... Initializer
+func NewEtlStore() EtlStore {
 	return &etlStore{
 		compPipelines: make(map[core.CUUID][]core.PUUID),
 		pipelines:     make(pipelineMap),

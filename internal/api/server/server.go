@@ -4,9 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/base-org/pessimism/internal/api/handlers"
@@ -33,7 +30,6 @@ type Server struct {
 // New ... Initializer
 func New(ctx context.Context, cfg *Config, apiHandlers handlers.Handlers) (*Server, func(), error) {
 	restServer := initializeServer(cfg, apiHandlers)
-	go spawnServer(restServer)
 
 	stop := func() {
 		logging.WithContext(ctx).Info("starting to shutdown REST API HTTP server")
@@ -61,6 +57,10 @@ func spawnServer(server *Server) {
 	}
 }
 
+func (s *Server) Start() {
+	go spawnServer(s)
+}
+
 // initializeServer ... Initializes server struct object
 func initializeServer(config *Config, handler http.Handler) *Server {
 	return &Server{
@@ -73,18 +73,4 @@ func initializeServer(config *Config, handler http.Handler) *Server {
 			WriteTimeout: time.Duration(config.WriteTimeout) * time.Second,
 		},
 	}
-}
-
-// done ... Returns a channel to handle shutdown
-func (sv *Server) done() <-chan os.Signal {
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	return sigs
-}
-
-// Stop ... Waits for shutdown signal from shutdown channel
-func (sv *Server) Stop(stop func()) {
-	done := <-sv.done()
-	logging.NoContext().Info("Received shutdown OS signal", zap.String("signal", done.String()))
-	stop()
 }

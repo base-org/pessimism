@@ -14,6 +14,13 @@ type ClientConfig struct {
 	EndHeight    *big.Int
 }
 
+// SessionConfig ... Configuration passed through to a session constructor
+type SessionConfig struct {
+	AlertDest AlertDestination
+	Type      InvariantType
+	Params    InvSessionParams
+}
+
 // PipelineConfig ... Configuration passed through to a pipeline constructor
 type PipelineConfig struct {
 	Network      Network

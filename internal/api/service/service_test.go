@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	svc "github.com/base-org/pessimism/internal/api/service"
+	"github.com/base-org/pessimism/internal/subsystem"
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/mocks"
@@ -47,7 +48,11 @@ func createTestSuite(ctrl *gomock.Controller, cfg svc.Config) testSuite {
 	etlManager := mocks.NewEtlManager(ctrl)
 	alertManager := mocks.NewAlertManager(ctrl)
 
-	service := svc.New(context.Background(), &cfg, alertManager, etlManager, engineManager)
+	// NOTE - These tests should be migrated to the subsystem manager package
+	// TODO(#76): No Subsystem Manager Tests
+	m := subsystem.NewManager(context.Background(), etlManager, engineManager, alertManager)
+
+	service := svc.New(context.Background(), &cfg, m)
 	return testSuite{
 		testCfg: cfg,
 

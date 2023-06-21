@@ -20,8 +20,6 @@ type Store interface {
 	GetNestedSubset(ctx context.Context, key core.StateKey) (map[string][]string, error)
 
 	SetSlice(context.Context, core.StateKey, string) (string, error)
-	// MergeSlice(ctx context.Context, key1, key2 core.StateKey) error
-
 	Remove(context.Context, core.StateKey) error
 }
 

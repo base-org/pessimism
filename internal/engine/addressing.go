@@ -22,7 +22,7 @@ type addressEntry struct {
 
 // addressingMap ... Implementation of AddressingMap
 type addressingMap struct {
-	m map[common.Address][]addressEntry
+	m map[common.Address][]*addressEntry
 }
 
 // GetSessionUUIDByPair ... Gets the session UUID by the pair of address and pipeline UUID
@@ -45,13 +45,13 @@ func (am *addressingMap) GetSessionUUIDByPair(address common.Address,
 // Insert ... Inserts a new entry into the addressing map
 func (am *addressingMap) Insert(pUUID core.PUUID,
 	sUUID core.SUUID, address common.Address) error {
-	newEntry := addressEntry{
+	newEntry := &addressEntry{
 		address: address,
 		sUUID:   sUUID,
 		pUUID:   pUUID}
 
 	if _, found := am.m[address]; !found {
-		am.m[address] = []addressEntry{newEntry}
+		am.m[address] = []*addressEntry{newEntry}
 		return nil
 	}
 
@@ -69,6 +69,6 @@ func (am *addressingMap) Insert(pUUID core.PUUID,
 // NewAddressingMap ... Initializer
 func NewAddressingMap() AddressingMap {
 	return &addressingMap{
-		m: make(map[common.Address][]addressEntry),
+		m: make(map[common.Address][]*addressEntry),
 	}
 }
