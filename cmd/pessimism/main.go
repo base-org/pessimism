@@ -32,7 +32,8 @@ const (
 // initializeServer ... Performs dependency injection to build server struct
 func initializeServer(ctx context.Context, cfg *config.Config,
 	m subsystem.Manager) (*server.Server, func(), error) {
-	apiService := service.New(ctx, cfg.SvcConfig, m)
+	ethClient := client.NewEthClient()
+	apiService := service.New(ctx, cfg.SvcConfig, m, ethClient)
 	handler, err := handlers.New(ctx, apiService)
 	if err != nil {
 		return nil, nil, err
