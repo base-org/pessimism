@@ -52,6 +52,9 @@ func Test_GetHealth(t *testing.T) {
 				hc := ts.apiSvc.CheckHealth()
 
 				assert.True(t, hc.Healthy)
+				assert.True(t, hc.ChainConnectionStatus.IsL2Healthy)
+				assert.True(t, hc.ChainConnectionStatus.IsL1Healthy)
+
 			},
 		},
 		{
@@ -84,6 +87,8 @@ func Test_GetHealth(t *testing.T) {
 			testLogic: func(t *testing.T, ts testSuite) {
 				hc := ts.apiSvc.CheckHealth()
 				assert.False(t, hc.Healthy)
+				assert.False(t, hc.ChainConnectionStatus.IsL2Healthy)
+				assert.False(t, hc.ChainConnectionStatus.IsL1Healthy)
 			},
 		},
 	}

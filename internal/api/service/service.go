@@ -19,7 +19,6 @@ type Config struct {
 	L2RpcEndpoint  string
 	L1PollInterval int
 	L2PollInterval int
-	SlackURL       string
 }
 
 // GetEndpointForNetwork ... Returns config endpoint for network type

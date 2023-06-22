@@ -35,7 +35,12 @@ func Test_HealthCheck(t *testing.T) {
 				ts := createTestSuite(t)
 				ts.mockSvc.EXPECT().
 					CheckHealth().
-					Return(&models.HealthCheck{Healthy: true}).
+					Return(&models.HealthCheck{
+						Healthy: true,
+						ChainConnectionStatus: models.ChainConnectionStatus{
+							IsL1Healthy: true,
+							IsL2Healthy: true,
+						}}).
 					Times(1)
 
 				return ts
@@ -58,6 +63,8 @@ func Test_HealthCheck(t *testing.T) {
 
 				assert.NoError(t, err)
 				assert.True(t, actualHc.Healthy)
+				assert.True(t, actualHc.ChainConnectionStatus.IsL1Healthy)
+				assert.True(t, actualHc.ChainConnectionStatus.IsL2Healthy)
 			},
 		},
 		{
@@ -69,7 +76,12 @@ func Test_HealthCheck(t *testing.T) {
 				ts := createTestSuite(t)
 				ts.mockSvc.EXPECT().
 					CheckHealth().
-					Return(&models.HealthCheck{Healthy: false}).
+					Return(&models.HealthCheck{
+						Healthy: false,
+						ChainConnectionStatus: models.ChainConnectionStatus{
+							IsL1Healthy: false,
+							IsL2Healthy: true,
+						}}).
 					Times(1)
 
 				return ts
@@ -92,6 +104,8 @@ func Test_HealthCheck(t *testing.T) {
 
 				assert.NoError(t, err)
 				assert.False(t, actualHc.Healthy)
+				assert.False(t, actualHc.ChainConnectionStatus.IsL1Healthy)
+				assert.True(t, actualHc.ChainConnectionStatus.IsL2Healthy)
 			},
 		},
 	}

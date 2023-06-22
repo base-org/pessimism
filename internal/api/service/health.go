@@ -10,14 +10,18 @@ import (
 
 // CheckHealth ... Returns health check for server
 func (svc *PessimismService) CheckHealth() *models.HealthCheck {
-	healthCheck := &models.NodeConnectionStatus{}
+	hc := &models.ChainConnectionStatus{
+		IsL1Healthy: svc.CheckETHRPCHealth(svc.cfg.L1RpcEndpoint),
+		IsL2Healthy: svc.CheckETHRPCHealth(svc.cfg.L2RpcEndpoint),
+	}
 
-	healthCheck.IsL1Healthy = svc.CheckETHRPCHealth(svc.cfg.L1RpcEndpoint)
-	healthCheck.IsL2Healthy = svc.CheckETHRPCHealth(svc.cfg.L2RpcEndpoint)
+	healthy := hc.IsL1Healthy && hc.IsL2Healthy
 
-	healthy := healthCheck.IsL1Healthy && healthCheck.IsL2Healthy
-
-	return &models.HealthCheck{Timestamp: time.Now(), Healthy: healthy}
+	return &models.HealthCheck{
+		Timestamp:             time.Now(),
+		Healthy:               healthy,
+		ChainConnectionStatus: *hc,
+	}
 }
 
 func (svc *PessimismService) CheckETHRPCHealth(url string) bool {
