@@ -6,6 +6,8 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
+// TODO(#81): No Support for Multiple Alerting Destinations for an Invariant Session
+
 // Store ... Interface for alert store
 // NOTE - This is a simple in-memory store, using this interface
 // we can easily swap it out for a persistent store
