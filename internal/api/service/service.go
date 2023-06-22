@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/base-org/pessimism/internal/client"
 	"time"
 
 	"github.com/base-org/pessimism/internal/api/models"
@@ -18,6 +19,7 @@ type Config struct {
 	L2RpcEndpoint  string
 	L1PollInterval int
 	L2PollInterval int
+	SlackURL       string
 }
 
 // GetEndpointForNetwork ... Returns config endpoint for network type
@@ -52,21 +54,24 @@ func (cfg *Config) GetPollIntervalForNetwork(n core.Network) (time.Duration, err
 type Service interface {
 	ProcessInvariantRequest(ir models.InvRequestBody) (core.InvSessionUUID, error)
 	CheckHealth() *models.HealthCheck
+	CheckETHRPCHealth(url string) bool
 }
 
 // PessimismService ... API service
 type PessimismService struct {
-	ctx context.Context
-	cfg *Config
+	ctx       context.Context
+	cfg       *Config
+	ethClient client.EthClientInterface
 
 	m subsystem.Manager
 }
 
 // New ... Initializer
-func New(ctx context.Context, cfg *Config, m subsystem.Manager) *PessimismService {
+func New(ctx context.Context, cfg *Config, m subsystem.Manager, ethClient client.EthClientInterface) *PessimismService {
 	return &PessimismService{
-		ctx: ctx,
-		cfg: cfg,
+		ctx:       ctx,
+		cfg:       cfg,
+		ethClient: ethClient,
 
 		m: m,
 	}

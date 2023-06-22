@@ -35,6 +35,20 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 	return m.recorder
 }
 
+// CheckETHRPCHealth mocks base method.
+func (m *MockService) CheckETHRPCHealth(arg0 string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckETHRPCHealth", arg0)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CheckETHRPCHealth indicates an expected call of CheckETHRPCHealth.
+func (mr *MockServiceMockRecorder) CheckETHRPCHealth(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckETHRPCHealth", reflect.TypeOf((*MockService)(nil).CheckETHRPCHealth), arg0)
+}
+
 // CheckHealth mocks base method.
 func (m *MockService) CheckHealth() *models.HealthCheck {
 	m.ctrl.T.Helper()

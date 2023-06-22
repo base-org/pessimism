@@ -60,6 +60,40 @@ func Test_HealthCheck(t *testing.T) {
 				assert.True(t, actualHc.Healthy)
 			},
 		},
+		{
+			name:        "Failed Health Check",
+			description: "When GetHealth is called provided a unhealthy application, an unhealthy check should be rendered",
+			function:    "GetHealth",
+
+			constructionLogic: func() testSuite {
+				ts := createTestSuite(t)
+				ts.mockSvc.EXPECT().
+					CheckHealth().
+					Return(&models.HealthCheck{Healthy: false}).
+					Times(1)
+
+				return ts
+			},
+
+			testLogic: func(t *testing.T, ts testSuite) {
+				w := httptest.NewRecorder()
+				r := httptest.NewRequest(http.MethodGet, testAddress, nil)
+
+				ts.testHandler.HealthCheck(w, r)
+				res := w.Result()
+
+				data, err := io.ReadAll(res.Body)
+				if err != nil {
+					t.Errorf("Error: %v", err)
+				}
+
+				actualHc := &models.HealthCheck{}
+				err = json.Unmarshal(data, actualHc)
+
+				assert.NoError(t, err)
+				assert.False(t, actualHc.Healthy)
+			},
+		},
 	}
 
 	for i, tc := range tests {
