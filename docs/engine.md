@@ -90,7 +90,7 @@ A risk engine has an associated execution type that defines how the risk engine 
 ## Hardcoded Invariant Types
 As of now, there are two types of hardcoded invariants that a user can deploy active sessions for:
 -  `invocation` - Invariant that is triggered when a specific smart contract function is invoked **Not currently supported**
-- `balance` - Invariant that checks an address's balance changes and ensures that the balance does not exceed a certain threshold
+- `balance_enforcement` - Invariant that checks an address's balance changes and ensures that the balance does not exceed a certain threshold
 
 ### How to add a new invariant
 1. Create a new file in the `internal/engine/registry` directory that stores the invariant implementaion. The implementation must adhere to the interface specified for the `BaseInvariant` type. 
