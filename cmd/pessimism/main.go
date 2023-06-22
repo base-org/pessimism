@@ -120,7 +120,6 @@ func main() {
 		}
 
 		logger.Debug("Application state successfully bootstrapped")
-
 	}
 
 	pessimism.ListenForShutdown(func() {

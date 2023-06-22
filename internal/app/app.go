@@ -69,7 +69,6 @@ func (a *Application) BootStrap(sessions []BootSession) error {
 	logger := logging.WithContext(a.ctx)
 
 	for _, session := range sessions {
-
 		inv, err := registry.GetInvariant(session.InvariantType(), session.SessionParams)
 		if err != nil {
 			return err
