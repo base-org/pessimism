@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -27,14 +28,67 @@ func Test_GetHealth(t *testing.T) {
 
 			constructionLogic: func() testSuite {
 				cfg := svc.Config{}
+				ts := createTestSuite(ctrl, cfg)
 
-				return createTestSuite(ctrl, cfg)
+				ts.mockEthClientInterface.EXPECT().
+					DialContext(context.Background(), gomock.Any()).
+					Return(nil).
+					AnyTimes()
+
+				ts.mockService.EXPECT().
+					CheckETHRPCHealth(gomock.Any()).
+					Return(true).
+					AnyTimes()
+
+				ts.mockEthClientInterface.EXPECT().
+					HeaderByNumber(gomock.Any(), gomock.Any()).
+					Return(nil, nil).
+					AnyTimes()
+
+				return ts
 			},
 
 			testLogic: func(t *testing.T, ts testSuite) {
 				hc := ts.apiSvc.CheckHealth()
 
 				assert.True(t, hc.Healthy)
+				assert.True(t, hc.ChainConnectionStatus.IsL2Healthy)
+				assert.True(t, hc.ChainConnectionStatus.IsL1Healthy)
+
+			},
+		},
+		{
+			name:        "Get Unhealthy Response",
+			description: "Emulates unhealthy rpc endpoints",
+			function:    "ProcessInvariantRequest",
+
+			constructionLogic: func() testSuite {
+				cfg := svc.Config{}
+				ts := createTestSuite(ctrl, cfg)
+
+				ts.mockEthClientInterface.EXPECT().
+					DialContext(gomock.Any(), gomock.Any()).
+					Return(testErr1()).
+					AnyTimes()
+
+				ts.mockService.EXPECT().
+					CheckETHRPCHealth(gomock.Any()).
+					Return(false).
+					AnyTimes()
+
+				ts.mockEthClientInterface.EXPECT().
+					HeaderByNumber(gomock.Any(), gomock.Any()).
+					Return(nil, nil).
+					AnyTimes()
+
+				return ts
+			},
+
+			testLogic: func(t *testing.T, ts testSuite) {
+				hc := ts.apiSvc.CheckHealth()
+				assert.False(t, hc.Healthy)
+				assert.False(t, hc.ChainConnectionStatus.IsL2Healthy)
+				assert.False(t, hc.ChainConnectionStatus.IsL1Healthy)
 			},
 		},
 	}
