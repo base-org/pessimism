@@ -19,18 +19,20 @@ type Manager interface {
 	GetRegister(rt core.RegisterType) (*core.DataRegister, error)
 	CreateDataPipeline(cfg *core.PipelineConfig) (core.PipelineUUID, error)
 	RunPipeline(pID core.PipelineUUID) error
-	EventLoop(ctx context.Context) error
+
+	core.Subsystem
 }
 
 // etlManager ... ETL manager
 type etlManager struct {
-	ctx context.Context
+	ctx    context.Context
+	cancel context.CancelFunc
 
 	analyzer Analyzer
 	dag      ComponentGraph
 	store    EtlStore
 
-	engineChan chan core.InvariantInput
+	engOutgress chan core.InvariantInput
 
 	registry registry.Registry
 	wg       sync.WaitGroup
@@ -38,38 +40,19 @@ type etlManager struct {
 
 // NewManager ... Initializer
 func NewManager(ctx context.Context, analyzer Analyzer, cRegistry registry.Registry,
-	ec chan core.InvariantInput) (Manager, func()) {
-	dag := NewComponentGraph()
-
+	store EtlStore, dag ComponentGraph,
+	eo chan core.InvariantInput) Manager {
 	m := &etlManager{
-		analyzer:   analyzer,
-		ctx:        ctx,
-		dag:        dag,
-		store:      newEtlStore(),
-		registry:   cRegistry,
-		engineChan: ec,
-		wg:         sync.WaitGroup{},
+		analyzer:    analyzer,
+		ctx:         ctx,
+		dag:         dag,
+		store:       store,
+		registry:    cRegistry,
+		engOutgress: eo,
+		wg:          sync.WaitGroup{},
 	}
 
-	shutDown := func() { // Iterate and kill active pipelines
-		for _, pl := range m.store.GetAllPipelines() {
-			logging.WithContext(ctx).
-				Info("Shuting down pipeline",
-					zap.String(core.PUUIDKey, pl.UUID().String()))
-
-			if err := pl.Close(); err != nil {
-				logging.WithContext(ctx).
-					Error("Failed to close pipeline",
-						zap.String(core.PUUIDKey, pl.UUID().String()))
-			}
-		}
-		logging.WithContext(ctx).Debug("Waiting for all component routines to end")
-		m.wg.Wait()
-
-		logging.WithContext(ctx).Debug("Closing component event channel")
-	}
-
-	return m, shutDown
+	return m
 }
 
 // GetRegister ... Returns a data register for a given register type
@@ -113,7 +96,7 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.Pipelin
 	}
 
 	// Bind communication route between pipeline and risk engine
-	if err := pipeline.AddEngineRelay(em.engineChan); err != nil {
+	if err := pipeline.AddEngineRelay(em.engOutgress); err != nil {
 		return core.NilPipelineUUID(), err
 	}
 
@@ -144,14 +127,35 @@ func (em *etlManager) RunPipeline(pUUID core.PipelineUUID) error {
 }
 
 // EventLoop ... Driver ran as separate go routine
-func (em *etlManager) EventLoop(ctx context.Context) error {
-	logger := logging.WithContext(ctx)
+func (em *etlManager) EventLoop() error {
+	logger := logging.WithContext(em.ctx)
 
 	for {
-		<-ctx.Done()
+		<-em.ctx.Done()
 		logger.Info("Receieved shutdown request")
 		return nil
 	}
+}
+
+// Shutdown ... Shuts down all pipelines
+func (em *etlManager) Shutdown() error {
+	logger := logging.WithContext(em.ctx)
+
+	for _, pl := range em.store.GetAllPipelines() {
+		logger.Info("Shuting down pipeline",
+			zap.String(core.PUUIDKey, pl.UUID().String()))
+
+		if err := pl.Close(); err != nil {
+			logger.Error("Failed to close pipeline",
+				zap.String(core.PUUIDKey, pl.UUID().String()))
+			return err
+		}
+	}
+	logger.Debug("Waiting for all component routines to end")
+	em.wg.Wait()
+	em.cancel()
+
+	return nil
 }
 
 // getComponents ... Returns all components provided a slice of register definitions

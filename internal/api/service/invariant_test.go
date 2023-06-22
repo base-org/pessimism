@@ -143,8 +143,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 					Times(1)
 
 				ts.mockEngineMan.EXPECT().
-					DeployInvariantSession(gomock.Any(), gomock.Any(),
-						gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					DeployInvariantSession(gomock.Any()).
 					Return(core.NilInvariantUUID(), testErr2()).
 					Times(1)
 
@@ -186,8 +185,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 					Times(1)
 
 				ts.mockEngineMan.EXPECT().
-					DeployInvariantSession(gomock.Any(), gomock.Any(),
-						gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					DeployInvariantSession(gomock.Any()).
 					Return(core.NilInvariantUUID(), nil).
 					Times(1)
 
@@ -229,8 +227,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 					Times(1)
 
 				ts.mockEngineMan.EXPECT().
-					DeployInvariantSession(gomock.Any(), gomock.Any(),
-						gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+					DeployInvariantSession(gomock.Any()).
 					Return(testSUUID1(), nil).
 					Times(1)
 

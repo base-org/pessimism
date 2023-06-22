@@ -5,7 +5,6 @@
 package mocks
 
 import (
-	context "context"
 	reflect "reflect"
 
 	core "github.com/base-org/pessimism/internal/core"
@@ -50,17 +49,31 @@ func (mr *MockAlertingManagerMockRecorder) AddInvariantSession(arg0, arg1 interf
 }
 
 // EventLoop mocks base method.
-func (m *MockAlertingManager) EventLoop(arg0 context.Context) error {
+func (m *MockAlertingManager) EventLoop() error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "EventLoop", arg0)
+	ret := m.ctrl.Call(m, "EventLoop")
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // EventLoop indicates an expected call of EventLoop.
-func (mr *MockAlertingManagerMockRecorder) EventLoop(arg0 interface{}) *gomock.Call {
+func (mr *MockAlertingManagerMockRecorder) EventLoop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventLoop", reflect.TypeOf((*MockAlertingManager)(nil).EventLoop), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventLoop", reflect.TypeOf((*MockAlertingManager)(nil).EventLoop))
+}
+
+// Shutdown mocks base method.
+func (m *MockAlertingManager) Shutdown() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Shutdown")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Shutdown indicates an expected call of Shutdown.
+func (mr *MockAlertingManagerMockRecorder) Shutdown() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*MockAlertingManager)(nil).Shutdown))
 }
 
 // Transit mocks base method.

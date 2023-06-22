@@ -88,6 +88,15 @@ func (irp *InvRequestParams) GeneratePipelineConfig(endpoint string, pollInterva
 	}
 }
 
+// SessionConfig ... Generates a session config using the request params
+func (irp *InvRequestParams) SessionConfig() *core.SessionConfig {
+	return &core.SessionConfig{
+		AlertDest: irp.AlertingDestType(),
+		Type:      irp.InvariantType(),
+		Params:    irp.SessionParams,
+	}
+}
+
 // InvRequestBody ... Request body for invariant operation request
 type InvRequestBody struct {
 	Method string           `json:"method"`
