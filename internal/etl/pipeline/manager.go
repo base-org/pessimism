@@ -42,9 +42,12 @@ type etlManager struct {
 func NewManager(ctx context.Context, analyzer Analyzer, cRegistry registry.Registry,
 	store EtlStore, dag ComponentGraph,
 	eo chan core.InvariantInput) Manager {
+	ctx, cancel := context.WithCancel(ctx)
+
 	m := &etlManager{
 		analyzer:    analyzer,
 		ctx:         ctx,
+		cancel:      cancel,
 		dag:         dag,
 		store:       store,
 		registry:    cRegistry,
@@ -139,6 +142,7 @@ func (em *etlManager) EventLoop() error {
 
 // Shutdown ... Shuts down all pipelines
 func (em *etlManager) Shutdown() error {
+	em.cancel()
 	logger := logging.WithContext(em.ctx)
 
 	for _, pl := range em.store.GetAllPipelines() {
@@ -153,7 +157,6 @@ func (em *etlManager) Shutdown() error {
 	}
 	logger.Debug("Waiting for all component routines to end")
 	em.wg.Wait()
-	em.cancel()
 
 	return nil
 }

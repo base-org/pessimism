@@ -50,7 +50,7 @@ func initializeServer(ctx context.Context, cfg *config.Config,
 */
 
 // initializeAlerting ... Performs dependency injection to build alerting struct
-func initializeAlerting(ctx context.Context, cfg *config.Config) alert.AlertingManager {
+func initializeAlerting(ctx context.Context, cfg *config.Config) alert.Manager {
 	sc := client.NewSlackClient(cfg.SlackURL)
 	return alert.NewManager(ctx, sc)
 }
@@ -97,15 +97,33 @@ func main() {
 		os.Exit(1)
 	}
 
-	pess := app.New(ctx, m, srver)
+	pessimism := app.New(ctx, cfg, m, srver)
 
 	logger.Info("Starting pessimism application")
-	if err := pess.Start(); err != nil {
+	if err := pessimism.Start(); err != nil {
 		logger.Error("Error starting pessimism application", zap.Error(err))
 		os.Exit(1)
 	}
 
-	pess.ListenForShutdown(func() {
+	if cfg.IsBootstrap() {
+		logger.Debug("Bootstrapping application state")
+
+		sessions, err := fetchBootSessions(cfg.BootStrapPath)
+		if err != nil {
+			logger.Error("Error loading bootstrap file", zap.Error(err))
+			panic(err)
+		}
+
+		if err := pessimism.BootStrap(sessions); err != nil {
+			logger.Error("Error bootstrapping application state", zap.Error(err))
+			panic(err)
+		}
+
+		logger.Debug("Application state successfully bootstrapped")
+
+	}
+
+	pessimism.ListenForShutdown(func() {
 		err := m.Shutdown()
 		if err != nil {
 			logger.Error("Error shutting down subsystems", zap.Error(err))
@@ -113,21 +131,6 @@ func main() {
 
 		shutdownServer()
 	})
-
-	if cfg.IsBootstrap() {
-		logger.Debug("Bootstrapping application state")
-
-		// sessions, err := loadBootStrapFile(cfg.BootStrapPath)
-		// if err != nil {
-		// 	logger.Error("Error loading bootstrap file", zap.Error(err))
-		// 	panic(err)
-		// }
-
-		// if err := bootStrap(appCtx, svc, sessions); err != nil {
-		// 	logger.Error("Error bootstrapping application state", zap.Error(err))
-		// 	panic(err)
-		// }
-	}
 
 	logger.Debug("Waiting for all application threads to end")
 

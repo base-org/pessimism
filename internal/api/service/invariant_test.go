@@ -144,7 +144,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				ts.mockEngineMan.EXPECT().
 					DeployInvariantSession(gomock.Any()).
-					Return(core.NilInvariantUUID(), testErr2()).
+					Return(core.NilSUUID(), testErr2()).
 					Times(1)
 
 				return ts
@@ -186,7 +186,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				ts.mockEngineMan.EXPECT().
 					DeployInvariantSession(gomock.Any()).
-					Return(core.NilInvariantUUID(), nil).
+					Return(core.NilSUUID(), nil).
 					Times(1)
 
 				ts.mockEtlMan.EXPECT().

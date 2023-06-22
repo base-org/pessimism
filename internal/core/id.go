@@ -62,7 +62,7 @@ type PUUID struct {
 }
 
 // PipelineType ... Returns pipeline type decoding from encoded pid byte
-func (uuid PipelineUUID) PipelineType() PipelineType {
+func (uuid PUUID) PipelineType() PipelineType {
 	return PipelineType(uuid.PID[0])
 }
 

@@ -49,7 +49,7 @@ func (mr *AlertManagerMockRecorder) AddInvariantSession(arg0, arg1 interface{}) 
 }
 
 // EventLoop mocks base method.
-func (m *MockAlertingManager) EventLoop() error {
+func (m *AlertManager) EventLoop() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "EventLoop")
 	ret0, _ := ret[0].(error)
@@ -57,16 +57,13 @@ func (m *MockAlertingManager) EventLoop() error {
 }
 
 // EventLoop indicates an expected call of EventLoop.
-func (mr *AlertManagerMockRecorder) EventLoop(arg0 interface{}) *gomock.Call {
+func (mr *AlertManagerMockRecorder) EventLoop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventLoop", reflect.TypeOf((*AlertManager)(nil).EventLoop), arg0)
-func (mr *MockAlertingManagerMockRecorder) EventLoop() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventLoop", reflect.TypeOf((*MockAlertingManager)(nil).EventLoop))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventLoop", reflect.TypeOf((*AlertManager)(nil).EventLoop))
 }
 
 // Shutdown mocks base method.
-func (m *MockAlertingManager) Shutdown() error {
+func (m *AlertManager) Shutdown() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Shutdown")
 	ret0, _ := ret[0].(error)
@@ -74,9 +71,9 @@ func (m *MockAlertingManager) Shutdown() error {
 }
 
 // Shutdown indicates an expected call of Shutdown.
-func (mr *MockAlertingManagerMockRecorder) Shutdown() *gomock.Call {
+func (mr *AlertManagerMockRecorder) Shutdown() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*MockAlertingManager)(nil).Shutdown))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*AlertManager)(nil).Shutdown))
 }
 
 // Transit mocks base method.

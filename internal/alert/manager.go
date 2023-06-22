@@ -12,8 +12,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// AlertingManager ... Interface for alert manager
-type AlertingManager interface {
+// Manager ... Interface for alert manager
+type Manager interface {
 	AddInvariantSession(core.SUUID, core.AlertDestination) error
 	Transit() chan core.Alert
 
@@ -33,7 +33,7 @@ type alertManager struct {
 }
 
 // NewManager ... Instantiates a new alert manager
-func NewManager(ctx context.Context, sc client.SlackClient) AlertingManager {
+func NewManager(ctx context.Context, sc client.SlackClient) Manager {
 	// NOTE - Consider constructing dependencies in higher level
 	// abstraction and passing them in
 

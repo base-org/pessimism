@@ -16,7 +16,7 @@ import (
 // Manager ... Subsystem manager interface
 type Manager interface {
 	StartEventRoutines(ctx context.Context)
-	StartInvSession(cfg *core.PipelineConfig, invCfg *core.SessionConfig) (core.InvSessionUUID, error)
+	StartInvSession(cfg *core.PipelineConfig, invCfg *core.SessionConfig) (core.SUUID, error)
 	Shutdown() error
 }
 
@@ -26,14 +26,14 @@ type manager struct {
 
 	etl  pipeline.Manager
 	eng  engine.Manager
-	alrt alert.AlertingManager
+	alrt alert.Manager
 
 	*sync.WaitGroup
 }
 
 // NewManager ... Initializer for the subsystem manager
 func NewManager(ctx context.Context, etl pipeline.Manager, eng engine.Manager,
-	alrt alert.AlertingManager,
+	alrt alert.Manager,
 ) Manager {
 	return &manager{
 		ctx:       ctx,
@@ -91,17 +91,17 @@ func (m *manager) StartEventRoutines(ctx context.Context) {
 }
 
 // StartInvSession ... Deploys an invariant session
-func (m *manager) StartInvSession(cfg *core.PipelineConfig, invCfg *core.SessionConfig) (core.InvSessionUUID, error) {
+func (m *manager) StartInvSession(cfg *core.PipelineConfig, invCfg *core.SessionConfig) (core.SUUID, error) {
 	logger := logging.WithContext(m.ctx)
 
 	pUUID, err := m.etl.CreateDataPipeline(cfg)
 	if err != nil {
-		return core.NilInvariantUUID(), err
+		return core.NilSUUID(), err
 	}
 
 	reg, err := m.etl.GetRegister(cfg.DataType)
 	if err != nil {
-		return core.NilInvariantUUID(), err
+		return core.NilSUUID(), err
 	}
 
 	logger.Info("Created etl pipeline",
@@ -117,17 +117,17 @@ func (m *manager) StartInvSession(cfg *core.PipelineConfig, invCfg *core.Session
 
 	sUUID, err := m.eng.DeployInvariantSession(deployCfg)
 	if err != nil {
-		return core.NilInvariantUUID(), err
+		return core.NilSUUID(), err
 	}
 	logger.Info("Deployed invariant session", zap.String(core.SUUIDKey, sUUID.String()))
 
 	err = m.alrt.AddInvariantSession(sUUID, invCfg.AlertDest)
 	if err != nil {
-		return core.NilInvariantUUID(), err
+		return core.NilSUUID(), err
 	}
 
 	if err = m.etl.RunPipeline(pUUID); err != nil {
-		return core.NilInvariantUUID(), err
+		return core.NilSUUID(), err
 	}
 
 	return sUUID, nil
