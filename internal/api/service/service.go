@@ -5,10 +5,10 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/base-org/pessimism/internal/client"
 	"time"
 
 	"github.com/base-org/pessimism/internal/api/models"
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/subsystem"
 )

@@ -1,15 +1,15 @@
 package service
 
 import (
+	"time"
+
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/logging"
 	"go.uber.org/zap"
-	"time"
 )
 
 // CheckHealth ... Returns health check for server
 func (svc *PessimismService) CheckHealth() *models.HealthCheck {
-
 	healthCheck := &models.NodeConnectionStatus{}
 
 	healthCheck.IsL1Healthy = svc.CheckETHRPCHealth(svc.cfg.L1RpcEndpoint)
