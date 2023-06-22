@@ -51,7 +51,9 @@ func (cfg *Config) GetPollIntervalForNetwork(n core.Network) (time.Duration, err
 
 // Service ... Interface for API service
 type Service interface {
-	ProcessInvariantRequest(ir models.InvRequestBody) (core.InvSessionUUID, error)
+	ProcessInvariantRequest(ir models.InvRequestBody) (core.SUUID, error)
+	RunInvariantSession(params models.InvRequestParams) (core.SUUID, error)
+
 	CheckHealth() *models.HealthCheck
 	CheckETHRPCHealth(url string) bool
 }

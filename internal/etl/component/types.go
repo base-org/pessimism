@@ -33,7 +33,7 @@ func (as ActivityState) String() string {
 // that is processed by component management logic to determine
 // proper pipeline states and duplicate pipeline merging opportunities
 type StateChange struct {
-	ID core.ComponentUUID
+	ID core.CUUID
 
 	From ActivityState // S
 	To   ActivityState // S'

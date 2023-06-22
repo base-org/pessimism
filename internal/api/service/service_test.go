@@ -21,7 +21,7 @@ const (
 type testSuite struct {
 	testCfg svc.Config
 
-	mockAlertMan           *mocks.MockAlertingManager
+	mockAlertMan           *mocks.AlertManager
 	mockEngineMan          *mocks.EngineManager
 	mockEtlMan             *mocks.EtlManager
 	mockService            *mocks.MockService
@@ -41,14 +41,14 @@ func testErr3() error {
 	return fmt.Errorf(testErrMsg3)
 }
 
-func testSUUID1() core.InvSessionUUID {
-	return core.MakeInvSessionUUID(1, 1, 1)
+func testSUUID1() core.SUUID {
+	return core.MakeSUUID(1, 1, 1)
 }
 
 func createTestSuite(ctrl *gomock.Controller, cfg svc.Config) testSuite {
 	engineManager := mocks.NewEngineManager(ctrl)
 	etlManager := mocks.NewEtlManager(ctrl)
-	alertManager := mocks.NewMockAlertingManager(ctrl)
+	alertManager := mocks.NewAlertManager(ctrl)
 	serviceManager := mocks.NewMockService(ctrl)
 	ethClientManager := mocks.NewMockEthClientInterface(ctrl)
 

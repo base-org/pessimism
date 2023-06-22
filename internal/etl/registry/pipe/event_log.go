@@ -23,12 +23,12 @@ import (
 type EventDefinition struct {
 	client client.EthClientInterface
 	sk     core.StateKey
-	pUUID  core.PipelineUUID
+	pUUID  core.PUUID
 	cfg    *core.ClientConfig
 }
 
 // ConfigureRoutine ... Sets up the pipe client connection and persists puuid to definition state
-func (ed *EventDefinition) ConfigureRoutine(pUUID core.PipelineUUID) error {
+func (ed *EventDefinition) ConfigureRoutine(pUUID core.PUUID) error {
 	ed.pUUID = pUUID
 	ed.sk = state.MakeKey(core.EventLog, core.AddressKey, true).
 		WithPUUID(pUUID)

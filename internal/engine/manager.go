@@ -23,8 +23,8 @@ type Manager interface {
 	Transit() chan core.InvariantInput
 
 	// TODO( ) : Session deletion logic
-	DeleteInvariantSession(core.InvSessionUUID) (core.InvSessionUUID, error)
-	DeployInvariantSession(cfg *invariant.DeployConfig) (core.InvSessionUUID, error)
+	DeleteInvariantSession(core.SUUID) (core.SUUID, error)
+	DeployInvariantSession(cfg *invariant.DeployConfig) (core.SUUID, error)
 }
 
 /*
@@ -70,15 +70,15 @@ func (em *engineManager) Transit() chan core.InvariantInput {
 }
 
 // DeleteInvariantSession ... Deletes an invariant session
-func (em *engineManager) DeleteInvariantSession(_ core.InvSessionUUID) (core.InvSessionUUID, error) {
-	return core.NilInvariantUUID(), nil
+func (em *engineManager) DeleteInvariantSession(_ core.SUUID) (core.SUUID, error) {
+	return core.NilSUUID(), nil
 }
 
 // updateSharedState ... Updates the shared state store
 // with contextual information about the invariant session
 // to the ETL (e.g. address, events)
 func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
-	register *core.DataRegister, pUUID core.PipelineUUID) error {
+	register *core.DataRegister, pUUID core.PUUID) error {
 	stateStore, err := state.FromContext(em.ctx)
 	if err != nil {
 		return err
@@ -110,18 +110,18 @@ func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
 }
 
 // DeployInvariantSession ... Deploys an invariant session to be processed by the engine
-func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (core.InvSessionUUID, error) {
+func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (core.SUUID, error) {
 	inv, err := registry.GetInvariant(cfg.InvType, cfg.InvParams)
 	if err != nil {
-		return core.NilInvariantUUID(), err
+		return core.NilSUUID(), err
 	}
 
-	sUUID := core.MakeInvSessionUUID(cfg.Network, cfg.PUUID.PipelineType(), cfg.InvType)
+	sUUID := core.MakeSUUID(cfg.Network, cfg.PUUID.PipelineType(), cfg.InvType)
 	inv.SetSUUID(sUUID)
 
 	err = em.store.AddInvSession(sUUID, cfg.PUUID, inv)
 	if err != nil {
-		return core.NilInvariantUUID(), err
+		return core.NilSUUID(), err
 	}
 
 	if cfg.Register.Addressing {
@@ -129,12 +129,12 @@ func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (co
 
 		err = em.addresser.Insert(cfg.PUUID, sUUID, gethAddr)
 		if err != nil {
-			return core.NilInvariantUUID(), err
+			return core.NilSUUID(), err
 		}
 
 		err = em.updateSharedState(cfg.InvParams, cfg.Register, cfg.PUUID)
 		if err != nil {
-			return core.NilInvariantUUID(), err
+			return core.NilSUUID(), err
 		}
 	}
 

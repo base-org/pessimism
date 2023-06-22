@@ -35,10 +35,10 @@ func (m *EtlManager) EXPECT() *EtlManagerMockRecorder {
 }
 
 // CreateDataPipeline mocks base method.
-func (m *EtlManager) CreateDataPipeline(arg0 *core.PipelineConfig) (core.PipelineUUID, error) {
+func (m *EtlManager) CreateDataPipeline(arg0 *core.PipelineConfig) (core.PUUID, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateDataPipeline", arg0)
-	ret0, _ := ret[0].(core.PipelineUUID)
+	ret0, _ := ret[0].(core.PUUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -79,7 +79,7 @@ func (mr *EtlManagerMockRecorder) GetRegister(arg0 interface{}) *gomock.Call {
 }
 
 // RunPipeline mocks base method.
-func (m *EtlManager) RunPipeline(arg0 core.PipelineUUID) error {
+func (m *EtlManager) RunPipeline(arg0 core.PUUID) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RunPipeline", arg0)
 	ret0, _ := ret[0].(error)

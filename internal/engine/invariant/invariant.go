@@ -16,8 +16,8 @@ const (
 type Invariant interface {
 	InputType() core.RegisterType
 	Invalidate(core.TransitData) (*core.InvalOutcome, bool, error)
-	SUUID() core.InvSessionUUID
-	SetSUUID(core.InvSessionUUID)
+	SUUID() core.SUUID
+	SetSUUID(core.SUUID)
 }
 
 // BaseInvariantOpt ... Functional option for BaseInvariant
@@ -34,7 +34,7 @@ func WithAddressing() BaseInvariantOpt {
 // BaseInvariant ... Base invariant implementation
 type BaseInvariant struct {
 	addressing bool
-	sUUID      core.InvSessionUUID
+	sUUID      core.SUUID
 	inType     core.RegisterType
 }
 
@@ -53,12 +53,12 @@ func NewBaseInvariant(inType core.RegisterType,
 }
 
 // SetSUUID ... Sets the invariant session UUID
-func (bi *BaseInvariant) SetSUUID(sUUID core.InvSessionUUID) {
+func (bi *BaseInvariant) SetSUUID(sUUID core.SUUID) {
 	bi.sUUID = sUUID
 }
 
 // SUUID ... Returns the invariant session UUID
-func (bi *BaseInvariant) SUUID() core.InvSessionUUID {
+func (bi *BaseInvariant) SUUID() core.SUUID {
 	return bi.sUUID
 }
 

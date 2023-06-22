@@ -49,7 +49,8 @@ type InvRequestParams struct {
 	EndHeight   *big.Int `json:"end_height"`
 
 	SessionParams map[string]interface{} `json:"invariant_params"`
-	AlertingDest  string                 `json:"alert_destination"`
+	// TODO(#81): No Support for Multiple Alerting Destinations for an Invariant Session
+	AlertingDest string `json:"alert_destination"`
 }
 
 // AlertingDestType ... Returns the alerting destination type

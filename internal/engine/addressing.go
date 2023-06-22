@@ -9,15 +9,15 @@ import (
 
 // AddressingMap ... Interface for mapping addresses to session UUIDs
 type AddressingMap interface {
-	GetSessionUUIDByPair(address common.Address, pUUID core.PipelineUUID) (core.InvSessionUUID, error)
-	Insert(pUUID core.PipelineUUID, sUUID core.InvSessionUUID, address common.Address) error
+	GetSessionUUIDByPair(address common.Address, pUUID core.PUUID) (core.SUUID, error)
+	Insert(pUUID core.PUUID, sUUID core.SUUID, address common.Address) error
 }
 
 // addressEntry ... Entry for the addressing map
 type addressEntry struct {
 	address common.Address
-	sUUID   core.InvSessionUUID
-	pUUID   core.PipelineUUID
+	sUUID   core.SUUID
+	pUUID   core.PUUID
 }
 
 // addressingMap ... Implementation of AddressingMap
@@ -27,9 +27,9 @@ type addressingMap struct {
 
 // GetSessionUUIDByPair ... Gets the session UUID by the pair of address and pipeline UUID
 func (am *addressingMap) GetSessionUUIDByPair(address common.Address,
-	pUUID core.PipelineUUID) (core.InvSessionUUID, error) {
+	pUUID core.PUUID) (core.SUUID, error) {
 	if _, found := am.m[address]; !found {
-		return core.NilInvariantUUID(), fmt.Errorf("address provided is not tracked %s", address.String())
+		return core.NilSUUID(), fmt.Errorf("address provided is not tracked %s", address.String())
 	}
 
 	// Now we know it's entry has been seen
@@ -39,12 +39,12 @@ func (am *addressingMap) GetSessionUUIDByPair(address common.Address,
 		}
 	}
 
-	return core.NilInvariantUUID(), fmt.Errorf("could not find matching pUUID %s", pUUID.String())
+	return core.NilSUUID(), fmt.Errorf("could not find matching pUUID %s", pUUID.String())
 }
 
 // Insert ... Inserts a new entry into the addressing map
-func (am *addressingMap) Insert(pUUID core.PipelineUUID,
-	sUUID core.InvSessionUUID, address common.Address) error {
+func (am *addressingMap) Insert(pUUID core.PUUID,
+	sUUID core.SUUID, address common.Address) error {
 	newEntry := &addressEntry{
 		address: address,
 		sUUID:   sUUID,

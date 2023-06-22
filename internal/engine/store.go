@@ -9,28 +9,28 @@ import (
 
 // SessionStore ...
 type SessionStore interface {
-	AddInvSession(sUUID core.InvSessionUUID, pID core.PipelineUUID, inv invariant.Invariant) error
-	GetInvSessionByUUID(sUUID core.InvSessionUUID) (invariant.Invariant, error)
-	GetInvariantsByUUIDs(sUUIDs ...core.InvSessionUUID) ([]invariant.Invariant, error)
-	GetInvSessionsForPipeline(pUUID core.PipelineUUID) ([]core.InvSessionUUID, error)
+	AddInvSession(sUUID core.SUUID, pID core.PUUID, inv invariant.Invariant) error
+	GetInvSessionByUUID(sUUID core.SUUID) (invariant.Invariant, error)
+	GetInvariantsByUUIDs(sUUIDs ...core.SUUID) ([]invariant.Invariant, error)
+	GetInvSessionsForPipeline(pUUID core.PUUID) ([]core.SUUID, error)
 }
 
 // sessionStore ...
 type sessionStore struct {
-	sessionPipelineMap map[core.PipelineUUID][]core.InvSessionUUID
-	invSessionMap      map[core.InvSessionUUID]invariant.Invariant // no duplicates
+	sessionPipelineMap map[core.PUUID][]core.SUUID
+	invSessionMap      map[core.SUUID]invariant.Invariant // no duplicates
 }
 
 // NewSessionStore ... Initializer
 func NewSessionStore() SessionStore {
 	return &sessionStore{
-		invSessionMap:      make(map[core.InvSessionUUID]invariant.Invariant),
-		sessionPipelineMap: make(map[core.PipelineUUID][]core.InvSessionUUID),
+		invSessionMap:      make(map[core.SUUID]invariant.Invariant),
+		sessionPipelineMap: make(map[core.PUUID][]core.SUUID),
 	}
 }
 
 // GetInvariantsByUUIDs ... Fetches in-order all invariants associated with a set of session UUIDs
-func (ss *sessionStore) GetInvariantsByUUIDs(sUUIDs ...core.InvSessionUUID) ([]invariant.Invariant, error) {
+func (ss *sessionStore) GetInvariantsByUUIDs(sUUIDs ...core.SUUID) ([]invariant.Invariant, error) {
 	invariants := make([]invariant.Invariant, len(sUUIDs))
 
 	for i, uuid := range sUUIDs {
@@ -46,7 +46,7 @@ func (ss *sessionStore) GetInvariantsByUUIDs(sUUIDs ...core.InvSessionUUID) ([]i
 }
 
 // GetInvSessionByUUID .... Fetches invariant session by UUID
-func (ss *sessionStore) GetInvSessionByUUID(sUUID core.InvSessionUUID) (invariant.Invariant, error) {
+func (ss *sessionStore) GetInvSessionByUUID(sUUID core.SUUID) (invariant.Invariant, error) {
 	if entry, found := ss.invSessionMap[sUUID]; found {
 		return entry, nil
 	}
@@ -54,7 +54,7 @@ func (ss *sessionStore) GetInvSessionByUUID(sUUID core.InvSessionUUID) (invarian
 }
 
 // GetInvSessionsForPipeline ... Returns all invariant session ids associated with pipeline
-func (ss *sessionStore) GetInvSessionsForPipeline(pUUID core.PipelineUUID) ([]core.InvSessionUUID, error) {
+func (ss *sessionStore) GetInvSessionsForPipeline(pUUID core.PUUID) ([]core.SUUID, error) {
 	if sessionIDs, found := ss.sessionPipelineMap[pUUID]; found {
 		return sessionIDs, nil
 	}
@@ -62,14 +62,14 @@ func (ss *sessionStore) GetInvSessionsForPipeline(pUUID core.PipelineUUID) ([]co
 }
 
 // AddInvSession ... Adds an invariant session to the store
-func (ss *sessionStore) AddInvSession(sUUID core.InvSessionUUID,
-	pUUID core.PipelineUUID, inv invariant.Invariant) error {
+func (ss *sessionStore) AddInvSession(sUUID core.SUUID,
+	pUUID core.PUUID, inv invariant.Invariant) error {
 	if _, found := ss.invSessionMap[sUUID]; found {
 		return fmt.Errorf("invariant UUID already exists in store pid mapping")
 	}
 
 	if _, found := ss.sessionPipelineMap[pUUID]; !found { //
-		ss.sessionPipelineMap[pUUID] = make([]core.InvSessionUUID, 0)
+		ss.sessionPipelineMap[pUUID] = make([]core.SUUID, 0)
 	}
 	ss.invSessionMap[sUUID] = inv
 	ss.sessionPipelineMap[pUUID] = append(ss.sessionPipelineMap[pUUID], sUUID)
@@ -77,7 +77,7 @@ func (ss *sessionStore) AddInvSession(sUUID core.InvSessionUUID,
 }
 
 // RemoveInvSession ... Removes an existing invariant session from the store
-func (ss *sessionStore) RemoveInvSession(_ core.InvSessionUUID,
-	_ core.PipelineUUID, _ invariant.Invariant) error {
+func (ss *sessionStore) RemoveInvSession(_ core.SUUID,
+	_ core.PUUID, _ invariant.Invariant) error {
 	return nil
 }

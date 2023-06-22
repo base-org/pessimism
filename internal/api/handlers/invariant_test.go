@@ -66,7 +66,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				ts.mockSvc.EXPECT().
 					ProcessInvariantRequest(gomock.Any()).
-					Return(core.NilInvariantUUID(), testError1()).
+					Return(core.NilSUUID(), testError1()).
 					Times(1)
 
 				return ts

@@ -38,7 +38,7 @@ func Test_MetaData(t *testing.T) {
 
 				assert.Equal(t, sChange.From, Inactive)
 				assert.Equal(t, sChange.To, Terminated)
-				assert.Equal(t, sChange.ID, core.NilComponentUUID())
+				assert.Equal(t, sChange.ID, core.NilCUUID())
 			},
 		},
 	}

@@ -34,8 +34,8 @@ func Test_Mergable(t *testing.T) {
 				assert.NoError(t, err)
 
 				comps := []component.Component{mockOracle}
-				testPUUID := core.MakePipelineUUID(0, core.MakeComponentUUID(core.Live, 0, 0, 0), core.MakeComponentUUID(core.Live, 0, 0, 0))
-				testPUUID2 := core.MakePipelineUUID(0, core.MakeComponentUUID(core.Live, 0, 0, 0), core.MakeComponentUUID(core.Live, 0, 0, 0))
+				testPUUID := core.MakePUUID(0, core.MakeCUUID(core.Live, 0, 0, 0), core.MakeCUUID(core.Live, 0, 0, 0))
+				testPUUID2 := core.MakePUUID(0, core.MakeCUUID(core.Live, 0, 0, 0), core.MakeCUUID(core.Live, 0, 0, 0))
 
 				testCfg := &core.PipelineConfig{
 					PipelineType: core.Live,
@@ -65,8 +65,8 @@ func Test_Mergable(t *testing.T) {
 				assert.NoError(t, err)
 
 				comps := []component.Component{mockOracle}
-				testPUUID := core.MakePipelineUUID(0, core.MakeComponentUUID(core.Backtest, 0, 0, 0), core.MakeComponentUUID(core.Live, 0, 0, 0))
-				testPUUID2 := core.MakePipelineUUID(0, core.MakeComponentUUID(core.Live, 0, 0, 0), core.MakeComponentUUID(core.Live, 0, 0, 0))
+				testPUUID := core.MakePUUID(0, core.MakeCUUID(core.Backtest, 0, 0, 0), core.MakeCUUID(core.Live, 0, 0, 0))
+				testPUUID2 := core.MakePUUID(0, core.MakeCUUID(core.Live, 0, 0, 0), core.MakeCUUID(core.Live, 0, 0, 0))
 
 				testCfg := &core.PipelineConfig{
 					PipelineType: core.Live,

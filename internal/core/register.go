@@ -48,12 +48,12 @@ type RegisterDependencyPath struct {
 	Path []*DataRegister
 }
 
-// GeneratePipelineUUID ... Generates a pipelineUUID for an existing dependency path
+// GeneratePUUID ... Generates a PUUID for an existing dependency path
 // provided an enumerated pipeline and network type
-func (rdp RegisterDependencyPath) GeneratePipelineUUID(pt PipelineType, n Network) PipelineUUID {
+func (rdp RegisterDependencyPath) GeneratePUUID(pt PipelineType, n Network) PUUID {
 	firstComp, lastComp := rdp.Path[0], rdp.Path[len(rdp.Path)-1]
-	firstUUID := MakeComponentUUID(pt, firstComp.ComponentType, firstComp.DataType, n)
-	lastUUID := MakeComponentUUID(pt, lastComp.ComponentType, lastComp.DataType, n)
+	firstUUID := MakeCUUID(pt, firstComp.ComponentType, firstComp.DataType, n)
+	lastUUID := MakeCUUID(pt, lastComp.ComponentType, lastComp.DataType, n)
 
-	return MakePipelineUUID(pt, firstUUID, lastUUID)
+	return MakePUUID(pt, firstUUID, lastUUID)
 }

@@ -53,5 +53,39 @@ Unit tests can ran using the following project level command(s):
 ### Integration Tests
 TBD
 
+## Bootstrap Config
+A bootstrap config file is used to define the initial state of the pessimism service. The file must be `json` formatted with it's directive defined in the `BOOTSTRAP_PATH` env var. 
+
+### Example
+```
+[
+    {
+          "network": "layer1",
+          "pipeline_type": "live",
+          "type": "contract_event", 
+          "start_height": null,
+          "alert_destination": "slack",
+          "invariant_params": {
+              "address": "0xfC0157aA4F5DB7177830ACddB3D5a9BB5BE9cc5e",
+              "args": ["Transfer(address, address, uint256)"]
+        }
+    },
+    {
+        "network": "layer1",
+        "pipeline_type": "live",
+        "type": "balance_enforcement", 
+        "start_height": null,
+        "alert_destination": "slack",
+        "invariant_params": {
+            "address": "0xfC0157aA4F5DB7177830ACddB3D5a9BB5BE9cc5e",
+            "lower": 1,
+            "upper": 2
+       }
+    }
+]
+```
+
+
+
 ## Spawning an invariant session
 To learn about the currently supported invariants and how to spawn them, please advise the [invariants documentation](./docs/invariants.md).

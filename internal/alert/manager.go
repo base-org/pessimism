@@ -1,4 +1,4 @@
-//go:generate mockgen -package mocks --destination ../mocks/alert_manager.go . AlertingManager
+//go:generate mockgen -package mocks --destination ../mocks/alert_manager.go --mock_names Manager=AlertManager . Manager
 
 package alert
 
@@ -12,9 +12,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// AlertingManager ... Interface for alert manager
-type AlertingManager interface {
-	AddInvariantSession(core.InvSessionUUID, core.AlertDestination) error
+// Manager ... Interface for alert manager
+type Manager interface {
+	AddInvariantSession(core.SUUID, core.AlertDestination) error
 	Transit() chan core.Alert
 
 	core.Subsystem
@@ -33,7 +33,7 @@ type alertManager struct {
 }
 
 // NewManager ... Instantiates a new alert manager
-func NewManager(ctx context.Context, sc client.SlackClient) AlertingManager {
+func NewManager(ctx context.Context, sc client.SlackClient) Manager {
 	// NOTE - Consider constructing dependencies in higher level
 	// abstraction and passing them in
 
@@ -53,7 +53,7 @@ func NewManager(ctx context.Context, sc client.SlackClient) AlertingManager {
 }
 
 // AddInvariantSession ... Adds an invariant session to the alert manager store
-func (am *alertManager) AddInvariantSession(sUUID core.InvSessionUUID, alertDestination core.AlertDestination) error {
+func (am *alertManager) AddInvariantSession(sUUID core.SUUID, alertDestination core.AlertDestination) error {
 	return am.store.AddAlertDestination(sUUID, alertDestination)
 }
 

@@ -9,18 +9,18 @@ import (
 // TODO(#48): Pipeline Analysis Functionality
 // EtlStore ... Interface used to define all etl storage based functions
 type EtlStore interface {
-	AddComponentLink(cID core.ComponentUUID, pID core.PipelineUUID)
-	AddPipeline(id core.PipelineUUID, pl Pipeline)
+	AddComponentLink(cID core.CUUID, pID core.PUUID)
+	AddPipeline(id core.PUUID, pl Pipeline)
 	GetAllPipelines() []Pipeline
-	GetExistingPipelinesByPID(pPID core.PipelinePID) []core.PipelineUUID
-	GetPipelineUUIDs(cID core.ComponentUUID) ([]core.PipelineUUID, error)
-	GetPipelineFromPUUID(pUUID core.PipelineUUID) (Pipeline, error)
+	GetExistingPipelinesByPID(pPID core.PipelinePID) []core.PUUID
+	GetPUUIDs(cID core.CUUID) ([]core.PUUID, error)
+	GetPipelineFromPUUID(pUUID core.PUUID) (Pipeline, error)
 }
 
 // pipelineEntry ... value entry for some
 // pipeline with necessary metadata
 type pipelineEntry struct {
-	id core.PipelineUUID
+	id core.PUUID
 	as ActivityState
 	p  Pipeline
 }
@@ -33,34 +33,34 @@ type pipelineMap = map[core.PipelinePID][]pipelineEntry
 //	compPipelines - Mapping used for storing all component-->[]PID entries
 type etlStore struct {
 	pipelines     pipelineMap
-	compPipelines map[core.ComponentUUID][]core.PipelineUUID
+	compPipelines map[core.CUUID][]core.PUUID
 }
 
 // NewEtlStore ... Initializer
 func NewEtlStore() EtlStore {
 	return &etlStore{
-		compPipelines: make(map[core.ComponentUUID][]core.PipelineUUID),
+		compPipelines: make(map[core.CUUID][]core.PUUID),
 		pipelines:     make(pipelineMap),
 	}
 }
 
 /*
-Note - PipelineUUIDs can only conflict
+Note - PUUIDs can only conflict
        when whenpipeLineType = Live && activityState = Active
 */
 
 // addComponentLink ... Creates an entry for some new C_UUID:P_UUID mapping
-func (store *etlStore) AddComponentLink(cUUID core.ComponentUUID, pUUID core.PipelineUUID) {
+func (store *etlStore) AddComponentLink(cUUID core.CUUID, pUUID core.PUUID) {
 	// EDGE CASE - C_UUID:P_UUID pair already exists
 	if _, found := store.compPipelines[cUUID]; !found { // Create slice
-		store.compPipelines[cUUID] = make([]core.PipelineUUID, 0)
+		store.compPipelines[cUUID] = make([]core.PUUID, 0)
 	}
 
 	store.compPipelines[cUUID] = append(store.compPipelines[cUUID], pUUID)
 }
 
 // addPipeline ... Creates and stores a new pipeline entry
-func (store *etlStore) AddPipeline(pUUID core.PipelineUUID, pl Pipeline) {
+func (store *etlStore) AddPipeline(pUUID core.PUUID, pl Pipeline) {
 	entry := pipelineEntry{
 		id: pUUID,
 		as: Booting,
@@ -81,19 +81,19 @@ func (store *etlStore) AddPipeline(pUUID core.PipelineUUID, pl Pipeline) {
 	}
 }
 
-// GetPipelineUUIDs ... Returns all entried PIDs for some CID
-func (store *etlStore) GetPipelineUUIDs(cID core.ComponentUUID) ([]core.PipelineUUID, error) {
+// GetPUUIDs ... Returns all entried PIDs for some CID
+func (store *etlStore) GetPUUIDs(cID core.CUUID) ([]core.PUUID, error) {
 	pIDs, found := store.compPipelines[cID]
 
 	if !found {
-		return []core.PipelineUUID{}, fmt.Errorf("could not find key for %s", cID)
+		return []core.PUUID{}, fmt.Errorf("could not find key for %s", cID)
 	}
 
 	return pIDs, nil
 }
 
 // getPipelineByPID ... Returns pipeline storeovided some PID
-func (store *etlStore) GetPipelineFromPUUID(pUUID core.PipelineUUID) (Pipeline, error) {
+func (store *etlStore) GetPipelineFromPUUID(pUUID core.PUUID) (Pipeline, error) {
 	if _, found := store.pipelines[pUUID.PID]; !found {
 		return nil, fmt.Errorf(pIDNotFoundErr, pUUID.String())
 	}
@@ -108,13 +108,13 @@ func (store *etlStore) GetPipelineFromPUUID(pUUID core.PipelineUUID) (Pipeline, 
 }
 
 // GetExistingPipelinesByPID ... Returns existing pipelines for some PID value
-func (store *etlStore) GetExistingPipelinesByPID(pPID core.PipelinePID) []core.PipelineUUID {
+func (store *etlStore) GetExistingPipelinesByPID(pPID core.PipelinePID) []core.PUUID {
 	entries, exists := store.pipelines[pPID]
 	if !exists {
-		return []core.PipelineUUID{}
+		return []core.PUUID{}
 	}
 
-	pUUIDs := make([]core.PipelineUUID, len(entries))
+	pUUIDs := make([]core.PUUID, len(entries))
 
 	for i, entry := range entries {
 		pUUIDs[i] = entry.id

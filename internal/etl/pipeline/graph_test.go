@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	testCUUID1 = core.MakeComponentUUID(69, 69, 69, 69)
-	testCUUID2 = core.MakeComponentUUID(42, 42, 42, 42)
+	testCUUID1 = core.MakeCUUID(69, 69, 69, 69)
+	testCUUID2 = core.MakeCUUID(42, 42, 42, 42)
 )
 
 func Test_Graph(t *testing.T) {
@@ -34,7 +34,7 @@ func Test_Graph(t *testing.T) {
 
 			constructionLogic: NewComponentGraph,
 			testLogic: func(t *testing.T, g ComponentGraph) {
-				cUUID := core.MakeComponentUUID(69, 69, 69, 69)
+				cUUID := core.MakeCUUID(69, 69, 69, 69)
 
 				component, err := p_registry.NewEventParserPipe(context.Background(),
 					&core.ClientConfig{}, component.WithCUUID(cUUID))

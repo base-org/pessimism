@@ -60,19 +60,19 @@ func NewTransitChannel() chan TransitData {
 // InvariantInput ... Standardized type used to supply
 // the Risk Engine
 type InvariantInput struct {
-	PUUID PipelineUUID
+	PUUID PUUID
 	Input TransitData
 }
 
 // EngineInputRelay ... Represents a inter-subsystem
 // relay used to bind final ETL pipeline outputs to risk engine inputs
 type EngineInputRelay struct {
-	pUUID   PipelineUUID
+	pUUID   PUUID
 	outChan chan InvariantInput
 }
 
 // NewEngineRelay ... Initializer
-func NewEngineRelay(pUUID PipelineUUID, outChan chan InvariantInput) *EngineInputRelay {
+func NewEngineRelay(pUUID PUUID, outChan chan InvariantInput) *EngineInputRelay {
 	return &EngineInputRelay{
 		pUUID:   pUUID,
 		outChan: outChan,
@@ -151,7 +151,7 @@ func (sk StateKey) IsNested() bool {
 }
 
 // WithPUUID ... Adds a pipeline UUID to the state key prefix and returns a new state key
-func (sk StateKey) WithPUUID(pUUID PipelineUUID) StateKey {
+func (sk StateKey) WithPUUID(pUUID PUUID) StateKey {
 	return StateKey{
 		sk.Nested,
 		sk.Prefix,

@@ -7,31 +7,31 @@ import (
 )
 
 // ProcessInvariantRequest ... Processes an invariant request type
-func (svc *PessimismService) ProcessInvariantRequest(ir models.InvRequestBody) (core.InvSessionUUID, error) {
+func (svc *PessimismService) ProcessInvariantRequest(ir models.InvRequestBody) (core.SUUID, error) {
 	if ir.MethodType() == models.Run { // Deploy invariant session
-		return svc.runInvariantSession(ir.Params)
+		return svc.RunInvariantSession(ir.Params)
 	}
 	// TODO - Add support for other method types (ie. delete. update)
 
-	return core.NilInvariantUUID(), nil
+	return core.NilSUUID(), nil
 }
 
 // runInvariantSession ... Runs an invariant session provided
-func (svc *PessimismService) runInvariantSession(params models.InvRequestParams) (core.InvSessionUUID, error) {
+func (svc *PessimismService) RunInvariantSession(params models.InvRequestParams) (core.SUUID, error) {
 	inv, err := registry.GetInvariant(params.InvariantType(), params.SessionParams)
 	if err != nil {
-		return core.NilInvariantUUID(), err
+		return core.NilSUUID(), err
 	}
 
 	// TODO(#53): API Request Validation Submodule
 	endpoint, err := svc.cfg.GetEndpointForNetwork(params.NetworkType())
 	if err != nil {
-		return core.NilInvariantUUID(), err
+		return core.NilSUUID(), err
 	}
 
 	pollInterval, err := svc.cfg.GetPollIntervalForNetwork(params.NetworkType())
 	if err != nil {
-		return core.NilInvariantUUID(), err
+		return core.NilSUUID(), err
 	}
 
 	pConfig := params.GeneratePipelineConfig(endpoint, pollInterval, inv.InputType())
@@ -39,7 +39,7 @@ func (svc *PessimismService) runInvariantSession(params models.InvRequestParams)
 
 	sUUID, err := svc.m.StartInvSession(pConfig, sConfig)
 	if err != nil {
-		return core.NilInvariantUUID(), err
+		return core.NilSUUID(), err
 	}
 
 	return sUUID, nil

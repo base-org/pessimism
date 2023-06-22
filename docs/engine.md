@@ -61,8 +61,8 @@ type Invariant interface {
 	Addressing() bool
 	InputType() core.RegisterType
 	Invalidate(core.TransitData) (*core.InvalOutcome, bool, error)
-	SUUID() core.InvSessionUUID
-	SetSUUID(core.InvSessionUUID)
+	SUUID() core.SUUID
+	SetSUUID(core.SUUID)
 }
 
 ``` 

@@ -11,7 +11,7 @@ import (
 type mockOracleDefinition struct {
 }
 
-func (md *mockOracleDefinition) ConfigureRoutine(core.PipelineUUID) error {
+func (md *mockOracleDefinition) ConfigureRoutine(core.PUUID) error {
 	return nil
 }
 

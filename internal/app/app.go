@@ -6,14 +6,21 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/api/server"
+	"github.com/base-org/pessimism/internal/config"
+	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/engine/registry"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/subsystem"
 	"go.uber.org/zap"
 )
 
+type BootSession = models.InvRequestParams
+
 // Application ... Pessimism app struct
 type Application struct {
+	cfg *config.Config
 	ctx context.Context
 
 	sub    subsystem.Manager
@@ -21,9 +28,11 @@ type Application struct {
 }
 
 // New ... Initializer
-func New(ctx context.Context, sub subsystem.Manager, server *server.Server) *Application {
+func New(ctx context.Context, cfg *config.Config,
+	sub subsystem.Manager, server *server.Server) *Application {
 	return &Application{
 		ctx:    ctx,
+		cfg:    cfg,
 		sub:    sub,
 		server: server,
 	}
@@ -53,4 +62,38 @@ func (a *Application) End() <-chan os.Signal {
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 	return sigs
+}
+
+// BootStrap ... Bootstraps the application
+func (a *Application) BootStrap(sessions []BootSession) error {
+	logger := logging.WithContext(a.ctx)
+
+	for _, session := range sessions {
+		inv, err := registry.GetInvariant(session.InvariantType(), session.SessionParams)
+		if err != nil {
+			return err
+		}
+
+		endpoint, err := a.cfg.SvcConfig.GetEndpointForNetwork(session.NetworkType())
+		if err != nil {
+			return err
+		}
+
+		pollInterval, err := a.cfg.SvcConfig.GetPollIntervalForNetwork(session.NetworkType())
+		if err != nil {
+			return err
+		}
+
+		pConfig := session.GeneratePipelineConfig(endpoint, pollInterval, inv.InputType())
+		sConfig := session.SessionConfig()
+
+		sUUID, err := a.sub.StartInvSession(pConfig, sConfig)
+		if err != nil {
+			return err
+		}
+
+		logger.Info("invariant session started",
+			zap.String(core.SUUIDKey, sUUID.String()))
+	}
+	return nil
 }
