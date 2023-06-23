@@ -56,11 +56,6 @@ func NewAddressBalanceOracle(ctx context.Context, cfg *core.ClientConfig,
 func (oracle *AddressBalanceODef) ConfigureRoutine(pUUID core.PUUID) error {
 	oracle.pUUID = pUUID
 
-	err := oracle.sk.SetPUUID(pUUID)
-	if err != nil {
-		return err
-	}
-
 	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
 		time.Second*time.Duration(core.EthClientTimeout))
 	defer ctxCancel()

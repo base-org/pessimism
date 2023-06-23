@@ -165,7 +165,6 @@ func (em *etlManager) Shutdown() error {
 func (em *etlManager) getComponents(cfg *core.PipelineConfig, pUUID core.PUUID,
 	depPath core.RegisterDependencyPath) ([]component.Component, error) {
 	components := make([]component.Component, 0)
-	// prevUUID := core.NilCUUID()
 
 	for _, register := range depPath.Path {
 		cUUID := core.MakeCUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
@@ -181,6 +180,7 @@ func (em *etlManager) getComponents(cfg *core.PipelineConfig, pUUID core.PUUID,
 	return components, nil
 }
 
+// getMergeUUID ... Returns a pipeline UUID if a mergable pipeline exists
 func (em *etlManager) getMergeUUID(pUUID core.PUUID, pipeline Pipeline) (core.PUUID, error) {
 	pipelines := em.store.GetExistingPipelinesByPID(pUUID.PID)
 
@@ -211,7 +211,13 @@ func inferComponent(ctx context.Context, cc *core.ClientConfig, cUUID core.CUUID
 	if register.Stateful() {
 		// Propagate state key to component so that it can be used
 		// by the component's definition logic
-		opts = append(opts, component.WithStateKey(register.StateKey.Clone()))
+		sk := register.StateKey()
+		err := sk.SetPUUID(pUUID)
+		if err != nil {
+			return nil, err
+		}
+
+		opts = append(opts, component.WithStateKey(sk))
 	}
 
 	switch register.ComponentType {
@@ -232,7 +238,7 @@ func inferComponent(ctx context.Context, cc *core.ClientConfig, cUUID core.CUUID
 		return init(ctx, cc, opts...)
 
 	case core.Aggregator:
-		return nil, fmt.Errorf("aggregator component has yet to be implemented")
+		return nil, fmt.Errorf(noAggregatorErr)
 
 	default:
 		return nil, fmt.Errorf(unknownCompType, register.ComponentType.String())

@@ -30,7 +30,7 @@ func (rt RegisterType) String() string {
 // can be produced and consumed by heterogenous components
 type DataRegister struct {
 	Addressing bool
-	StateKey   *StateKey
+	Sk         *StateKey
 
 	DataType             RegisterType
 	ComponentType        ComponentType
@@ -38,8 +38,14 @@ type DataRegister struct {
 	Dependencies         []RegisterType
 }
 
+// StateKey ... Returns a cloned state key for a data register
+func (dr *DataRegister) StateKey() *StateKey {
+	return dr.Sk.Clone()
+}
+
+// Stateful ... Indicates whether the data register has statefulness
 func (dr *DataRegister) Stateful() bool {
-	return dr.StateKey != nil
+	return dr.Sk != nil
 }
 
 // RegisterDependencyPath ... Represents an inclusive acyclic sequential

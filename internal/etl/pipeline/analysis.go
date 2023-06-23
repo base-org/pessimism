@@ -124,9 +124,9 @@ func (a *analyzer) MergeNestedStateKeys(ctx context.Context, c1, c2 component.Co
 		}
 
 		key2 := &core.StateKey{
-			Prefix: c1.OutputType(),
+			Prefix: c2.OutputType(),
 			ID:     item,
-			PUUID:  &p1,
+			PUUID:  &p2,
 		}
 
 		nestedValues, err := ss.GetSlice(ctx, key1)

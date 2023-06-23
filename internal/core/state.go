@@ -43,7 +43,7 @@ func (sk *StateKey) IsNested() bool {
 // SetPUUID ... Adds a pipeline UUID to the state key prefix and returns a new state key
 func (sk *StateKey) SetPUUID(pUUID PUUID) error {
 	if sk.PUUID != nil {
-		return fmt.Errorf("State key already has a pipeline UUID")
+		return fmt.Errorf("state key already has a pipeline UUID %s", sk.PUUID.String())
 	}
 
 	sk.PUUID = &pUUID

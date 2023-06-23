@@ -29,10 +29,7 @@ type EventDefinition struct {
 
 // ConfigureRoutine ... Sets up the pipe client connection and persists puuid to definition state
 func (ed *EventDefinition) ConfigureRoutine(pUUID core.PUUID) error {
-	err := ed.sk.SetPUUID(pUUID)
-	if err != nil {
-		return err
-	}
+	ed.pUUID = pUUID
 
 	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
 		time.Second*time.Duration(core.EthClientTimeout))
@@ -40,7 +37,7 @@ func (ed *EventDefinition) ConfigureRoutine(pUUID core.PUUID) error {
 
 	logging.WithContext(ctxTimeout).Info("Setting up GETH client connection")
 
-	err = ed.client.DialContext(ctxTimeout, ed.cfg.RPCEndpoint)
+	err := ed.client.DialContext(ctxTimeout, ed.cfg.RPCEndpoint)
 	if err != nil {
 		return err
 	}
@@ -84,17 +81,18 @@ func (ce *contractEvents) HasSignature(sig common.Hash) bool {
 }
 
 // getEventsToMonitor ... Gets the smart contract events to monitor from the state store
-func (ed *EventDefinition) getEventsToMonitor(ctx context.Context, rt core.RegisterType,
+func (ed *EventDefinition) getEventsToMonitor(ctx context.Context,
 	addresses []string, ss state.Store) ([]contractEvents, error) {
 	var events []contractEvents
 	for _, address := range addresses {
-		nestedKey := &core.StateKey{
+		innerKey := &core.StateKey{
 			Nesting: false,
 			Prefix:  ed.sk.Prefix,
+			ID:      address,
 			PUUID:   &ed.pUUID,
 		}
 
-		sigs, err := ss.GetSlice(ctx, nestedKey)
+		sigs, err := ss.GetSlice(ctx, innerKey)
 		if err != nil {
 			logging.WithContext(ctx).Error(err.Error())
 			return []contractEvents{}, err
@@ -136,7 +134,7 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 		return []core.TransitData{}, err
 	}
 
-	eventsToMonitor, err := ed.getEventsToMonitor(ctx, core.EventLog, addresses, stateStore)
+	eventsToMonitor, err := ed.getEventsToMonitor(ctx, addresses, stateStore)
 	if err != nil {
 		return []core.TransitData{}, err
 	}

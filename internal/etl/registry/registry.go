@@ -10,9 +10,6 @@ import (
 
 const (
 	noEntryErr = "could not find entry in registry for encoded register type %s"
-
-	withNesting = true
-	noNesting   = false
 )
 
 // Registry ... Interface for registry
@@ -37,7 +34,7 @@ func NewRegistry() Registry {
 			ComponentConstructor: oracle.NewGethBlockOracle,
 
 			Dependencies: noDeps(),
-			StateKey:     noState(),
+			Sk:           noState(),
 		},
 		core.AccountBalance: {
 			Addressing:           true,
@@ -46,7 +43,7 @@ func NewRegistry() Registry {
 			ComponentConstructor: oracle.NewAddressBalanceOracle,
 
 			Dependencies: noDeps(),
-			StateKey: &core.StateKey{
+			Sk: &core.StateKey{
 				Nesting: false,
 				Prefix:  core.AccountBalance,
 				ID:      core.AddressKey,
@@ -60,7 +57,7 @@ func NewRegistry() Registry {
 			ComponentConstructor: pipe.NewEventParserPipe,
 
 			Dependencies: makeDeps(core.GethBlock),
-			StateKey: &core.StateKey{
+			Sk: &core.StateKey{
 				Nesting: true,
 				Prefix:  core.EventLog,
 				ID:      core.AddressKey,

@@ -21,12 +21,14 @@ var (
 // getTestPipeLine ... Returns a test pipeline
 func getTestPipeLine(ctx context.Context) Pipeline {
 
-	p1, err := pipe_registry.NewEventParserPipe(ctx, &core.ClientConfig{}, component.WithCUUID(cID1))
+	p1, err := pipe_registry.NewEventParserPipe(ctx, &core.ClientConfig{}, component.WithCUUID(cID1),
+		component.WithStateKey(&core.StateKey{}))
 	if err != nil {
 		panic(err)
 	}
 
-	p2, err := pipe_registry.NewEventParserPipe(ctx, &core.ClientConfig{}, component.WithCUUID(cID2))
+	p2, err := pipe_registry.NewEventParserPipe(ctx, &core.ClientConfig{}, component.WithCUUID(cID2),
+		component.WithStateKey(&core.StateKey{}))
 	if err != nil {
 		panic(err)
 	}
