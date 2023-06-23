@@ -21,8 +21,6 @@ type Component interface {
 	*/
 	// PUUID ... Returns component's PUUID
 	PUUID() core.PUUID
-	// SetPUUID ... Sets component's PUUID
-	SetPUUID(pUUID core.PUUID)
 
 	// UUID ...
 	UUID() core.CUUID
@@ -49,7 +47,7 @@ type Component interface {
 	// OutputType ... Returns component output data type
 	OutputType() core.RegisterType
 
-	StateKey() core.StateKey
+	StateKey() *core.StateKey
 
 	// TODO(#24): Add Internal Component Activity State Tracking
 	ActivityState() ActivityState
@@ -60,14 +58,15 @@ type metaData struct {
 	id    core.CUUID
 	pUUID core.PUUID
 
-	cType    core.ComponentType
-	output   core.RegisterType
-	state    ActivityState
-	cacheKey core.StateKey
-	inTypes  []core.RegisterType
+	cType  core.ComponentType
+	output core.RegisterType
+	state  ActivityState
+
+	inTypes []core.RegisterType
 
 	closeChan chan int
 	stateChan chan StateChange
+	sk        *core.StateKey
 
 	*ingressHandler
 	*egressHandler
@@ -98,20 +97,17 @@ func (meta *metaData) ActivityState() ActivityState {
 }
 
 // StateKey ... Returns component's state key
-func (meta *metaData) StateKey() core.StateKey {
-	return meta.cacheKey
+func (meta *metaData) StateKey() *core.StateKey {
+	return meta.sk
 }
 
 // UUID ... Returns component's CUUID
 func (meta *metaData) UUID() core.CUUID {
 	return meta.id
 }
-func (meta *metaData) SetPUUID(pUUID core.PUUID) {
-	meta.pUUID = pUUID
-}
 
 // UUID ... Returns component's PUUID
-// NOTE - This assumes that component collisions are impossible
+// NOTE - This currently assumes that component collisions are impossible
 func (meta *metaData) PUUID() core.PUUID {
 	return meta.pUUID
 }
@@ -148,6 +144,13 @@ func WithCUUID(id core.CUUID) Option {
 	}
 }
 
+// WithPUUID ... Passes component PUUID to component metadata field
+func WithPUUID(pUUID core.PUUID) Option {
+	return func(meta *metaData) {
+		meta.pUUID = pUUID
+	}
+}
+
 // WithEventChan ... Passes state channel to component metadata field
 func WithEventChan(sc chan StateChange) Option {
 	return func(md *metaData) {
@@ -163,8 +166,8 @@ func WithInTypes(its []core.RegisterType) Option {
 }
 
 // WithStateKey ... Passes state key to component metadata field
-func WithStateKey(key core.StateKey) Option {
+func WithStateKey(key *core.StateKey) Option {
 	return func(md *metaData) {
-		md.cacheKey = key
+		md.sk = key
 	}
 }

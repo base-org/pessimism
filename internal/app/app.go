@@ -16,6 +16,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// BootSession ... Application wrapper for InvRequestParams
 type BootSession = models.InvRequestParams
 
 // Application ... Pessimism app struct
@@ -48,7 +49,7 @@ func (a *Application) Start() error {
 	return nil
 }
 
-// ListenForShutdown ... Handles and listens or shutdown
+// ListenForShutdown ... Handles and listens for shutdown
 func (a *Application) ListenForShutdown(stop func()) {
 	done := <-a.End() // Blocks until an OS signal is received
 

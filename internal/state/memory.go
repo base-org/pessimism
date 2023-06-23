@@ -14,6 +14,11 @@ import (
 
 // stateStore ... In memory state store
 type stateStore struct {
+	// NOTE - This is a temporary implementation of the state store.
+	// Using a map of string to string slices to represent the state
+	// store is not a scalable solution and will be rather expensive
+	// in both memory and time complexity. This will be replaced with
+	// a more optimal in-memory solution in the future.
 	sliceStore map[string][]string
 
 	sync.RWMutex
@@ -28,7 +33,7 @@ func NewMemState() Store {
 }
 
 // Get ... Fetches a string value slice from the store
-func (ss *stateStore) GetSlice(_ context.Context, key core.StateKey) ([]string, error) {
+func (ss *stateStore) GetSlice(_ context.Context, key *core.StateKey) ([]string, error) {
 	ss.RLock()
 	defer ss.RUnlock()
 
@@ -41,7 +46,7 @@ func (ss *stateStore) GetSlice(_ context.Context, key core.StateKey) ([]string, 
 }
 
 // SetSlice ... Appends a value to the store slice
-func (ss *stateStore) SetSlice(_ context.Context, key core.StateKey, value string) (string, error) {
+func (ss *stateStore) SetSlice(_ context.Context, key *core.StateKey, value string) (string, error) {
 	ss.Lock()
 	defer ss.Unlock()
 
@@ -51,7 +56,7 @@ func (ss *stateStore) SetSlice(_ context.Context, key core.StateKey, value strin
 }
 
 // Remove ... Removes a key entry from the store
-func (ss *stateStore) Remove(_ context.Context, key core.StateKey) error {
+func (ss *stateStore) Remove(_ context.Context, key *core.StateKey) error {
 	ss.Lock()
 	defer ss.Unlock()
 
@@ -63,7 +68,7 @@ func (ss *stateStore) Remove(_ context.Context, key core.StateKey) error {
 // key/value pair (ie. filters the state object into a subset object that
 // contains only the values that match the nested key/value pair)
 func (ss *stateStore) GetNestedSubset(_ context.Context,
-	key core.StateKey) (map[string][]string, error) {
+	key *core.StateKey) (map[string][]string, error) {
 	ss.RLock()
 	defer ss.RUnlock()
 

@@ -84,18 +84,30 @@ func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
 		return err
 	}
 
-	key := register.StateKey.WithPUUID(pUUID)
+	key := register.StateKey.Clone()
+	err = key.SetPUUID(pUUID)
+	// PUUID already exists in key but is different than the one we want
+	if err != nil && key.PUUID != &pUUID {
+		return err
+	}
+
 	_, err = stateStore.SetSlice(em.ctx, key, invParams.Address())
 	if err != nil {
 		return err
 	}
 
-	if key.Nested { // Nested addressing
+	if key.IsNested() { // Nested addressing
 		args := invParams.NestedArgs()
 
 		for _, arg := range args {
-			key2 := state.MakeKey(register.DataType, invParams.Address(), false).WithPUUID(pUUID)
-			_, err = stateStore.SetSlice(em.ctx, key2, arg)
+			innerKey := &core.StateKey{
+				Nesting: false,
+				Prefix:  key.Prefix,
+				ID:      invParams.Address(),
+				PUUID:   &pUUID,
+			}
+
+			_, err = stateStore.SetSlice(em.ctx, innerKey, arg)
 			if err != nil {
 				return err
 			}

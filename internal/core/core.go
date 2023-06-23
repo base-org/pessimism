@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -137,45 +136,6 @@ func (sp *InvSessionParams) NestedArgs() []string {
 type InvalOutcome struct {
 	TimeStamp time.Time
 	Message   string
-}
-
-// StateKey ... Represents a key in the state store
-type StateKey struct {
-	Nested bool // Indicates whether the key is nested
-	Prefix uint8
-	Key    string
-}
-
-func (sk StateKey) IsNested() bool {
-	return sk.Nested
-}
-
-// WithPUUID ... Adds a pipeline UUID to the state key prefix and returns a new state key
-func (sk StateKey) WithPUUID(pUUID PUUID) StateKey {
-	return StateKey{
-		sk.Nested,
-		sk.Prefix,
-		pUUID.String() + ":" + sk.Key,
-	}
-}
-
-// NilStateKey ... Returns a nil state key
-func NilStateKey() StateKey {
-	return StateKey{
-		false,
-		0,
-		"",
-	}
-}
-
-const (
-	AddressPrefix = iota + 1
-	NestedPrefix
-)
-
-// String ... Returns a string representation of the state key
-func (sk StateKey) String() string {
-	return fmt.Sprintf("%d:%s", sk.Prefix, sk.Key)
 }
 
 // Subsystem ... Represents a subsystem

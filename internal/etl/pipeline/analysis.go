@@ -117,22 +117,31 @@ func (a *analyzer) MergeNestedStateKeys(ctx context.Context, c1, c2 component.Co
 	}
 
 	for _, item := range items {
-		nestedKey := state.MakeKey(c1.OutputType(), item, false).WithPUUID(p1)
-		nestedKeyj := state.MakeKey(c2.OutputType(), item, false).WithPUUID(p2)
+		key1 := &core.StateKey{
+			Prefix: c1.OutputType(),
+			ID:     item,
+			PUUID:  &p1,
+		}
 
-		nestedValues, err := ss.GetSlice(ctx, nestedKey)
+		key2 := &core.StateKey{
+			Prefix: c1.OutputType(),
+			ID:     item,
+			PUUID:  &p1,
+		}
+
+		nestedValues, err := ss.GetSlice(ctx, key1)
 		if err != nil {
 			return err
 		}
 
 		for _, value := range nestedValues {
-			_, err = ss.SetSlice(ctx, nestedKeyj, value)
+			_, err = ss.SetSlice(ctx, key2, value)
 			if err != nil {
 				return err
 			}
 		}
 
-		err = ss.Remove(ctx, nestedKey)
+		err = ss.Remove(ctx, key1)
 		if err != nil {
 			return err
 		}

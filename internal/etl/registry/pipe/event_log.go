@@ -22,16 +22,17 @@ import (
 // EventDefinition ...
 type EventDefinition struct {
 	client client.EthClientInterface
-	sk     core.StateKey
+	sk     *core.StateKey
 	pUUID  core.PUUID
 	cfg    *core.ClientConfig
 }
 
 // ConfigureRoutine ... Sets up the pipe client connection and persists puuid to definition state
 func (ed *EventDefinition) ConfigureRoutine(pUUID core.PUUID) error {
-	ed.pUUID = pUUID
-	ed.sk = state.MakeKey(core.EventLog, core.AddressKey, true).
-		WithPUUID(pUUID)
+	err := ed.sk.SetPUUID(pUUID)
+	if err != nil {
+		return err
+	}
 
 	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
 		time.Second*time.Duration(core.EthClientTimeout))
@@ -39,8 +40,7 @@ func (ed *EventDefinition) ConfigureRoutine(pUUID core.PUUID) error {
 
 	logging.WithContext(ctxTimeout).Info("Setting up GETH client connection")
 
-	err := ed.client.DialContext(ctxTimeout, ed.cfg.RPCEndpoint)
-
+	err = ed.client.DialContext(ctxTimeout, ed.cfg.RPCEndpoint)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,13 @@ func NewEventParserPipe(ctx context.Context, cfg *core.ClientConfig,
 		client: client,
 	}
 
-	return component.NewPipe(ctx, ed, core.GethBlock, core.EventLog, opts...)
+	p, err := component.NewPipe(ctx, ed, core.GethBlock, core.EventLog, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	ed.sk = p.StateKey().Clone()
+	return p, nil
 }
 
 // contractEvents ... Struct to hold the contract address and the event signatures
@@ -82,8 +88,13 @@ func (ed *EventDefinition) getEventsToMonitor(ctx context.Context, rt core.Regis
 	addresses []string, ss state.Store) ([]contractEvents, error) {
 	var events []contractEvents
 	for _, address := range addresses {
-		addrKey := state.MakeKey(rt, address, false).WithPUUID(ed.pUUID)
-		sigs, err := ss.GetSlice(ctx, addrKey)
+		nestedKey := &core.StateKey{
+			Nesting: false,
+			Prefix:  ed.sk.Prefix,
+			PUUID:   &ed.pUUID,
+		}
+
+		sigs, err := ss.GetSlice(ctx, nestedKey)
 		if err != nil {
 			logging.WithContext(ctx).Error(err.Error())
 			return []contractEvents{}, err

@@ -6,7 +6,6 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/registry/oracle"
 	"github.com/base-org/pessimism/internal/etl/registry/pipe"
-	"github.com/base-org/pessimism/internal/state"
 )
 
 const (
@@ -22,12 +21,13 @@ type Registry interface {
 	GetRegister(rt core.RegisterType) (*core.DataRegister, error)
 }
 
-// componentRegistry ...
+// componentRegistry ... Registry implementation
 type componentRegistry struct {
 	registers map[core.RegisterType]*core.DataRegister
 }
 
-// NewRegistry ... Initializer
+// NewRegistry ... Instantiates a new hardcoded registry
+// that contains all extractable ETL data types
 func NewRegistry() Registry {
 	registers := map[core.RegisterType]*core.DataRegister{
 		core.GethBlock: {
@@ -46,7 +46,12 @@ func NewRegistry() Registry {
 			ComponentConstructor: oracle.NewAddressBalanceOracle,
 
 			Dependencies: noDeps(),
-			StateKey:     state.MakeKey(core.AccountBalance, core.AddressKey, noNesting),
+			StateKey: &core.StateKey{
+				Nesting: false,
+				Prefix:  core.AccountBalance,
+				ID:      core.AddressKey,
+				PUUID:   nil,
+			},
 		},
 		core.EventLog: {
 			Addressing:           true,
@@ -55,7 +60,12 @@ func NewRegistry() Registry {
 			ComponentConstructor: pipe.NewEventParserPipe,
 
 			Dependencies: makeDeps(core.GethBlock),
-			StateKey:     state.MakeKey(core.EventLog, core.AddressKey, withNesting),
+			StateKey: &core.StateKey{
+				Nesting: true,
+				Prefix:  core.EventLog,
+				ID:      core.AddressKey,
+				PUUID:   nil,
+			},
 		},
 	}
 
@@ -77,8 +87,8 @@ func noDeps() []core.RegisterType {
 
 // noState ... Returns empty state key, indicating no state dependencies
 // for cross subsystem communication (i.e. ETL -> Risk Engine)
-func noState() core.StateKey {
-	return core.NilStateKey()
+func noState() *core.StateKey {
+	return nil
 }
 
 // GetDependencyPath ... Returns in-order slice of ETL pipeline path

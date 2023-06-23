@@ -30,7 +30,7 @@ func (rt RegisterType) String() string {
 // can be produced and consumed by heterogenous components
 type DataRegister struct {
 	Addressing bool
-	StateKey   StateKey
+	StateKey   *StateKey
 
 	DataType             RegisterType
 	ComponentType        ComponentType
@@ -39,7 +39,7 @@ type DataRegister struct {
 }
 
 func (dr *DataRegister) Stateful() bool {
-	return dr.StateKey != NilStateKey()
+	return dr.StateKey != nil
 }
 
 // RegisterDependencyPath ... Represents an inclusive acyclic sequential
