@@ -3,7 +3,6 @@ package pipe
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/base-org/pessimism/internal/client"
 	pess_common "github.com/base-org/pessimism/internal/common"
@@ -30,24 +29,16 @@ type EventDefinition struct {
 // ConfigureRoutine ... Sets up the pipe client connection and persists puuid to definition state
 func (ed *EventDefinition) ConfigureRoutine(pUUID core.PUUID) error {
 	ed.pUUID = pUUID
-
-	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
-		time.Second*time.Duration(core.EthClientTimeout))
-	defer ctxCancel()
-
-	logging.WithContext(ctxTimeout).Info("Setting up GETH client connection")
-
-	err := ed.client.DialContext(ctxTimeout, ed.cfg.RPCEndpoint)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
 // NewEventParserPipe ... Initializer
 func NewEventParserPipe(ctx context.Context, cfg *core.ClientConfig,
 	opts ...component.Option) (component.Component, error) {
-	client := client.NewEthClient()
+	client, err := client.FromContext(ctx, cfg.Network)
+	if err != nil {
+		return nil, err
+	}
 
 	ed := &EventDefinition{
 		cfg:    cfg,

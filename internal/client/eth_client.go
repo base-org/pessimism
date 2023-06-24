@@ -10,8 +10,10 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -32,6 +34,19 @@ type EthClientInterface interface {
 
 	BalanceAt(ctx context.Context, account common.Address, number *big.Int) (*big.Int, error)
 	FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error)
+}
+
+func FromContext(ctx context.Context, layer core.Network) (EthClientInterface, error) {
+	ctxKey := core.L1Client
+	if layer == core.Layer2 {
+		ctxKey = core.L2Client
+	}
+
+	if client, ok := ctx.Value(ctxKey).(EthClientInterface); ok {
+		return client, nil
+	}
+
+	return nil, fmt.Errorf("could not load eth client object from context")
 }
 
 // NewEthClient ... Initializer

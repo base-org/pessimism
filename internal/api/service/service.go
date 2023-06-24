@@ -15,24 +15,8 @@ import (
 
 // Config ... Used to store necessary API service config values
 type Config struct {
-	L1RpcEndpoint  string
-	L2RpcEndpoint  string
 	L1PollInterval int
 	L2PollInterval int
-}
-
-// GetEndpointForNetwork ... Returns config endpoint for network type
-func (cfg *Config) GetEndpointForNetwork(n core.Network) (string, error) {
-	switch n {
-	case core.Layer1:
-		return cfg.L1RpcEndpoint, nil
-
-	case core.Layer2:
-		return cfg.L2RpcEndpoint, nil
-
-	default:
-		return "", fmt.Errorf("could not find endpoint for network %s", n.String())
-	}
 }
 
 // GetEndpointForNetwork ... Returns config poll-interval for network type
@@ -55,7 +39,7 @@ type Service interface {
 	RunInvariantSession(params models.InvRequestParams) (core.SUUID, error)
 
 	CheckHealth() *models.HealthCheck
-	CheckETHRPCHealth(url string) bool
+	CheckETHRPCHealth(n core.Network) bool
 }
 
 // PessimismService ... API service

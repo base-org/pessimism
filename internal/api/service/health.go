@@ -4,15 +4,18 @@ import (
 	"time"
 
 	"github.com/base-org/pessimism/internal/api/models"
+	"github.com/base-org/pessimism/internal/client"
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
+
 	"go.uber.org/zap"
 )
 
 // CheckHealth ... Returns health check for server
 func (svc *PessimismService) CheckHealth() *models.HealthCheck {
 	hc := &models.ChainConnectionStatus{
-		IsL1Healthy: svc.CheckETHRPCHealth(svc.cfg.L1RpcEndpoint),
-		IsL2Healthy: svc.CheckETHRPCHealth(svc.cfg.L2RpcEndpoint),
+		IsL1Healthy: svc.CheckETHRPCHealth(core.Layer1),
+		IsL2Healthy: svc.CheckETHRPCHealth(core.Layer2),
 	}
 
 	healthy := hc.IsL1Healthy && hc.IsL2Healthy
@@ -24,21 +27,20 @@ func (svc *PessimismService) CheckHealth() *models.HealthCheck {
 	}
 }
 
-func (svc *PessimismService) CheckETHRPCHealth(url string) bool {
+func (svc *PessimismService) CheckETHRPCHealth(n core.Network) bool {
 	logger := logging.WithContext(svc.ctx)
-
-	err := svc.ethClient.DialContext(svc.ctx, url)
+	ethClient, err := client.FromContext(svc.ctx, n)
 	if err != nil {
-		logger.Error("error conntecting to %s", zap.String("url", url))
+		logger.Error("error getting client from context", zap.Error(err))
 		return false
 	}
 
-	_, err = svc.ethClient.HeaderByNumber(svc.ctx, nil)
+	_, err = ethClient.HeaderByNumber(svc.ctx, nil)
 	if err != nil {
-		logger.Error("error connecting to url", zap.String("url", url))
+		logger.Error("error connecting to client", zap.String("network", n.String()))
 		return false
 	}
 
-	logger.Debug("successfully connected", zap.String("url", url))
+	logger.Debug("successfully connected", zap.String("network", n.String()))
 	return true
 }
