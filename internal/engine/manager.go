@@ -78,24 +78,35 @@ func (em *engineManager) DeleteInvariantSession(_ core.SUUID) (core.SUUID, error
 // with contextual information about the invariant session
 // to the ETL (e.g. address, events)
 func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
-	register *core.DataRegister, pUUID core.PUUID) error {
+	sk *core.StateKey, pUUID core.PUUID) error {
 	stateStore, err := state.FromContext(em.ctx)
 	if err != nil {
 		return err
 	}
 
-	key := register.StateKey.WithPUUID(pUUID)
-	_, err = stateStore.SetSlice(em.ctx, key, invParams.Address())
+	err = sk.SetPUUID(pUUID)
+	// PUUID already exists in key but is different than the one we want
+	if err != nil && sk.PUUID != &pUUID {
+		return err
+	}
+
+	_, err = stateStore.SetSlice(em.ctx, sk, invParams.Address())
 	if err != nil {
 		return err
 	}
 
-	if key.Nested { // Nested addressing
+	if sk.IsNested() { // Nested addressing
 		args := invParams.NestedArgs()
 
 		for _, arg := range args {
-			key2 := state.MakeKey(register.DataType, invParams.Address(), false).WithPUUID(pUUID)
-			_, err = stateStore.SetSlice(em.ctx, key2, arg)
+			innerKey := &core.StateKey{
+				Nesting: false,
+				Prefix:  sk.Prefix,
+				ID:      invParams.Address(),
+				PUUID:   &pUUID,
+			}
+
+			_, err = stateStore.SetSlice(em.ctx, innerKey, arg)
 			if err != nil {
 				return err
 			}
@@ -132,7 +143,7 @@ func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (co
 			return core.NilSUUID(), err
 		}
 
-		err = em.updateSharedState(cfg.InvParams, cfg.Register, cfg.PUUID)
+		err = em.updateSharedState(cfg.InvParams, cfg.Register.StateKey(), cfg.PUUID)
 		if err != nil {
 			return core.NilSUUID(), err
 		}
@@ -160,6 +171,7 @@ func (em *engineManager) EventLoop() error {
 	}
 }
 
+// Shutdown ... Shuts down the engine manager
 func (em *engineManager) Shutdown() error {
 	em.cancel()
 	return nil

@@ -76,7 +76,7 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, 
 
 	pUUID := depPath.GeneratePUUID(cfg.PipelineType, cfg.Network)
 
-	components, err := em.getComponents(cfg, depPath)
+	components, err := em.getComponents(cfg, pUUID, depPath)
 	if err != nil {
 		return core.NilPUUID(), err
 	}
@@ -95,7 +95,7 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, 
 	}
 
 	if mPUUID != core.NilPUUID() { // Pipeline is mergable
-		return pUUID, nil
+		return mPUUID, nil
 	}
 
 	// Bind communication route between pipeline and risk engine
@@ -162,15 +162,14 @@ func (em *etlManager) Shutdown() error {
 }
 
 // getComponents ... Returns all components provided a slice of register definitions
-func (em *etlManager) getComponents(cfg *core.PipelineConfig,
+func (em *etlManager) getComponents(cfg *core.PipelineConfig, pUUID core.PUUID,
 	depPath core.RegisterDependencyPath) ([]component.Component, error) {
 	components := make([]component.Component, 0)
-	// prevUUID := core.NilCUUID()
 
 	for _, register := range depPath.Path {
 		cUUID := core.MakeCUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
 
-		c, err := inferComponent(em.ctx, cfg.ClientConfig, cUUID, register)
+		c, err := inferComponent(em.ctx, cfg.ClientConfig, cUUID, pUUID, register)
 		if err != nil {
 			return []component.Component{}, err
 		}
@@ -181,6 +180,7 @@ func (em *etlManager) getComponents(cfg *core.PipelineConfig,
 	return components, nil
 }
 
+// getMergeUUID ... Returns a pipeline UUID if a mergable pipeline exists
 func (em *etlManager) getMergeUUID(pUUID core.PUUID, pipeline Pipeline) (core.PUUID, error) {
 	pipelines := em.store.GetExistingPipelinesByPID(pUUID.PID)
 
@@ -200,16 +200,24 @@ func (em *etlManager) getMergeUUID(pUUID core.PUUID, pipeline Pipeline) (core.PU
 }
 
 // inferComponent ... Constructs a component provided a data register definition
-func inferComponent(ctx context.Context, cc *core.ClientConfig, cUUID core.CUUID,
+func inferComponent(ctx context.Context, cc *core.ClientConfig, cUUID core.CUUID, pUUID core.PUUID,
 	register *core.DataRegister) (component.Component, error) {
 	logging.WithContext(ctx).Debug("constructing component",
 		zap.String("type", register.ComponentType.String()),
 		zap.String("outdata_type", register.DataType.String()))
 
-	opts := []component.Option{component.WithCUUID(cUUID)}
+	opts := []component.Option{component.WithCUUID(cUUID), component.WithPUUID(pUUID)}
 
 	if register.Stateful() {
-		opts = append(opts, component.WithStateKey(register.StateKey))
+		// Propagate state key to component so that it can be used
+		// by the component's definition logic
+		sk := register.StateKey()
+		err := sk.SetPUUID(pUUID)
+		if err != nil {
+			return nil, err
+		}
+
+		opts = append(opts, component.WithStateKey(sk))
 	}
 
 	switch register.ComponentType {
@@ -230,7 +238,7 @@ func inferComponent(ctx context.Context, cc *core.ClientConfig, cUUID core.CUUID
 		return init(ctx, cc, opts...)
 
 	case core.Aggregator:
-		return nil, fmt.Errorf("aggregator component has yet to be implemented")
+		return nil, fmt.Errorf(noAggregatorErr)
 
 	default:
 		return nil, fmt.Errorf(unknownCompType, register.ComponentType.String())

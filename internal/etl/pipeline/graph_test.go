@@ -37,7 +37,7 @@ func Test_Graph(t *testing.T) {
 				cUUID := core.MakeCUUID(69, 69, 69, 69)
 
 				component, err := p_registry.NewEventParserPipe(context.Background(),
-					&core.ClientConfig{}, component.WithCUUID(cUUID))
+					&core.ClientConfig{}, component.WithCUUID(cUUID), component.WithStateKey(&core.StateKey{}))
 				assert.NoError(t, err)
 
 				err = g.AddComponent(cUUID, component)
@@ -73,7 +73,7 @@ func Test_Graph(t *testing.T) {
 					panic(err)
 				}
 
-				comp2, err := p_registry.NewEventParserPipe(context.Background(), &core.ClientConfig{})
+				comp2, err := p_registry.NewEventParserPipe(context.Background(), &core.ClientConfig{}, component.WithStateKey(&core.StateKey{}))
 				if err != nil {
 					panic(err)
 				}
@@ -112,7 +112,8 @@ func Test_Graph(t *testing.T) {
 					panic(err)
 				}
 
-				comp2, err := p_registry.NewEventParserPipe(context.Background(), &core.ClientConfig{}, component.WithCUUID(testCUUID1))
+				comp2, err := p_registry.NewEventParserPipe(context.Background(), &core.ClientConfig{},
+					component.WithCUUID(testCUUID1), component.WithStateKey(&core.StateKey{}))
 				if err != nil {
 					panic(err)
 				}
@@ -151,7 +152,8 @@ func Test_Graph(t *testing.T) {
 					panic(err)
 				}
 
-				comp2, err := p_registry.NewEventParserPipe(context.Background(), &core.ClientConfig{}, component.WithCUUID(testCUUID1))
+				comp2, err := p_registry.NewEventParserPipe(context.Background(), &core.ClientConfig{},
+					component.WithCUUID(testCUUID1), component.WithStateKey(&core.StateKey{}))
 				if err != nil {
 					panic(err)
 				}

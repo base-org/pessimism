@@ -79,7 +79,6 @@ func (pl *pipeline) RunPipeline(wg *sync.WaitGroup) error {
 		// NOTE - This is a hack and a bit leaky since
 		// we're teaching callee level absractions about the pipelines
 		// which they execute within.
-		comp.SetPUUID(pl.uuid)
 
 		go func(c component.Component, wg *sync.WaitGroup) {
 			defer wg.Done()

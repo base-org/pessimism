@@ -5,18 +5,18 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/state"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_MemState(t *testing.T) {
 
-	testKey := state.MakeKey(0, "test", false)
+	testKey := &core.StateKey{false, 1, "test", nil}
 	testValue := "0xabc"
 	testValue2 := "0xdef"
 
-	innerTestKey := state.MakeKey(0, "inner", false)
-
+	innerTestKey := &core.StateKey{false, 1, "best", nil}
 	var tests = []struct {
 		name        string
 		description string

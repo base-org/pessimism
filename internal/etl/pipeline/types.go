@@ -40,4 +40,6 @@ const (
 
 	// Manager error constants
 	unknownCompType = "unknown component type %s provided"
+
+	noAggregatorErr = "aggregator component has yet to be implemented"
 )
