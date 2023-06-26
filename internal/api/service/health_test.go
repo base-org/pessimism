@@ -1,7 +1,6 @@
 package service_test
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -31,19 +30,9 @@ func Test_GetHealth(t *testing.T) {
 				ts := createTestSuite(ctrl, cfg)
 
 				ts.mockEthClientInterface.EXPECT().
-					DialContext(context.Background(), gomock.Any()).
-					Return(nil).
-					AnyTimes()
-
-				ts.mockService.EXPECT().
-					CheckETHRPCHealth(gomock.Any()).
-					Return(true).
-					AnyTimes()
-
-				ts.mockEthClientInterface.EXPECT().
 					HeaderByNumber(gomock.Any(), gomock.Any()).
 					Return(nil, nil).
-					AnyTimes()
+					Times(2)
 
 				return ts
 			},
@@ -67,19 +56,9 @@ func Test_GetHealth(t *testing.T) {
 				ts := createTestSuite(ctrl, cfg)
 
 				ts.mockEthClientInterface.EXPECT().
-					DialContext(gomock.Any(), gomock.Any()).
-					Return(testErr1()).
-					AnyTimes()
-
-				ts.mockService.EXPECT().
-					CheckETHRPCHealth(gomock.Any()).
-					Return(false).
-					AnyTimes()
-
-				ts.mockEthClientInterface.EXPECT().
 					HeaderByNumber(gomock.Any(), gomock.Any()).
-					Return(nil, nil).
-					AnyTimes()
+					Return(nil, testErr1()).
+					Times(2)
 
 				return ts
 			},

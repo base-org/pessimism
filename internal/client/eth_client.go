@@ -28,7 +28,6 @@ type EthClient struct {
 // EthClientInterface ... Provides interface wrapper for ethClient functions
 // Useful for mocking go-etheruem node client logic
 type EthClientInterface interface {
-	DialContext(ctx context.Context, rawURL string) error
 	HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error)
 	BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error)
 
@@ -36,13 +35,14 @@ type EthClientInterface interface {
 	FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error)
 }
 
+// FromContext ... Retrieves ethClient from context
 func FromContext(ctx context.Context, layer core.Network) (EthClientInterface, error) {
-	ctxKey := core.L1Client
+	key := core.L1Client
 	if layer == core.Layer2 {
-		ctxKey = core.L2Client
+		key = core.L2Client
 	}
 
-	if client, ok := ctx.Value(ctxKey).(EthClientInterface); ok {
+	if client, ok := ctx.Value(key).(EthClientInterface); ok {
 		return client, nil
 	}
 
@@ -50,22 +50,14 @@ func FromContext(ctx context.Context, layer core.Network) (EthClientInterface, e
 }
 
 // NewEthClient ... Initializer
-func NewEthClient() EthClientInterface {
-	return &EthClient{
-		client: &ethclient.Client{},
-	}
-}
-
-// DialContext ... Wraps go-etheruem node dialContext RPC creation
-func (ec *EthClient) DialContext(ctx context.Context, rawURL string) error {
+func NewEthClient(ctx context.Context, rawURL string) (EthClientInterface, error) {
 	client, err := ethclient.DialContext(ctx, rawURL)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	ec.client = client
-	return nil
+	return &EthClient{client}, nil
 }
 
 // HeaderByNumber ... Wraps go-ethereum node headerByNumber RPC call

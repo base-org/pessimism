@@ -23,7 +23,7 @@ func (svc *PessimismService) CheckHealth() *models.HealthCheck {
 	return &models.HealthCheck{
 		Timestamp:             time.Now(),
 		Healthy:               healthy,
-		ChainConnectionStatus: *hc,
+		ChainConnectionStatus: hc,
 	}
 }
 

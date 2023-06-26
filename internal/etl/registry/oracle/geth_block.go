@@ -57,7 +57,6 @@ func NewGethBlockOracle(ctx context.Context, cfg *core.ClientConfig,
 
 // ConfigureRoutine ... Sets up the oracle client connection and persists puuid to definition state
 func (oracle *GethBlockODef) ConfigureRoutine(core.PUUID) error {
-
 	return nil
 }
 

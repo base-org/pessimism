@@ -27,7 +27,11 @@ go-gen-mocks:
 	
 .PHONY: test
 test:
-	@ go test ./... -timeout $(TEST_LIMIT)
+	@ go test ./internal/... -timeout $(TEST_LIMIT)
+
+.PHONY: test-e2e
+test-e2e:
+	@ go test ./e2e/... -timeout $(TEST_LIMIT)
 
 .PHONY: lint
 lint:

@@ -41,17 +41,17 @@ func NewSlackClient(url string) SlackClient {
 }
 
 // slackPayload represents the structure of a slack alert
-type slackPayload struct {
+type SlackPayload struct {
 	Text interface{} `json:"text"`
 }
 
 // newSlackPayload ... initializes a new slack payload
-func newSlackPayload(text interface{}) *slackPayload {
-	return &slackPayload{Text: text}
+func newSlackPayload(text interface{}) *SlackPayload {
+	return &SlackPayload{Text: text}
 }
 
 // marshal ... marshals the slack payload
-func (sp *slackPayload) marshal() ([]byte, error) {
+func (sp *SlackPayload) marshal() ([]byte, error) {
 	bytes, err := json.Marshal(sp)
 	if err != nil {
 		return nil, err

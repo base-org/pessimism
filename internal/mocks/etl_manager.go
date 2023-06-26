@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	core "github.com/base-org/pessimism/internal/core"
+	component "github.com/base-org/pessimism/internal/etl/component"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -76,6 +77,21 @@ func (m *EtlManager) GetRegister(arg0 core.RegisterType) (*core.DataRegister, er
 func (mr *EtlManagerMockRecorder) GetRegister(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegister", reflect.TypeOf((*EtlManager)(nil).GetRegister), arg0)
+}
+
+// InferComponent mocks base method.
+func (m *EtlManager) InferComponent(arg0 *core.ClientConfig, arg1 core.CUUID, arg2 core.PUUID, arg3 *core.DataRegister) (component.Component, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InferComponent", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(component.Component)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InferComponent indicates an expected call of InferComponent.
+func (mr *EtlManagerMockRecorder) InferComponent(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InferComponent", reflect.TypeOf((*EtlManager)(nil).InferComponent), arg0, arg1, arg2, arg3)
 }
 
 // RunPipeline mocks base method.

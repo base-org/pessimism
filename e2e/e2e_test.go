@@ -2,61 +2,84 @@ package e2e_test
 
 import (
 	"context"
+	"math/big"
 	"testing"
+	"time"
 
-	"github.com/base-org/pessimism/internal/api/server"
-	"github.com/base-org/pessimism/internal/api/service"
-	"github.com/base-org/pessimism/internal/app"
-	"github.com/base-org/pessimism/internal/config"
-	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/logging"
-	op_e2e "github.com/ethereum-optimism/optimism/op-e2e"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/base-org/pessimism/e2e"
+
+	"github.com/base-org/pessimism/internal/api/models"
 )
 
-func Default_Test_Config(t *testing.T) *config.Config {
-	return &config.Config{
-		Environment:   config.Development,
-		BootStrapPath: "",
-		SlackURL:      "",
+// Test_Balance_Enforcement
+func Test_Balance_Enforcement(t *testing.T) {
 
-		SvcConfig: &service.Config{L2PollInterval: 300},
-		ServerConfig: &server.Config{
-			Host: "localhost",
-			Port: 8080,
+	ts := e2e.CreateTestSuite(t)
+
+	alice := ts.L2Cfg.Secrets.Addresses().Alice
+	bob := ts.L2Cfg.Secrets.Addresses().Bob
+
+	// Deploy a balance enforcement invariant session for Alice
+	err := ts.App.BootStrap([]models.InvRequestParams{{
+		Network:      "layer2",
+		PType:        "live",
+		InvType:      "balance_enforcement",
+		StartHeight:  nil,
+		EndHeight:    nil,
+		AlertingDest: "slack",
+		SessionParams: map[string]interface{}{
+			"address": alice.String(),
+			"lower":   3, // Alert if balance is less than 3 ETH
 		},
-		LoggerConfig: &logging.Config{
-			Level: -1,
-		},
-	}
+	}})
 
-}
-
-// Test_Node_To_Pessimism
-func Test_Node_To_Pessimism(t *testing.T) {
-	ctx := context.Background()
-	cfg := op_e2e.DefaultSystemConfig(t)
-
-	node, err := op_e2e.NewOpGeth(t, ctx, &cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ctx = context.WithValue(
-		ctx, core.L2Client, node.L2Client)
-
-	cfg2 := Default_Test_Config(t)
-	pess, kill, err := app.NewPessimismApp(ctx, cfg2)
+	// Get Alice's balance
+	aliceAmt, err := ts.L2Geth.L2Client.BalanceAt(context.Background(), alice, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer kill()
 
-	pess.Start()
+	// Determine the gas cost of the transaction
+	gasAmt := 1_000_001
+	bigAmt := big.NewInt(1_000_001)
+	gasPrice := big.NewInt(int64(ts.L2Cfg.DeployConfig.L2GenesisBlockGasLimit))
 
-	node.AddL2Block(ctx)
-	node.AddL2Block(ctx)
-	node.AddL2Block(ctx)
-	node.AddL2Block(ctx)
-	node.AddL2Block(ctx)
+	gasCost := gasPrice.Mul(gasPrice, bigAmt)
 
+	signer := types.LatestSigner(ts.L2Geth.L2ChainConfig)
+	drainAliceTx := types.MustSignNewTx(ts.L2Cfg.Secrets.Alice, signer, &types.DynamicFeeTx{
+		ChainID:   big.NewInt(int64(ts.L2Cfg.DeployConfig.L2ChainID)),
+		Nonce:     0,
+		GasTipCap: big.NewInt(100),
+		GasFeeCap: big.NewInt(100000),
+		Gas:       uint64(gasAmt),
+		To:        &bob,
+		// Subtract the gas cost from the amount sent to Bob
+		Value: aliceAmt.Sub(aliceAmt, gasCost),
+		Data:  nil,
+	})
+
+	assert.Equal(t, len(ts.Slack.SlackAlerts), 0, "No alerts should be sent before the transaction is sent")
+
+	// Send the transaction to drain Alice's account of almost all ETH
+	_, err = ts.L2Geth.AddL2Block(context.Background(), drainAliceTx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Wait for Pessimism to process the balance change and send a notification to the mocked Slack server
+	time.Sleep(1 * time.Second)
+
+	// Check that the balance enforcement was triggered
+	posts := ts.Slack.SlackAlerts
+
+	assert.Greater(t, len(posts), 0, "No balance enforcement alert was sent")
+	assert.Contains(t, posts[0].Text, "balance_enforcement", "Balance enforcement alert was not sent")
 }

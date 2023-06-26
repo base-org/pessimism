@@ -13,20 +13,28 @@ import (
 	"github.com/base-org/pessimism/internal/engine"
 	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/etl/registry"
+	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/state"
 	"github.com/base-org/pessimism/internal/subsystem"
+	"go.uber.org/zap"
 )
 
-const (
-	// cfgPath ... env file path
-	cfgPath = "config.env"
-)
+// InitializeContext ... Performs dependency injection to build context struct
+func InitializeContext(ctx context.Context, ss state.Store,
+	l1Client, l2Client client.EthClientInterface) context.Context {
+	ctx = context.WithValue(
+		ctx, core.State, ss)
+
+	ctx = context.WithValue(
+		ctx, core.L1Client, l1Client)
+
+	return context.WithValue(
+		ctx, core.L2Client, l2Client)
+}
 
 // InitializeServer ... Performs dependency injection to build server struct
-func InitializeServer(ctx context.Context, cfg *config.Config,
-	m subsystem.Manager) (*server.Server, func(), error) {
-	ethClient := client.NewEthClient()
-	apiService := service.New(ctx, cfg.SvcConfig, m, ethClient)
+func InitializeServer(ctx context.Context, cfg *config.Config, m subsystem.Manager) (*server.Server, func(), error) {
+	apiService := service.New(ctx, cfg.SvcConfig, m)
 	handler, err := handlers.New(ctx, apiService)
 	if err != nil {
 		return nil, nil, err
@@ -42,19 +50,6 @@ func InitializeServer(ctx context.Context, cfg *config.Config,
 /*
 	Subsystem initialization functions
 */
-
-func InitializeContext(ctx context.Context,
-	l1Client, l2Client client.EthClientInterface) context.Context {
-	ctx = context.WithValue(
-		context.Background(), core.State, state.NewMemState())
-
-	ctx = context.WithValue(
-		ctx, core.L1Client, l1Client)
-
-	return context.WithValue(
-		ctx, core.L2Client, l2Client)
-
-}
 
 // InitializeAlerting ... Performs dependency injection to build alerting struct
 func InitializeAlerting(ctx context.Context, cfg *config.Config) alert.Manager {
@@ -94,5 +89,13 @@ func NewPessimismApp(ctx context.Context, cfg *config.Config) (*Application, fun
 		return nil, nil, err
 	}
 
-	return New(ctx, cfg, m, svr), shutDown, nil
+	appShutDown := func() {
+		shutDown()
+
+		if err := m.Shutdown(); err != nil {
+			logging.WithContext(ctx).Error("error shutting down subsystems", zap.Error(err))
+		}
+	}
+
+	return New(ctx, cfg, m, svr), appShutDown, nil
 }
