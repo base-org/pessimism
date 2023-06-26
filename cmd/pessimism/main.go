@@ -22,6 +22,9 @@ const (
 func main() {
 	cfg := config.NewConfig(cfgPath) // Load env vars
 	ctx := context.Background()      // Create context
+
+	// Init logger
+	logging.NewLogger(cfg.LoggerConfig, string(cfg.Environment))
 	logger := logging.WithContext(ctx)
 
 	l1Client, err := client.NewEthClient(ctx, cfg.L1RpcEndpoint)
