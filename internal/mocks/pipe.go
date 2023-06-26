@@ -21,10 +21,11 @@ func (md *mockPipeDefinition) Transform(_ context.Context, td core.TransitData) 
 	return []core.TransitData{td}, nil
 }
 
-// NewMockPipe ... Takes in a register type that specifies the mocked output type
+// NewDummyPipe ... Takes in a register type that specifies the mocked output type
 // Useful for testing inter-component connectivity and higher level component management abstractions
-func NewMockPipe(ctx context.Context, it core.RegisterType, ot core.RegisterType) (component.Component, error) {
-	od := &mockPipeDefinition{}
+func NewDummyPipe(ctx context.Context, it core.RegisterType, ot core.RegisterType,
+	opts ...component.Option) (component.Component, error) {
+	pd := &mockPipeDefinition{}
 
-	return component.NewPipe(ctx, od, it, ot)
+	return component.NewPipe(ctx, pd, it, ot, opts...)
 }

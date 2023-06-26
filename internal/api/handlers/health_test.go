@@ -37,7 +37,7 @@ func Test_HealthCheck(t *testing.T) {
 					CheckHealth().
 					Return(&models.HealthCheck{
 						Healthy: true,
-						ChainConnectionStatus: models.ChainConnectionStatus{
+						ChainConnectionStatus: &models.ChainConnectionStatus{
 							IsL1Healthy: true,
 							IsL2Healthy: true,
 						}}).
@@ -78,7 +78,7 @@ func Test_HealthCheck(t *testing.T) {
 					CheckHealth().
 					Return(&models.HealthCheck{
 						Healthy: false,
-						ChainConnectionStatus: models.ChainConnectionStatus{
+						ChainConnectionStatus: &models.ChainConnectionStatus{
 							IsL1Healthy: false,
 							IsL2Healthy: true,
 						}}).

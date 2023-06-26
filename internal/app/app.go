@@ -75,17 +75,12 @@ func (a *Application) BootStrap(sessions []BootSession) error {
 			return err
 		}
 
-		endpoint, err := a.cfg.SvcConfig.GetEndpointForNetwork(session.NetworkType())
-		if err != nil {
-			return err
-		}
-
 		pollInterval, err := a.cfg.SvcConfig.GetPollIntervalForNetwork(session.NetworkType())
 		if err != nil {
 			return err
 		}
 
-		pConfig := session.GeneratePipelineConfig(endpoint, pollInterval, inv.InputType())
+		pConfig := session.GeneratePipelineConfig(pollInterval, inv.InputType())
 		sConfig := session.SessionConfig()
 
 		sUUID, err := a.sub.StartInvSession(pConfig, sConfig)

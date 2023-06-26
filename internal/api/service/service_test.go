@@ -24,7 +24,6 @@ type testSuite struct {
 	mockAlertMan           *mocks.AlertManager
 	mockEngineMan          *mocks.EngineManager
 	mockEtlMan             *mocks.EtlManager
-	mockService            *mocks.MockService
 	mockEthClientInterface *mocks.MockEthClientInterface
 
 	apiSvc   svc.Service
@@ -49,22 +48,26 @@ func createTestSuite(ctrl *gomock.Controller, cfg svc.Config) testSuite {
 	engineManager := mocks.NewEngineManager(ctrl)
 	etlManager := mocks.NewEtlManager(ctrl)
 	alertManager := mocks.NewAlertManager(ctrl)
-	serviceManager := mocks.NewMockService(ctrl)
-	ethClientManager := mocks.NewMockEthClientInterface(ctrl)
+	ethClient := mocks.NewMockEthClientInterface(ctrl)
 
 	// NOTE - These tests should be migrated to the subsystem manager package
 	// TODO(#76): No Subsystem Manager Tests
-	m := subsystem.NewManager(context.Background(), etlManager, engineManager, alertManager)
 
-	service := svc.New(context.Background(), &cfg, m, ethClientManager)
+	ctx := context.Background()
+
+	ctx = context.WithValue(ctx, core.L1Client, ethClient)
+	ctx = context.WithValue(ctx, core.L2Client, ethClient)
+
+	m := subsystem.NewManager(ctx, etlManager, engineManager, alertManager)
+
+	service := svc.New(ctx, &cfg, m)
 	return testSuite{
 		testCfg: cfg,
 
 		mockAlertMan:           alertManager,
 		mockEngineMan:          engineManager,
 		mockEtlMan:             etlManager,
-		mockService:            serviceManager,
-		mockEthClientInterface: ethClientManager,
+		mockEthClientInterface: ethClient,
 
 		apiSvc:   service,
 		mockCtrl: ctrl,

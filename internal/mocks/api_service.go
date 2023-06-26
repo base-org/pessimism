@@ -36,7 +36,7 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 }
 
 // CheckETHRPCHealth mocks base method.
-func (m *MockService) CheckETHRPCHealth(arg0 string) bool {
+func (m *MockService) CheckETHRPCHealth(arg0 core.Network) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckETHRPCHealth", arg0)
 	ret0, _ := ret[0].(bool)

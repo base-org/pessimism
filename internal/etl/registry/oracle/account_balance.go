@@ -40,7 +40,10 @@ func NewAddressBalanceODef(cfg *core.ClientConfig, client client.EthClientInterf
 // NewAddressBalanceOracle ... Initializer for address.balance oracle component
 func NewAddressBalanceOracle(ctx context.Context, cfg *core.ClientConfig,
 	opts ...component.Option) (component.Component, error) {
-	client := client.NewEthClient()
+	client, err := client.FromContext(ctx, cfg.Network)
+	if err != nil {
+		return nil, err
+	}
 
 	od := NewAddressBalanceODef(cfg, client, nil)
 	o, err := component.NewOracle(ctx, core.GethBlock, od, opts...)
@@ -55,14 +58,7 @@ func NewAddressBalanceOracle(ctx context.Context, cfg *core.ClientConfig,
 // ConfigureRoutine ... Sets up the oracle client connection and persists puuid to definition state
 func (oracle *AddressBalanceODef) ConfigureRoutine(pUUID core.PUUID) error {
 	oracle.pUUID = pUUID
-
-	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
-		time.Second*time.Duration(core.EthClientTimeout))
-	defer ctxCancel()
-
-	logging.WithContext(ctxTimeout).Info("Setting up Account Balance client")
-
-	return oracle.client.DialContext(ctxTimeout, oracle.cfg.RPCEndpoint)
+	return nil
 }
 
 // BackTestRoutine ...

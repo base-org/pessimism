@@ -74,14 +74,14 @@ func (irp *InvRequestParams) InvariantType() core.InvariantType {
 }
 
 // GeneratePipelineConfig ... Generates a pipeline config using the request params
-func (irp *InvRequestParams) GeneratePipelineConfig(endpoint string, pollInterval time.Duration,
+func (irp *InvRequestParams) GeneratePipelineConfig(pollInterval time.Duration,
 	regType core.RegisterType) *core.PipelineConfig {
 	return &core.PipelineConfig{
 		Network:      irp.NetworkType(),
 		DataType:     regType,
 		PipelineType: irp.PiplineType(),
 		ClientConfig: &core.ClientConfig{
-			RPCEndpoint:  endpoint,
+			Network:      irp.NetworkType(),
 			PollInterval: pollInterval,
 			StartHeight:  irp.StartHeight,
 			EndHeight:    irp.EndHeight,

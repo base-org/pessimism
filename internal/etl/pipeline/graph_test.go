@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/etl/component"
-	p_registry "github.com/base-org/pessimism/internal/etl/registry/pipe"
 	"github.com/base-org/pessimism/internal/mocks"
 
 	"github.com/stretchr/testify/assert"
@@ -36,8 +34,7 @@ func Test_Graph(t *testing.T) {
 			testLogic: func(t *testing.T, g ComponentGraph) {
 				cUUID := core.MakeCUUID(69, 69, 69, 69)
 
-				component, err := p_registry.NewEventParserPipe(context.Background(),
-					&core.ClientConfig{}, component.WithCUUID(cUUID), component.WithStateKey(&core.StateKey{}))
+				component, err := mocks.NewDummyPipe(context.Background(), core.GethBlock, core.AccountBalance)
 				assert.NoError(t, err)
 
 				err = g.AddComponent(cUUID, component)
@@ -64,7 +61,7 @@ func Test_Graph(t *testing.T) {
 			constructionLogic: func() ComponentGraph {
 				g := NewComponentGraph()
 
-				comp1, err := mocks.NewMockOracle(context.Background(), core.GethBlock)
+				comp1, err := mocks.NewDummyOracle(context.Background(), core.GethBlock)
 				if err != nil {
 					panic(err)
 				}
@@ -73,7 +70,7 @@ func Test_Graph(t *testing.T) {
 					panic(err)
 				}
 
-				comp2, err := p_registry.NewEventParserPipe(context.Background(), &core.ClientConfig{}, component.WithStateKey(&core.StateKey{}))
+				comp2, err := mocks.NewDummyPipe(context.Background(), core.GethBlock, core.AccountBalance)
 				if err != nil {
 					panic(err)
 				}
@@ -103,7 +100,7 @@ func Test_Graph(t *testing.T) {
 			constructionLogic: func() ComponentGraph {
 				g := NewComponentGraph()
 
-				comp1, err := mocks.NewMockOracle(context.Background(), core.GethBlock)
+				comp1, err := mocks.NewDummyOracle(context.Background(), core.GethBlock)
 				if err != nil {
 					panic(err)
 				}
@@ -112,8 +109,7 @@ func Test_Graph(t *testing.T) {
 					panic(err)
 				}
 
-				comp2, err := p_registry.NewEventParserPipe(context.Background(), &core.ClientConfig{},
-					component.WithCUUID(testCUUID1), component.WithStateKey(&core.StateKey{}))
+				comp2, err := mocks.NewDummyPipe(context.Background(), core.GethBlock, core.AccountBalance)
 				if err != nil {
 					panic(err)
 				}
@@ -143,7 +139,7 @@ func Test_Graph(t *testing.T) {
 			constructionLogic: func() ComponentGraph {
 				g := NewComponentGraph()
 
-				comp1, err := mocks.NewMockOracle(context.Background(), core.GethBlock)
+				comp1, err := mocks.NewDummyOracle(context.Background(), core.GethBlock)
 				if err != nil {
 					panic(err)
 				}
@@ -152,8 +148,7 @@ func Test_Graph(t *testing.T) {
 					panic(err)
 				}
 
-				comp2, err := p_registry.NewEventParserPipe(context.Background(), &core.ClientConfig{},
-					component.WithCUUID(testCUUID1), component.WithStateKey(&core.StateKey{}))
+				comp2, err := mocks.NewDummyPipe(context.Background(), core.GethBlock, core.AccountBalance)
 				if err != nil {
 					panic(err)
 				}
