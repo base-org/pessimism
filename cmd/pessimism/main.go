@@ -26,12 +26,12 @@ func main() {
 
 	l1Client, err := client.NewEthClient(ctx, cfg.L1RpcEndpoint)
 	if err != nil {
-		logging.WithContext(ctx).Fatal("Error creating L1 client", zap.Error(err))
+		logger.Fatal("Error creating L1 client", zap.Error(err))
 	}
 
 	l2Client, err := client.NewEthClient(ctx, cfg.L2RpcEndpoint)
 	if err != nil {
-		logging.WithContext(ctx).Fatal("Error creating L1 client", zap.Error(err))
+		logger.Fatal("Error creating L1 client", zap.Error(err))
 	}
 
 	ss := state.NewMemState()
