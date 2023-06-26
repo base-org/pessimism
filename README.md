@@ -44,14 +44,18 @@ It can be ran using the following project level command(s):
 ## Testing
 
 ### Unit Tests
-Unit tests are written using the native [go test](https://pkg.go.dev/testing) library with test mocks generated using the golang native [mock](https://github.com/golang/mock) library.
+Unit tests are written using the native [go test](https://pkg.go.dev/testing) library with test mocks generated using the golang native [mock](https://github.com/golang/mock) library. These tests live throughout the the project's `/internal` directory and are named with the suffix `_test.go`.
 
 Unit tests can ran using the following project level command(s):
 * Using Make: `make test`
 * Direct Call: `go test ./...`
 
 ### Integration Tests
-TBD
+Integration tests are written that leverage the existing [op-e2e](https://github.com/ethereum-optimism/optimism/tree/develop/op-e2e) testing framwork for spinning up pieces of the bedrock system. Additionally, the [httptest](https://pkg.go.dev/net/http/httptest) library is used to mock downstream alerting services (eg. Slack's webhook API). These tests live in the project's `/e2e` directory.
+
+Integration tests can ran using the following project level command(s):
+* Using Make: `make e2e-test`
+* Direct Call: `go test ./e2e/...`
 
 ## Bootstrap Config
 A bootstrap config file is used to define the initial state of the pessimism service. The file must be `json` formatted with it's directive defined in the `BOOTSTRAP_PATH` env var. 
