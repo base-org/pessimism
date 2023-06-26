@@ -27,7 +27,7 @@ func Test_Pipe_Event_Flow(t *testing.T) {
 	outputChan := make(chan core.TransitData)
 
 	// Construct test component
-	testPipe, err := mocks.NewMockPipe(ctx, core.GethBlock, core.EventLog)
+	testPipe, err := mocks.NewDummyPipe(ctx, core.GethBlock, core.EventLog)
 	assert.NoError(t, err)
 
 	err = testPipe.AddEgress(testID, outputChan)

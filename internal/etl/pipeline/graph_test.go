@@ -34,7 +34,7 @@ func Test_Graph(t *testing.T) {
 			testLogic: func(t *testing.T, g ComponentGraph) {
 				cUUID := core.MakeCUUID(69, 69, 69, 69)
 
-				component, err := mocks.NewMockPipe(context.Background(), core.GethBlock, core.AccountBalance)
+				component, err := mocks.NewDummyPipe(context.Background(), core.GethBlock, core.AccountBalance)
 				assert.NoError(t, err)
 
 				err = g.AddComponent(cUUID, component)
@@ -61,7 +61,7 @@ func Test_Graph(t *testing.T) {
 			constructionLogic: func() ComponentGraph {
 				g := NewComponentGraph()
 
-				comp1, err := mocks.NewMockOracle(context.Background(), core.GethBlock)
+				comp1, err := mocks.NewDummyOracle(context.Background(), core.GethBlock)
 				if err != nil {
 					panic(err)
 				}
@@ -70,7 +70,7 @@ func Test_Graph(t *testing.T) {
 					panic(err)
 				}
 
-				comp2, err := mocks.NewMockPipe(context.Background(), core.GethBlock, core.AccountBalance)
+				comp2, err := mocks.NewDummyPipe(context.Background(), core.GethBlock, core.AccountBalance)
 				if err != nil {
 					panic(err)
 				}
@@ -100,7 +100,7 @@ func Test_Graph(t *testing.T) {
 			constructionLogic: func() ComponentGraph {
 				g := NewComponentGraph()
 
-				comp1, err := mocks.NewMockOracle(context.Background(), core.GethBlock)
+				comp1, err := mocks.NewDummyOracle(context.Background(), core.GethBlock)
 				if err != nil {
 					panic(err)
 				}
@@ -109,7 +109,7 @@ func Test_Graph(t *testing.T) {
 					panic(err)
 				}
 
-				comp2, err := mocks.NewMockPipe(context.Background(), core.GethBlock, core.AccountBalance)
+				comp2, err := mocks.NewDummyPipe(context.Background(), core.GethBlock, core.AccountBalance)
 				if err != nil {
 					panic(err)
 				}
@@ -139,7 +139,7 @@ func Test_Graph(t *testing.T) {
 			constructionLogic: func() ComponentGraph {
 				g := NewComponentGraph()
 
-				comp1, err := mocks.NewMockOracle(context.Background(), core.GethBlock)
+				comp1, err := mocks.NewDummyOracle(context.Background(), core.GethBlock)
 				if err != nil {
 					panic(err)
 				}
@@ -148,7 +148,7 @@ func Test_Graph(t *testing.T) {
 					panic(err)
 				}
 
-				comp2, err := mocks.NewMockPipe(context.Background(), core.GethBlock, core.AccountBalance)
+				comp2, err := mocks.NewDummyPipe(context.Background(), core.GethBlock, core.AccountBalance)
 				if err != nil {
 					panic(err)
 				}

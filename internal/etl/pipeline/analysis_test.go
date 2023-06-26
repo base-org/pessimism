@@ -30,7 +30,7 @@ func Test_Mergable(t *testing.T) {
 			},
 			testLogic: func(t *testing.T, a pipeline.Analyzer) {
 				// Setup test pipelines
-				mockOracle, err := mocks.NewMockOracle(context.Background(), core.GethBlock)
+				mockOracle, err := mocks.NewDummyOracle(context.Background(), core.GethBlock)
 				assert.NoError(t, err)
 
 				comps := []component.Component{mockOracle}
@@ -61,7 +61,7 @@ func Test_Mergable(t *testing.T) {
 			},
 			testLogic: func(t *testing.T, a pipeline.Analyzer) {
 				// Setup test pipelines
-				mockOracle, err := mocks.NewMockOracle(context.Background(), core.GethBlock)
+				mockOracle, err := mocks.NewDummyOracle(context.Background(), core.GethBlock)
 				assert.NoError(t, err)
 
 				comps := []component.Component{mockOracle}

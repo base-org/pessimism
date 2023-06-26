@@ -24,9 +24,9 @@ func (md *mockOracleDefinition) ReadRoutine(_ context.Context, _ chan core.Trans
 	return nil
 }
 
-// NewMockOracle ... Takes in a register type that specifies the mocked output type
+// NewDummyOracle ... Takes in a register type that specifies the mocked output type
 // Useful for testing inter-component connectivity and higher level component management abstractions
-func NewMockOracle(ctx context.Context, ot core.RegisterType, opts ...component.Option) (component.Component, error) {
+func NewDummyOracle(ctx context.Context, ot core.RegisterType, opts ...component.Option) (component.Component, error) {
 	od := &mockOracleDefinition{}
 
 	return component.NewOracle(ctx, ot, od, opts...)
