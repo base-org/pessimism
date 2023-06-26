@@ -51,16 +51,16 @@ Unit tests can ran using the following project level command(s):
 * Direct Call: `go test ./...`
 
 ### Integration Tests
-Integration tests are written that leverage the existing [op-e2e](https://github.com/ethereum-optimism/optimism/tree/develop/op-e2e) testing framwork for spinning up pieces of the bedrock system. Additionally, the [httptest](https://pkg.go.dev/net/http/httptest) library is used to mock downstream alerting services (eg. Slack's webhook API). These tests live in the project's `/e2e` directory.
+Integration tests are written that leverage the existing [op-e2e](https://github.com/ethereum-optimism/optimism/tree/develop/op-e2e) testing framwork for spinning up pieces of the bedrock system. Additionally, the [httptest](https://pkg.go.dev/net/http/httptest) library is used to mock downstream alerting services (e.g. Slack's webhook API). These tests live in the project's `/e2e` directory.
 
 Integration tests can ran using the following project level command(s):
 * Using Make: `make e2e-test`
 * Direct Call: `go test ./e2e/...`
 
 ## Bootstrap Config
-A bootstrap config file is used to define the initial state of the pessimism service. The file must be `json` formatted with it's directive defined in the `BOOTSTRAP_PATH` env var. 
+A bootstrap config file is used to define the initial state of the pessimism service. The file must be `json` formatted with its directive defined in the `BOOTSTRAP_PATH` env var. (e.g. `BOOTSTRAP_PATH=./genesis.json`)
 
-### Example
+### Example File
 ```
 [
     {
