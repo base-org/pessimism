@@ -13,6 +13,7 @@ import (
 
 // CheckHealth ... Returns health check for server
 func (svc *PessimismService) CheckHealth() *models.HealthCheck {
+	// TODO(#88): Parallelized Node Queries for Health Checking
 	hc := &models.ChainConnectionStatus{
 		IsL1Healthy: svc.CheckETHRPCHealth(core.Layer1),
 		IsL2Healthy: svc.CheckETHRPCHealth(core.Layer2),
