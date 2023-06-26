@@ -56,7 +56,7 @@ func CreateTestSuite(t *testing.T) *TestSuite {
 
 	go pess.ListenForShutdown(kill)
 
-	logging.NewLogger(appCfg.LoggerConfig, false)
+	logging.NewLogger(appCfg.LoggerConfig, "development")
 
 	return &TestSuite{
 		t:       t,
