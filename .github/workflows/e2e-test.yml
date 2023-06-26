@@ -19,5 +19,5 @@ jobs:
       with:
         go-version: 1.19
 
-    - name: Run Unit Tests
+    - name: Run E2E Integration Tests
       run: make e2e-test
