@@ -24,7 +24,7 @@ func main() {
 	ctx := context.Background()      // Create context
 
 	// Init logger
-	logging.NewLogger(cfg.LoggerConfig, string(cfg.Environment))
+	logging.NewLogger(cfg.LoggerConfig, cfg.IsProduction())
 	logger := logging.WithContext(ctx)
 
 	l1Client, err := client.NewEthClient(ctx, cfg.L1RpcEndpoint)
