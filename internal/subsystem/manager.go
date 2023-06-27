@@ -2,6 +2,7 @@ package subsystem
 
 import (
 	"context"
+	"github.com/base-org/pessimism/internal/metrics"
 	"sync"
 
 	"github.com/base-org/pessimism/internal/alert"
@@ -11,6 +12,16 @@ import (
 	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/logging"
 	"go.uber.org/zap"
+)
+
+// Metrics
+
+const (
+	MetricScope = "subsystem"
+)
+
+var (
+	deployedInvariantCount = metrics.MetricName(MetricScope, "invariant", "deployed")
 )
 
 // Manager ... Subsystem manager interface
@@ -47,6 +58,7 @@ func NewManager(ctx context.Context, etl pipeline.Manager, eng engine.Manager,
 // Shutdown ... Shuts down all subsystems in primary data flow order
 // Ie. ETL -> Engine -> Alert
 func (m *manager) Shutdown() error {
+	stats := metrics.WithContext(m.ctx)
 	if err := m.etl.Shutdown(); err != nil {
 		return err
 	}
@@ -54,6 +66,8 @@ func (m *manager) Shutdown() error {
 	if err := m.eng.Shutdown(); err != nil {
 		return err
 	}
+
+	stats.Decr(deployedInvariantCount, []string{}, 1)
 
 	return m.alrt.Shutdown()
 }
@@ -93,6 +107,7 @@ func (m *manager) StartEventRoutines(ctx context.Context) {
 // StartInvSession ... Deploys an invariant session
 func (m *manager) StartInvSession(cfg *core.PipelineConfig, invCfg *core.SessionConfig) (core.SUUID, error) {
 	logger := logging.WithContext(m.ctx)
+	stats := metrics.WithContext(m.ctx)
 
 	pUUID, err := m.etl.CreateDataPipeline(cfg)
 	if err != nil {
@@ -129,6 +144,8 @@ func (m *manager) StartInvSession(cfg *core.PipelineConfig, invCfg *core.Session
 	if err = m.etl.RunPipeline(pUUID); err != nil {
 		return core.NilSUUID(), err
 	}
+
+	stats.Incr(deployedInvariantCount, []string{}, float64(1))
 
 	return sUUID, nil
 }

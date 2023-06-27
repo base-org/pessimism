@@ -23,6 +23,7 @@ type Manager interface {
 	Transit() chan core.InvariantInput
 
 	// TODO( ) : Session deletion logic
+	// TODO : Add decrement for invariant deletion
 	DeleteInvariantSession(core.SUUID) (core.SUUID, error)
 	DeployInvariantSession(cfg *invariant.DeployConfig) (core.SUUID, error)
 }

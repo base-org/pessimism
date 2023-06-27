@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/base-org/pessimism/internal/metrics"
 	"log"
 	"strconv"
 	"strings"
@@ -38,10 +39,10 @@ type Config struct {
 	// TODO - Consider moving this URL to a more appropriate location
 	SlackURL string
 
-	SvcConfig    *service.Config
-	ServerConfig *server.Config
-
-	LoggerConfig *logging.Config
+	SvcConfig     *service.Config
+	ServerConfig  *server.Config
+	MetricsConfig *metrics.Config
+	LoggerConfig  *logging.Config
 }
 
 // NewConfig ... Initializer
@@ -62,6 +63,12 @@ func NewConfig(fileName FilePath) *Config {
 
 			L1PollInterval: getEnvInt("L1_POLL_INTERVAL"),
 			L2PollInterval: getEnvInt("L2_POLL_INTERVAL"),
+		},
+
+		MetricsConfig: &metrics.Config{
+			Host:          getEnvStr("METRICS_HOST"),
+			Port:          getEnvInt("METRICS_PORT"),
+			EnableMetrics: getEnvBool("ENABLE_METRICS"),
 		},
 
 		LoggerConfig: &logging.Config{

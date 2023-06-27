@@ -1,0 +1,37 @@
+[
+  {
+    "network": "layer1",
+    "pipeline_type": "live",
+    "type": "balance_enforcement",
+    "start_height": null,
+    "alert_destination": "slack",
+    "invariant_params": {
+      "address": "0x5050F69a9786F081509234F1a7F4684b5E5b76C9",
+      "lower": 200,
+      "upper": 1000
+    }
+  },
+  {
+    "network": "layer1",
+    "pipeline_type": "live",
+    "type": "balance_enforcement",
+    "start_height": null,
+    "alert_destination": "slack",
+    "invariant_params": {
+      "address": "0x642229f238fb9dE03374Be34B0eD8D9De80752c5",
+      "lower": 20,
+      "upper": 100
+    }
+  },
+  {
+    "network": "layer1",
+    "pipeline_type": "live",
+    "type": "contract_event",
+    "start_height": null,
+    "alert_destination": "slack",
+    "invariant_params": {
+      "address": "0x49048044D57e1C92A77f79988d21Fa8fAF74E97e",
+      "args": ["Paused(address)", "Unpaused(address)"]
+    }
+  }
+]
