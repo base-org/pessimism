@@ -35,7 +35,6 @@ type manager struct {
 func NewManager(ctx context.Context, etl pipeline.Manager, eng engine.Manager,
 	alrt alert.Manager,
 ) Manager {
-
 	return &manager{
 		ctx:       ctx,
 		etl:       etl,

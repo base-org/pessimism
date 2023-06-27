@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+
 	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/handlers"
 	"github.com/base-org/pessimism/internal/api/server"

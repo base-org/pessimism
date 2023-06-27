@@ -1,18 +1,17 @@
 package config
 
 import (
-	"github.com/base-org/pessimism/internal/metrics"
 	"log"
+	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/api/service"
-
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/joho/godotenv"
-
-	"os"
 )
 
 type FilePath string
@@ -69,6 +68,7 @@ func NewConfig(fileName FilePath) *Config {
 			Host:          getEnvStr("METRICS_HOST"),
 			Port:          uint64(getEnvInt("METRICS_PORT")),
 			EnableMetrics: getEnvBool("ENABLE_METRICS"),
+			ServerTimeout: time.Duration(getEnvInt("METRICS_SERVER_TIMEOUT")),
 		},
 
 		LoggerConfig: &logging.Config{

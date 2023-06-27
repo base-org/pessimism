@@ -1,11 +1,13 @@
 package metrics
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net"
 	"net/http"
 	"strconv"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const metricsNamespace = "pessimism"
@@ -14,6 +16,7 @@ type Config struct {
 	Host          string
 	Port          uint64
 	EnableMetrics bool
+	ServerTimeout time.Duration
 }
 
 type Metricer interface {
@@ -51,19 +54,19 @@ func NewMetrics() *Metrics {
 		}),
 
 		InvariantRuns: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name:      "invariant_runs",
+			Name:      "invariant_runs_total",
 			Help:      "Number of times a specific invariant has been run",
 			Namespace: metricsNamespace,
 		}, []string{"invariant"}),
 
 		AlarmsGenerated: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name:      "alarms_generated",
+			Name:      "alarms_generated_total",
 			Help:      "Number of total alarms generated for a given invariant",
 			Namespace: metricsNamespace,
 		}, []string{"invariant"}),
 
 		NodeErrors: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name:      "node_errors",
+			Name:      "node_errors_total",
 			Help:      "Number of node errors caught",
 			Namespace: metricsNamespace,
 		}, []string{"node"}),
@@ -98,13 +101,14 @@ func (m *Metrics) RecordNodeError(node string) {
 	m.NodeErrors.WithLabelValues(node).Inc()
 }
 
-func (m *Metrics) Serve(hostname string, port uint64) (*http.Server, error) {
+func (m *Metrics) Serve(cfg *Config) (*http.Server, error) {
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
 
 	srv := &http.Server{
-		Addr:    net.JoinHostPort(hostname, strconv.FormatUint(port, 10)),
-		Handler: mux,
+		Addr:              net.JoinHostPort(cfg.Host, strconv.FormatUint(cfg.Port, 10)),
+		Handler:           mux,
+		ReadHeaderTimeout: cfg.ServerTimeout,
 	}
 
 	err := srv.ListenAndServe()
@@ -116,10 +120,10 @@ type noopMetricer struct{}
 
 var NoopMetrics Metricer = new(noopMetricer)
 
-func (n *noopMetricer) IncActiveInvariants()                  {}
-func (n *noopMetricer) DecActiveInvariants()                  {}
-func (n *noopMetricer) IncActivePipelines()                   {}
-func (n *noopMetricer) DecActivePipelines()                   {}
-func (n *noopMetricer) RecordInvariantRun(invariant string)   {}
-func (n *noopMetricer) RecordAlarmGenerated(invariant string) {}
-func (n *noopMetricer) RecordNodeError(node string)           {}
+func (n *noopMetricer) IncActiveInvariants()          {}
+func (n *noopMetricer) DecActiveInvariants()          {}
+func (n *noopMetricer) IncActivePipelines()           {}
+func (n *noopMetricer) DecActivePipelines()           {}
+func (n *noopMetricer) RecordInvariantRun(_ string)   {}
+func (n *noopMetricer) RecordAlarmGenerated(_ string) {}
+func (n *noopMetricer) RecordNodeError(_ string)      {}

@@ -33,12 +33,13 @@ func main() {
 	metrics := metrics.NewMetrics()
 	if cfg.MetricsConfig.EnableMetrics {
 		go func() {
-			_, err := metrics.Serve(cfg.MetricsConfig.Host, cfg.MetricsConfig.Port)
+			_, err := metrics.Serve(cfg.MetricsConfig)
 			if err != nil {
 				logger.Fatal("Error starting metrics server", zap.Error(err))
 			}
 		}()
-		logger.Info("Metrics server started", zap.String("host", cfg.MetricsConfig.Host), zap.Uint64("port", cfg.MetricsConfig.Port))
+		logger.Info("Metrics server started",
+			zap.String("host", cfg.MetricsConfig.Host), zap.Uint64("port", cfg.MetricsConfig.Port))
 	}
 
 	l1Client, err := client.NewEthClient(ctx, cfg.L1RpcEndpoint)

@@ -3,11 +3,11 @@ package pipeline
 import (
 	"context"
 	"fmt"
-	"github.com/base-org/pessimism/internal/metrics"
 	"testing"
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/registry"
+	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
