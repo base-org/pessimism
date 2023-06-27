@@ -161,7 +161,9 @@ func DefaultTestConfig() *config.Config {
 // WaitForTransaction ... Waits for a transaction receipt to be generated or times out
 func WaitForTransaction(hash common.Hash, client *ethclient.Client, timeout time.Duration) (*types.Receipt, error) {
 	timeoutCh := time.After(timeout)
-	ticker := time.NewTicker(100 * time.Millisecond)
+	ms100 := 100
+
+	ticker := time.NewTicker(time.Duration(ms100) * time.Millisecond)
 	defer ticker.Stop()
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
