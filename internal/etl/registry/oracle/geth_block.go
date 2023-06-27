@@ -39,7 +39,11 @@ func NewGethBlockODef(cfg *core.ClientConfig, client client.EthClientInterface, 
 // NewGethBlockOracle ... Initializer for geth.block oracle component
 func NewGethBlockOracle(ctx context.Context, cfg *core.ClientConfig,
 	opts ...component.Option) (component.Component, error) {
-	client := client.NewEthClient()
+	client, err := client.FromContext(ctx, cfg.Network)
+	if err != nil {
+		return nil, err
+	}
+
 	od := NewGethBlockODef(cfg, client, nil)
 
 	oracle, err := component.NewOracle(ctx, core.GethBlock, od, opts...)
@@ -53,17 +57,6 @@ func NewGethBlockOracle(ctx context.Context, cfg *core.ClientConfig,
 
 // ConfigureRoutine ... Sets up the oracle client connection and persists puuid to definition state
 func (oracle *GethBlockODef) ConfigureRoutine(core.PUUID) error {
-	ctxTimeout, ctxCancel := context.WithTimeout(context.Background(),
-		time.Second*time.Duration(core.EthClientTimeout))
-	defer ctxCancel()
-
-	logging.WithContext(ctxTimeout).Info("Setting up GETH Block client")
-
-	err := oracle.client.DialContext(ctxTimeout, oracle.cfg.RPCEndpoint)
-
-	if err != nil {
-		return err
-	}
 	return nil
 }
 

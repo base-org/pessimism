@@ -9,7 +9,7 @@ import (
 type HealthCheck struct {
 	Timestamp             time.Time
 	Healthy               bool
-	ChainConnectionStatus ChainConnectionStatus
+	ChainConnectionStatus *ChainConnectionStatus
 }
 
 // ChainConnectionStatus ... Used to display health status of each node connection

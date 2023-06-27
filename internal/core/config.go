@@ -7,7 +7,7 @@ import (
 
 // ClientConfig ... Configuration passed through to an oracle component constructor
 type ClientConfig struct {
-	RPCEndpoint  string
+	Network      Network
 	PollInterval time.Duration
 	NumOfRetries int
 	StartHeight  *big.Int

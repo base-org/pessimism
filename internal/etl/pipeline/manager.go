@@ -16,6 +16,8 @@ import (
 
 // Manager ... ETL manager interface
 type Manager interface {
+	InferComponent(cc *core.ClientConfig, cUUID core.CUUID, pUUID core.PUUID,
+		register *core.DataRegister) (component.Component, error)
 	GetRegister(rt core.RegisterType) (*core.DataRegister, error)
 	CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, error)
 	RunPipeline(pID core.PUUID) error
@@ -169,7 +171,7 @@ func (em *etlManager) getComponents(cfg *core.PipelineConfig, pUUID core.PUUID,
 	for _, register := range depPath.Path {
 		cUUID := core.MakeCUUID(cfg.PipelineType, register.ComponentType, register.DataType, cfg.Network)
 
-		c, err := inferComponent(em.ctx, cfg.ClientConfig, cUUID, pUUID, register)
+		c, err := em.InferComponent(cfg.ClientConfig, cUUID, pUUID, register)
 		if err != nil {
 			return []component.Component{}, err
 		}
@@ -199,10 +201,10 @@ func (em *etlManager) getMergeUUID(pUUID core.PUUID, pipeline Pipeline) (core.PU
 	return core.NilPUUID(), nil
 }
 
-// inferComponent ... Constructs a component provided a data register definition
-func inferComponent(ctx context.Context, cc *core.ClientConfig, cUUID core.CUUID, pUUID core.PUUID,
+// InferComponent ... Constructs a component provided a data register definition
+func (em *etlManager) InferComponent(cc *core.ClientConfig, cUUID core.CUUID, pUUID core.PUUID,
 	register *core.DataRegister) (component.Component, error) {
-	logging.WithContext(ctx).Debug("constructing component",
+	logging.WithContext(em.ctx).Debug("constructing component",
 		zap.String("type", register.ComponentType.String()),
 		zap.String("outdata_type", register.DataType.String()))
 
@@ -227,7 +229,7 @@ func inferComponent(ctx context.Context, cc *core.ClientConfig, cUUID core.CUUID
 			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Oracle.String()))
 		}
 
-		return init(ctx, cc, opts...)
+		return init(em.ctx, cc, opts...)
 
 	case core.Pipe:
 		init, success := register.ComponentConstructor.(component.PipeConstructorFunc)
@@ -235,7 +237,7 @@ func inferComponent(ctx context.Context, cc *core.ClientConfig, cUUID core.CUUID
 			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Pipe.String()))
 		}
 
-		return init(ctx, cc, opts...)
+		return init(em.ctx, cc, opts...)
 
 	case core.Aggregator:
 		return nil, fmt.Errorf(noAggregatorErr)

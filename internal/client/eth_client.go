@@ -10,8 +10,10 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -26,7 +28,6 @@ type EthClient struct {
 // EthClientInterface ... Provides interface wrapper for ethClient functions
 // Useful for mocking go-etheruem node client logic
 type EthClientInterface interface {
-	DialContext(ctx context.Context, rawURL string) error
 	HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error)
 	BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error)
 
@@ -34,23 +35,29 @@ type EthClientInterface interface {
 	FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error)
 }
 
-// NewEthClient ... Initializer
-func NewEthClient() EthClientInterface {
-	return &EthClient{
-		client: &ethclient.Client{},
+// FromContext ... Retrieves ethClient from context
+func FromContext(ctx context.Context, layer core.Network) (EthClientInterface, error) {
+	key := core.L1Client
+	if layer == core.Layer2 {
+		key = core.L2Client
 	}
+
+	if client, ok := ctx.Value(key).(EthClientInterface); ok {
+		return client, nil
+	}
+
+	return nil, fmt.Errorf("could not load eth client object from context")
 }
 
-// DialContext ... Wraps go-etheruem node dialContext RPC creation
-func (ec *EthClient) DialContext(ctx context.Context, rawURL string) error {
+// NewEthClient ... Initializer
+func NewEthClient(ctx context.Context, rawURL string) (EthClientInterface, error) {
 	client, err := ethclient.DialContext(ctx, rawURL)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	ec.client = client
-	return nil
+	return &EthClient{client}, nil
 }
 
 // HeaderByNumber ... Wraps go-ethereum node headerByNumber RPC call

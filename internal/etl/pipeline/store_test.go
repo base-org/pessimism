@@ -7,7 +7,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
-	pipe_registry "github.com/base-org/pessimism/internal/etl/registry/pipe"
+	"github.com/base-org/pessimism/internal/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,21 +21,19 @@ var (
 // getTestPipeLine ... Returns a test pipeline
 func getTestPipeLine(ctx context.Context) Pipeline {
 
-	p1, err := pipe_registry.NewEventParserPipe(ctx, &core.ClientConfig{}, component.WithCUUID(cID1),
-		component.WithStateKey(&core.StateKey{}))
+	c1, err := mocks.NewDummyOracle(ctx, core.GethBlock, component.WithCUUID(cID2))
 	if err != nil {
 		panic(err)
 	}
 
-	p2, err := pipe_registry.NewEventParserPipe(ctx, &core.ClientConfig{}, component.WithCUUID(cID2),
-		component.WithStateKey(&core.StateKey{}))
+	c2, err := mocks.NewDummyPipe(ctx, core.GethBlock, core.EventLog, component.WithCUUID(cID1))
 	if err != nil {
 		panic(err)
 	}
 
 	comps := []component.Component{
-		p1,
-		p2,
+		c1,
+		c2,
 	}
 
 	pipeLine, err := NewPipeline(&core.PipelineConfig{}, core.NilPUUID(), comps)

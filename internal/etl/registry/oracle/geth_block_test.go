@@ -2,7 +2,6 @@ package oracle
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"math/big"
 	"testing"
@@ -17,63 +16,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_ConfigureRoutine_Error(t *testing.T) {
-
-	_, cancel := context.WithCancel(context.Background())
-	logging.NewLogger(nil, false)
-	defer cancel()
-
-	// setup mock
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	testObj := mocks.NewMockEthClientInterface(ctrl)
-
-	// setup expectations
-	testObj.
-		EXPECT().
-		DialContext(gomock.Any(), "error handle test").
-		Return(errors.New("error handle test"))
-
-	testOdef := NewGethBlockODef(&core.ClientConfig{
-		RPCEndpoint: "error handle test"},
-		testObj,
-		nil,
-	)
-	err := testOdef.ConfigureRoutine(core.NilPUUID())
-	assert.Error(t, err)
-	assert.EqualError(t, err, "error handle test")
-}
-
-func Test_ConfigureRoutine_Pass(t *testing.T) {
-
-	_, cancel := context.WithCancel(context.Background())
-	logging.NewLogger(nil, false)
-	defer cancel()
-
-	// setup mock
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	testObj := mocks.NewMockEthClientInterface(ctrl)
-
-	// setup expectations
-	testObj.
-		EXPECT().
-		DialContext(gomock.Any(), gomock.Eq("error handle test")).
-		Return(nil)
-
-	testOdef := NewGethBlockODef(&core.ClientConfig{
-		RPCEndpoint: "error handle test"},
-		testObj,
-		nil,
-	)
-	err := testOdef.ConfigureRoutine(core.NilPUUID())
-	assert.NoError(t, err)
-}
-
 func Test_GetCurrentHeightFromNetwork(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
-	logging.NewLogger(nil, false)
+	logging.NewLogger(nil, "development")
 	defer cancel()
 
 	// setup mock
@@ -92,7 +38,6 @@ func Test_GetCurrentHeightFromNetwork(t *testing.T) {
 		Return(&header, nil)
 
 	od := &GethBlockODef{cfg: &core.ClientConfig{
-		RPCEndpoint:  "pass test",
 		NumOfRetries: 3,
 	}, currHeight: nil, client: testObj}
 
@@ -102,20 +47,13 @@ func Test_GetCurrentHeightFromNetwork(t *testing.T) {
 func Test_GetHeightToProcess(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
-	logging.NewLogger(nil, false)
+	logging.NewLogger(nil, "development")
 	defer cancel()
 
 	// setup mock
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	testObj := mocks.NewMockEthClientInterface(ctrl)
-
-	// setup expectations
-	testObj.
-		EXPECT().
-		DialContext(gomock.Any(), gomock.Eq("pass test")).
-		Return(nil).
-		AnyTimes()
 
 	header := types.Header{
 		ParentHash: common.HexToHash("0x123456789"),
@@ -128,7 +66,6 @@ func Test_GetHeightToProcess(t *testing.T) {
 		AnyTimes()
 
 	od := &GethBlockODef{cfg: &core.ClientConfig{
-		RPCEndpoint:  "pass test",
 		NumOfRetries: 3,
 	}, currHeight: big.NewInt(123), client: testObj}
 
@@ -144,7 +81,7 @@ func Test_GetHeightToProcess(t *testing.T) {
 }
 
 func Test_Backroutine(t *testing.T) {
-	logging.NewLogger(nil, false)
+	logging.NewLogger(nil, "development")
 	var tests = []struct {
 		name        string
 		description string
@@ -167,12 +104,7 @@ func Test_Backroutine(t *testing.T) {
 					ParentHash: common.HexToHash("0x123456789"),
 					Number:     big.NewInt(5),
 				}
-				// setup expectations
-				testObj.
-					EXPECT().
-					DialContext(gomock.Any(), gomock.Eq("pass test")).
-					Return(nil).
-					AnyTimes()
+				// setup expectationss
 				testObj.
 					EXPECT().
 					HeaderByNumber(gomock.Any(), gomock.Any()).
@@ -180,7 +112,6 @@ func Test_Backroutine(t *testing.T) {
 					AnyTimes()
 
 				od := &GethBlockODef{cfg: &core.ClientConfig{
-					RPCEndpoint:  "pass test",
 					NumOfRetries: 3,
 				}, currHeight: nil, client: testObj}
 
@@ -209,15 +140,7 @@ func Test_Backroutine(t *testing.T) {
 				defer ctrl.Finish()
 				testObj := mocks.NewMockEthClientInterface(ctrl)
 
-				// setup expectations
-				testObj.
-					EXPECT().
-					DialContext(gomock.Any(), gomock.Eq("pass test")).
-					Return(nil).
-					AnyTimes()
-
 				od := &GethBlockODef{cfg: &core.ClientConfig{
-					RPCEndpoint:  "pass test",
 					NumOfRetries: 3,
 				}, currHeight: nil, client: testObj}
 
@@ -286,11 +209,6 @@ func Test_Backroutine(t *testing.T) {
 				// setup expectations
 				testObj.
 					EXPECT().
-					DialContext(gomock.Any(), gomock.Eq("pass test")).
-					Return(nil).
-					AnyTimes()
-				testObj.
-					EXPECT().
 					HeaderByNumber(gomock.Any(), gomock.Any()).
 					Return(&header, nil).
 					AnyTimes()
@@ -301,7 +219,6 @@ func Test_Backroutine(t *testing.T) {
 					AnyTimes()
 
 				od := &GethBlockODef{cfg: &core.ClientConfig{
-					RPCEndpoint:  "pass test",
 					NumOfRetries: 3,
 					PollInterval: 1000,
 				}, currHeight: nil, client: testObj}
@@ -338,7 +255,7 @@ func Test_Backroutine(t *testing.T) {
 }
 
 func Test_ReadRoutine(t *testing.T) {
-	logging.NewLogger(nil, false)
+	logging.NewLogger(nil, "development")
 	var tests = []struct {
 		name        string
 		description string
@@ -357,15 +274,7 @@ func Test_ReadRoutine(t *testing.T) {
 				defer ctrl.Finish()
 				testObj := mocks.NewMockEthClientInterface(ctrl)
 
-				// setup expectations
-				testObj.
-					EXPECT().
-					DialContext(gomock.Any(), gomock.Eq("pass test")).
-					Return(nil).
-					AnyTimes()
-
 				od := &GethBlockODef{cfg: &core.ClientConfig{
-					RPCEndpoint:  "pass test",
 					StartHeight:  big.NewInt(2),
 					EndHeight:    big.NewInt(1),
 					NumOfRetries: 3,
@@ -394,15 +303,7 @@ func Test_ReadRoutine(t *testing.T) {
 				defer ctrl.Finish()
 				testObj := mocks.NewMockEthClientInterface(ctrl)
 
-				// setup expectations
-				testObj.
-					EXPECT().
-					DialContext(gomock.Any(), gomock.Eq("pass test")).
-					Return(nil).
-					AnyTimes()
-
 				od := &GethBlockODef{cfg: &core.ClientConfig{
-					RPCEndpoint:  "pass test",
 					StartHeight:  nil,
 					EndHeight:    big.NewInt(1),
 					NumOfRetries: 3,
@@ -436,12 +337,7 @@ func Test_ReadRoutine(t *testing.T) {
 					Number:     big.NewInt(7),
 				}
 				block := types.NewBlock(&header, nil, nil, nil, trie.NewStackTrie(nil))
-				// setup expectations
-				testObj.
-					EXPECT().
-					DialContext(gomock.Any(), "pass test").
-					Return(nil).
-					AnyTimes()
+
 				testObj.
 					EXPECT().
 					HeaderByNumber(gomock.Any(), gomock.Any()).
@@ -454,7 +350,6 @@ func Test_ReadRoutine(t *testing.T) {
 					AnyTimes()
 
 				od := &GethBlockODef{cfg: &core.ClientConfig{
-					RPCEndpoint:  "pass test",
 					StartHeight:  big.NewInt(1),
 					EndHeight:    big.NewInt(5),
 					NumOfRetries: 3,

@@ -23,18 +23,12 @@ func (svc *PessimismService) RunInvariantSession(params models.InvRequestParams)
 		return core.NilSUUID(), err
 	}
 
-	// TODO(#53): API Request Validation Submodule
-	endpoint, err := svc.cfg.GetEndpointForNetwork(params.NetworkType())
-	if err != nil {
-		return core.NilSUUID(), err
-	}
-
 	pollInterval, err := svc.cfg.GetPollIntervalForNetwork(params.NetworkType())
 	if err != nil {
 		return core.NilSUUID(), err
 	}
 
-	pConfig := params.GeneratePipelineConfig(endpoint, pollInterval, inv.InputType())
+	pConfig := params.GeneratePipelineConfig(pollInterval, inv.InputType())
 	sConfig := params.SessionConfig()
 
 	sUUID, err := svc.m.StartInvSession(pConfig, sConfig)

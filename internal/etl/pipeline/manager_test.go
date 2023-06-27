@@ -7,6 +7,8 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/registry"
+	"github.com/base-org/pessimism/internal/mocks"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,7 +29,11 @@ func Test_Manager(t *testing.T) {
 
 			constructionLogic: func() Manager {
 				reg := registry.NewRegistry()
-				return NewManager(context.Background(), NewAnalyzer(reg), reg, NewEtlStore(), NewComponentGraph(), nil)
+				ctrl := gomock.NewController(t)
+
+				ctx := mocks.Context(context.Background(), ctrl)
+
+				return NewManager(ctx, NewAnalyzer(reg), reg, NewEtlStore(), NewComponentGraph(), nil)
 			},
 
 			testLogic: func(t *testing.T, m Manager) {
@@ -38,7 +44,7 @@ func Test_Manager(t *testing.T) {
 				assert.NoError(t, err)
 
 				cc := &core.ClientConfig{}
-				c, err := inferComponent(context.Background(), cc, cUUID, core.NilPUUID(), register)
+				c, err := m.InferComponent(cc, cUUID, core.NilPUUID(), register)
 				assert.NoError(t, err)
 
 				assert.Equal(t, c.UUID(), cUUID)

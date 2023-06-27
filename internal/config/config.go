@@ -32,6 +32,8 @@ const (
 type Config struct {
 	Environment   Env
 	BootStrapPath string
+	L1RpcEndpoint string
+	L2RpcEndpoint string
 
 	// TODO - Consider moving this URL to a more appropriate location
 	SlackURL string
@@ -49,13 +51,15 @@ func NewConfig(fileName FilePath) *Config {
 	}
 
 	config := &Config{
+		L1RpcEndpoint: getEnvStr("L1_RPC_ENDPOINT"),
+		L2RpcEndpoint: getEnvStr("L2_RPC_ENDPOINT"),
+
 		BootStrapPath: getEnvStrWithDefault("BOOTSTRAP_PATH", ""),
 		Environment:   Env(getEnvStr("ENV")),
 		SlackURL:      getEnvStrWithDefault("SLACK_URL", ""),
 
 		SvcConfig: &service.Config{
-			L1RpcEndpoint:  getEnvStr("L1_RPC_ENDPOINT"),
-			L2RpcEndpoint:  getEnvStr("L2_RPC_ENDPOINT"),
+
 			L1PollInterval: getEnvInt("L1_POLL_INTERVAL"),
 			L2PollInterval: getEnvInt("L2_POLL_INTERVAL"),
 		},
