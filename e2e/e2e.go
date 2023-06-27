@@ -119,7 +119,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 
 	go pess.ListenForShutdown(kill)
 
-	logging.NewLogger(appCfg.LoggerConfig, false)
+	logging.NewLogger(appCfg.LoggerConfig, "development")
 
 	return &SysTestSuite{
 		t:   t,
