@@ -1,13 +1,11 @@
 package metrics
 
 import (
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net"
 	"net/http"
 	"strconv"
-	"time"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const metricsNamespace = "pessimism"
@@ -16,7 +14,6 @@ type Config struct {
 	Host          string
 	Port          uint64
 	EnableMetrics bool
-	ServerTimeout time.Duration
 }
 
 type Metricer interface {
