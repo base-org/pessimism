@@ -11,14 +11,14 @@ import (
 
 // TestServer ... Mock server for testing slack alerts
 type TestServer struct {
-	Server      *httptest.Server
-	SlackAlerts []*client.SlackPayload
+	Server   *httptest.Server
+	Payloads []*client.SlackPayload
 }
 
-// MockSlackServer ... Creates a new mock slack server
-func MockSlackServer() *TestServer {
+// NewTestServer ... Creates a new mock slack server
+func NewTestServer() *TestServer {
 	ts := &TestServer{
-		SlackAlerts: []*client.SlackPayload{},
+		Payloads: []*client.SlackPayload{},
 	}
 
 	ts.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -43,8 +43,18 @@ func (svr *TestServer) mockSlackPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	svr.SlackAlerts = append(svr.SlackAlerts, alert)
+	svr.Payloads = append(svr.Payloads, alert)
 
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"ok":true, "error":""}`))
+}
+
+// SlackAlerts ... Returns the slack alerts
+func (svr *TestServer) SlackAlerts() []*client.SlackPayload {
+	return svr.Payloads
+}
+
+// ClearAlerts ... Clears the alerts
+func (svr *TestServer) ClearAlerts() {
+	svr.Payloads = []*client.SlackPayload{}
 }
