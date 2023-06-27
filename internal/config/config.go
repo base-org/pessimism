@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/api/service"
@@ -64,9 +65,10 @@ func NewConfig(fileName FilePath) *Config {
 		},
 
 		MetricsConfig: &metrics.Config{
-			Host:          getEnvStr("METRICS_HOST"),
-			Port:          uint64(getEnvInt("METRICS_PORT")),
-			EnableMetrics: getEnvBool("ENABLE_METRICS"),
+			Host:              getEnvStr("METRICS_HOST"),
+			Port:              uint64(getEnvInt("METRICS_PORT")),
+			Enabled:           getEnvBool("ENABLE_METRICS"),
+			ReadHeaderTimeout: time.Duration(getEnvInt("METRICS_READ_HEADER_TIMEOUT")) * time.Second,
 		},
 
 		LoggerConfig: &logging.Config{

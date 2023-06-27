@@ -2,14 +2,15 @@ package metrics
 
 import (
 	"context"
-	"github.com/ethereum-optimism/optimism/op-service/metrics"
-	"github.com/prometheus/client_golang/prometheus/collectors"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net"
 	"net/http"
 	"strconv"
+	"time"
 
+	"github.com/ethereum-optimism/optimism/op-service/metrics"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const metricsNamespace = "pessimism"
@@ -20,9 +21,10 @@ const (
 )
 
 type Config struct {
-	Host          string
-	Port          uint64
-	EnableMetrics bool
+	Host              string
+	Port              uint64
+	Enabled           bool
+	ReadHeaderTimeout time.Duration
 }
 
 type Metricer interface {
@@ -49,7 +51,6 @@ type Metrics struct {
 var _ Metricer = (*Metrics)(nil)
 
 func NewMetrics() *Metrics {
-
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 	registry.MustRegister(collectors.NewGoCollector())
@@ -123,7 +124,9 @@ func (m *Metrics) RecordNodeError(node string) {
 
 func (m *Metrics) Serve(ctx context.Context, cfg *Config) error {
 	addr := net.JoinHostPort(cfg.Host, strconv.FormatUint(cfg.Port, 10))
-	server := &http.Server{}
+	server := &http.Server{
+		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
+	}
 	server.Handler = promhttp.InstrumentMetricHandler(m.registry, promhttp.HandlerFor(m.registry, promhttp.HandlerOpts{}))
 	server.Addr = addr
 
