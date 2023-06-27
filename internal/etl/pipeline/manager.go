@@ -14,6 +14,11 @@ import (
 	"go.uber.org/zap"
 )
 
+type Metrics interface {
+	IncActivePipelines()
+	DecActivePipelines()
+}
+
 // Manager ... ETL manager interface
 type Manager interface {
 	InferComponent(cc *core.ClientConfig, cUUID core.CUUID, pUUID core.PUUID,
@@ -33,6 +38,7 @@ type etlManager struct {
 	analyzer Analyzer
 	dag      ComponentGraph
 	store    EtlStore
+	metrics  Metrics
 
 	engOutgress chan core.InvariantInput
 
@@ -42,7 +48,7 @@ type etlManager struct {
 
 // NewManager ... Initializer
 func NewManager(ctx context.Context, analyzer Analyzer, cRegistry registry.Registry,
-	store EtlStore, dag ComponentGraph,
+	store EtlStore, dag ComponentGraph, metrics Metrics,
 	eo chan core.InvariantInput) Manager {
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -54,6 +60,7 @@ func NewManager(ctx context.Context, analyzer Analyzer, cRegistry registry.Regis
 		store:       store,
 		registry:    cRegistry,
 		engOutgress: eo,
+		metrics:     metrics,
 		wg:          sync.WaitGroup{},
 	}
 
@@ -115,6 +122,8 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, 
 		return pUUID, nil
 	}
 
+	em.metrics.IncActivePipelines()
+
 	return pUUID, nil
 }
 
@@ -137,7 +146,8 @@ func (em *etlManager) EventLoop() error {
 
 	for {
 		<-em.ctx.Done()
-		logger.Info("Receieved shutdown request")
+
+		logger.Info("Received shutdown request")
 		return nil
 	}
 }
@@ -148,7 +158,7 @@ func (em *etlManager) Shutdown() error {
 	logger := logging.WithContext(em.ctx)
 
 	for _, pl := range em.store.GetAllPipelines() {
-		logger.Info("Shuting down pipeline",
+		logger.Info("Shutting down pipeline",
 			zap.String(core.PUUIDKey, pl.UUID().String()))
 
 		if err := pl.Close(); err != nil {
@@ -156,6 +166,7 @@ func (em *etlManager) Shutdown() error {
 				zap.String(core.PUUIDKey, pl.UUID().String()))
 			return err
 		}
+		em.metrics.DecActivePipelines()
 	}
 	logger.Debug("Waiting for all component routines to end")
 	em.wg.Wait()

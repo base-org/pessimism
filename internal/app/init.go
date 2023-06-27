@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-
 	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/handlers"
 	"github.com/base-org/pessimism/internal/api/server"
@@ -14,6 +13,7 @@ import (
 	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/state"
 	"github.com/base-org/pessimism/internal/subsystem"
 	"go.uber.org/zap"
@@ -58,29 +58,29 @@ func InitializeAlerting(ctx context.Context, cfg *config.Config) alert.Manager {
 }
 
 // InitalizeETL ... Performs dependency injection to build etl struct
-func InitalizeETL(ctx context.Context, transit chan core.InvariantInput) pipeline.Manager {
+func InitalizeETL(ctx context.Context, transit chan core.InvariantInput, metr metrics.Metricer) pipeline.Manager {
 	compRegistry := registry.NewRegistry()
 	analyzer := pipeline.NewAnalyzer(compRegistry)
 	store := pipeline.NewEtlStore()
 	dag := pipeline.NewComponentGraph()
 
-	return pipeline.NewManager(ctx, analyzer, compRegistry, store, dag, transit)
+	return pipeline.NewManager(ctx, analyzer, compRegistry, store, dag, metr, transit)
 }
 
 // InitializeEngine ... Performs dependency injection to build engine struct
-func InitializeEngine(ctx context.Context, transit chan core.Alert) engine.Manager {
+func InitializeEngine(ctx context.Context, transit chan core.Alert, metr metrics.Metricer) engine.Manager {
 	store := engine.NewSessionStore()
 	am := engine.NewAddressingMap()
 	re := engine.NewHardCodedEngine()
 
-	return engine.NewManager(ctx, re, am, store, transit)
+	return engine.NewManager(ctx, re, am, store, metr, transit)
 }
 
 // NewPessimismApp ... Performs dependency injection to build app struct
-func NewPessimismApp(ctx context.Context, cfg *config.Config) (*Application, func(), error) {
+func NewPessimismApp(ctx context.Context, cfg *config.Config, metr metrics.Metricer) (*Application, func(), error) {
 	alrt := InitializeAlerting(ctx, cfg)
-	engine := InitializeEngine(ctx, alrt.Transit())
-	etl := InitalizeETL(ctx, engine.Transit())
+	engine := InitializeEngine(ctx, alrt.Transit(), metr)
+	etl := InitalizeETL(ctx, engine.Transit(), metr)
 
 	m := subsystem.NewManager(ctx, etl, engine, alrt)
 

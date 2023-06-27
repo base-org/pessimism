@@ -67,7 +67,7 @@ func NewConfig(fileName FilePath) *Config {
 
 		MetricsConfig: &metrics.Config{
 			Host:          getEnvStr("METRICS_HOST"),
-			Port:          getEnvInt("METRICS_PORT"),
+			Port:          uint64(getEnvInt("METRICS_PORT")),
 			EnableMetrics: getEnvBool("ENABLE_METRICS"),
 		},
 

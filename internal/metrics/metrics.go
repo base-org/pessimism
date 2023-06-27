@@ -1,65 +1,125 @@
 package metrics
 
 import (
-	"context"
-	"fmt"
-	"github.com/DataDog/datadog-go/v5/statsd"
-	"strings"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"net"
+	"net/http"
+	"strconv"
 )
 
-const (
-	Namespace  = "pessimism"
-	MetricsKey = "statsd"
-)
+const metricsNamespace = "pessimism"
 
 type Config struct {
 	Host          string
-	Port          int
-	Environment   string
+	Port          uint64
 	EnableMetrics bool
 }
 
-var Metrics statsd.ClientInterface
-var metrics = Metrics
+type Metricer interface {
+	IncActiveInvariants()
+	DecActiveInvariants()
+	IncActivePipelines()
+	DecActivePipelines()
+	RecordInvariantRun(invariant string)
+	RecordAlarmGenerated(invariant string)
+	RecordNodeError(node string)
+}
 
-// NewStatsd ... Initializer for statsd client, returns NoopClient if metrics are disabled
-func NewStatsd(cfg *Config) {
-	if !cfg.EnableMetrics {
-		metrics = &statsd.NoOpClient{}
-		return
-	}
+type Metrics struct {
+	ActiveInvariants prometheus.Gauge
+	ActivePipelines  prometheus.Gauge
+	InvariantRuns    *prometheus.CounterVec
+	AlarmsGenerated  *prometheus.CounterVec
+	NodeErrors       *prometheus.CounterVec
+}
 
-	host := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
+var _ Metricer = (*Metrics)(nil)
 
-	var err error
-	metrics, err = statsd.New(host, statsd.WithTags([]string{
-		fmt.Sprintf("env:%s", cfg.Environment),
-		fmt.Sprintf("service:%s", Namespace),
-	}))
-	if err != nil {
-		panic("could not initialize statsd client")
+func NewMetrics() *Metrics {
+	return &Metrics{
+		ActiveInvariants: prometheus.NewGauge(prometheus.GaugeOpts{
+			Name:      "active_invariants",
+			Help:      "Number of active invariants",
+			Namespace: metricsNamespace,
+		}),
+
+		ActivePipelines: prometheus.NewGauge(prometheus.GaugeOpts{
+			Name:      "active_pipelines",
+			Help:      "Number of active pipelines",
+			Namespace: metricsNamespace,
+		}),
+
+		InvariantRuns: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name:      "invariant_runs",
+			Help:      "Number of times a specific invariant has been run",
+			Namespace: metricsNamespace,
+		}, []string{"invariant"}),
+
+		AlarmsGenerated: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name:      "alarms_generated",
+			Help:      "Number of total alarms generated for a given invariant",
+			Namespace: metricsNamespace,
+		}, []string{"invariant"}),
+
+		NodeErrors: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Name:      "node_errors",
+			Help:      "Number of node errors caught",
+			Namespace: metricsNamespace,
+		}, []string{"node"}),
 	}
 }
 
-func WithContext(ctx context.Context) statsd.ClientInterface {
-	if ctx == nil {
-		return metrics
+func (m *Metrics) IncActiveInvariants() {
+	m.ActiveInvariants.Inc()
+}
+
+func (m *Metrics) DecActiveInvariants() {
+	m.ActiveInvariants.Dec()
+}
+
+func (m *Metrics) IncActivePipelines() {
+	m.ActivePipelines.Inc()
+}
+
+func (m *Metrics) DecActivePipelines() {
+	m.ActivePipelines.Dec()
+}
+
+func (m *Metrics) RecordInvariantRun(invariant string) {
+	m.InvariantRuns.WithLabelValues(invariant).Inc()
+}
+
+func (m *Metrics) RecordAlarmGenerated(invariant string) {
+	m.AlarmsGenerated.WithLabelValues(invariant).Inc()
+}
+
+func (m *Metrics) RecordNodeError(node string) {
+	m.NodeErrors.WithLabelValues(node).Inc()
+}
+
+func (m *Metrics) Serve(hostname string, port uint64) (*http.Server, error) {
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
+
+	srv := &http.Server{
+		Addr:    net.JoinHostPort(hostname, strconv.FormatUint(port, 10)),
+		Handler: mux,
 	}
 
-	if ctxStats, ok := ctx.Value(MetricsKey).(statsd.ClientInterface); ok {
-		return ctxStats
-	}
+	err := srv.ListenAndServe()
 
-	return metrics
-
+	return srv, err
 }
 
-func MetricName(scope string, metric string, additionals ...string) string {
-	return strings.Join(append([]string{Namespace, scope, metric}, additionals...), ".")
-}
+type noopMetricer struct{}
 
-// TODO: Impl GetMetadataTags to cast invariant and pipeline configs to metric tags
-func GetMetadataTags() []string {
+var NoopMetrics Metricer = new(noopMetricer)
 
-	return []string{}
-}
+func (n *noopMetricer) IncActiveInvariants()                  {}
+func (n *noopMetricer) DecActiveInvariants()                  {}
+func (n *noopMetricer) IncActivePipelines()                   {}
+func (n *noopMetricer) DecActivePipelines()                   {}
+func (n *noopMetricer) RecordInvariantRun(invariant string)   {}
+func (n *noopMetricer) RecordAlarmGenerated(invariant string) {}
+func (n *noopMetricer) RecordNodeError(node string)           {}

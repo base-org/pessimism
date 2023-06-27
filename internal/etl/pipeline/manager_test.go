@@ -3,6 +3,7 @@ package pipeline
 import (
 	"context"
 	"fmt"
+	"github.com/base-org/pessimism/internal/metrics"
 	"testing"
 
 	"github.com/base-org/pessimism/internal/core"
@@ -33,7 +34,7 @@ func Test_Manager(t *testing.T) {
 
 				ctx := mocks.Context(context.Background(), ctrl)
 
-				return NewManager(ctx, NewAnalyzer(reg), reg, NewEtlStore(), NewComponentGraph(), nil)
+				return NewManager(ctx, NewAnalyzer(reg), reg, NewEtlStore(), NewComponentGraph(), metrics.NoopMetrics, nil)
 			},
 
 			testLogic: func(t *testing.T, m Manager) {

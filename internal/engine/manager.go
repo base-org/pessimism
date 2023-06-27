@@ -5,7 +5,6 @@ package engine
 import (
 	"context"
 	"fmt"
-
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/engine/registry"
@@ -16,6 +15,13 @@ import (
 	"go.uber.org/zap"
 )
 
+type Metrics interface {
+	DecActiveInvariants()
+	IncActiveInvariants()
+	RecordInvariantRun(invariant string)
+	RecordAlarmGenerated(invariant string)
+}
+
 // Manager ... Engine manager interface
 type Manager interface {
 	core.Subsystem
@@ -23,7 +29,6 @@ type Manager interface {
 	Transit() chan core.InvariantInput
 
 	// TODO( ) : Session deletion logic
-	// TODO : Add decrement for invariant deletion
 	DeleteInvariantSession(core.SUUID) (core.SUUID, error)
 	DeployInvariantSession(cfg *invariant.DeployConfig) (core.SUUID, error)
 }
@@ -38,6 +43,7 @@ type Manager interface {
 type engineManager struct {
 	ctx    context.Context
 	cancel context.CancelFunc
+	m      Metrics
 
 	etlIngress    chan core.InvariantInput
 	alertOutgress chan core.Alert
@@ -49,7 +55,7 @@ type engineManager struct {
 
 // NewManager ... Initializer
 func NewManager(ctx context.Context, engine RiskEngine, addr AddressingMap,
-	store SessionStore, alertOutgress chan core.Alert) Manager {
+	store SessionStore, m Metrics, alertOutgress chan core.Alert) Manager {
 	ctx, cancel := context.WithCancel(ctx)
 
 	em := &engineManager{
@@ -60,6 +66,7 @@ func NewManager(ctx context.Context, engine RiskEngine, addr AddressingMap,
 		engine:        engine,
 		addresser:     addr,
 		store:         store,
+		m:             m,
 	}
 
 	return em
@@ -72,6 +79,7 @@ func (em *engineManager) Transit() chan core.InvariantInput {
 
 // DeleteInvariantSession ... Deletes an invariant session
 func (em *engineManager) DeleteInvariantSession(_ core.SUUID) (core.SUUID, error) {
+	em.m.DecActiveInvariants()
 	return core.NilSUUID(), nil
 }
 
@@ -149,6 +157,8 @@ func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (co
 			return core.NilSUUID(), err
 		}
 	}
+
+	em.m.IncActiveInvariants()
 
 	return sUUID, nil
 }
@@ -254,5 +264,7 @@ func (em *engineManager) executeInvariant(ctx context.Context, data core.Invaria
 			zap.String("message", outcome.Message))
 
 		em.alertOutgress <- alert
+		em.m.RecordAlarmGenerated(inv.SUUID().String())
 	}
+	em.m.RecordInvariantRun(inv.SUUID().String())
 }

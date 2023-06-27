@@ -9,6 +9,7 @@ import (
 	"github.com/base-org/pessimism/internal/app"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/state"
 	op_e2e "github.com/ethereum-optimism/optimism/op-e2e"
 )
@@ -46,7 +47,7 @@ func CreateTestSuite(t *testing.T) *TestSuite {
 	slackServer := MockSlackServer()
 	appCfg.SlackURL = slackServer.Server.URL
 
-	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
+	pess, kill, err := app.NewPessimismApp(ctx, appCfg, metrics.NoopMetrics)
 	if err != nil {
 		t.Fatal(err)
 	}
