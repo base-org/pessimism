@@ -31,10 +31,13 @@ func main() {
 
 	// Init stats server
 	metrics := metrics.NewMetrics()
+	if !cfg.MetricsConfig.EnableMetrics {
+		logger.Info("Metrics server disabled")
+	}
+
 	if cfg.MetricsConfig.EnableMetrics {
 		go func() {
-			_, err := metrics.Serve(cfg.MetricsConfig)
-			if err != nil {
+			if err := metrics.Serve(ctx, cfg.MetricsConfig); err != nil {
 				logger.Fatal("Error starting metrics server", zap.Error(err))
 			}
 		}()

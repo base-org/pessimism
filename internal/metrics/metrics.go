@@ -1,15 +1,23 @@
 package metrics
 
 import (
+	"context"
+	"github.com/ethereum-optimism/optimism/op-service/metrics"
+	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net"
 	"net/http"
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const metricsNamespace = "pessimism"
+
+const (
+	SubsystemInvariants = "invariants"
+	SubsystemEtl        = "etl"
+)
 
 type Config struct {
 	Host          string
@@ -33,41 +41,55 @@ type Metrics struct {
 	InvariantRuns    *prometheus.CounterVec
 	AlarmsGenerated  *prometheus.CounterVec
 	NodeErrors       *prometheus.CounterVec
+
+	registry *prometheus.Registry
+	factory  metrics.Factory
 }
 
 var _ Metricer = (*Metrics)(nil)
 
 func NewMetrics() *Metrics {
+
+	registry := prometheus.NewRegistry()
+	registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
+	registry.MustRegister(collectors.NewGoCollector())
+	factory := metrics.With(registry)
+
 	return &Metrics{
-		ActiveInvariants: prometheus.NewGauge(prometheus.GaugeOpts{
+		ActiveInvariants: factory.NewGauge(prometheus.GaugeOpts{
 			Name:      "active_invariants",
 			Help:      "Number of active invariants",
 			Namespace: metricsNamespace,
+			Subsystem: SubsystemInvariants,
 		}),
 
-		ActivePipelines: prometheus.NewGauge(prometheus.GaugeOpts{
+		ActivePipelines: factory.NewGauge(prometheus.GaugeOpts{
 			Name:      "active_pipelines",
 			Help:      "Number of active pipelines",
 			Namespace: metricsNamespace,
+			Subsystem: SubsystemEtl,
 		}),
 
-		InvariantRuns: prometheus.NewCounterVec(prometheus.CounterOpts{
+		InvariantRuns: factory.NewCounterVec(prometheus.CounterOpts{
 			Name:      "invariant_runs_total",
 			Help:      "Number of times a specific invariant has been run",
 			Namespace: metricsNamespace,
+			Subsystem: SubsystemInvariants,
 		}, []string{"invariant"}),
 
-		AlarmsGenerated: prometheus.NewCounterVec(prometheus.CounterOpts{
+		AlarmsGenerated: factory.NewCounterVec(prometheus.CounterOpts{
 			Name:      "alarms_generated_total",
 			Help:      "Number of total alarms generated for a given invariant",
 			Namespace: metricsNamespace,
 		}, []string{"invariant"}),
 
-		NodeErrors: prometheus.NewCounterVec(prometheus.CounterOpts{
+		NodeErrors: factory.NewCounterVec(prometheus.CounterOpts{
 			Name:      "node_errors_total",
 			Help:      "Number of node errors caught",
 			Namespace: metricsNamespace,
 		}, []string{"node"}),
+		registry: registry,
+		factory:  factory,
 	}
 }
 
@@ -99,14 +121,22 @@ func (m *Metrics) RecordNodeError(node string) {
 	m.NodeErrors.WithLabelValues(node).Inc()
 }
 
-func (m *Metrics) Serve(cfg *Config) (*http.Server, error) {
-	mux := http.NewServeMux()
-	mux.Handle("/metrics", promhttp.Handler())
-	srv := new(http.Server)
-	srv.Addr = net.JoinHostPort(cfg.Host, strconv.FormatUint(cfg.Port, 10))
-	srv.Handler = mux
-	err := srv.ListenAndServe()
-	return srv, err
+func (m *Metrics) Serve(ctx context.Context, cfg *Config) error {
+	addr := net.JoinHostPort(cfg.Host, strconv.FormatUint(cfg.Port, 10))
+	server := &http.Server{}
+	server.Handler = promhttp.InstrumentMetricHandler(m.registry, promhttp.HandlerFor(m.registry, promhttp.HandlerOpts{}))
+	server.Addr = addr
+
+	go func() {
+		<-ctx.Done()
+		server.Close()
+	}()
+
+	return server.ListenAndServe()
+}
+
+func (m *Metrics) Document() []metrics.DocumentedMetric {
+	return m.factory.Document()
 }
 
 type noopMetricer struct{}
