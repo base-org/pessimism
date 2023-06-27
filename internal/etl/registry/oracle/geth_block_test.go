@@ -19,7 +19,7 @@ import (
 func Test_GetCurrentHeightFromNetwork(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
-	logging.NewLogger(nil, false)
+	logging.NewLogger(nil, "development")
 	defer cancel()
 
 	// setup mock
@@ -47,7 +47,7 @@ func Test_GetCurrentHeightFromNetwork(t *testing.T) {
 func Test_GetHeightToProcess(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
-	logging.NewLogger(nil, false)
+	logging.NewLogger(nil, "development")
 	defer cancel()
 
 	// setup mock
@@ -81,7 +81,7 @@ func Test_GetHeightToProcess(t *testing.T) {
 }
 
 func Test_Backroutine(t *testing.T) {
-	logging.NewLogger(nil, false)
+	logging.NewLogger(nil, "development")
 	var tests = []struct {
 		name        string
 		description string
@@ -255,7 +255,7 @@ func Test_Backroutine(t *testing.T) {
 }
 
 func Test_ReadRoutine(t *testing.T) {
-	logging.NewLogger(nil, false)
+	logging.NewLogger(nil, "development")
 	var tests = []struct {
 		name        string
 		description string
