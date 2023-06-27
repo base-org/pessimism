@@ -19,8 +19,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-// TestSuite ... Stores all the information needed to run an e2e test
-type TestSuite struct {
+// SysTestSuite ... Stores all the information needed to run an e2e test
+type SysTestSuite struct {
 	t *testing.T
 
 	Cfg *op_e2e.SystemConfig
@@ -30,7 +30,7 @@ type TestSuite struct {
 	AppCfg *config.Config
 	Close  func()
 
-	Slack *TestServer
+	SlackDummy *TestServer
 }
 
 type L2TestSuite struct {
@@ -43,7 +43,7 @@ type L2TestSuite struct {
 	AppCfg *config.Config
 	Close  func()
 
-	Slack *TestServer
+	SlackDummy *TestServer
 }
 
 func CreateL2TestSuite(t *testing.T) *L2TestSuite {
@@ -85,13 +85,13 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 			kill()
 			node.Close()
 		},
-		AppCfg: appCfg,
-		Slack:  slackServer,
+		AppCfg:     appCfg,
+		SlackDummy: slackServer,
 	}
 }
 
-// CreateSysTestSuite ... Creates a new TestSuite
-func CreateSysTestSuite(t *testing.T) *TestSuite {
+// CreateSysTestSuite ... Creates a new SysTestSuite
+func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	ctx := context.Background()
 
 	cfg := op_e2e.DefaultSystemConfig(t)
@@ -121,7 +121,7 @@ func CreateSysTestSuite(t *testing.T) *TestSuite {
 
 	logging.NewLogger(appCfg.LoggerConfig, false)
 
-	return &TestSuite{
+	return &SysTestSuite{
 		t:   t,
 		Sys: sys,
 		Cfg: &cfg,
@@ -130,8 +130,8 @@ func CreateSysTestSuite(t *testing.T) *TestSuite {
 			kill()
 			sys.Close()
 		},
-		AppCfg: appCfg,
-		Slack:  slackServer,
+		AppCfg:     appCfg,
+		SlackDummy: slackServer,
 	}
 }
 
