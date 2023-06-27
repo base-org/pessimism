@@ -133,9 +133,7 @@ func (am *alertManager) EventLoop() error {
 				}
 
 			case core.Log:
-				logger.Debug("Attempting to log alert to console")
 				am.handleLogPost(alert)
-				logger.Debug("Logging alert to console completed")
 
 			case core.ThirdParty:
 				logger.Error("Attempting to post alert to third_party which is not yet supported")
