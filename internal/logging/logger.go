@@ -28,10 +28,10 @@ type Config struct {
 }
 
 // NewLogger ... initializes logging from config
-func NewLogger(cfg *Config, isProduction bool) {
+func NewLogger(cfg *Config, env string) {
 	var zapCfg zap.Config
 
-	if isProduction {
+	if env == "production" {
 		zapCfg = zap.NewProductionConfig()
 	} else {
 		zapCfg = zap.NewDevelopmentConfig()
