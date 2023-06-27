@@ -17,7 +17,8 @@ import (
 	"github.com/base-org/pessimism/internal/api/models"
 )
 
-// Test_Balance_Enforcement
+// Test_Balance_Enforcement ... Tests the E2E flow of a single
+// balance enforcement invariant session on L2 network.
 func Test_Balance_Enforcement(t *testing.T) {
 
 	ts := e2e.CreateL2TestSuite(t)
@@ -54,6 +55,8 @@ func Test_Balance_Enforcement(t *testing.T) {
 	gasCost := gasPrice.Mul(gasPrice, bigAmt)
 
 	signer := types.LatestSigner(ts.L2Geth.L2ChainConfig)
+
+	// Create a transaction from Alice to Bob that will drain almost all of Alice's ETH.
 	drainAliceTx := types.MustSignNewTx(ts.L2Cfg.Secrets.Alice, signer, &types.DynamicFeeTx{
 		ChainID:   big.NewInt(int64(ts.L2Cfg.DeployConfig.L2ChainID)),
 		Nonce:     0,
@@ -66,7 +69,7 @@ func Test_Balance_Enforcement(t *testing.T) {
 		Data:  nil,
 	})
 
-	assert.Equal(t, len(ts.SlackDummy.Payloads), 0, "No alerts should be sent before the transaction is sent")
+	assert.Equal(t, len(ts.TestSvr.SlackAlerts()), 0, "No alerts should be sent before the transaction is sent")
 
 	// Send the transaction to drain Alice's account of almost all ETH.
 	_, err = ts.L2Geth.AddL2Block(context.Background(), drainAliceTx)
@@ -76,7 +79,7 @@ func Test_Balance_Enforcement(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// Check that the balance enforcement was triggered using the mocked server cache.
-	posts := ts.SlackDummy.Payloads
+	posts := ts.TestSvr.SlackAlerts()
 
 	assert.Greater(t, len(posts), 0, "No balance enforcement alert was sent")
 	assert.Contains(t, posts[0].Text, "balance_enforcement", "Balance enforcement alert was not sent")
@@ -105,15 +108,17 @@ func Test_Balance_Enforcement(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// Empty the mocked Slack server cache.
-	ts.SlackDummy.ClearAlerts()
+	ts.TestSvr.ClearAlerts()
 
 	// Wait to ensure that no new alerts are sent.
 	time.Sleep(1 * time.Second)
 
 	// Ensure that no new alerts were sent.
-	assert.Equal(t, len(ts.SlackDummy.Payloads), 0, "No alerts should be sent after the transaction is sent")
+	assert.Equal(t, len(ts.TestSvr.Payloads), 0, "No alerts should be sent after the transaction is sent")
 }
 
+// Test_Contract_Event ... Tests the E2E flow of a single
+// contract event invariant session on L1 network.
 func Test_Contract_Event(t *testing.T) {
 
 	ts := e2e.CreateSysTestSuite(t)
@@ -164,7 +169,7 @@ func Test_Contract_Event(t *testing.T) {
 
 	// Wait for Pessimism to process the newly emitted event and send a notification to the mocked Slack server.
 	time.Sleep(1 * time.Second)
-	posts := ts.SlackDummy.Payloads
+	posts := ts.TestSvr.SlackAlerts()
 
 	assert.Equal(t, len(posts), 1, "No system contract event alert was sent")
 	assert.Contains(t, posts[0].Text, "contract_event", "System contract event alert was not sent")

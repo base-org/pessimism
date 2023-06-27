@@ -19,7 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-// SysTestSuite ... Stores all the information needed to run an e2e test
+// SysTestSuite ... Stores all the information needed to run an e2e system test
 type SysTestSuite struct {
 	t *testing.T
 
@@ -30,9 +30,10 @@ type SysTestSuite struct {
 	AppCfg *config.Config
 	Close  func()
 
-	SlackDummy *TestServer
+	TestSvr *TestServer
 }
 
+// L2TestSuite ... Stores all the information needed to run an e2e L2Geth test
 type L2TestSuite struct {
 	t *testing.T
 
@@ -43,9 +44,10 @@ type L2TestSuite struct {
 	AppCfg *config.Config
 	Close  func()
 
-	SlackDummy *TestServer
+	TestSvr *TestServer
 }
 
+// CreateSysTestSuite ... Creates a new L2Geth test suite
 func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 	ctx := context.Background()
 	nodeCfg := op_e2e.DefaultSystemConfig(t)
@@ -61,7 +63,7 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 
 	appCfg := DefaultTestConfig()
 
-	slackServer := MockSlackServer()
+	slackServer := NewTestServer()
 	appCfg.SlackURL = slackServer.Server.URL
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
@@ -85,8 +87,8 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 			kill()
 			node.Close()
 		},
-		AppCfg:     appCfg,
-		SlackDummy: slackServer,
+		AppCfg:  appCfg,
+		TestSvr: slackServer,
 	}
 }
 
@@ -106,7 +108,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 
 	appCfg := DefaultTestConfig()
 
-	slackServer := MockSlackServer()
+	slackServer := NewTestServer()
 	appCfg.SlackURL = slackServer.Server.URL
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
@@ -130,12 +132,12 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 			kill()
 			sys.Close()
 		},
-		AppCfg:     appCfg,
-		SlackDummy: slackServer,
+		AppCfg:  appCfg,
+		TestSvr: slackServer,
 	}
 }
 
-// DefaultTestConfig ... Returns a default config for testing
+// DefaultTestConfig ... Returns a default app config for testing
 func DefaultTestConfig() *config.Config {
 	port := 6980
 	l1PollInterval := 900
