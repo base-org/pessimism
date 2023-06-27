@@ -48,3 +48,8 @@ func (svr *TestServer) mockSlackPost(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"ok":true, "error":""}`))
 }
+
+// ClearAlerts ... Clears the alerts
+func (svr *TestServer) ClearAlerts() {
+	svr.SlackAlerts = []*client.SlackPayload{}
+}
