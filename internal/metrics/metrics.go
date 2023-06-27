@@ -104,15 +104,10 @@ func (m *Metrics) RecordNodeError(node string) {
 func (m *Metrics) Serve(cfg *Config) (*http.Server, error) {
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
-
-	srv := &http.Server{
-		Addr:              net.JoinHostPort(cfg.Host, strconv.FormatUint(cfg.Port, 10)),
-		Handler:           mux,
-		ReadHeaderTimeout: cfg.ServerTimeout,
-	}
-
+	srv := new(http.Server)
+	srv.Addr = net.JoinHostPort(cfg.Host, strconv.FormatUint(cfg.Port, 10))
+	srv.Handler = mux
 	err := srv.ListenAndServe()
-
 	return srv, err
 }
 
