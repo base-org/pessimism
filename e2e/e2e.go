@@ -67,7 +67,7 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 	slackServer := NewTestServer()
 	appCfg.SlackURL = slackServer.Server.URL
 
-	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
+	pess, kill, err := app.NewPessimismApp(ctx, appCfg, metrics.NoopMetrics)
 	if err != nil {
 		t.Fatal(err)
 	}
