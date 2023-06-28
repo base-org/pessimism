@@ -79,7 +79,11 @@ func (wi *WthdrawlEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutcom
 		return nil, false, fmt.Errorf("could not convert transit data to log")
 	}
 
-	exists, err := wi.l2Messager.SentMessages(nil, log.Topics[0])
+	if len(log.Topics) != 4 {
+		return nil, false, fmt.Errorf("invalid log topics")
+	}
+
+	exists, err := wi.l2Messager.SentMessages(nil, log.Topics[1])
 	if err != nil {
 		return nil, false, err
 	}

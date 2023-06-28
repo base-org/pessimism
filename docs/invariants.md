@@ -4,14 +4,12 @@
 ## Balance Enforcement
 The hardcoded `balance_enforcement` invariant checks the native ETH balance of some address every `n` milliseconds and alerts to slack if the account's balance is ever less than `lower` or greater than `upper` value. This invariant is useful for monitoring hot wallets and other accounts that should always have a balance above a certain threshold.
 
-
 ### Parameters
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | address | string | The address to check the balance of |
 | lower | float | The ETH lower bound of the balance |
 | upper | float | The ETH upper bound of the balance |
-
 
 ### Example Deploy Request
 ```

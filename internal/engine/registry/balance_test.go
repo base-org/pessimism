@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Invalidate(t *testing.T) {
+func Test_Balance_Invalidate(t *testing.T) {
 	upper := float64(5)
 	lower := float64(1)
 

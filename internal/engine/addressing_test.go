@@ -15,40 +15,31 @@ var (
 		core.MakeCUUID(core.Live, 0, 0, 0))
 )
 
-func Test_GetSessionUUIDByPair(t *testing.T) {
+func Test_GetSUUIDsByPair(t *testing.T) {
 	am := engine.NewAddressingMap()
 
-	pUUID := core.NilPUUID()
 	sUUID := core.NilSUUID()
 	address := common.HexToAddress("0x24")
 
-	err := am.Insert(pUUID, sUUID, address)
+	err := am.Insert(address, testPUUID, sUUID)
 	assert.NoError(t, err, "should not error")
 
 	// Test for found
-	sUUID, err = am.GetSessionUUIDByPair(address, pUUID)
+	ids, err := am.GetSUUIDsByPair(address, testPUUID)
 	assert.NoError(t, err, "should not error")
-	assert.Equal(t, core.NilSUUID(), sUUID, "should be equal")
+	assert.Equal(t, core.NilSUUID(), ids[0], "should be equal")
 
-}
-
-func Test_Insert(t *testing.T) {
-	am := engine.NewAddressingMap()
-
-	pUUID := core.NilPUUID()
-	sUUID := core.NilSUUID()
-	address := common.HexToAddress("0x24")
-
-	err := am.Insert(pUUID, sUUID, address)
+	// Test for found with multiple entries
+	sUUID2 := core.MakeSUUID(0, 0, 1)
+	err = am.Insert(address, testPUUID, sUUID2)
 	assert.NoError(t, err, "should not error")
 
-	// Test for found
-	sUUID, err = am.GetSessionUUIDByPair(address, pUUID)
-	assert.NoError(t, err, "should not error")
-	assert.Equal(t, core.NilSUUID(), sUUID, "should be equal")
+	ids, err = am.GetSUUIDsByPair(address, testPUUID)
+	assert.Len(t, ids, 2, "should have length of 2")
+	assert.Contains(t, ids, sUUID, "should contain sUUID")
+	assert.Contains(t, ids, sUUID2, "should contain sUUID2")
 
 	// Test for not found
-	sUUID, err = am.GetSessionUUIDByPair(address, testPUUID)
+	ids, err = am.GetSUUIDsByPair(address, core.NilPUUID())
 	assert.Error(t, err, "should error")
-	assert.Equal(t, core.NilSUUID(), sUUID, "should be equal")
 }

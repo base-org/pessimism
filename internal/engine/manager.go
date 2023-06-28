@@ -138,7 +138,7 @@ func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (co
 	if cfg.Register.Addressing {
 		gethAddr := common.HexToAddress(cfg.InvParams.Address())
 
-		err = em.addresser.Insert(cfg.PUUID, sUUID, gethAddr)
+		err = em.addresser.Insert(gethAddr, cfg.PUUID, sUUID)
 		if err != nil {
 			return core.NilSUUID(), err
 		}
@@ -190,7 +190,7 @@ func (em *engineManager) executeInvariants(ctx context.Context, data core.Invari
 func (em *engineManager) executeAddressInvariants(ctx context.Context, data core.InvariantInput) {
 	logger := logging.WithContext(ctx)
 
-	sUUID, err := em.addresser.GetSessionUUIDByPair(data.Input.Address, data.PUUID)
+	ids, err := em.addresser.GetSUUIDsByPair(data.Input.Address, data.PUUID)
 	if err != nil {
 		logger.Error("Could not fetch invariants by address:pipeline",
 			zap.Error(err),
@@ -198,15 +198,18 @@ func (em *engineManager) executeAddressInvariants(ctx context.Context, data core
 		return
 	}
 
-	inv, err := em.store.GetInvSessionByUUID(sUUID)
-	if err != nil {
-		logger.Error("Could not session by invariant sUUID",
-			zap.Error(err),
-			zap.String(core.PUUIDKey, sUUID.String()))
-		return
-	}
+	for _, sUUID := range ids {
+		inv, err := em.store.GetInvSessionByUUID(sUUID)
+		if err != nil {
+			logger.Error("Could not session by invariant sUUID",
+				zap.Error(err),
+				zap.String(core.PUUIDKey, sUUID.String()))
+			continue
+		}
 
-	em.executeInvariant(ctx, data, inv)
+		em.executeInvariant(ctx, data, inv)
+
+	}
 }
 
 // executeNonAddressInvariants ... Executes all non address specific invariants associated with the input etl pipeline
