@@ -41,7 +41,7 @@ func main() {
 
 	ctx = app.InitializeContext(ctx, ss, l1Client, l2Client)
 
-	pessimism, close, err := app.NewPessimismApp(ctx, cfg)
+	pessimism, shutdown, err := app.NewPessimismApp(ctx, cfg)
 
 	if err != nil {
 		logger.Fatal("Error creating pessimism application", zap.Error(err))
@@ -67,7 +67,7 @@ func main() {
 		logger.Debug("Application state successfully bootstrapped")
 	}
 
-	pessimism.ListenForShutdown(close)
+	pessimism.ListenForShutdown(shutdown)
 	logger.Info("Successful pessimism shutdown")
 
 	os.Exit(0)
