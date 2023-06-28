@@ -94,6 +94,10 @@ func (m *manager) StartEventRoutines(ctx context.Context) {
 func (m *manager) StartInvSession(cfg *core.PipelineConfig, invCfg *core.SessionConfig) (core.SUUID, error) {
 	logger := logging.WithContext(m.ctx)
 
+	if invCfg.Type == core.WithdrawalEnforcement {
+		invCfg.Params["args"] = []interface{}{"WithdrawalProven(bytes32,address,address)"}
+	}
+
 	pUUID, err := m.etl.CreateDataPipeline(cfg)
 	if err != nil {
 		return core.NilSUUID(), err

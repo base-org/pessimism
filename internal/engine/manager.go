@@ -122,7 +122,7 @@ func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
 
 // DeployInvariantSession ... Deploys an invariant session to be processed by the engine
 func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (core.SUUID, error) {
-	inv, err := registry.GetInvariant(cfg.InvType, cfg.InvParams)
+	inv, err := registry.GetInvariant(em.ctx, cfg.InvType, cfg.InvParams)
 	if err != nil {
 		return core.NilSUUID(), err
 	}

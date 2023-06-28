@@ -28,6 +28,9 @@ type EthClient struct {
 // EthClientInterface ... Provides interface wrapper for ethClient functions
 // Useful for mocking go-etheruem node client logic
 type EthClientInterface interface {
+	CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error)
+	CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error)
+
 	HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error)
 	BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error)
 
@@ -78,4 +81,14 @@ func (ec *EthClient) BalanceAt(ctx context.Context, account common.Address, numb
 // FilterLogs ... Wraps go-ethereum node balanceAt RPC call
 func (ec *EthClient) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
 	return ec.client.FilterLogs(ctx, query)
+}
+
+// CallContract ... Wraps go-ethereum node callContract RPC call
+func (ec *EthClient) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
+	return ec.client.CallContract(ctx, msg, blockNumber)
+}
+
+// CodeAt ... Wraps go-ethereum node codeAt RPC call
+func (ec *EthClient) CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error) {
+	return ec.client.CodeAt(ctx, account, blockNumber)
 }
