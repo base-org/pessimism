@@ -11,5 +11,5 @@ FROM alpine:3.16
 WORKDIR /app
 COPY --from=builder /app/bin/pessimism .
 COPY config.env .
-COPY genesis.json .
+COPY genesis.example.json .
 CMD ["./pessimism"]
