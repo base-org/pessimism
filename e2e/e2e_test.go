@@ -27,15 +27,6 @@ import (
 	"github.com/base-org/pessimism/internal/api/models"
 )
 
-func calcGasFees(gasUsed uint64, gasTipCap *big.Int, gasFeeCap *big.Int, baseFee *big.Int) *big.Int {
-	x := new(big.Int).Add(gasTipCap, baseFee)
-	// If tip + basefee > gas fee cap, clamp it to the gas fee cap
-	if x.Cmp(gasFeeCap) > 0 {
-		x = gasFeeCap
-	}
-	return x.Mul(x, new(big.Int).SetUint64(gasUsed))
-}
-
 // Test_Balance_Enforcement ... Tests the E2E flow of a single
 // balance enforcement invariant session on L2 network.
 func Test_Balance_Enforcement(t *testing.T) {
@@ -241,6 +232,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 
 	// Deploy a dummy L2ToL1 message passer for testing.
 	fakeAddr, tx, _, err := bindings.DeployL2ToL1MessagePasser(transactor.L2Opts, l2Seq)
+	assert.NoError(t, err, "error deploying message passer on L2")
 
 	_, err = e2e.WaitForTransaction(tx.Hash(), l2Seq, txTimeoutDuration)
 
@@ -346,7 +338,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	assert.Nil(t, err, "withdrawal should successfully prove")
 
 	// Wait for the transaction to appear in L1
-	receipt, err = e2e.WaitForTransaction(tx.Hash(), l1Client, txTimeoutDuration)
+	_, err = e2e.WaitForTransaction(tx.Hash(), l1Client, txTimeoutDuration)
 	assert.Nil(t, err, "withdrawal finalized on L1")
 	time.Sleep(1 * time.Second)
 

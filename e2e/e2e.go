@@ -131,7 +131,6 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 		Cfg: &cfg,
 		App: pess,
 		Close: func() {
-			kill()
 			sys.Close()
 		},
 		AppCfg:  appCfg,

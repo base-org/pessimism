@@ -35,6 +35,7 @@ func Test_GetSUUIDsByPair(t *testing.T) {
 	assert.NoError(t, err, "should not error")
 
 	ids, err = am.GetSUUIDsByPair(address, testPUUID)
+	assert.NoError(t, err, "should not error")
 	assert.Len(t, ids, 2, "should have length of 2")
 	assert.Contains(t, ids, sUUID, "should contain sUUID")
 	assert.Contains(t, ids, sUUID2, "should contain sUUID2")
@@ -42,4 +43,5 @@ func Test_GetSUUIDsByPair(t *testing.T) {
 	// Test for not found
 	ids, err = am.GetSUUIDsByPair(address, core.NilPUUID())
 	assert.Error(t, err, "should error")
+	assert.Empty(t, ids, "should be empty")
 }

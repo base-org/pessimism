@@ -33,7 +33,6 @@ func (am *addressingMap) GetSUUIDsByPair(address common.Address, pUUID core.PUUI
 
 // Insert ... Inserts a new entry into the addressing map
 func (am *addressingMap) Insert(addr common.Address, pUUID core.PUUID, sUUID core.SUUID) error {
-
 	if _, found := am.m[addr]; !found {
 		am.m[addr] = make(map[core.PUUID][]core.SUUID)
 		am.m[addr][pUUID] = []core.SUUID{sUUID}

@@ -208,7 +208,6 @@ func (em *engineManager) executeAddressInvariants(ctx context.Context, data core
 		}
 
 		em.executeInvariant(ctx, data, inv)
-
 	}
 }
 
