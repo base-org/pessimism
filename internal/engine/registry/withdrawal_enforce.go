@@ -3,6 +3,7 @@ package registry
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
@@ -14,6 +15,15 @@ import (
 
 	"go.uber.org/zap"
 )
+
+const withdrawalEnforceMsg = `
+	Proven withdrawal on L1 does not exist on L2
+	L1PortalAddress: %s
+	L2ToL1Address: %s
+	
+	Session UUID: %s
+	Transaction Hash: %s
+`
 
 // WthdrawlEnforceCfg  ... Configuration for the balance invariant
 type WthdrawlEnforceCfg struct {
@@ -72,6 +82,14 @@ func (wi *WthdrawlEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutcom
 	exists, err := wi.l2Messager.SentMessages(nil, log.Topics[0])
 	if err != nil {
 		return nil, false, err
+	}
+
+	if !exists { // Proven withdrawal does not exist on L1
+		return &core.InvalOutcome{
+			TimeStamp: time.Now(),
+			Message: fmt.Sprintf(withdrawalEnforceMsg,
+				wi.cfg.L1PortalAddress, wi.cfg.L2ToL1Address, wi.SUUID(), log.TxHash.Hex()),
+		}, true, nil
 	}
 
 	return nil, !exists, nil
