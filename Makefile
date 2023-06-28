@@ -31,7 +31,7 @@ test:
 
 .PHONY: test-e2e
 e2e-test:
-	@ go test ./e2e/... -timeout $(TEST_LIMIT)
+	@ go test ./e2e/...
 
 .PHONY: lint
 lint:
