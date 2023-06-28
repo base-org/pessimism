@@ -94,8 +94,11 @@ func (m *manager) StartEventRoutines(ctx context.Context) {
 func (m *manager) StartInvSession(cfg *core.PipelineConfig, invCfg *core.SessionConfig) (core.SUUID, error) {
 	logger := logging.WithContext(m.ctx)
 
+	// NOTE: This is a temporary solution
+	// Parameterized preloading should be defined in an invariant register definition
 	if invCfg.Type == core.WithdrawalEnforcement {
 		invCfg.Params["args"] = []interface{}{"WithdrawalProven(bytes32,address,address)"}
+		invCfg.Params["address"] = invCfg.Params["l1_portal"]
 	}
 
 	pUUID, reuse, err := m.etl.CreateDataPipeline(cfg)

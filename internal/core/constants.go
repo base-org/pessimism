@@ -2,6 +2,15 @@ package core
 
 import "github.com/base-org/pessimism/internal/logging"
 
+type CtxKey uint8
+
+const (
+	Logger CtxKey = iota
+	State
+	L1Client
+	L2Client
+)
+
 // Network ... Represents the network for which a pipeline's oracle
 // is subscribed to.
 type Network uint8

@@ -301,7 +301,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 		EndHeight:    nil,
 		AlertingDest: "slack",
 		SessionParams: map[string]interface{}{
-			"address":     predeploys.DevOptimismPortal,
+			"l1_portal":   predeploys.DevOptimismPortal,
 			"l2_messager": fakeAddr.String(),
 		},
 	},
@@ -314,7 +314,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 			EndHeight:    nil,
 			AlertingDest: "slack",
 			SessionParams: map[string]interface{}{
-				"address":     predeploys.DevOptimismPortal,
+				"l1_portal":   predeploys.DevOptimismPortal,
 				"l2_messager": predeploys.L2ToL1MessagePasserAddr.String(),
 			},
 		},
@@ -340,4 +340,6 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	// Ensure Pessimism has detected what it considers a "faulty" withdrawal
 	alerts := ts.TestSvr.SlackAlerts()
 	assert.Equal(t, 1, len(alerts), "expected 1 alert")
+	assert.Contains(t, alerts[0].Text, "withdrawal_enforcement", "expected alert to be for withdrawal_enforcement")
+	assert.Contains(t, alerts[0].Text, fakeAddr.String(), "expected alert to be for dummy L2ToL1MessagePasser")
 }

@@ -12,12 +12,12 @@ import (
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 
 	"go.uber.org/zap"
 )
 
 const (
-	withdrawEvent = "WithdrawalProven(bytes32,address,address)"
 	expTopicCount = 4
 )
 
@@ -32,12 +32,13 @@ const withdrawalEnforceMsg = `
 
 // WthdrawlEnforceCfg  ... Configuration for the balance invariant
 type WthdrawlEnforceCfg struct {
-	L1PortalAddress string `json:"address"`
+	L1PortalAddress string `json:"l1_portal"`
 	L2ToL1Address   string `json:"l2_messager"`
 }
 
 // WthdrawlEnforceInv ... WithdrawalEnforceInvariant implementation
 type WthdrawlEnforceInv struct {
+	eventHash  common.Hash
 	cfg        *WthdrawlEnforceCfg
 	l2Messager *bindings.L2ToL1MessagePasserCaller
 
@@ -51,6 +52,8 @@ func NewWthdrawlEnforceInv(ctx context.Context, cfg *WthdrawlEnforceCfg) (invari
 		return nil, err
 	}
 
+	withdrawalHash := crypto.Keccak256Hash([]byte("WithdrawalProven(bytes32,address,address)"))
+
 	addr := common.HexToAddress(cfg.L2ToL1Address)
 	l2Messager, err := bindings.NewL2ToL1MessagePasserCaller(addr, l2Client)
 	if err != nil {
@@ -58,7 +61,9 @@ func NewWthdrawlEnforceInv(ctx context.Context, cfg *WthdrawlEnforceCfg) (invari
 	}
 
 	return &WthdrawlEnforceInv{
-		cfg:        cfg,
+		cfg: cfg,
+
+		eventHash:  withdrawalHash,
 		l2Messager: l2Messager,
 
 		Invariant: invariant.NewBaseInvariant(core.EventLog),
@@ -74,7 +79,6 @@ func (wi *WthdrawlEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutcom
 		return nil, false, fmt.Errorf("invalid type supplied")
 	}
 
-	// WithdrawalProven(bytes32 indexed withdrawalHash, address indexed from, address indexed to)
 	if td.Address.String() != wi.cfg.L1PortalAddress {
 		return nil, false, fmt.Errorf("invalid address supplied")
 	}
@@ -82,6 +86,10 @@ func (wi *WthdrawlEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutcom
 	log, success := td.Value.(types.Log)
 	if !success {
 		return nil, false, fmt.Errorf("could not convert transit data to log")
+	}
+
+	if log.Topics[0] != wi.eventHash {
+		return nil, false, fmt.Errorf("invalid log topic")
 	}
 
 	if len(log.Topics) != expTopicCount {
