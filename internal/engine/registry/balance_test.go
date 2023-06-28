@@ -19,7 +19,6 @@ func Test_Balance_Invalidate(t *testing.T) {
 	})
 
 	// No invalidation
-
 	testData1 := core.TransitData{
 		Type:  core.AccountBalance,
 		Value: float64(3),
