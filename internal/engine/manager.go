@@ -91,8 +91,12 @@ func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
 	}
 
 	_, err = stateStore.SetSlice(em.ctx, sk, invParams.Address())
-	if err != nil {
+	if err != nil && !state.IsValAlreadySetError(err) {
 		return err
+	}
+
+	if err != nil {
+		logging.NoContext().Warn("Invariant session already exists in state store")
 	}
 
 	if sk.IsNested() { // Nested addressing
@@ -106,9 +110,14 @@ func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
 				PUUID:   &pUUID,
 			}
 
+			// TODO - Create a state wrapper to handle this
 			_, err = stateStore.SetSlice(em.ctx, innerKey, arg)
-			if err != nil {
+			if err != nil && !state.IsValAlreadySetError(err) {
 				return err
+			}
+
+			if err != nil {
+				logging.NoContext().Warn("Invariant session already exists in state store")
 			}
 		}
 	}

@@ -36,12 +36,13 @@ func (m *EtlManager) EXPECT() *EtlManagerMockRecorder {
 }
 
 // CreateDataPipeline mocks base method.
-func (m *EtlManager) CreateDataPipeline(arg0 *core.PipelineConfig) (core.PUUID, error) {
+func (m *EtlManager) CreateDataPipeline(arg0 *core.PipelineConfig) (core.PUUID, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateDataPipeline", arg0)
 	ret0, _ := ret[0].(core.PUUID)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // CreateDataPipeline indicates an expected call of CreateDataPipeline.

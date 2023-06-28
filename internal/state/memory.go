@@ -8,6 +8,14 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
+// IsValAlreadySetError ... Checks if the error is a ValAlreadySetError
+func IsValAlreadySetError(err error) bool {
+	return err.Error() == ValAlreadySetError().Error()
+}
+func ValAlreadySetError() error {
+	return fmt.Errorf("value already exists in state store")
+}
+
 /*
 	NOTE - This is a temporary implementation of the state store.
 */
@@ -50,8 +58,13 @@ func (ss *stateStore) SetSlice(_ context.Context, key *core.StateKey, value stri
 	ss.Lock()
 	defer ss.Unlock()
 
-	ss.sliceStore[key.String()] = append(ss.sliceStore[key.String()], value)
-
+	entries := ss.sliceStore[key.String()]
+	for _, entry := range entries {
+		if entry == value {
+			return "", ValAlreadySetError()
+		}
+	}
+	ss.sliceStore[key.String()] = append(entries, value)
 	return value, nil
 }
 

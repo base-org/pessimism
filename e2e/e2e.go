@@ -105,8 +105,9 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	}
 
 	ss := state.NewMemState()
-
-	ctx = app.InitializeContext(ctx, ss, sys.Clients["l1"], sys.Clients["sequencer"])
+	ctx = app.InitializeContext(ctx, ss,
+		sys.Clients["l1"],
+		sys.Clients["sequencer"])
 
 	appCfg := DefaultTestConfig()
 
@@ -131,6 +132,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 		Cfg: &cfg,
 		App: pess,
 		Close: func() {
+			kill()
 			sys.Close()
 		},
 		AppCfg:  appCfg,

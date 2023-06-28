@@ -16,6 +16,11 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	withdrawEvent = "WithdrawalProven(bytes32,address,address)"
+	expTopicCount = 4
+)
+
 const withdrawalEnforceMsg = `
 	Proven withdrawal on L1 does not exist on L2
 	L1PortalAddress: %s
@@ -56,7 +61,7 @@ func NewWthdrawlEnforceInv(ctx context.Context, cfg *WthdrawlEnforceCfg) (invari
 		cfg:        cfg,
 		l2Messager: l2Messager,
 
-		Invariant: invariant.NewBaseInvariant(core.EventLog, invariant.WithAddressing()),
+		Invariant: invariant.NewBaseInvariant(core.EventLog),
 	}, nil
 }
 
@@ -79,11 +84,12 @@ func (wi *WthdrawlEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutcom
 		return nil, false, fmt.Errorf("could not convert transit data to log")
 	}
 
-	if len(log.Topics) != 4 {
-		return nil, false, fmt.Errorf("invalid log topics")
+	if len(log.Topics) != expTopicCount {
+		return nil, false, fmt.Errorf("invalid number of log topics")
 	}
 
-	exists, err := wi.l2Messager.SentMessages(nil, log.Topics[1])
+	withdrawalHash := log.Topics[1]
+	exists, err := wi.l2Messager.SentMessages(nil, withdrawalHash)
 	if err != nil {
 		return nil, false, err
 	}

@@ -23,19 +23,10 @@ type Invariant interface {
 // BaseInvariantOpt ... Functional option for BaseInvariant
 type BaseInvariantOpt = func(bi *BaseInvariant) *BaseInvariant
 
-// WithAddressing ... Toggles addressing property for invariant
-func WithAddressing() BaseInvariantOpt {
-	return func(bi *BaseInvariant) *BaseInvariant {
-		bi.addressing = true
-		return bi
-	}
-}
-
 // BaseInvariant ... Base invariant implementation
 type BaseInvariant struct {
-	addressing bool
-	sUUID      core.SUUID
-	inType     core.RegisterType
+	sUUID  core.SUUID
+	inType core.RegisterType
 }
 
 // NewBaseInvariant ... Initializer for BaseInvariant

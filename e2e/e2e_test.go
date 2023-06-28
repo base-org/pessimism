@@ -235,6 +235,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	assert.NoError(t, err, "error deploying message passer on L2")
 
 	_, err = e2e.WaitForTransaction(tx.Hash(), l2Seq, txTimeoutDuration)
+	assert.NoError(t, err, "error waiting for transaction")
 
 	// Determine the address our request will come from.
 	fromAddr := crypto.PubkeyToAddress(transactor.Key.PublicKey)
@@ -250,20 +251,14 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	assert.Nil(t, err, "withdrawal initiated on L2 sequencer")
 	assert.Equal(t, receipt.Status, types.ReceiptStatusSuccessful, "transaction failed")
 
-	// Obtain the header for the block containing the transaction (used to calculate gas fees).
-	ctx, cancel := context.WithTimeout(context.Background(), txTimeoutDuration)
-	header, err := l2Verif.HeaderByNumber(ctx, receipt.BlockNumber)
-	cancel()
-	assert.Nil(t, err)
-
 	// Wait for the finalization period, then we can finalize this withdrawal.
-	ctx, cancel = context.WithTimeout(context.Background(), 40*time.Duration(ts.Cfg.DeployConfig.L1BlockTime)*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Duration(ts.Cfg.DeployConfig.L1BlockTime)*time.Second)
 	blockNumber, err := withdrawals.WaitForFinalizationPeriod(ctx, l1Client, predeploys.DevOptimismPortalAddr, receipt.BlockNumber)
 	cancel()
 	assert.Nil(t, err)
 
 	ctx, cancel = context.WithTimeout(context.Background(), txTimeoutDuration)
-	header, err = l2Verif.HeaderByNumber(ctx, new(big.Int).SetUint64(blockNumber))
+	header, err := l2Verif.HeaderByNumber(ctx, new(big.Int).SetUint64(blockNumber))
 	cancel()
 	assert.Nil(t, err)
 
