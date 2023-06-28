@@ -45,3 +45,9 @@ lint:
 	fi
 
 	@golangci-lint run
+
+.PHONY: docs
+
+docs: build-app
+	@echo "$(GREEN) Generating docs...$(COLOR_END)"
+	@./bin/$(APP_NAME) doc metrics
