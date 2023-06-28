@@ -79,30 +79,20 @@ func (em *engineManager) DeleteInvariantSession(_ core.SUUID) (core.SUUID, error
 // to the ETL (e.g. address, events)
 func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
 	sk *core.StateKey, pUUID core.PUUID) error {
-	stateStore, err := state.FromContext(em.ctx)
-	if err != nil {
-		return err
-	}
-
-	err = sk.SetPUUID(pUUID)
+	err := sk.SetPUUID(pUUID)
 	// PUUID already exists in key but is different than the one we want
 	if err != nil && sk.PUUID != &pUUID {
 		return err
 	}
 
-	_, err = stateStore.SetSlice(em.ctx, sk, invParams.Address())
-	if err != nil && !state.IsValAlreadySetError(err) {
+	// Use accessor method to insert entry into state store
+	err = state.InsertUnique(em.ctx, sk, invParams.Address())
+	if err != nil {
 		return err
 	}
 
-	if err != nil {
-		logging.NoContext().Warn("Invariant session already exists in state store")
-	}
-
 	if sk.IsNested() { // Nested addressing
-		args := invParams.NestedArgs()
-
-		for _, arg := range args {
+		for _, arg := range invParams.NestedArgs() {
 			innerKey := &core.StateKey{
 				Nesting: false,
 				Prefix:  sk.Prefix,
@@ -110,19 +100,14 @@ func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
 				PUUID:   &pUUID,
 			}
 
-			// TODO - Create a state wrapper to handle this
-			_, err = stateStore.SetSlice(em.ctx, innerKey, arg)
-			if err != nil && !state.IsValAlreadySetError(err) {
-				return err
-			}
-
+			err = state.InsertUnique(em.ctx, innerKey, arg)
 			if err != nil {
-				logging.NoContext().Warn("Invariant session already exists in state store")
+				return err
 			}
 		}
 	}
 
-	logging.NoContext().Debug("Setting to state store",
+	logging.WithContext(em.ctx).Debug("Setting to state store",
 		zap.String(core.PUUIDKey, pUUID.String()),
 		zap.String(core.AddrKey, invParams.Address()))
 
