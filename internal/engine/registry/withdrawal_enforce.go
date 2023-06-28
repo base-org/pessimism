@@ -92,5 +92,5 @@ func (wi *WthdrawlEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutcom
 		}, true, nil
 	}
 
-	return nil, !exists, nil
+	return nil, false, nil
 }
