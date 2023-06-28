@@ -79,6 +79,10 @@ func InitializeEngine(ctx context.Context, transit chan core.Alert, metr metrics
 
 // NewPessimismApp ... Performs dependency injection to build app struct
 func NewPessimismApp(ctx context.Context, cfg *config.Config, metr metrics.Metricer) (*Application, func(), error) {
+	if metr == nil {
+		metr = metrics.NoopMetrics
+	}
+
 	alrt := InitializeAlerting(ctx, cfg)
 	engine := InitializeEngine(ctx, alrt.Transit(), metr)
 	etl := InitalizeETL(ctx, engine.Transit(), metr)
@@ -98,5 +102,5 @@ func NewPessimismApp(ctx context.Context, cfg *config.Config, metr metrics.Metri
 		}
 	}
 
-	return New(ctx, cfg, m, svr), appShutDown, nil
+	return New(ctx, cfg, m, svr, metr), appShutDown, nil
 }

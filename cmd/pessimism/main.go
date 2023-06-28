@@ -54,22 +54,7 @@ func RunPessimism(_ *cli.Context) error {
 	logger := logging.WithContext(ctx)
 
 	// Init stats server
-	metrics := metrics.NewMetrics()
-	if !cfg.MetricsConfig.Enabled {
-		logger.Info("Metrics server disabled")
-	}
-
-	if cfg.MetricsConfig.Enabled {
-		go func() {
-			if err := metrics.Serve(ctx, cfg.MetricsConfig); err != nil {
-				logger.Fatal("Error starting metrics server", zap.Error(err))
-				panic(err)
-			}
-		}()
-
-		logger.Info("Metrics server started",
-			zap.String("host", cfg.MetricsConfig.Host), zap.Uint64("port", cfg.MetricsConfig.Port))
-	}
+	stats := initializeMetrics(ctx, cfg)
 
 	l1Client, err := client.NewEthClient(ctx, cfg.L1RpcEndpoint)
 	if err != nil {
@@ -87,7 +72,7 @@ func RunPessimism(_ *cli.Context) error {
 
 	ctx = app.InitializeContext(ctx, ss, l1Client, l2Client)
 
-	pessimism, shutDown, err := app.NewPessimismApp(ctx, cfg, metrics)
+	pessimism, shutDown, err := app.NewPessimismApp(ctx, cfg, stats)
 
 	if err != nil {
 		logger.Fatal("Error creating pessimism application", zap.Error(err))
@@ -123,4 +108,27 @@ func RunPessimism(_ *cli.Context) error {
 
 	logger.Info("Successful pessimism shutdown")
 	return nil
+}
+
+func initializeMetrics(ctx context.Context, cfg *config.Config) *metrics.Metrics {
+	logger := logging.WithContext(ctx)
+
+	met := metrics.NewMetrics()
+	if !cfg.MetricsConfig.Enabled {
+		logger.Info("Metrics server disabled")
+		return nil
+	}
+
+	if cfg.MetricsConfig.Enabled {
+		go func() {
+			if err := met.Serve(ctx, cfg.MetricsConfig); err != nil {
+				logger.Fatal("Error starting metrics server", zap.Error(err))
+				panic(err)
+			}
+		}()
+
+		logger.Info("Metrics server started",
+			zap.String("host", cfg.MetricsConfig.Host), zap.Uint64("port", cfg.MetricsConfig.Port))
+	}
+	return met
 }

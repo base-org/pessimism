@@ -35,11 +35,13 @@ type Metricer interface {
 	RecordInvariantRun(invariant string)
 	RecordAlarmGenerated(invariant string)
 	RecordNodeError(node string)
+	RecordUp()
 }
 
 type Metrics struct {
 	ActiveInvariants prometheus.Gauge
 	ActivePipelines  prometheus.Gauge
+	Up               prometheus.Gauge
 	InvariantRuns    *prometheus.CounterVec
 	AlarmsGenerated  *prometheus.CounterVec
 	NodeErrors       *prometheus.CounterVec
@@ -57,6 +59,11 @@ func NewMetrics() *Metrics {
 	factory := metrics.With(registry)
 
 	return &Metrics{
+		Up: factory.NewGauge(prometheus.GaugeOpts{
+			Namespace: metricsNamespace,
+			Name:      "up",
+			Help:      "1 if the service is up",
+		}),
 		ActiveInvariants: factory.NewGauge(prometheus.GaugeOpts{
 			Name:      "active_invariants",
 			Help:      "Number of active invariants",
@@ -92,6 +99,11 @@ func NewMetrics() *Metrics {
 		registry: registry,
 		factory:  factory,
 	}
+}
+
+func (m *Metrics) RecordUp() {
+	prometheus.MustRegister()
+	m.Up.Set(1)
 }
 
 func (m *Metrics) IncActiveInvariants() {
@@ -153,3 +165,4 @@ func (n *noopMetricer) DecActivePipelines()           {}
 func (n *noopMetricer) RecordInvariantRun(_ string)   {}
 func (n *noopMetricer) RecordAlarmGenerated(_ string) {}
 func (n *noopMetricer) RecordNodeError(_ string)      {}
+func (n *noopMetricer) RecordUp()                     {}

@@ -56,6 +56,7 @@ which can be pasted directly below to keep current metric documentation up to da
 ## Current Metrics
 |                  METRIC                   |                      DESCRIPTION                       |  LABELS   |  TYPE   |
 |-------------------------------------------|--------------------------------------------------------|-----------|---------|
+| pessimism_up                              | 1 if the service is up                                 |           | gauge   |
 | pessimism_invariants_active_invariants    | Number of active invariants                            |           | gauge   |
 | pessimism_etl_active_pipelines            | Number of active pipelines                             |           | gauge   |
 | pessimism_invariants_invariant_runs_total | Number of times a specific invariant has been run      | invariant | counter |
