@@ -1,4 +1,5 @@
 name: security
+
 on:
   push:
     branches: [ "master", "development" ]
