@@ -1,0 +1,16 @@
+# Generation assurance test workflow
+# (e.g. no uncovered diffs in go-mocks)
+name: gen-test
+
+on:
+  push:
+    branches: [ "master", "development" ]
+  pull_request:
+    branches: [ "master", "development" ]
+
+jobs:
+  ensure-mock-gen:
+    name: Ensure mock generation
+    runs-on: ubuntu-latest
+    steps:
+      - run: make go-gen-mocks && git diff --exit-code
