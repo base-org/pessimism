@@ -36,7 +36,7 @@ func InitializeContext(ctx context.Context, ss state.Store,
 // InitializeMetrics ... Performs dependency injection to build metrics struct
 func InitializeMetrics(ctx context.Context, cfg *config.Config) (metrics.Metricer, func(), error) {
 	if !cfg.MetricsConfig.Enabled {
-		return metrics.NoopMetrics, nil, nil
+		return metrics.NoopMetrics, func() {}, nil
 	}
 
 	server, cleanup, err := metrics.New(ctx, cfg.MetricsConfig)

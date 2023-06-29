@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"github.com/base-org/pessimism/internal/core"
 	"net/http"
 	"time"
 
@@ -13,9 +14,8 @@ import (
 	"go.uber.org/zap"
 )
 
-const metricsNamespace = "pessimism"
-
 const (
+	metricsNamespace    = "pessimism"
 	SubsystemInvariants = "invariants"
 	SubsystemEtl        = "etl"
 )
@@ -56,16 +56,8 @@ type Metrics struct {
 	server   *http.Server
 }
 
-var _ Metricer = (*Metrics)(nil)
-
 var Stats Metricer = new(noopMetricer)
-
 var stats = Stats
-
-type StatsKey = string
-type statsKeyType int
-
-const statsKey statsKeyType = iota
 
 // WithContext returns a Metricer from the given context. If no Metricer is found,
 // the default noopMetricer is returned.
@@ -74,7 +66,7 @@ func WithContext(ctx context.Context) Metricer {
 		return stats
 	}
 
-	if ctxStats, ok := ctx.Value(statsKey).(Metricer); ok {
+	if ctxStats, ok := ctx.Value(core.Metrics).(Metricer); ok {
 		return ctxStats
 	}
 
@@ -83,6 +75,7 @@ func WithContext(ctx context.Context) Metricer {
 
 // New ... Creates a new metrics server registered with defined custom metrics
 func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
+
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 	registry.MustRegister(collectors.NewGoCollector())
@@ -135,7 +128,7 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 	stop := func() {
 		logging.WithContext(ctx).Info("starting to shutdown metrics server")
 		ctx, cancel := context.WithTimeout(context.Background(), serverShutdownTimeout)
-		if err := (stats).(*Metrics).Shutdown(ctx); err != nil {
+		if err := stats.Shutdown(ctx); err != nil {
 			logging.WithContext(ctx).Error("failed to shutdown metrics server: %v", zap.Error(err))
 			panic(err)
 		}
@@ -145,35 +138,43 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 	return stats, stop, nil
 }
 
+// RecordUp ... Records that the service has been successfully started
 func (m *Metrics) RecordUp() {
 	prometheus.MustRegister()
 	m.Up.Set(1)
 }
 
+// IncActiveInvariants ... Increments the number of active invariants
 func (m *Metrics) IncActiveInvariants() {
 	m.ActiveInvariants.Inc()
 }
 
+// DecActiveInvariants ... Decrements the number of active invariants
 func (m *Metrics) DecActiveInvariants() {
 	m.ActiveInvariants.Dec()
 }
 
+// IncActivePipelines ... Increments the number of active pipelines
 func (m *Metrics) IncActivePipelines() {
 	m.ActivePipelines.Inc()
 }
 
+// DecActivePipelines ... Decrements the number of active pipelines
 func (m *Metrics) DecActivePipelines() {
 	m.ActivePipelines.Dec()
 }
 
+// RecordInvariantRun ... Records that a given invariant has been run
 func (m *Metrics) RecordInvariantRun(invariant string) {
 	m.InvariantRuns.WithLabelValues(invariant).Inc()
 }
 
+// RecordAlertGenerated ... Records that an alert has been generated for a given invariant
 func (m *Metrics) RecordAlertGenerated(invariant string) {
 	m.AlarmsGenerated.WithLabelValues(invariant).Inc()
 }
 
+// RecordNodeError ... Records that an error has been caught for a given node
 func (m *Metrics) RecordNodeError(node string) {
 	m.NodeErrors.WithLabelValues(node).Inc()
 }

@@ -5,6 +5,13 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+const (
+	SummaryType   = "summary"
+	HistogramType = "histogram"
+	GaugeType     = "gauge"
+	CounterType   = "counter"
+)
+
 type Factory interface {
 	NewCounter(opts prometheus.CounterOpts) prometheus.Counter
 	NewCounterVec(opts prometheus.CounterOpts, labelNames []string) *prometheus.CounterVec
@@ -37,7 +44,7 @@ func With(registry *prometheus.Registry) Factory {
 
 func (d *documentor) NewCounter(opts prometheus.CounterOpts) prometheus.Counter {
 	d.metrics = append(d.metrics, DocumentedMetric{
-		Type: "counter",
+		Type: CounterType,
 		Name: fullName(opts.Namespace, opts.Subsystem, opts.Name),
 		Help: opts.Help,
 	})
@@ -46,7 +53,7 @@ func (d *documentor) NewCounter(opts prometheus.CounterOpts) prometheus.Counter 
 
 func (d *documentor) NewCounterVec(opts prometheus.CounterOpts, labelNames []string) *prometheus.CounterVec {
 	d.metrics = append(d.metrics, DocumentedMetric{
-		Type:   "counter",
+		Type:   CounterType,
 		Name:   fullName(opts.Namespace, opts.Subsystem, opts.Name),
 		Help:   opts.Help,
 		Labels: labelNames,
@@ -56,7 +63,7 @@ func (d *documentor) NewCounterVec(opts prometheus.CounterOpts, labelNames []str
 
 func (d *documentor) NewGauge(opts prometheus.GaugeOpts) prometheus.Gauge {
 	d.metrics = append(d.metrics, DocumentedMetric{
-		Type: "gauge",
+		Type: GaugeType,
 		Name: fullName(opts.Namespace, opts.Subsystem, opts.Name),
 		Help: opts.Help,
 	})
@@ -65,7 +72,7 @@ func (d *documentor) NewGauge(opts prometheus.GaugeOpts) prometheus.Gauge {
 
 func (d *documentor) NewGaugeVec(opts prometheus.GaugeOpts, labelNames []string) *prometheus.GaugeVec {
 	d.metrics = append(d.metrics, DocumentedMetric{
-		Type:   "gauge",
+		Type:   GaugeType,
 		Name:   fullName(opts.Namespace, opts.Subsystem, opts.Name),
 		Help:   opts.Help,
 		Labels: labelNames,
@@ -75,7 +82,7 @@ func (d *documentor) NewGaugeVec(opts prometheus.GaugeOpts, labelNames []string)
 
 func (d *documentor) NewHistogram(opts prometheus.HistogramOpts) prometheus.Histogram {
 	d.metrics = append(d.metrics, DocumentedMetric{
-		Type: "histogram",
+		Type: HistogramType,
 		Name: fullName(opts.Namespace, opts.Subsystem, opts.Name),
 		Help: opts.Help,
 	})
@@ -84,7 +91,7 @@ func (d *documentor) NewHistogram(opts prometheus.HistogramOpts) prometheus.Hist
 
 func (d *documentor) NewHistogramVec(opts prometheus.HistogramOpts, labelNames []string) *prometheus.HistogramVec {
 	d.metrics = append(d.metrics, DocumentedMetric{
-		Type:   "histogram",
+		Type:   HistogramType,
 		Name:   fullName(opts.Namespace, opts.Subsystem, opts.Name),
 		Help:   opts.Help,
 		Labels: labelNames,
@@ -94,7 +101,7 @@ func (d *documentor) NewHistogramVec(opts prometheus.HistogramOpts, labelNames [
 
 func (d *documentor) NewSummary(opts prometheus.SummaryOpts) prometheus.Summary {
 	d.metrics = append(d.metrics, DocumentedMetric{
-		Type: "summary",
+		Type: SummaryType,
 		Name: fullName(opts.Namespace, opts.Subsystem, opts.Name),
 		Help: opts.Help,
 	})
@@ -103,7 +110,7 @@ func (d *documentor) NewSummary(opts prometheus.SummaryOpts) prometheus.Summary 
 
 func (d *documentor) NewSummaryVec(opts prometheus.SummaryOpts, labelNames []string) *prometheus.SummaryVec {
 	d.metrics = append(d.metrics, DocumentedMetric{
-		Type:   "summary",
+		Type:   SummaryType,
 		Name:   fullName(opts.Namespace, opts.Subsystem, opts.Name),
 		Help:   opts.Help,
 		Labels: labelNames,

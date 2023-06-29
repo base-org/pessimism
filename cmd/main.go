@@ -2,7 +2,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/base-org/pessimism/cmd/doc"
 	"github.com/base-org/pessimism/internal/app"
@@ -18,6 +21,7 @@ import (
 const (
 	// cfgPath ... env file path
 	cfgPath = "config.env"
+	extJSON = ".json"
 )
 
 // main ... Application driver
@@ -105,4 +109,25 @@ func RunPessimism(_ *cli.Context) error {
 
 	logger.Info("Successful pessimism shutdown")
 	return nil
+}
+
+// fetchBootSessions ... Loads the bootstrap file
+func fetchBootSessions(path string) ([]app.BootSession, error) {
+	if !strings.HasSuffix(path, extJSON) {
+		return nil, fmt.Errorf("invalid bootstrap file format; expected %s", extJSON)
+	}
+
+	file, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	data := []app.BootSession{}
+
+	err = json.Unmarshal(file, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }

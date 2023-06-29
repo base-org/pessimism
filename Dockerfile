@@ -16,5 +16,12 @@ COPY config.env .
 COPY genesis.json .
 
 # Run app and expose api and metrics ports
-EXPOSE 8080 7300
+
+# API
+EXPOSE 8080
+
+# Metrics
+EXPOSE 7300
+
+# Run app
 CMD ["./pessimism"]

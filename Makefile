@@ -14,7 +14,7 @@ TEST_LIMIT = 30s
 
 build-app:
 	@echo "$(BLUE)» building application binary... $(COLOR_END)"
-	@CGO_ENABLED=0 go build -a -tags netgo -o bin/$(APP_NAME) ./cmd/pessimism/
+	@CGO_ENABLED=0 go build -a -tags netgo -o bin/$(APP_NAME) ./cmd/
 	@echo "Binary successfully built"
 
 run-app: 
@@ -50,3 +50,13 @@ lint:
 metric-docs: build-app
 	@echo "$(GREEN) Generating metric documentation...$(COLOR_END)"
 	@./bin/$(APP_NAME) doc metrics
+
+.PHONY: docker-build
+docker-build:
+	@echo "$(GREEN) Building docker image...$(COLOR_END)"
+	@docker build -t $(APP_NAME) .
+
+.PHONY: docker-run
+docker-run:
+	@echo "$(GREEN) Running docker image...$(COLOR_END)"
+	@docker run -p 8080:8080 -p 7300:7300 -e config.env $(APP_NAME)
