@@ -1,15 +1,16 @@
-package core
+package core_test
 
 import (
 	"testing"
 
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_Component_ID(t *testing.T) {
 
-	expectedPID := ComponentPID([4]byte{1, 1, 1, 1})
-	actualID := MakeCUUID(1, 1, 1, 1)
+	expectedPID := core.ComponentPID([4]byte{1, 1, 1, 1})
+	actualID := core.MakeCUUID(1, 1, 1, 1)
 
 	assert.Equal(t, expectedPID, actualID.PID)
 
@@ -20,10 +21,10 @@ func Test_Component_ID(t *testing.T) {
 }
 
 func Test_Pipeline_ID(t *testing.T) {
-	expectedID := PipelinePID([9]byte{1, 1, 1, 1, 1, 1, 1, 1, 1})
-	actualID := MakePUUID(1,
-		MakeCUUID(1, 1, 1, 1),
-		MakeCUUID(1, 1, 1, 1))
+	expectedID := core.PipelinePID([9]byte{1, 1, 1, 1, 1, 1, 1, 1, 1})
+	actualID := core.MakePUUID(1,
+		core.MakeCUUID(1, 1, 1, 1),
+		core.MakeCUUID(1, 1, 1, 1))
 
 	assert.Equal(t, expectedID, actualID.PID)
 
@@ -34,12 +35,12 @@ func Test_Pipeline_ID(t *testing.T) {
 }
 
 func Test_InvSession_ID(t *testing.T) {
-	expectedID := InvSessionPID([3]byte{1, 2, 1})
-	actualID := MakeSUUID(1, 2, 1)
+	expectedID := core.InvSessionPID([3]byte{1, 2, 1})
+	actualID := core.MakeSUUID(1, 2, 1)
 
 	assert.Equal(t, expectedID, actualID.PID)
 
-	expectedStr := "layer1:live:unknown"
+	expectedStr := "layer1:live:balance_enforcement"
 	actualStr := actualID.PID.String()
 
 	assert.Equal(t, expectedStr, actualStr)

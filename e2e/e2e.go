@@ -98,14 +98,17 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	ctx := context.Background()
 
 	cfg := op_e2e.DefaultSystemConfig(t)
+	cfg.DeployConfig.FinalizationPeriodSeconds = 6
+
 	sys, err := cfg.Start()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	ss := state.NewMemState()
-
-	ctx = app.InitializeContext(ctx, ss, sys.Clients["l1"], sys.Clients["sequencer"])
+	ctx = app.InitializeContext(ctx, ss,
+		sys.Clients["l1"],
+		sys.Clients["sequencer"])
 
 	appCfg := DefaultTestConfig()
 

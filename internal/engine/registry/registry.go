@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -10,7 +11,7 @@ import (
 
 // GetInvariant ... Returns an invariant based on the invariant type provided
 // a general config
-func GetInvariant(it core.InvariantType, cfg any) (invariant.Invariant, error) {
+func GetInvariant(ctx context.Context, it core.InvariantType, cfg any) (invariant.Invariant, error) {
 	var inv invariant.Invariant
 
 	switch it {
@@ -41,6 +42,20 @@ func GetInvariant(it core.InvariantType, cfg any) (invariant.Invariant, error) {
 		}
 
 		inv = NewEventInvariant(&invConfg)
+
+	case core.WithdrawalEnforcement:
+		cfg, err := json.Marshal(cfg)
+		if err != nil {
+			return nil, err
+		}
+		// convert json to struct
+		invConfg := WthdrawlEnforceCfg{}
+		err = json.Unmarshal(cfg, &invConfg)
+		if err != nil {
+			return nil, err
+		}
+
+		return NewWthdrawlEnforceInv(ctx, &invConfg)
 
 	default:
 		return nil, fmt.Errorf("could not find implementation for type %s", it.String())

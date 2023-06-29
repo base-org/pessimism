@@ -94,7 +94,14 @@ func (m *manager) StartEventRoutines(ctx context.Context) {
 func (m *manager) StartInvSession(cfg *core.PipelineConfig, invCfg *core.SessionConfig) (core.SUUID, error) {
 	logger := logging.WithContext(m.ctx)
 
-	pUUID, err := m.etl.CreateDataPipeline(cfg)
+	// NOTE: This is a temporary solution
+	// Parameterized preloading should be defined in an invariant register definition
+	if invCfg.Type == core.WithdrawalEnforcement {
+		invCfg.Params["args"] = []interface{}{"WithdrawalProven(bytes32,address,address)"}
+		invCfg.Params["address"] = invCfg.Params["l1_portal"]
+	}
+
+	pUUID, reuse, err := m.etl.CreateDataPipeline(cfg)
 	if err != nil {
 		return core.NilSUUID(), err
 	}
@@ -124,6 +131,10 @@ func (m *manager) StartInvSession(cfg *core.PipelineConfig, invCfg *core.Session
 	err = m.alrt.AddInvariantSession(sUUID, invCfg.AlertDest)
 	if err != nil {
 		return core.NilSUUID(), err
+	}
+
+	if reuse { // If the pipeline was reused, we don't need to run it again
+		return sUUID, nil
 	}
 
 	if err = m.etl.RunPipeline(pUUID); err != nil {

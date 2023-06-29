@@ -21,7 +21,7 @@ type Manager interface {
 	InferComponent(cc *core.ClientConfig, cUUID core.CUUID, pUUID core.PUUID,
 		register *core.DataRegister) (component.Component, error)
 	GetRegister(rt core.RegisterType) (*core.DataRegister, error)
-	CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, error)
+	CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, bool, error)
 	RunPipeline(pID core.PUUID) error
 
 	core.Subsystem
@@ -71,21 +71,21 @@ func (em *etlManager) GetRegister(rt core.RegisterType) (*core.DataRegister, err
 }
 
 // CreateDataPipeline ... Creates an ETL data pipeline provided a pipeline configuration
-func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, error) {
+func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, bool, error) {
 	// NOTE - If some of these early sub-system operations succeed but lower function
 	// code logic fails, then some rollback will need be triggered to undo prior applied state operations
 	logger := logging.WithContext(em.ctx)
 
 	depPath, err := em.registry.GetDependencyPath(cfg.DataType)
 	if err != nil {
-		return core.NilPUUID(), err
+		return core.NilPUUID(), false, err
 	}
 
 	pUUID := depPath.GeneratePUUID(cfg.PipelineType, cfg.Network)
 
 	components, err := em.getComponents(cfg, pUUID, depPath)
 	if err != nil {
-		return core.NilPUUID(), err
+		return core.NilPUUID(), false, err
 	}
 
 	logger.Debug("constructing pipeline",
@@ -93,36 +93,36 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, 
 
 	pipeline, err := NewPipeline(cfg, pUUID, components)
 	if err != nil {
-		return core.NilPUUID(), err
+		return core.NilPUUID(), false, err
 	}
 
 	mPUUID, err := em.getMergeUUID(pUUID, pipeline)
 	if err != nil {
-		return core.NilPUUID(), err
+		return core.NilPUUID(), false, err
 	}
 
 	if mPUUID != core.NilPUUID() { // Pipeline is mergable
-		return mPUUID, nil
+		return mPUUID, true, nil
 	}
 
 	// Bind communication route between pipeline and risk engine
 	if err := pipeline.AddEngineRelay(em.engOutgress); err != nil {
-		return core.NilPUUID(), err
+		return core.NilPUUID(), false, err
 	}
 
 	if err := em.dag.AddComponents(pipeline.Components()); err != nil {
-		return core.NilPUUID(), err
+		return core.NilPUUID(), false, err
 	}
 
 	em.store.AddPipeline(pUUID, pipeline)
 
 	if len(components) == 1 {
-		return pUUID, nil
+		return pUUID, false, nil
 	}
 
 	em.metrics.IncActivePipelines()
 
-	return pUUID, nil
+	return pUUID, false, nil
 }
 
 // RunPipeline ... Runs pipeline session for some provided pUUID
@@ -144,8 +144,7 @@ func (em *etlManager) EventLoop() error {
 
 	for {
 		<-em.ctx.Done()
-
-		logger.Info("Received shutdown request")
+		logger.Info("Receieved shutdown request")
 		return nil
 	}
 }
