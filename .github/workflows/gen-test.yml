@@ -10,7 +10,6 @@ on:
 
 jobs:
   ensure-mock-gen:
-    name: Ensure mock generation
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
