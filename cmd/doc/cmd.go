@@ -1,12 +1,15 @@
 package doc
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
 
+	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/metrics"
+
 	"github.com/olekukonko/tablewriter"
 	"github.com/urfave/cli"
 )
@@ -23,7 +26,8 @@ var Subcommands = cli.Commands{
 			},
 		},
 		Action: func(ctx *cli.Context) error {
-			m := metrics.NewMetrics()
+			cfg := config.NewConfig("config.env")
+			m, _, _ := metrics.New(context.Background(), cfg.MetricsConfig)
 			supportedMetrics := m.Document()
 			format := ctx.String("format")
 

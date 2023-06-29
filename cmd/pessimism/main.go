@@ -4,16 +4,15 @@ import (
 	"context"
 	"os"
 
-	"github.com/urfave/cli"
-	"go.uber.org/zap"
-
 	"github.com/base-org/pessimism/cmd/doc"
 	"github.com/base-org/pessimism/internal/app"
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/logging"
-	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/state"
+
+	"github.com/urfave/cli"
+	"go.uber.org/zap"
 )
 
 const (
@@ -45,6 +44,7 @@ func main() {
 	}
 }
 
+// RunPessimism ... Application entry point
 func RunPessimism(_ *cli.Context) error {
 	cfg := config.NewConfig(cfgPath) // Load env vars
 	ctx := context.Background()
@@ -52,9 +52,6 @@ func RunPessimism(_ *cli.Context) error {
 	// Init logger
 	logging.NewLogger(cfg.LoggerConfig, string(cfg.Environment))
 	logger := logging.WithContext(ctx)
-
-	// Init stats server
-	stats := initializeMetrics(ctx, cfg)
 
 	l1Client, err := client.NewEthClient(ctx, cfg.L1RpcEndpoint)
 	if err != nil {
@@ -72,7 +69,7 @@ func RunPessimism(_ *cli.Context) error {
 
 	ctx = app.InitializeContext(ctx, ss, l1Client, l2Client)
 
-	pessimism, shutDown, err := app.NewPessimismApp(ctx, cfg, stats)
+	pessimism, shutDown, err := app.NewPessimismApp(ctx, cfg)
 
 	if err != nil {
 		logger.Fatal("Error creating pessimism application", zap.Error(err))
@@ -108,27 +105,4 @@ func RunPessimism(_ *cli.Context) error {
 
 	logger.Info("Successful pessimism shutdown")
 	return nil
-}
-
-func initializeMetrics(ctx context.Context, cfg *config.Config) *metrics.Metrics {
-	logger := logging.WithContext(ctx)
-
-	met := metrics.NewMetrics()
-	if !cfg.MetricsConfig.Enabled {
-		logger.Info("Metrics server disabled")
-		return nil
-	}
-
-	if cfg.MetricsConfig.Enabled {
-		go func() {
-			if err := met.Serve(ctx, cfg.MetricsConfig); err != nil {
-				logger.Fatal("Error starting metrics server", zap.Error(err))
-				panic(err)
-			}
-		}()
-
-		logger.Info("Metrics server started",
-			zap.String("host", cfg.MetricsConfig.Host), zap.Uint64("port", cfg.MetricsConfig.Port))
-	}
-	return met
 }

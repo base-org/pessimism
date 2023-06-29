@@ -7,7 +7,6 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/registry"
-	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/mocks"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -34,7 +33,7 @@ func Test_Manager(t *testing.T) {
 
 				ctx := mocks.Context(context.Background(), ctrl)
 
-				return NewManager(ctx, NewAnalyzer(reg), reg, NewEtlStore(), NewComponentGraph(), metrics.NoopMetrics, nil)
+				return NewManager(ctx, NewAnalyzer(reg), reg, NewEtlStore(), NewComponentGraph(), nil)
 			},
 
 			testLogic: func(t *testing.T, m Manager) {

@@ -1,6 +1,6 @@
 ## Pessimism Telemetry
 
-Pessimism uses Prometheus for telemetry. The application spins up a metrics server on a specified port (default 7300) and exposes metrics at the `/metrics` endpoint. 
+Pessimism uses [Prometheus](https://prometheus.io/docs/introduction/overview/) for telemetry. The application spins up a metrics server on a specified port (default 7300) and exposes metrics at the `/metrics` endpoint. 
 
 ### Metrics Configuration
 Configuration depends on the client that you are running, but the general idea is that you need to configure a Prometheus client to scrape the metrics server to view metrics in a dashboard such as Grafana or Datadog. Here at Coinbase, we use Datadog for our metrics dashboards, so I will run through an example using Datadog.

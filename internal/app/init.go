@@ -33,6 +33,20 @@ func InitializeContext(ctx context.Context, ss state.Store,
 		ctx, core.L2Client, l2Client)
 }
 
+// InitializeMetrics ... Performs dependency injection to build metrics struct
+func InitializeMetrics(ctx context.Context, cfg *config.Config) (metrics.Metricer, func(), error) {
+	if !cfg.MetricsConfig.Enabled {
+		return metrics.NoopMetrics, nil, nil
+	}
+
+	server, cleanup, err := metrics.New(ctx, cfg.MetricsConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return server, cleanup, nil
+}
+
 // InitializeServer ... Performs dependency injection to build server struct
 func InitializeServer(ctx context.Context, cfg *config.Config, m subsystem.Manager) (*server.Server, func(), error) {
 	apiService := service.New(ctx, cfg.SvcConfig, m)
@@ -45,6 +59,7 @@ func InitializeServer(ctx context.Context, cfg *config.Config, m subsystem.Manag
 	if err != nil {
 		return nil, nil, err
 	}
+
 	return server, cleanup, nil
 }
 
@@ -59,33 +74,34 @@ func InitializeAlerting(ctx context.Context, cfg *config.Config) alert.Manager {
 }
 
 // InitalizeETL ... Performs dependency injection to build etl struct
-func InitalizeETL(ctx context.Context, transit chan core.InvariantInput, metr metrics.Metricer) pipeline.Manager {
+func InitalizeETL(ctx context.Context, transit chan core.InvariantInput) pipeline.Manager {
 	compRegistry := registry.NewRegistry()
 	analyzer := pipeline.NewAnalyzer(compRegistry)
 	store := pipeline.NewEtlStore()
 	dag := pipeline.NewComponentGraph()
 
-	return pipeline.NewManager(ctx, analyzer, compRegistry, store, dag, metr, transit)
+	return pipeline.NewManager(ctx, analyzer, compRegistry, store, dag, transit)
 }
 
 // InitializeEngine ... Performs dependency injection to build engine struct
-func InitializeEngine(ctx context.Context, transit chan core.Alert, metr metrics.Metricer) engine.Manager {
+func InitializeEngine(ctx context.Context, transit chan core.Alert) engine.Manager {
 	store := engine.NewSessionStore()
 	am := engine.NewAddressingMap()
 	re := engine.NewHardCodedEngine()
 
-	return engine.NewManager(ctx, re, am, store, metr, transit)
+	return engine.NewManager(ctx, re, am, store, transit)
 }
 
 // NewPessimismApp ... Performs dependency injection to build app struct
-func NewPessimismApp(ctx context.Context, cfg *config.Config, metr metrics.Metricer) (*Application, func(), error) {
-	if metr == nil {
-		metr = metrics.NoopMetrics
+func NewPessimismApp(ctx context.Context, cfg *config.Config) (*Application, func(), error) {
+	mSvr, mShutDown, err := InitializeMetrics(ctx, cfg)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	alrt := InitializeAlerting(ctx, cfg)
-	engine := InitializeEngine(ctx, alrt.Transit(), metr)
-	etl := InitalizeETL(ctx, engine.Transit(), metr)
+	engine := InitializeEngine(ctx, alrt.Transit())
+	etl := InitalizeETL(ctx, engine.Transit())
 
 	m := subsystem.NewManager(ctx, etl, engine, alrt)
 
@@ -96,11 +112,11 @@ func NewPessimismApp(ctx context.Context, cfg *config.Config, metr metrics.Metri
 
 	appShutDown := func() {
 		shutDown()
-
+		mShutDown()
 		if err := m.Shutdown(); err != nil {
 			logging.WithContext(ctx).Error("error shutting down subsystems", zap.Error(err))
 		}
 	}
 
-	return New(ctx, cfg, m, svr, metr), appShutDown, nil
+	return New(ctx, cfg, m, svr, mSvr), appShutDown, nil
 }

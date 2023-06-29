@@ -11,13 +11,10 @@ import (
 	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
+
 	"go.uber.org/zap"
 )
-
-type Metrics interface {
-	IncActivePipelines()
-	DecActivePipelines()
-}
 
 // Manager ... ETL manager interface
 type Manager interface {
@@ -38,7 +35,7 @@ type etlManager struct {
 	analyzer Analyzer
 	dag      ComponentGraph
 	store    EtlStore
-	metrics  Metrics
+	metrics  metrics.Metricer
 
 	engOutgress chan core.InvariantInput
 
@@ -48,9 +45,10 @@ type etlManager struct {
 
 // NewManager ... Initializer
 func NewManager(ctx context.Context, analyzer Analyzer, cRegistry registry.Registry,
-	store EtlStore, dag ComponentGraph, metrics Metrics,
+	store EtlStore, dag ComponentGraph,
 	eo chan core.InvariantInput) Manager {
 	ctx, cancel := context.WithCancel(ctx)
+	stats := metrics.WithContext(ctx)
 
 	m := &etlManager{
 		analyzer:    analyzer,
@@ -60,7 +58,7 @@ func NewManager(ctx context.Context, analyzer Analyzer, cRegistry registry.Regis
 		store:       store,
 		registry:    cRegistry,
 		engOutgress: eo,
-		metrics:     metrics,
+		metrics:     stats,
 		wg:          sync.WaitGroup{},
 	}
 

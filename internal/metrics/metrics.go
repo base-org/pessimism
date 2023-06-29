@@ -2,15 +2,15 @@ package metrics
 
 import (
 	"context"
-	"net"
 	"net/http"
-	"strconv"
 	"time"
 
-	"github.com/ethereum-optimism/optimism/op-service/metrics"
+	"github.com/base-org/pessimism/internal/logging"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"go.uber.org/zap"
 )
 
 const metricsNamespace = "pessimism"
@@ -20,11 +20,13 @@ const (
 	SubsystemEtl        = "etl"
 )
 
+const serverShutdownTimeout = 10 * time.Second
+
 type Config struct {
 	Host              string
-	Port              uint64
+	Port              int
 	Enabled           bool
-	ReadHeaderTimeout time.Duration
+	ReadHeaderTimeout int
 }
 
 type Metricer interface {
@@ -33,9 +35,12 @@ type Metricer interface {
 	IncActivePipelines()
 	DecActivePipelines()
 	RecordInvariantRun(invariant string)
-	RecordAlarmGenerated(invariant string)
+	RecordAlertGenerated(invariant string)
 	RecordNodeError(node string)
 	RecordUp()
+	Start()
+	Shutdown(ctx context.Context) error
+	Document() []DocumentedMetric
 }
 
 type Metrics struct {
@@ -47,18 +52,43 @@ type Metrics struct {
 	NodeErrors       *prometheus.CounterVec
 
 	registry *prometheus.Registry
-	factory  metrics.Factory
+	factory  Factory
+	server   *http.Server
 }
 
 var _ Metricer = (*Metrics)(nil)
 
-func NewMetrics() *Metrics {
+var Stats Metricer = new(noopMetricer)
+
+var stats = Stats
+
+type StatsKey = string
+type statsKeyType int
+
+const statsKey statsKeyType = iota
+
+// WithContext returns a Metricer from the given context. If no Metricer is found,
+// the default noopMetricer is returned.
+func WithContext(ctx context.Context) Metricer {
+	if ctx == nil {
+		return stats
+	}
+
+	if ctxStats, ok := ctx.Value(statsKey).(Metricer); ok {
+		return ctxStats
+	}
+
+	return stats
+}
+
+// New ... Creates a new metrics server registered with defined custom metrics
+func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 	registry.MustRegister(collectors.NewGoCollector())
-	factory := metrics.With(registry)
+	factory := With(registry)
 
-	return &Metrics{
+	stats = &Metrics{
 		Up: factory.NewGauge(prometheus.GaugeOpts{
 			Namespace: metricsNamespace,
 			Name:      "up",
@@ -96,9 +126,23 @@ func NewMetrics() *Metrics {
 			Help:      "Number of node errors caught",
 			Namespace: metricsNamespace,
 		}, []string{"node"}),
+
 		registry: registry,
 		factory:  factory,
+		server:   initServer(cfg, registry),
 	}
+
+	stop := func() {
+		logging.WithContext(ctx).Info("starting to shutdown metrics server")
+		ctx, cancel := context.WithTimeout(context.Background(), serverShutdownTimeout)
+		if err := (stats).(*Metrics).Shutdown(ctx); err != nil {
+			logging.WithContext(ctx).Error("failed to shutdown metrics server: %v", zap.Error(err))
+			panic(err)
+		}
+		defer cancel()
+	}
+
+	return stats, stop, nil
 }
 
 func (m *Metrics) RecordUp() {
@@ -126,7 +170,7 @@ func (m *Metrics) RecordInvariantRun(invariant string) {
 	m.InvariantRuns.WithLabelValues(invariant).Inc()
 }
 
-func (m *Metrics) RecordAlarmGenerated(invariant string) {
+func (m *Metrics) RecordAlertGenerated(invariant string) {
 	m.AlarmsGenerated.WithLabelValues(invariant).Inc()
 }
 
@@ -134,23 +178,13 @@ func (m *Metrics) RecordNodeError(node string) {
 	m.NodeErrors.WithLabelValues(node).Inc()
 }
 
-func (m *Metrics) Serve(ctx context.Context, cfg *Config) error {
-	addr := net.JoinHostPort(cfg.Host, strconv.FormatUint(cfg.Port, 10))
-	server := &http.Server{
-		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
-	}
-	server.Handler = promhttp.InstrumentMetricHandler(m.registry, promhttp.HandlerFor(m.registry, promhttp.HandlerOpts{}))
-	server.Addr = addr
-
-	go func() {
-		<-ctx.Done()
-		server.Close()
-	}()
-
-	return server.ListenAndServe()
+// Shutdown ... Shuts down the metrics server
+func (m *Metrics) Shutdown(ctx context.Context) error {
+	return m.server.Shutdown(ctx)
 }
 
-func (m *Metrics) Document() []metrics.DocumentedMetric {
+// Document ... Returns a list of documented metrics
+func (m *Metrics) Document() []DocumentedMetric {
 	return m.factory.Document()
 }
 
@@ -163,6 +197,13 @@ func (n *noopMetricer) DecActiveInvariants()          {}
 func (n *noopMetricer) IncActivePipelines()           {}
 func (n *noopMetricer) DecActivePipelines()           {}
 func (n *noopMetricer) RecordInvariantRun(_ string)   {}
-func (n *noopMetricer) RecordAlarmGenerated(_ string) {}
+func (n *noopMetricer) RecordAlertGenerated(_ string) {}
 func (n *noopMetricer) RecordNodeError(_ string)      {}
 func (n *noopMetricer) RecordUp()                     {}
+func (n *noopMetricer) Shutdown(_ context.Context) error {
+	return nil
+}
+func (n *noopMetricer) Start() {}
+func (n *noopMetricer) Document() []DocumentedMetric {
+	return nil
+}
