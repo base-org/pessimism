@@ -2,12 +2,11 @@ package metrics
 
 import (
 	"context"
-	"github.com/base-org/pessimism/internal/core"
 	"net/http"
 	"time"
 
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 
@@ -75,7 +74,6 @@ func WithContext(ctx context.Context) Metricer {
 
 // New ... Creates a new metrics server registered with defined custom metrics
 func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
-
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}))
 	registry.MustRegister(collectors.NewGoCollector())
