@@ -13,4 +13,15 @@ jobs:
     name: Ensure mock generation
     runs-on: ubuntu-latest
     steps:
-      - run: make go-gen-mocks && git diff --exit-code
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+
+      - name: Install mockgen
+        run: go install github.com/golang/mock/mockgen@v1.6.0
+        
+      - name: Mock diff check
+        run: make go-gen-mocks && git diff --exit-code
