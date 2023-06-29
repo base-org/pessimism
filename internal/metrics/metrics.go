@@ -55,8 +55,7 @@ type Metrics struct {
 	server   *http.Server
 }
 
-var Stats Metricer = new(noopMetricer)
-var stats = Stats
+var stats Metricer = new(noopMetricer)
 
 // WithContext returns a Metricer from the given context. If no Metricer is found,
 // the default noopMetricer is returned.
