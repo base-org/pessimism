@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/base-org/pessimism/internal/app"
@@ -19,7 +20,7 @@ func fetchBootSessions(path string) ([]app.BootSession, error) {
 		return nil, fmt.Errorf("invalid bootstrap file format; expected %s", extJSON)
 	}
 
-	file, err := os.ReadFile(path)
+	file, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
 		return nil, err
 	}

@@ -1,4 +1,5 @@
 # Linting with golangci-lint
+# https://github.com/golangci/golangci-lint-action
 name: golangci-lint
 on:
 

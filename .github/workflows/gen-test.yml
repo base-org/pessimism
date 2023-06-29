@@ -13,8 +13,6 @@ jobs:
     name: Ensure mock generation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
@@ -22,6 +20,6 @@ jobs:
 
       - name: Install mockgen
         run: go install github.com/golang/mock/mockgen@v1.6.0
-        
+
       - name: Mock diff check
         run: make go-gen-mocks && git diff --exit-code
