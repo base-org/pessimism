@@ -11,6 +11,8 @@ import (
 	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
+
 	"go.uber.org/zap"
 )
 
@@ -33,6 +35,7 @@ type etlManager struct {
 	analyzer Analyzer
 	dag      ComponentGraph
 	store    EtlStore
+	metrics  metrics.Metricer
 
 	engOutgress chan core.InvariantInput
 
@@ -45,6 +48,7 @@ func NewManager(ctx context.Context, analyzer Analyzer, cRegistry registry.Regis
 	store EtlStore, dag ComponentGraph,
 	eo chan core.InvariantInput) Manager {
 	ctx, cancel := context.WithCancel(ctx)
+	stats := metrics.WithContext(ctx)
 
 	m := &etlManager{
 		analyzer:    analyzer,
@@ -54,6 +58,7 @@ func NewManager(ctx context.Context, analyzer Analyzer, cRegistry registry.Regis
 		store:       store,
 		registry:    cRegistry,
 		engOutgress: eo,
+		metrics:     stats,
 		wg:          sync.WaitGroup{},
 	}
 
@@ -115,6 +120,8 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, 
 		return pUUID, false, nil
 	}
 
+	em.metrics.IncActivePipelines()
+
 	return pUUID, false, nil
 }
 
@@ -148,7 +155,7 @@ func (em *etlManager) Shutdown() error {
 	logger := logging.WithContext(em.ctx)
 
 	for _, pl := range em.store.GetAllPipelines() {
-		logger.Info("Shuting down pipeline",
+		logger.Info("Shutting down pipeline",
 			zap.String(core.PUUIDKey, pl.UUID().String()))
 
 		if err := pl.Close(); err != nil {
@@ -156,6 +163,7 @@ func (em *etlManager) Shutdown() error {
 				zap.String(core.PUUIDKey, pl.UUID().String()))
 			return err
 		}
+		em.metrics.DecActivePipelines()
 	}
 	logger.Debug("Waiting for all component routines to end")
 	em.wg.Wait()

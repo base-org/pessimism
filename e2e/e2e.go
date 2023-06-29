@@ -11,6 +11,7 @@ import (
 	"github.com/base-org/pessimism/internal/app"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/state"
 	op_e2e "github.com/ethereum-optimism/optimism/op-e2e"
 	"github.com/ethereum/go-ethereum"
@@ -143,6 +144,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 // DefaultTestConfig ... Returns a default app config for testing
 func DefaultTestConfig() *config.Config {
 	port := 6980
+	metPort := 6300
 	l1PollInterval := 900
 	l2PollInterval := 300
 
@@ -152,6 +154,11 @@ func DefaultTestConfig() *config.Config {
 		SvcConfig: &service.Config{
 			L2PollInterval: l2PollInterval,
 			L1PollInterval: l1PollInterval,
+		},
+		MetricsConfig: &metrics.Config{
+			Enabled: false,
+			Host:    "localhost",
+			Port:    metPort,
 		},
 		ServerConfig: &server.Config{
 			Host: "localhost",

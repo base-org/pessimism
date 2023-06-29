@@ -2,16 +2,15 @@ package config
 
 import (
 	"log"
+	"os"
 	"strconv"
 	"strings"
 
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/api/service"
-
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/joho/godotenv"
-
-	"os"
 )
 
 type FilePath string
@@ -38,10 +37,10 @@ type Config struct {
 	// TODO - Consider moving this URL to a more appropriate location
 	SlackURL string
 
-	SvcConfig    *service.Config
-	ServerConfig *server.Config
-
-	LoggerConfig *logging.Config
+	SvcConfig     *service.Config
+	ServerConfig  *server.Config
+	MetricsConfig *metrics.Config
+	LoggerConfig  *logging.Config
 }
 
 // NewConfig ... Initializer
@@ -62,6 +61,13 @@ func NewConfig(fileName FilePath) *Config {
 
 			L1PollInterval: getEnvInt("L1_POLL_INTERVAL"),
 			L2PollInterval: getEnvInt("L2_POLL_INTERVAL"),
+		},
+
+		MetricsConfig: &metrics.Config{
+			Host:              getEnvStr("METRICS_HOST"),
+			Port:              getEnvInt("METRICS_PORT"),
+			Enabled:           getEnvBool("ENABLE_METRICS"),
+			ReadHeaderTimeout: getEnvInt("METRICS_READ_HEADER_TIMEOUT"),
 		},
 
 		LoggerConfig: &logging.Config{

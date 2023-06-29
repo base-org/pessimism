@@ -14,6 +14,7 @@ import (
 	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/state"
 	"github.com/base-org/pessimism/internal/subsystem"
 	"go.uber.org/zap"
@@ -32,6 +33,20 @@ func InitializeContext(ctx context.Context, ss state.Store,
 		ctx, core.L2Client, l2Client)
 }
 
+// InitializeMetrics ... Performs dependency injection to build metrics struct
+func InitializeMetrics(ctx context.Context, cfg *config.Config) (metrics.Metricer, func(), error) {
+	if !cfg.MetricsConfig.Enabled {
+		return metrics.NoopMetrics, func() {}, nil
+	}
+
+	server, cleanup, err := metrics.New(ctx, cfg.MetricsConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return server, cleanup, nil
+}
+
 // InitializeServer ... Performs dependency injection to build server struct
 func InitializeServer(ctx context.Context, cfg *config.Config, m subsystem.Manager) (*server.Server, func(), error) {
 	apiService := service.New(ctx, cfg.SvcConfig, m)
@@ -44,6 +59,7 @@ func InitializeServer(ctx context.Context, cfg *config.Config, m subsystem.Manag
 	if err != nil {
 		return nil, nil, err
 	}
+
 	return server, cleanup, nil
 }
 
@@ -78,6 +94,11 @@ func InitializeEngine(ctx context.Context, transit chan core.Alert) engine.Manag
 
 // NewPessimismApp ... Performs dependency injection to build app struct
 func NewPessimismApp(ctx context.Context, cfg *config.Config) (*Application, func(), error) {
+	mSvr, mShutDown, err := InitializeMetrics(ctx, cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	alrt := InitializeAlerting(ctx, cfg)
 	engine := InitializeEngine(ctx, alrt.Transit())
 	etl := InitalizeETL(ctx, engine.Transit())
@@ -91,11 +112,11 @@ func NewPessimismApp(ctx context.Context, cfg *config.Config) (*Application, fun
 
 	appShutDown := func() {
 		shutDown()
-
+		mShutDown()
 		if err := m.Shutdown(); err != nil {
 			logging.WithContext(ctx).Error("error shutting down subsystems", zap.Error(err))
 		}
 	}
 
-	return New(ctx, cfg, m, svr), appShutDown, nil
+	return New(ctx, cfg, m, svr, mSvr), appShutDown, nil
 }
