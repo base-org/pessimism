@@ -1,5 +1,5 @@
 # Static security scan using Salus
-name: golangci-lint
+name: salus-security-scan
 on:
 
   push:
