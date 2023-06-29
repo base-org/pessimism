@@ -2,6 +2,15 @@ package core
 
 import "github.com/base-org/pessimism/internal/logging"
 
+type CtxKey uint8
+
+const (
+	Logger CtxKey = iota
+	State
+	L1Client
+	L2Client
+)
+
 // Network ... Represents the network for which a pipeline's oracle
 // is subscribed to.
 type Network uint8
@@ -60,10 +69,9 @@ const (
 type InvariantType uint8
 
 const (
-	ExampleInv = iota + 1
-	TxCaller
-	BalanceEnforcement
+	BalanceEnforcement = iota + 1
 	ContractEvent
+	WithdrawalEnforcement
 )
 
 // String ... Converts an invariant type to a string
@@ -74,6 +82,9 @@ func (it InvariantType) String() string {
 
 	case ContractEvent:
 		return "contract_event"
+
+	case WithdrawalEnforcement:
+		return "withdrawal_enforcement"
 
 	default:
 		return "unknown"
@@ -88,6 +99,9 @@ func StringToInvariantType(stringType string) InvariantType {
 
 	case "contract_event":
 		return ContractEvent
+
+	case "withdrawal_enforcement":
+		return WithdrawalEnforcement
 
 	default:
 		return InvariantType(0)

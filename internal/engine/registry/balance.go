@@ -39,7 +39,7 @@ func NewBalanceInvariant(cfg *BalanceInvConfig) invariant.Invariant {
 	return &BalanceInvariant{
 		cfg: cfg,
 
-		Invariant: invariant.NewBaseInvariant(core.AccountBalance, invariant.WithAddressing()),
+		Invariant: invariant.NewBaseInvariant(core.AccountBalance),
 	}
 }
 

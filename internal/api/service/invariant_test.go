@@ -75,7 +75,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
-					Return(core.NilPUUID(), testErr1()).
+					Return(core.NilPUUID(), false, testErr1()).
 					Times(1)
 
 				return ts
@@ -102,7 +102,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
-					Return(core.NilPUUID(), nil).
+					Return(core.NilPUUID(), false, nil).
 					Times(1)
 
 				ts.mockEtlMan.EXPECT().
@@ -134,7 +134,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
-					Return(core.NilPUUID(), nil).
+					Return(core.NilPUUID(), false, nil).
 					Times(1)
 
 				ts.mockEtlMan.EXPECT().
@@ -176,7 +176,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
-					Return(core.NilPUUID(), nil).
+					Return(core.NilPUUID(), false, nil).
 					Times(1)
 
 				ts.mockEtlMan.EXPECT().
@@ -218,7 +218,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
-					Return(core.NilPUUID(), nil).
+					Return(core.NilPUUID(), false, nil).
 					Times(1)
 
 				ts.mockEtlMan.EXPECT().

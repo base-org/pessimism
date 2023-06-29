@@ -23,22 +23,15 @@ type Invariant interface {
 // BaseInvariantOpt ... Functional option for BaseInvariant
 type BaseInvariantOpt = func(bi *BaseInvariant) *BaseInvariant
 
-// WithAddressing ... Toggles addressing property for invariant
-func WithAddressing() BaseInvariantOpt {
-	return func(bi *BaseInvariant) *BaseInvariant {
-		bi.addressing = true
-		return bi
-	}
-}
-
 // BaseInvariant ... Base invariant implementation
 type BaseInvariant struct {
-	addressing bool
-	sUUID      core.SUUID
-	inType     core.RegisterType
+	sUUID  core.SUUID
+	inType core.RegisterType
 }
 
-// NewBaseInvariant ... Initializer
+// NewBaseInvariant ... Initializer for BaseInvariant
+// This is a base type that's inherited by all hardcoded
+// invariant implementations
 func NewBaseInvariant(inType core.RegisterType,
 	opts ...BaseInvariantOpt) Invariant {
 	bi := &BaseInvariant{
@@ -50,11 +43,6 @@ func NewBaseInvariant(inType core.RegisterType,
 	}
 
 	return bi
-}
-
-// SetSUUID ... Sets the invariant session UUID
-func (bi *BaseInvariant) SetSUUID(sUUID core.SUUID) {
-	bi.sUUID = sUUID
 }
 
 // SUUID ... Returns the invariant session UUID
@@ -70,4 +58,8 @@ func (bi *BaseInvariant) InputType() core.RegisterType {
 // Invalidate ... Invalidates the invariant; defaults to no-op
 func (bi *BaseInvariant) Invalidate(core.TransitData) (*core.InvalOutcome, bool, error) {
 	return nil, false, nil
+}
+
+func (bi *BaseInvariant) SetSUUID(sUUID core.SUUID) {
+	bi.sUUID = sUUID
 }

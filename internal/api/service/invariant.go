@@ -18,7 +18,7 @@ func (svc *PessimismService) ProcessInvariantRequest(ir models.InvRequestBody) (
 
 // runInvariantSession ... Runs an invariant session provided
 func (svc *PessimismService) RunInvariantSession(params models.InvRequestParams) (core.SUUID, error) {
-	inv, err := registry.GetInvariant(params.InvariantType(), params.SessionParams)
+	inv, err := registry.GetInvariant(svc.ctx, params.InvariantType(), params.SessionParams)
 	if err != nil {
 		return core.NilSUUID(), err
 	}
