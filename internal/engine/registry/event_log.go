@@ -46,8 +46,7 @@ func NewEventInvariant(cfg *EventInvConfig) invariant.Invariant {
 		cfg:  cfg,
 		sigs: sigs,
 
-		Invariant: invariant.NewBaseInvariant(core.EventLog,
-			invariant.WithAddressing()),
+		Invariant: invariant.NewBaseInvariant(core.EventLog),
 	}
 }
 

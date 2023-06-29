@@ -117,6 +117,7 @@ func (am *alertManager) EventLoop() error {
 	}
 }
 
+// Shutdown ... Shuts down the alert manager subsystem
 func (am *alertManager) Shutdown() error {
 	am.cancel()
 	return nil

@@ -107,7 +107,7 @@ func (ed *EventDefinition) getEventsToMonitor(ctx context.Context,
 // Transform ... Gets the events from the block, filters them and
 // returns them if they are in the list of events to monitor
 func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) ([]core.TransitData, error) {
-	asBlock, success := td.Value.(types.Block)
+	block, success := td.Value.(types.Block)
 	if !success {
 		return []core.TransitData{}, fmt.Errorf("could not convert to block")
 	}
@@ -130,7 +130,7 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 		return []core.TransitData{}, err
 	}
 
-	hash := asBlock.Header().Hash()
+	hash := block.Header().Hash()
 
 	query := ethereum.FilterQuery{
 		BlockHash: &hash,
