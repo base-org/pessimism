@@ -8,6 +8,16 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
+const (
+	valAlreadySetError = "value already exists in state store"
+	notFoundError      = "could not find state store value for key %s"
+)
+
+// IsValAlreadySetError ... Checks if the error is a ValAlreadySetError
+func isValAlreadySetError(err error) bool {
+	return err.Error() == valAlreadySetError
+}
+
 /*
 	NOTE - This is a temporary implementation of the state store.
 */
@@ -39,7 +49,7 @@ func (ss *stateStore) GetSlice(_ context.Context, key *core.StateKey) ([]string,
 
 	val, exists := ss.sliceStore[key.String()]
 	if !exists {
-		return []string{}, fmt.Errorf("could not find state store value for key %s", key)
+		return []string{}, fmt.Errorf(notFoundError, key)
 	}
 
 	return val, nil
@@ -50,8 +60,13 @@ func (ss *stateStore) SetSlice(_ context.Context, key *core.StateKey, value stri
 	ss.Lock()
 	defer ss.Unlock()
 
-	ss.sliceStore[key.String()] = append(ss.sliceStore[key.String()], value)
-
+	entries := ss.sliceStore[key.String()]
+	for _, entry := range entries {
+		if entry == value {
+			return "", fmt.Errorf(valAlreadySetError)
+		}
+	}
+	ss.sliceStore[key.String()] = append(entries, value)
 	return value, nil
 }
 
@@ -74,13 +89,13 @@ func (ss *stateStore) GetNestedSubset(_ context.Context,
 
 	values, exists := ss.sliceStore[key.String()]
 	if !exists {
-		return map[string][]string{}, fmt.Errorf("could not find state store value for key %s", key)
+		return map[string][]string{}, fmt.Errorf(notFoundError, key)
 	}
 
 	var nestedMap = make(map[string][]string, 0)
 	for _, val := range values {
 		if _, exists := ss.sliceStore[val]; !exists {
-			return map[string][]string{}, fmt.Errorf("could not find state store value for key %s", key)
+			return map[string][]string{}, fmt.Errorf(notFoundError, val)
 		}
 
 		nestedValues := ss.sliceStore[val]

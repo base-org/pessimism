@@ -12,6 +12,7 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/registry"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/subsystem"
 	"go.uber.org/zap"
 )
@@ -21,8 +22,9 @@ type BootSession = models.InvRequestParams
 
 // Application ... Pessimism app struct
 type Application struct {
-	cfg *config.Config
-	ctx context.Context
+	cfg     *config.Config
+	ctx     context.Context
+	metrics metrics.Metricer
 
 	sub    subsystem.Manager
 	server *server.Server
@@ -30,22 +32,29 @@ type Application struct {
 
 // New ... Initializer
 func New(ctx context.Context, cfg *config.Config,
-	sub subsystem.Manager, server *server.Server) *Application {
+	sub subsystem.Manager, server *server.Server, stats metrics.Metricer) *Application {
 	return &Application{
-		ctx:    ctx,
-		cfg:    cfg,
-		sub:    sub,
-		server: server,
+		ctx:     ctx,
+		cfg:     cfg,
+		sub:     sub,
+		server:  server,
+		metrics: stats,
 	}
 }
 
 // Start ... Starts the application
 func (a *Application) Start() error {
+	// Start metrics server
+	a.metrics.Start()
+
 	// Spawn subsystem event loop routines
 	a.sub.StartEventRoutines(a.ctx)
 
 	// Start the API server
 	a.server.Start()
+
+	metrics.WithContext(a.ctx).RecordUp()
+
 	return nil
 }
 
@@ -70,7 +79,7 @@ func (a *Application) BootStrap(sessions []BootSession) error {
 	logger := logging.WithContext(a.ctx)
 
 	for _, session := range sessions {
-		inv, err := registry.GetInvariant(session.InvariantType(), session.SessionParams)
+		inv, err := registry.GetInvariant(a.ctx, session.InvariantType(), session.SessionParams)
 		if err != nil {
 			return err
 		}

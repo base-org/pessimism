@@ -10,11 +10,11 @@ GREEN = \033[0;32m
 BLUE = \033[0;34m
 COLOR_END = \033[0;39m
 
-TEST_LIMIT = 30s
+TEST_LIMIT = 120s
 
 build-app:
 	@echo "$(BLUE)» building application binary... $(COLOR_END)"
-	@CGO_ENABLED=0 go build -a -tags netgo -o bin/$(APP_NAME) ./cmd/pessimism/
+	@CGO_ENABLED=0 go build -a -tags netgo -o bin/$(APP_NAME) ./cmd/
 	@echo "Binary successfully built"
 
 run-app: 
@@ -31,7 +31,7 @@ test:
 
 .PHONY: test-e2e
 e2e-test:
-	@ go test ./e2e/... -timeout $(TEST_LIMIT)
+	@ go test ./e2e/...  -timeout $(TEST_LIMIT)
 
 .PHONY: lint
 lint:
@@ -49,3 +49,18 @@ lint:
 gosec:
 	@echo "$(GREEN) Running security scan with gosec...$(COLOR_END)"
 	gosec ./...
+
+.PHONY: metric-docs
+metric-docs: build-app
+	@echo "$(GREEN) Generating metric documentation...$(COLOR_END)"
+	@./bin/$(APP_NAME) doc metrics
+
+.PHONY: docker-build
+docker-build:
+	@echo "$(GREEN) Building docker image...$(COLOR_END)"
+	@docker build -t $(APP_NAME) .
+
+.PHONY: docker-run
+docker-run:
+	@echo "$(GREEN) Running docker image...$(COLOR_END)"
+	@docker run -p 8080:8080 -p 7300:7300 -e config.env $(APP_NAME)

@@ -33,6 +33,11 @@ func NewTestServer() *TestServer {
 	return ts
 }
 
+// Close ... Closes the server
+func (svr *TestServer) Close() {
+	svr.Server.Close()
+}
+
 // mockSlackPost ... Mocks a slack post request
 func (svr *TestServer) mockSlackPost(w http.ResponseWriter, r *http.Request) {
 	var alert *client.SlackPayload

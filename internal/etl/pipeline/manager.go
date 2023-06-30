@@ -11,6 +11,8 @@ import (
 	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
+
 	"go.uber.org/zap"
 )
 
@@ -19,7 +21,7 @@ type Manager interface {
 	InferComponent(cc *core.ClientConfig, cUUID core.CUUID, pUUID core.PUUID,
 		register *core.DataRegister) (component.Component, error)
 	GetRegister(rt core.RegisterType) (*core.DataRegister, error)
-	CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, error)
+	CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, bool, error)
 	RunPipeline(pID core.PUUID) error
 
 	core.Subsystem
@@ -33,6 +35,7 @@ type etlManager struct {
 	analyzer Analyzer
 	dag      ComponentGraph
 	store    EtlStore
+	metrics  metrics.Metricer
 
 	engOutgress chan core.InvariantInput
 
@@ -45,6 +48,7 @@ func NewManager(ctx context.Context, analyzer Analyzer, cRegistry registry.Regis
 	store EtlStore, dag ComponentGraph,
 	eo chan core.InvariantInput) Manager {
 	ctx, cancel := context.WithCancel(ctx)
+	stats := metrics.WithContext(ctx)
 
 	m := &etlManager{
 		analyzer:    analyzer,
@@ -54,6 +58,7 @@ func NewManager(ctx context.Context, analyzer Analyzer, cRegistry registry.Regis
 		store:       store,
 		registry:    cRegistry,
 		engOutgress: eo,
+		metrics:     stats,
 		wg:          sync.WaitGroup{},
 	}
 
@@ -66,21 +71,21 @@ func (em *etlManager) GetRegister(rt core.RegisterType) (*core.DataRegister, err
 }
 
 // CreateDataPipeline ... Creates an ETL data pipeline provided a pipeline configuration
-func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, error) {
+func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, bool, error) {
 	// NOTE - If some of these early sub-system operations succeed but lower function
 	// code logic fails, then some rollback will need be triggered to undo prior applied state operations
 	logger := logging.WithContext(em.ctx)
 
 	depPath, err := em.registry.GetDependencyPath(cfg.DataType)
 	if err != nil {
-		return core.NilPUUID(), err
+		return core.NilPUUID(), false, err
 	}
 
 	pUUID := depPath.GeneratePUUID(cfg.PipelineType, cfg.Network)
 
 	components, err := em.getComponents(cfg, pUUID, depPath)
 	if err != nil {
-		return core.NilPUUID(), err
+		return core.NilPUUID(), false, err
 	}
 
 	logger.Debug("constructing pipeline",
@@ -88,34 +93,36 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, 
 
 	pipeline, err := NewPipeline(cfg, pUUID, components)
 	if err != nil {
-		return core.NilPUUID(), err
+		return core.NilPUUID(), false, err
 	}
 
 	mPUUID, err := em.getMergeUUID(pUUID, pipeline)
 	if err != nil {
-		return core.NilPUUID(), err
+		return core.NilPUUID(), false, err
 	}
 
 	if mPUUID != core.NilPUUID() { // Pipeline is mergable
-		return mPUUID, nil
+		return mPUUID, true, nil
 	}
 
 	// Bind communication route between pipeline and risk engine
 	if err := pipeline.AddEngineRelay(em.engOutgress); err != nil {
-		return core.NilPUUID(), err
+		return core.NilPUUID(), false, err
 	}
 
 	if err := em.dag.AddComponents(pipeline.Components()); err != nil {
-		return core.NilPUUID(), err
+		return core.NilPUUID(), false, err
 	}
 
 	em.store.AddPipeline(pUUID, pipeline)
 
 	if len(components) == 1 {
-		return pUUID, nil
+		return pUUID, false, nil
 	}
 
-	return pUUID, nil
+	em.metrics.IncActivePipelines()
+
+	return pUUID, false, nil
 }
 
 // RunPipeline ... Runs pipeline session for some provided pUUID
@@ -148,7 +155,7 @@ func (em *etlManager) Shutdown() error {
 	logger := logging.WithContext(em.ctx)
 
 	for _, pl := range em.store.GetAllPipelines() {
-		logger.Info("Shuting down pipeline",
+		logger.Info("Shutting down pipeline",
 			zap.String(core.PUUIDKey, pl.UUID().String()))
 
 		if err := pl.Close(); err != nil {
@@ -156,6 +163,7 @@ func (em *etlManager) Shutdown() error {
 				zap.String(core.PUUIDKey, pl.UUID().String()))
 			return err
 		}
+		em.metrics.DecActivePipelines()
 	}
 	logger.Debug("Waiting for all component routines to end")
 	em.wg.Wait()
