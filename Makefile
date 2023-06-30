@@ -46,6 +46,10 @@ lint:
 
 	@golangci-lint run
 
+gosec:
+	@echo "$(GREEN) Running security scan with gosec...$(COLOR_END)"
+	gosec ./...
+
 .PHONY: metric-docs
 metric-docs: build-app
 	@echo "$(GREEN) Generating metric documentation...$(COLOR_END)"

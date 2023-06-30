@@ -66,11 +66,12 @@ func initializeServer(config *Config, handler http.Handler) *Server {
 	return &Server{
 		Cfg: config,
 		serverHTTP: &http.Server{
-			Addr:         fmt.Sprintf("%s:%d", config.Host, config.Port),
-			Handler:      handler,
-			IdleTimeout:  time.Duration(config.KeepAlive) * time.Second,
-			ReadTimeout:  time.Duration(config.ReadTimeout) * time.Second,
-			WriteTimeout: time.Duration(config.WriteTimeout) * time.Second,
+			Addr:              fmt.Sprintf("%s:%d", config.Host, config.Port),
+			Handler:           handler,
+			IdleTimeout:       time.Duration(config.KeepAlive) * time.Second,
+			ReadHeaderTimeout: time.Duration(config.ReadTimeout) * time.Second,
+			ReadTimeout:       time.Duration(config.ReadTimeout) * time.Second,
+			WriteTimeout:      time.Duration(config.WriteTimeout) * time.Second,
 		},
 	}
 }
