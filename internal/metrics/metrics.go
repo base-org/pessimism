@@ -2,11 +2,11 @@ package metrics
 
 import (
 	"context"
-	"github.com/base-org/pessimism/internal/engine/invariant"
 	"net/http"
 	"time"
 
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
@@ -106,9 +106,9 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 			Subsystem: SubsystemInvariants,
 		}, []string{"network", "invariant"}),
 
-		AlarmsGenerated: factory.NewCounterVec(prometheus.CounterOpts{
-			Name:      "alarms_generated_total",
-			Help:      "Number of total alarms generated for a given invariant",
+		AlertsGenerated: factory.NewCounterVec(prometheus.CounterOpts{
+			Name:      "alerts_generated_total",
+			Help:      "Number of total alerts generated for a given invariant",
 			Namespace: metricsNamespace,
 		}, []string{"network", "invariant", "pipeline", "destination"}),
 
@@ -175,7 +175,7 @@ func (m *Metrics) RecordAlertGenerated(alert core.Alert) {
 	inv := alert.SUUID.PID.InvType().String()
 	pipeline := alert.Ptype.String()
 	dest := alert.Dest.String()
-	m.AlarmsGenerated.WithLabelValues(net, inv, pipeline, dest).Inc()
+	m.AlertsGenerated.WithLabelValues(net, inv, pipeline, dest).Inc()
 }
 
 // RecordNodeError ... Records that an error has been caught for a given node
@@ -202,7 +202,7 @@ func (n *noopMetricer) DecActiveInvariants()                     {}
 func (n *noopMetricer) IncActivePipelines()                      {}
 func (n *noopMetricer) DecActivePipelines()                      {}
 func (n *noopMetricer) RecordInvariantRun(_ invariant.Invariant) {}
-func (n *noopMetricer) RecordAlertGenerated(alert core.Alert)    {}
+func (n *noopMetricer) RecordAlertGenerated(_ core.Alert)        {}
 func (n *noopMetricer) RecordNodeError(_ string)                 {}
 func (n *noopMetricer) RecordUp()                                {}
 func (n *noopMetricer) Shutdown(_ context.Context) error {

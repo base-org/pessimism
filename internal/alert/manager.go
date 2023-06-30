@@ -5,11 +5,11 @@ package alert
 import (
 	"context"
 	"fmt"
-	"github.com/base-org/pessimism/internal/metrics"
 
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"go.uber.org/zap"
 )
 

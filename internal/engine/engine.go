@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/logging"
