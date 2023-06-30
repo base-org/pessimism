@@ -12,8 +12,8 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/prometheus/client_golang v1.16.0
-	github.com/stretchr/testify v1.8.2
-	github.com/urfave/cli v1.22.9
+	github.com/stretchr/testify v1.8.4
+	github.com/urfave/cli v1.22.14
 	go.uber.org/zap v1.24.0
 )
 
