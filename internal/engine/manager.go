@@ -52,7 +52,6 @@ type engineManager struct {
 func NewManager(ctx context.Context, engine RiskEngine, addr AddressingMap,
 	store SessionStore, alertOutgress chan core.Alert) Manager {
 	ctx, cancel := context.WithCancel(ctx)
-	stats := metrics.WithContext(ctx)
 
 	em := &engineManager{
 		ctx:           ctx,
@@ -62,7 +61,7 @@ func NewManager(ctx context.Context, engine RiskEngine, addr AddressingMap,
 		engine:        engine,
 		addresser:     addr,
 		store:         store,
-		metrics:       stats,
+		metrics:       metrics.WithContext(ctx),
 	}
 
 	return em
@@ -243,12 +242,15 @@ func (em *engineManager) executeInvariant(ctx context.Context, data core.Invaria
 
 	// Execute invariant using risk engine and return alert if invalidation occurs
 	outcome, invalid := em.engine.Execute(ctx, data.Input, inv)
+	em.metrics.RecordInvariantRun(inv)
 
 	if invalid {
 		alert := core.Alert{
 			Timestamp: outcome.TimeStamp,
 			SUUID:     inv.SUUID(),
 			Content:   outcome.Message,
+			PUUID:     data.PUUID,
+			Ptype:     data.PUUID.PipelineType(),
 		}
 
 		logger.Warn("Invariant alert",
@@ -256,7 +258,5 @@ func (em *engineManager) executeInvariant(ctx context.Context, data core.Invaria
 			zap.String("message", outcome.Message))
 
 		em.alertOutgress <- alert
-		em.metrics.RecordAlertGenerated(inv.SUUID().String())
 	}
-	em.metrics.RecordInvariantRun(inv.SUUID().String())
 }

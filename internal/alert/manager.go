@@ -5,6 +5,7 @@ package alert
 import (
 	"context"
 	"fmt"
+	"github.com/base-org/pessimism/internal/metrics"
 
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
@@ -29,6 +30,7 @@ type alertManager struct {
 	store        Store
 	interpolator Interpolator
 
+	metrics      metrics.Metricer
 	alertTransit chan core.Alert
 }
 
@@ -47,6 +49,7 @@ func NewManager(ctx context.Context, sc client.SlackClient) Manager {
 		interpolator: NewInterpolator(),
 		store:        NewStore(),
 		alertTransit: make(chan core.Alert),
+		metrics:      metrics.WithContext(ctx),
 	}
 
 	return am
@@ -96,6 +99,9 @@ func (am *alertManager) EventLoop() error {
 				logger.Error("Could not determine alerting destination", zap.Error(err))
 				continue
 			}
+
+			alert.Dest = alertDest
+			am.metrics.RecordAlertGenerated(alert)
 
 			switch alertDest {
 			case core.Slack: // TODO: add more alert destinations

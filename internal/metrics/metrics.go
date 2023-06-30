@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"context"
+	"github.com/base-org/pessimism/internal/engine/invariant"
 	"net/http"
 	"time"
 
@@ -33,8 +34,8 @@ type Metricer interface {
 	DecActiveInvariants()
 	IncActivePipelines()
 	DecActivePipelines()
-	RecordInvariantRun(invariant string)
-	RecordAlertGenerated(invariant string)
+	RecordInvariantRun(invariant invariant.Invariant)
+	RecordAlertGenerated(alert core.Alert)
 	RecordNodeError(node string)
 	RecordUp()
 	Start()
@@ -47,7 +48,7 @@ type Metrics struct {
 	ActivePipelines  prometheus.Gauge
 	Up               prometheus.Gauge
 	InvariantRuns    *prometheus.CounterVec
-	AlarmsGenerated  *prometheus.CounterVec
+	AlertsGenerated  *prometheus.CounterVec
 	NodeErrors       *prometheus.CounterVec
 
 	registry *prometheus.Registry
@@ -103,13 +104,13 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 			Help:      "Number of times a specific invariant has been run",
 			Namespace: metricsNamespace,
 			Subsystem: SubsystemInvariants,
-		}, []string{"invariant"}),
+		}, []string{"network", "invariant"}),
 
 		AlarmsGenerated: factory.NewCounterVec(prometheus.CounterOpts{
 			Name:      "alarms_generated_total",
 			Help:      "Number of total alarms generated for a given invariant",
 			Namespace: metricsNamespace,
-		}, []string{"invariant"}),
+		}, []string{"network", "invariant", "pipeline", "destination"}),
 
 		NodeErrors: factory.NewCounterVec(prometheus.CounterOpts{
 			Name:      "node_errors_total",
@@ -162,13 +163,19 @@ func (m *Metrics) DecActivePipelines() {
 }
 
 // RecordInvariantRun ... Records that a given invariant has been run
-func (m *Metrics) RecordInvariantRun(invariant string) {
-	m.InvariantRuns.WithLabelValues(invariant).Inc()
+func (m *Metrics) RecordInvariantRun(inv invariant.Invariant) {
+	net := inv.SUUID().PID.Network().String()
+	invType := inv.SUUID().PID.InvType().String()
+	m.InvariantRuns.WithLabelValues(net, invType).Inc()
 }
 
 // RecordAlertGenerated ... Records that an alert has been generated for a given invariant
-func (m *Metrics) RecordAlertGenerated(invariant string) {
-	m.AlarmsGenerated.WithLabelValues(invariant).Inc()
+func (m *Metrics) RecordAlertGenerated(alert core.Alert) {
+	net := alert.SUUID.PID.Network().String()
+	inv := alert.SUUID.PID.InvType().String()
+	pipeline := alert.Ptype.String()
+	dest := alert.Dest.String()
+	m.AlarmsGenerated.WithLabelValues(net, inv, pipeline, dest).Inc()
 }
 
 // RecordNodeError ... Records that an error has been caught for a given node
@@ -190,14 +197,14 @@ type noopMetricer struct{}
 
 var NoopMetrics Metricer = new(noopMetricer)
 
-func (n *noopMetricer) IncActiveInvariants()          {}
-func (n *noopMetricer) DecActiveInvariants()          {}
-func (n *noopMetricer) IncActivePipelines()           {}
-func (n *noopMetricer) DecActivePipelines()           {}
-func (n *noopMetricer) RecordInvariantRun(_ string)   {}
-func (n *noopMetricer) RecordAlertGenerated(_ string) {}
-func (n *noopMetricer) RecordNodeError(_ string)      {}
-func (n *noopMetricer) RecordUp()                     {}
+func (n *noopMetricer) IncActiveInvariants()                     {}
+func (n *noopMetricer) DecActiveInvariants()                     {}
+func (n *noopMetricer) IncActivePipelines()                      {}
+func (n *noopMetricer) DecActivePipelines()                      {}
+func (n *noopMetricer) RecordInvariantRun(_ invariant.Invariant) {}
+func (n *noopMetricer) RecordAlertGenerated(alert core.Alert)    {}
+func (n *noopMetricer) RecordNodeError(_ string)                 {}
+func (n *noopMetricer) RecordUp()                                {}
 func (n *noopMetricer) Shutdown(_ context.Context) error {
 	return nil
 }
