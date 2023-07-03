@@ -19,8 +19,6 @@ const (
 )
 
 type testSuite struct {
-	testCfg svc.Config
-
 	mockAlertMan           *mocks.AlertManager
 	mockEngineMan          *mocks.EngineManager
 	mockEtlMan             *mocks.EtlManager
@@ -44,7 +42,7 @@ func testSUUID1() core.SUUID {
 	return core.MakeSUUID(1, 1, 1)
 }
 
-func createTestSuite(ctrl *gomock.Controller, cfg svc.Config) testSuite {
+func createTestSuite(ctrl *gomock.Controller) testSuite {
 	engineManager := mocks.NewEngineManager(ctrl)
 	etlManager := mocks.NewEtlManager(ctrl)
 	alertManager := mocks.NewAlertManager(ctrl)
@@ -57,12 +55,12 @@ func createTestSuite(ctrl *gomock.Controller, cfg svc.Config) testSuite {
 
 	ctx = context.WithValue(ctx, core.L1Client, ethClient)
 	ctx = context.WithValue(ctx, core.L2Client, ethClient)
+	cfg := &subsystem.Config{}
 
-	m := subsystem.NewManager(ctx, etlManager, engineManager, alertManager)
+	m := subsystem.NewManager(ctx, cfg, etlManager, engineManager, alertManager)
 
-	service := svc.New(ctx, &cfg, m)
+	service := svc.New(ctx, m)
 	return testSuite{
-		testCfg: cfg,
 
 		mockAlertMan:           alertManager,
 		mockEngineMan:          engineManager,

@@ -17,7 +17,7 @@ const (
 type Network uint8
 
 const (
-	Layer1 = iota + 1
+	Layer1 Network = iota + 1
 	Layer2
 
 	UnknownNetwork
@@ -70,7 +70,7 @@ const (
 type InvariantType uint8
 
 const (
-	BalanceEnforcement = iota + 1
+	BalanceEnforcement InvariantType = iota + 1
 	ContractEvent
 	WithdrawalEnforcement
 )

@@ -25,6 +25,7 @@ import (
 	"github.com/base-org/pessimism/e2e"
 
 	"github.com/base-org/pessimism/internal/api/models"
+	"github.com/base-org/pessimism/internal/core"
 )
 
 // Test_Balance_Enforcement ... Tests the E2E flow of a single
@@ -141,12 +142,12 @@ func Test_Contract_Event(t *testing.T) {
 
 	// Deploy a contract event invariant session for the L1 system config addresss.
 	err := ts.App.BootStrap([]models.InvRequestParams{{
-		Network:      "layer1",
-		PType:        "live",
-		InvType:      "contract_event",
+		Network:      core.Layer1.String(),
+		PType:        core.Live.String(),
+		InvType:      core.ContractEvent.String(),
 		StartHeight:  nil,
 		EndHeight:    nil,
-		AlertingDest: "slack",
+		AlertingDest: core.Slack.String(),
 		SessionParams: map[string]interface{}{
 			"address": predeploys.DevSystemConfigAddr.String(),
 			"args":    []interface{}{updateSig},
@@ -240,6 +241,39 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	// Determine the address our request will come from.
 	fromAddr := crypto.PubkeyToAddress(transactor.Key.PublicKey)
 
+	// Setup Pessimism to listen for fraudulent withdrawals
+	// We use two invariants here; one configured with a dummy L1 message passer
+	// and one configured with the real L1->L2 message passer contract. This allows us to
+	// ensure that an alert is only produced using faulty message passer.
+	err = ts.App.BootStrap([]models.InvRequestParams{{
+		// This is the one that should produce an alert
+		Network:      core.Layer1.String(),
+		PType:        core.Live.String(),
+		InvType:      core.WithdrawalEnforcement.String(),
+		StartHeight:  nil,
+		EndHeight:    nil,
+		AlertingDest: core.Slack.String(),
+		SessionParams: map[string]interface{}{
+			core.L1Portal:          predeploys.DevOptimismPortal,
+			core.L2ToL1MessgPasser: fakeAddr.String(),
+		},
+	},
+		{
+			// This is the one that shouldn't produce an alert
+			Network:      core.Layer1.String(),
+			PType:        core.Live.String(),
+			InvType:      core.WithdrawalEnforcement.String(),
+			StartHeight:  nil,
+			EndHeight:    nil,
+			AlertingDest: core.Slack.String(),
+			SessionParams: map[string]interface{}{
+				core.L1Portal:          predeploys.DevOptimismPortal,
+				core.L2ToL1MessgPasser: predeploys.L2ToL1MessagePasserAddr.String(),
+			},
+		},
+	})
+	assert.NoError(t, err, "Error bootstrapping invariant session")
+
 	// Initiate Withdrawal.
 	withdrawAmount := big.NewInt(500_000_000_000)
 	transactor.L2Opts.Value = withdrawAmount
@@ -288,38 +322,6 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	outputRootProofParam := params.OutputRootProof
 	withdrawalProofParam := params.WithdrawalProof
 
-	// Setup Pessimism to listen for fraudulent withdrawals
-	// We use two invariants here; one configured with a dummy L1 message passer
-	// and one configured with the real L1->L2 message passer contract. This allows us to
-	// ensure that an alert is only produced using faulty message passer.
-	err = ts.App.BootStrap([]models.InvRequestParams{{
-		// This is the one that should produce an alert
-		Network:      "layer1",
-		PType:        "live",
-		InvType:      "withdrawal_enforcement",
-		StartHeight:  nil,
-		EndHeight:    nil,
-		AlertingDest: "slack",
-		SessionParams: map[string]interface{}{
-			"l1_portal":   predeploys.DevOptimismPortal,
-			"l2_messager": fakeAddr.String(),
-		},
-	},
-		{
-			// This is the one that shouldn't produce an alert
-			Network:      "layer1",
-			PType:        "live",
-			InvType:      "withdrawal_enforcement",
-			StartHeight:  nil,
-			EndHeight:    nil,
-			AlertingDest: "slack",
-			SessionParams: map[string]interface{}{
-				"l1_portal":   predeploys.DevOptimismPortal,
-				"l2_messager": predeploys.L2ToL1MessagePasserAddr.String(),
-			},
-		},
-	})
-	assert.NoError(t, err, "Error bootstrapping invariant session")
 	time.Sleep(1 * time.Second)
 
 	// Prove withdrawal. This checks the proof so we only finalize if this succeeds

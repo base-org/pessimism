@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/base-org/pessimism/internal/core"
@@ -15,6 +16,17 @@ type EventInvConfig struct {
 	ContractName string   `json:"contract_name"`
 	Address      string   `json:"address"`
 	Sigs         []string `json:"args"`
+}
+
+// UnmarshalToEventInvConfig ... Converts a general config to an event invariant config
+func UnmarshalToEventInvConfig(isp *core.InvSessionParams) (*EventInvConfig, error) {
+	invConfg := EventInvConfig{}
+	err := json.Unmarshal(isp.Bytes(), &invConfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &invConfg, nil
 }
 
 // EventInvariant ...
@@ -36,8 +48,9 @@ const eventReportMsg = `
 `
 
 // NewEventInvariant ... Initializer
-func NewEventInvariant(cfg *EventInvConfig) invariant.Invariant {
+func NewEventInvariant(cfg *EventInvConfig) (invariant.Invariant, error) {
 	var sigs []common.Hash
+
 	for _, sig := range cfg.Sigs {
 		sigs = append(sigs, crypto.Keccak256Hash([]byte(sig)))
 	}
@@ -47,7 +60,7 @@ func NewEventInvariant(cfg *EventInvConfig) invariant.Invariant {
 		sigs: sigs,
 
 		Invariant: invariant.NewBaseInvariant(core.EventLog),
-	}
+	}, nil
 }
 
 // Invalidate ... Checks if the balance is within the bounds

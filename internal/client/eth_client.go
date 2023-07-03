@@ -36,6 +36,7 @@ type EthClientInterface interface {
 
 	BalanceAt(ctx context.Context, account common.Address, number *big.Int) (*big.Int, error)
 	FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error)
+	SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error)
 }
 
 // FromContext ... Retrieves ethClient from context
@@ -91,4 +92,8 @@ func (ec *EthClient) CallContract(ctx context.Context, msg ethereum.CallMsg, blo
 // CodeAt ... Wraps go-ethereum node codeAt RPC call
 func (ec *EthClient) CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error) {
 	return ec.client.CodeAt(ctx, account, blockNumber)
+}
+
+func (ec *EthClient) SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error) {
+	return ec.client.SubscribeFilterLogs(ctx, query, ch)
 }

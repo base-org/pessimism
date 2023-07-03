@@ -142,6 +142,10 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 		return []core.TransitData{}, err
 	}
 
+	if len(logs) == 0 {
+		return []core.TransitData{}, nil
+	}
+
 	result := make([]core.TransitData, 0)
 	for _, log := range logs {
 		for _, event := range eventsToMonitor {

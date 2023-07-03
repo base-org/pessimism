@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/base-org/pessimism/internal/api/server"
-	"github.com/base-org/pessimism/internal/api/service"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
+	"github.com/base-org/pessimism/internal/subsystem"
 	"github.com/joho/godotenv"
 )
 
@@ -37,7 +37,7 @@ type Config struct {
 	// TODO - Consider moving this URL to a more appropriate location
 	SlackURL string
 
-	SvcConfig     *service.Config
+	SystemConfig  *subsystem.Config
 	ServerConfig  *server.Config
 	MetricsConfig *metrics.Config
 	LoggerConfig  *logging.Config
@@ -57,7 +57,7 @@ func NewConfig(fileName FilePath) *Config {
 		Environment:   Env(getEnvStr("ENV")),
 		SlackURL:      getEnvStrWithDefault("SLACK_URL", ""),
 
-		SvcConfig: &service.Config{
+		SystemConfig: &subsystem.Config{
 
 			L1PollInterval: getEnvInt("L1_POLL_INTERVAL"),
 			L2PollInterval: getEnvInt("L2_POLL_INTERVAL"),

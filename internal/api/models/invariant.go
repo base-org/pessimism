@@ -53,6 +53,16 @@ type InvRequestParams struct {
 	AlertingDest string `json:"alert_destination"`
 }
 
+func (irp *InvRequestParams) Params() *core.InvSessionParams {
+	isp := core.NewSessionParams()
+
+	for k, v := range irp.SessionParams {
+		isp.SetValue(k, v)
+	}
+
+	return isp
+}
+
 // AlertingDestType ... Returns the alerting destination type
 func (irp *InvRequestParams) AlertingDestType() core.AlertDestination {
 	return core.StringToAlertingDestType(irp.AlertingDest)
@@ -94,7 +104,8 @@ func (irp *InvRequestParams) SessionConfig() *core.SessionConfig {
 	return &core.SessionConfig{
 		AlertDest: irp.AlertingDestType(),
 		Type:      irp.InvariantType(),
-		Params:    irp.SessionParams,
+		Params:    irp.Params(),
+		PT:        irp.PiplineType(),
 	}
 }
 

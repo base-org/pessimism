@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	svc "github.com/base-org/pessimism/internal/api/service"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -26,8 +25,7 @@ func Test_GetHealth(t *testing.T) {
 			function:    "ProcessInvariantRequest",
 
 			constructionLogic: func() testSuite {
-				cfg := svc.Config{}
-				ts := createTestSuite(ctrl, cfg)
+				ts := createTestSuite(ctrl)
 
 				ts.mockEthClientInterface.EXPECT().
 					HeaderByNumber(gomock.Any(), gomock.Any()).
@@ -52,8 +50,7 @@ func Test_GetHealth(t *testing.T) {
 			function:    "ProcessInvariantRequest",
 
 			constructionLogic: func() testSuite {
-				cfg := svc.Config{}
-				ts := createTestSuite(ctrl, cfg)
+				ts := createTestSuite(ctrl)
 
 				ts.mockEthClientInterface.EXPECT().
 					HeaderByNumber(gomock.Any(), gomock.Any()).

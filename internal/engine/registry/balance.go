@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -17,6 +18,18 @@ type BalanceInvConfig struct {
 	LowerBound *float64 `json:"lower"`
 }
 
+// UnmarshalToBalanceInvConfig ... Converts a general config to a balance invariant config
+func UnmarshalToBalanceInvConfig(cfg *core.InvSessionParams) (*BalanceInvConfig, error) {
+
+	invConfg := BalanceInvConfig{}
+	err := json.Unmarshal(cfg.Bytes(), &invConfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &invConfg, nil
+}
+
 // BalanceInvariant ...
 type BalanceInvariant struct {
 	cfg *BalanceInvConfig
@@ -24,7 +37,7 @@ type BalanceInvariant struct {
 	invariant.Invariant
 }
 
-// reportMsg ... Message to be sent to the alerting system
+// reportMsg ... Message to be sent to the alerting subsystem
 const reportMsg = `
 	Current value: %3f
 	Upper bound: %s
@@ -35,12 +48,13 @@ const reportMsg = `
 `
 
 // NewBalanceInvariant ... Initializer
-func NewBalanceInvariant(cfg *BalanceInvConfig) invariant.Invariant {
+func NewBalanceInvariant(cfg *BalanceInvConfig) (invariant.Invariant, error) {
+
 	return &BalanceInvariant{
 		cfg: cfg,
 
 		Invariant: invariant.NewBaseInvariant(core.AccountBalance),
-	}
+	}, nil
 }
 
 // Invalidate ... Checks if the balance is within the bounds

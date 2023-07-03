@@ -11,6 +11,7 @@ import (
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine"
+	e_registry "github.com/base-org/pessimism/internal/engine/registry"
 	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/logging"
@@ -49,7 +50,7 @@ func InitializeMetrics(ctx context.Context, cfg *config.Config) (metrics.Metrice
 
 // InitializeServer ... Performs dependency injection to build server struct
 func InitializeServer(ctx context.Context, cfg *config.Config, m subsystem.Manager) (*server.Server, func(), error) {
-	apiService := service.New(ctx, cfg.SvcConfig, m)
+	apiService := service.New(ctx, m)
 	handler, err := handlers.New(ctx, apiService)
 	if err != nil {
 		return nil, nil, err
@@ -88,8 +89,9 @@ func InitializeEngine(ctx context.Context, transit chan core.Alert) engine.Manag
 	store := engine.NewSessionStore()
 	am := engine.NewAddressingMap()
 	re := engine.NewHardCodedEngine()
+	it := e_registry.NewInvariantTable()
 
-	return engine.NewManager(ctx, re, am, store, transit)
+	return engine.NewManager(ctx, re, am, store, it, transit)
 }
 
 // NewPessimismApp ... Performs dependency injection to build app struct
@@ -103,7 +105,7 @@ func NewPessimismApp(ctx context.Context, cfg *config.Config) (*Application, fun
 	engine := InitializeEngine(ctx, alrt.Transit())
 	etl := InitalizeETL(ctx, engine.Transit())
 
-	m := subsystem.NewManager(ctx, etl, engine, alrt)
+	m := subsystem.NewManager(ctx, cfg.SystemConfig, etl, engine, alrt)
 
 	svr, shutDown, err := InitializeServer(ctx, cfg, m)
 	if err != nil {

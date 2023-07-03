@@ -2,6 +2,7 @@ package registry
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -17,10 +18,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	expTopicCount = 4
-)
-
 const withdrawalEnforceMsg = `
 	Proven withdrawal on L1 does not exist on L2
 	L1PortalAddress: %s
@@ -32,22 +29,40 @@ const withdrawalEnforceMsg = `
 
 // WthdrawlEnforceCfg  ... Configuration for the balance invariant
 type WthdrawlEnforceCfg struct {
-	L1PortalAddress string `json:"l1_portal"`
-	L2ToL1Address   string `json:"l2_messager"`
+	L1PortalAddress string `json:"l1_portal_address"`
+	L2ToL1Address   string `json:"l2_to_l1_address"`
+}
+
+// UnmarshalToWthdrawlEnforceCfg ... Converts a general config to a balance invariant config
+func UnmarshalToWthdrawlEnforceCfg(isp *core.InvSessionParams) (*WthdrawlEnforceCfg, error) {
+	invConfg := WthdrawlEnforceCfg{}
+	err := json.Unmarshal(isp.Bytes(), &invConfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return &invConfg, nil
 }
 
 // WthdrawlEnforceInv ... WithdrawalEnforceInvariant implementation
 type WthdrawlEnforceInv struct {
-	eventHash  common.Hash
-	cfg        *WthdrawlEnforceCfg
-	l2Messager *bindings.L2ToL1MessagePasserCaller
+	eventHash           common.Hash
+	cfg                 *WthdrawlEnforceCfg
+	l2tol1MessagePasser *bindings.L2ToL1MessagePasserCaller
+	l1PortalFilter      *bindings.OptimismPortalFilterer
 
 	invariant.Invariant
 }
 
 // NewWthdrawlEnforceInv ... Initializer
 func NewWthdrawlEnforceInv(ctx context.Context, cfg *WthdrawlEnforceCfg) (invariant.Invariant, error) {
+
 	l2Client, err := client.FromContext(ctx, core.Layer2)
+	if err != nil {
+		return nil, err
+	}
+
+	l1Client, err := client.FromContext(ctx, core.Layer1)
 	if err != nil {
 		return nil, err
 	}
@@ -60,11 +75,17 @@ func NewWthdrawlEnforceInv(ctx context.Context, cfg *WthdrawlEnforceCfg) (invari
 		return nil, err
 	}
 
+	filter, err := bindings.NewOptimismPortalFilterer(addr, l1Client)
+	if err != nil {
+		return nil, err
+	}
+
 	return &WthdrawlEnforceInv{
 		cfg: cfg,
 
-		eventHash:  withdrawalHash,
-		l2Messager: l2Messager,
+		eventHash:           withdrawalHash,
+		l1PortalFilter:      filter,
+		l2tol1MessagePasser: l2Messager,
 
 		Invariant: invariant.NewBaseInvariant(core.EventLog),
 	}, nil
@@ -88,16 +109,12 @@ func (wi *WthdrawlEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutcom
 		return nil, false, fmt.Errorf("could not convert transit data to log")
 	}
 
-	if log.Topics[0] != wi.eventHash {
-		return nil, false, fmt.Errorf("invalid log topic")
+	provenWithdrawl, err := wi.l1PortalFilter.ParseWithdrawalProven(log)
+	if err != nil {
+		return nil, false, err
 	}
 
-	if len(log.Topics) != expTopicCount {
-		return nil, false, fmt.Errorf("invalid number of log topics")
-	}
-
-	withdrawalHash := log.Topics[1]
-	exists, err := wi.l2Messager.SentMessages(nil, withdrawalHash)
+	exists, err := wi.l2tol1MessagePasser.SentMessages(nil, provenWithdrawl.WithdrawalHash)
 	if err != nil {
 		return nil, false, err
 	}

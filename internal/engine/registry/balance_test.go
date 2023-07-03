@@ -12,11 +12,14 @@ func Test_Balance_Invalidate(t *testing.T) {
 	upper := float64(5)
 	lower := float64(1)
 
-	bi := registry.NewBalanceInvariant(&registry.BalanceInvConfig{
-		Address:    "0x123",
-		UpperBound: &upper,
-		LowerBound: &lower,
-	})
+	bi, err := registry.NewBalanceInvariant(
+		&registry.BalanceInvConfig{
+			Address:    "0x123",
+			UpperBound: &upper,
+			LowerBound: &lower,
+		})
+
+	assert.NoError(t, err)
 
 	// No invalidation
 	testData1 := core.TransitData{

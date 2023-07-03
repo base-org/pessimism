@@ -21,6 +21,7 @@ import (
 type Manager interface {
 	core.Subsystem
 
+	GetInputType(invType core.InvariantType) (core.RegisterType, error)
 	Transit() chan core.InvariantInput
 
 	// TODO( ) : Session deletion logic
@@ -46,11 +47,12 @@ type engineManager struct {
 	engine    RiskEngine
 	addresser AddressingMap
 	store     SessionStore
+	invTable  registry.InvariantTable
 }
 
 // NewManager ... Initializer
 func NewManager(ctx context.Context, engine RiskEngine, addr AddressingMap,
-	store SessionStore, alertOutgress chan core.Alert) Manager {
+	store SessionStore, it registry.InvariantTable, alertOutgress chan core.Alert) Manager {
 	ctx, cancel := context.WithCancel(ctx)
 	stats := metrics.WithContext(ctx)
 
@@ -62,6 +64,7 @@ func NewManager(ctx context.Context, engine RiskEngine, addr AddressingMap,
 		engine:        engine,
 		addresser:     addr,
 		store:         store,
+		invTable:      it,
 		metrics:       stats,
 	}
 
@@ -82,7 +85,7 @@ func (em *engineManager) DeleteInvariantSession(_ core.SUUID) (core.SUUID, error
 // updateSharedState ... Updates the shared state store
 // with contextual information about the invariant session
 // to the ETL (e.g. address, events)
-func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
+func (em *engineManager) updateSharedState(invParams *core.InvSessionParams,
 	sk *core.StateKey, pUUID core.PUUID) error {
 	err := sk.SetPUUID(pUUID)
 	// PUUID already exists in key but is different than the one we want
@@ -98,6 +101,12 @@ func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
 
 	if sk.IsNested() { // Nested addressing
 		for _, arg := range invParams.NestedArgs() {
+			argStr, success := arg.(string)
+			if !success {
+				return fmt.Errorf("invalid event string")
+			}
+
+			// Build nested key
 			innerKey := &core.StateKey{
 				Nesting: false,
 				Prefix:  sk.Prefix,
@@ -105,7 +114,7 @@ func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
 				PUUID:   &pUUID,
 			}
 
-			err = state.InsertUnique(em.ctx, innerKey, arg)
+			err = state.InsertUnique(em.ctx, innerKey, argStr)
 			if err != nil {
 				return err
 			}
@@ -121,7 +130,19 @@ func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
 
 // DeployInvariantSession ... Deploys an invariant session to be processed by the engine
 func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (core.SUUID, error) {
-	inv, err := registry.GetInvariant(em.ctx, cfg.InvType, cfg.InvParams)
+	reg, exists := em.invTable[cfg.InvType]
+	if !exists {
+		return core.NilSUUID(), fmt.Errorf("Invariant type %s not found", cfg.InvType)
+	}
+
+	if reg.Preprocess != nil {
+		err := reg.Preprocess(cfg.InvParams)
+		if err != nil {
+			return core.NilSUUID(), err
+		}
+	}
+
+	inv, err := reg.Constructor(em.ctx, cfg.InvParams)
 	if err != nil {
 		return core.NilSUUID(), err
 	}
@@ -134,7 +155,7 @@ func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (co
 		return core.NilSUUID(), err
 	}
 
-	if cfg.Register.Addressing {
+	if cfg.Stateful {
 		gethAddr := common.HexToAddress(cfg.InvParams.Address())
 
 		err = em.addresser.Insert(gethAddr, cfg.PUUID, sUUID)
@@ -142,7 +163,7 @@ func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (co
 			return core.NilSUUID(), err
 		}
 
-		err = em.updateSharedState(cfg.InvParams, cfg.Register.StateKey(), cfg.PUUID)
+		err = em.updateSharedState(cfg.InvParams, cfg.StateKey, cfg.PUUID)
 		if err != nil {
 			return core.NilSUUID(), err
 		}
@@ -170,6 +191,16 @@ func (em *engineManager) EventLoop() error {
 			return nil
 		}
 	}
+}
+
+// GetInputType ... Returns the input type for the invariant type
+func (em *engineManager) GetInputType(invType core.InvariantType) (core.RegisterType, error) {
+	val, exists := em.invTable[invType]
+	if !exists {
+		return 0, fmt.Errorf("Invariant type %s not found", invType)
+	}
+
+	return val.InputType, nil
 }
 
 // Shutdown ... Shuts down the engine manager
@@ -244,7 +275,7 @@ func (em *engineManager) executeInvariant(ctx context.Context, data core.Invaria
 	// Execute invariant using risk engine and return alert if invalidation occurs
 	outcome, invalid := em.engine.Execute(ctx, data.Input, inv)
 
-	if invalid {
+	if invalid { // Alert
 		alert := core.Alert{
 			Timestamp: outcome.TimeStamp,
 			SUUID:     inv.SUUID(),

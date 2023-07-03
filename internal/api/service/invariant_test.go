@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	svc "github.com/base-org/pessimism/internal/api/service"
-
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/golang/mock/gomock"
@@ -15,8 +13,8 @@ import (
 func Test_ProcessInvariantRequest(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
-	defaultRequestBody := func() models.InvRequestBody {
-		return models.InvRequestBody{
+	defaultRequestBody := func() *models.InvRequestBody {
+		return &models.InvRequestBody{
 			Method: "run",
 
 			Params: models.InvRequestParams{
@@ -46,9 +44,8 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			function:    "ProcessInvariantRequest",
 
 			constructionLogic: func() testSuite {
-				cfg := svc.Config{}
 
-				return createTestSuite(ctrl, cfg)
+				return createTestSuite(ctrl)
 			},
 
 			testLogic: func(t *testing.T, ts testSuite) {
@@ -69,9 +66,8 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			function:    "ProcessInvariantRequest",
 
 			constructionLogic: func() testSuite {
-				cfg := svc.Config{}
 
-				ts := createTestSuite(ctrl, cfg)
+				ts := createTestSuite(ctrl)
 
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
@@ -96,9 +92,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			function:    "ProcessInvariantRequest",
 
 			constructionLogic: func() testSuite {
-				cfg := svc.Config{}
-
-				ts := createTestSuite(ctrl, cfg)
+				ts := createTestSuite(ctrl)
 
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
@@ -106,7 +100,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 					Times(1)
 
 				ts.mockEtlMan.EXPECT().
-					GetRegister(gomock.Any()).
+					GetStateKey(gomock.Any()).
 					Return(nil, testErr1()).
 					Times(1)
 
@@ -128,9 +122,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			function:    "ProcessInvariantRequest",
 
 			constructionLogic: func() testSuite {
-				cfg := svc.Config{}
-
-				ts := createTestSuite(ctrl, cfg)
+				ts := createTestSuite(ctrl)
 
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
@@ -138,7 +130,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 					Times(1)
 
 				ts.mockEtlMan.EXPECT().
-					GetRegister(gomock.Any()).
+					GetStateKey(gomock.Any()).
 					Return(&core.DataRegister{}, nil).
 					Times(1)
 
@@ -165,9 +157,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			function:    "ProcessInvariantRequest",
 
 			constructionLogic: func() testSuite {
-				cfg := svc.Config{}
-
-				ts := createTestSuite(ctrl, cfg)
+				ts := createTestSuite(ctrl)
 
 				ts.mockAlertMan.EXPECT().
 					AddInvariantSession(gomock.Any(), gomock.Any()).
@@ -180,7 +170,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 					Times(1)
 
 				ts.mockEtlMan.EXPECT().
-					GetRegister(gomock.Any()).
+					GetStateKey(gomock.Any()).
 					Return(&core.DataRegister{}, nil).
 					Times(1)
 
@@ -212,9 +202,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			function:    "ProcessInvariantRequest",
 
 			constructionLogic: func() testSuite {
-				cfg := svc.Config{}
-
-				ts := createTestSuite(ctrl, cfg)
+				ts := createTestSuite(ctrl)
 
 				ts.mockEtlMan.EXPECT().
 					CreateDataPipeline(gomock.Any()).
@@ -222,7 +210,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 					Times(1)
 
 				ts.mockEtlMan.EXPECT().
-					GetRegister(gomock.Any()).
+					GetStateKey(gomock.Any()).
 					Return(&core.DataRegister{}, nil).
 					Times(1)
 

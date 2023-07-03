@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/base-org/pessimism/internal/api/server"
-	"github.com/base-org/pessimism/internal/api/service"
 	"github.com/base-org/pessimism/internal/app"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/state"
+	"github.com/base-org/pessimism/internal/subsystem"
 	op_e2e "github.com/ethereum-optimism/optimism/op-e2e"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -151,7 +151,7 @@ func DefaultTestConfig() *config.Config {
 	return &config.Config{
 		Environment:   config.Development,
 		BootStrapPath: "",
-		SvcConfig: &service.Config{
+		SystemConfig: &subsystem.Config{
 			L2PollInterval: l2PollInterval,
 			L1PollInterval: l1PollInterval,
 		},
