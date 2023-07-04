@@ -24,15 +24,12 @@ func Test_RunInvariantSession(t *testing.T) {
 
 	defaultBody := &models.InvRequestBody{
 		Method: "run",
-
 		Params: models.InvRequestParams{
-			Network: "layer1",
-			PType:   "live",
-			InvType: "contract_event",
-
-			StartHeight: nil,
-			EndHeight:   nil,
-
+			Network:       "layer1",
+			PType:         "live",
+			InvType:       "contract_event",
+			StartHeight:   nil,
+			EndHeight:     nil,
 			SessionParams: nil,
 		},
 	}
@@ -67,7 +64,6 @@ func Test_RunInvariantSession(t *testing.T) {
 			},
 
 			testLogic: func(t *testing.T, ts *testSuite) {
-
 				testParams := defaultBody.Clone()
 				actualSUUID, err := ts.apiSvc.ProcessInvariantRequest(testParams)
 
