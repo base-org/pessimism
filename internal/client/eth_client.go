@@ -36,7 +36,8 @@ type EthClientInterface interface {
 
 	BalanceAt(ctx context.Context, account common.Address, number *big.Int) (*big.Int, error)
 	FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error)
-	SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error)
+	SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery,
+		ch chan<- types.Log) (ethereum.Subscription, error)
 }
 
 // FromContext ... Retrieves ethClient from context
@@ -64,36 +65,38 @@ func NewEthClient(ctx context.Context, rawURL string) (EthClientInterface, error
 	return &EthClient{client}, nil
 }
 
-// HeaderByNumber ... Wraps go-ethereum node headerByNumber RPC call
+// HeaderByNumber ... Wraps go-ethereum headerByNumber client method call
 func (ec *EthClient) HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error) {
 	return ec.client.HeaderByNumber(ctx, number)
 }
 
-// BlockByNumber ... Wraps go-ethereum node blockByNumber RPC call
+// BlockByNumber ... Wraps go-ethereum blockByNumber client method call
 func (ec *EthClient) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
 	return ec.client.BlockByNumber(ctx, number)
 }
 
-// BalanceAt ... Wraps go-ethereum node balanceAt RPC call
+// BalanceAt ... Wraps go-ethereum balanceAt client method call
 func (ec *EthClient) BalanceAt(ctx context.Context, account common.Address, number *big.Int) (*big.Int, error) {
 	return ec.client.BalanceAt(ctx, account, number)
 }
 
-// FilterLogs ... Wraps go-ethereum node balanceAt RPC call
+// FilterLogs ... Wraps go-ethereum balanceAt client method call
 func (ec *EthClient) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
 	return ec.client.FilterLogs(ctx, query)
 }
 
-// CallContract ... Wraps go-ethereum node callContract RPC call
+// CallContract ... Wraps go-ethereum callContract client method call
 func (ec *EthClient) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
 	return ec.client.CallContract(ctx, msg, blockNumber)
 }
 
-// CodeAt ... Wraps go-ethereum node codeAt RPC call
+// CodeAt ... Wraps go-ethereum codeAt client method call
 func (ec *EthClient) CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error) {
 	return ec.client.CodeAt(ctx, account, blockNumber)
 }
 
-func (ec *EthClient) SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery, ch chan<- types.Log) (ethereum.Subscription, error) {
+// SubscribeFilterLogs ... Wraps go-ethereum subscribeFilterLogs client method call
+func (ec *EthClient) SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery,
+	ch chan<- types.Log) (ethereum.Subscription, error) {
 	return ec.client.SubscribeFilterLogs(ctx, query, ch)
 }

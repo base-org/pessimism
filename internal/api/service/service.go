@@ -22,8 +22,7 @@ type Service interface {
 // PessimismService ... API service
 type PessimismService struct {
 	ctx context.Context
-
-	m subsystem.Manager
+	m   subsystem.Manager
 }
 
 // New ... Initializer

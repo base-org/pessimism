@@ -17,7 +17,6 @@ func (svc *PessimismService) ProcessInvariantRequest(ir *models.InvRequestBody) 
 
 // runInvariantSession ... Runs an invariant session provided
 func (svc *PessimismService) RunInvariantSession(params *models.InvRequestParams) (core.SUUID, error) {
-
 	pConfig, err := svc.m.BuildPipelineCfg(params)
 	if err != nil {
 		return core.NilSUUID(), err
@@ -25,7 +24,12 @@ func (svc *PessimismService) RunInvariantSession(params *models.InvRequestParams
 
 	sConfig := params.SessionConfig()
 
-	sUUID, err := svc.m.RunInvSession(pConfig, sConfig)
+	deployCfg, err := svc.m.BuildDeployCfg(pConfig, sConfig)
+	if err != nil {
+		return core.NilSUUID(), err
+	}
+
+	sUUID, err := svc.m.RunInvSession(deployCfg)
 	if err != nil {
 		return core.NilSUUID(), err
 	}

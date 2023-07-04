@@ -7,8 +7,12 @@ type DeployConfig struct {
 	Stateful bool
 	StateKey *core.StateKey
 
-	Network   core.Network
-	PUUID     core.PUUID
+	Network core.Network
+	PUUID   core.PUUID
+	Reuse   bool
+
 	InvType   core.InvariantType
 	InvParams *core.InvSessionParams
+
+	AlertDest core.AlertDestination
 }

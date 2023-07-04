@@ -53,6 +53,7 @@ type InvRequestParams struct {
 	AlertingDest string `json:"alert_destination"`
 }
 
+// Params ... Returns the invariant session params
 func (irp *InvRequestParams) Params() *core.InvSessionParams {
 	isp := core.NewSessionParams()
 
@@ -73,7 +74,7 @@ func (irp *InvRequestParams) NetworkType() core.Network {
 	return core.StringToNetwork(irp.Network)
 }
 
-// PiplineType ... Returns the pipeline type
+// PipelineType ... Returns the pipeline type
 func (irp *InvRequestParams) PiplineType() core.PipelineType {
 	return core.StringToPipelineType(irp.PType)
 }
@@ -113,6 +114,13 @@ func (irp *InvRequestParams) SessionConfig() *core.SessionConfig {
 type InvRequestBody struct {
 	Method string           `json:"method"`
 	Params InvRequestParams `json:"params"`
+}
+
+func (irb *InvRequestBody) Clone() *InvRequestBody {
+	return &InvRequestBody{
+		Method: irb.Method,
+		Params: irb.Params,
+	}
 }
 
 // MethodType ... Returns the invariant method type

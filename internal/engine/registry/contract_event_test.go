@@ -19,14 +19,13 @@ func Test_Event_Log_Invariant(t *testing.T) {
 		{
 			name: "Successful Invalidation",
 			function: func(t *testing.T, cfg *registry.EventInvConfig) {
-				ei, err := registry.NewEventInvariant(
+				ei := registry.NewEventInvariant(
 					&registry.EventInvConfig{
 						Address:      "0x0000000000000000000000000000000000000420",
 						ContractName: "0x69",
 						Sigs:         []string{"0x420"},
 					})
 
-				assert.NoError(t, err)
 				hash := crypto.Keccak256Hash([]byte("0x420"))
 
 				td := core.TransitData{
@@ -47,7 +46,7 @@ func Test_Event_Log_Invariant(t *testing.T) {
 		{
 			name: "Error Invalidation Due to Mismatched Addresses",
 			function: func(t *testing.T, cfg *registry.EventInvConfig) {
-				ei, err := registry.NewEventInvariant(
+				ei := registry.NewEventInvariant(
 					&registry.EventInvConfig{
 						Address:      "0x0000000000000000000000000000000000000420",
 						ContractName: "0x69",
@@ -74,14 +73,13 @@ func Test_Event_Log_Invariant(t *testing.T) {
 		{
 			name: "No Invalidation Due to Missing Signature",
 			function: func(t *testing.T, cfg *registry.EventInvConfig) {
-				ei, err := registry.NewEventInvariant(
+				ei := registry.NewEventInvariant(
 					&registry.EventInvConfig{
 						Address:      "0x0000000000000000000000000000000000000420",
 						ContractName: "0x69",
 						Sigs:         []string{"0x424"},
 					})
 
-				assert.NoError(t, err)
 				hash := crypto.Keccak256Hash([]byte("0x420"))
 
 				td := core.TransitData{

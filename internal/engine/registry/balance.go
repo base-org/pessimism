@@ -20,7 +20,6 @@ type BalanceInvConfig struct {
 
 // UnmarshalToBalanceInvConfig ... Converts a general config to a balance invariant config
 func UnmarshalToBalanceInvConfig(cfg *core.InvSessionParams) (*BalanceInvConfig, error) {
-
 	invConfg := BalanceInvConfig{}
 	err := json.Unmarshal(cfg.Bytes(), &invConfg)
 	if err != nil {
@@ -49,10 +48,8 @@ const reportMsg = `
 
 // NewBalanceInvariant ... Initializer
 func NewBalanceInvariant(cfg *BalanceInvConfig) (invariant.Invariant, error) {
-
 	return &BalanceInvariant{
-		cfg: cfg,
-
+		cfg:       cfg,
 		Invariant: invariant.NewBaseInvariant(core.AccountBalance),
 	}, nil
 }
@@ -63,12 +60,12 @@ func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome,
 	logging.NoContext().Debug("Checking invalidation for balance invariant", zap.String("data", fmt.Sprintf("%v", td)))
 
 	if td.Type != bi.InputType() {
-		return nil, false, fmt.Errorf("invalid type supplied")
+		return nil, false, fmt.Errorf(invalidInTypeErr, bi.InputType(), td.Type)
 	}
 
 	balance, ok := td.Value.(float64)
 	if !ok {
-		return nil, false, fmt.Errorf("could not cast transit data value to float type")
+		return nil, false, fmt.Errorf(couldNotCastErr, "float64")
 	}
 
 	invalidated := false

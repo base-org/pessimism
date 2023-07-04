@@ -1,3 +1,5 @@
+//go:generate mockgen -package mocks --destination ../mocks/subsystem.go --mock_names Manager=SubManager . Manager
+
 package subsystem
 
 import (
@@ -38,8 +40,10 @@ func (cfg *Config) GetPollInterval(n core.Network) (time.Duration, error) {
 
 // Manager ... Subsystem manager interface
 type Manager interface {
+	BuildDeployCfg(pConfig *core.PipelineConfig, sConfig *core.SessionConfig) (*invariant.DeployConfig, error)
 	BuildPipelineCfg(params *models.InvRequestParams) (*core.PipelineConfig, error)
-	RunInvSession(pConfig *core.PipelineConfig, sConfig *core.SessionConfig) (core.SUUID, error)
+	RunInvSession(cfg *invariant.DeployConfig) (core.SUUID, error)
+	// Orchestration
 	StartEventRoutines(ctx context.Context)
 	Shutdown() error
 }
@@ -71,16 +75,18 @@ func NewManager(ctx context.Context, cfg *Config, etl pipeline.Manager, eng engi
 }
 
 // Shutdown ... Shuts down all subsystems in primary data flow order
-// Ie. ETL -> Engine -> Alert
 func (m *manager) Shutdown() error {
+	// 1. Shutdown ETL subsystem
 	if err := m.etl.Shutdown(); err != nil {
 		return err
 	}
 
+	// 2. Shutdown Engine subsystem
 	if err := m.eng.Shutdown(); err != nil {
 		return err
 	}
 
+	// 3. Shutdown Alert subsystem
 	return m.alrt.Shutdown()
 }
 
@@ -116,48 +122,63 @@ func (m *manager) StartEventRoutines(ctx context.Context) {
 	}()
 }
 
-func (m *manager) RunInvSession(pConfig *core.PipelineConfig, sConfig *core.SessionConfig) (core.SUUID, error) {
-	logger := logging.WithContext(m.ctx)
-
+// BuildDeployCfg ... Builds a deploy config provided a pipeline & session config
+func (m *manager) BuildDeployCfg(pConfig *core.PipelineConfig,
+	sConfig *core.SessionConfig) (*invariant.DeployConfig, error) {
+	// 1. Fetch state key using risk engine input register type
 	sk, stateful, err := m.etl.GetStateKey(pConfig.DataType)
 	if err != nil {
-		return core.NilSUUID(), err
+		return nil, err
 	}
 
+	// 2. Create data pipeline
 	pUUID, reuse, err := m.etl.CreateDataPipeline(pConfig)
+	if err != nil {
+		return nil, err
+	}
 
-	logger.Info("Created etl pipeline", zap.String(core.PUUIDKey, pUUID.String()))
+	logging.WithContext(m.ctx).
+		Info("Created etl pipeline", zap.String(core.PUUIDKey, pUUID.String()))
 
-	deployCfg := &invariant.DeployConfig{
+	// 3. Create a deploy config
+	return &invariant.DeployConfig{
 		PUUID:     pUUID,
+		Reuse:     reuse,
 		InvType:   sConfig.Type,
 		InvParams: sConfig.Params,
 		Network:   pConfig.Network,
 		Stateful:  stateful,
 		StateKey:  sk,
-	}
+		AlertDest: sConfig.AlertDest,
+	}, nil
+}
 
-	sUUID, err := m.eng.DeployInvariantSession(deployCfg)
+// RunInvSession ... Runs an invariant session
+func (m *manager) RunInvSession(cfg *invariant.DeployConfig) (core.SUUID, error) {
+	// 1. Deploy invariant session to risk engine
+	sUUID, err := m.eng.DeployInvariantSession(cfg)
 	if err != nil {
 		return core.NilSUUID(), err
 	}
-	logger.Info("Deployed invariant session to risk engine", zap.String(core.SUUIDKey, sUUID.String()))
+	logging.WithContext(m.ctx).
+		Info("Deployed invariant session to risk engine", zap.String(core.SUUIDKey, sUUID.String()))
 
-	err = m.alrt.AddInvariantSession(sUUID, sConfig.AlertDest)
+	// 2. Add session to alert manager
+	err = m.alrt.AddSession(sUUID, cfg.AlertDest)
 	if err != nil {
 		return core.NilSUUID(), err
 	}
 
-	if reuse { // If the pipeline was reused, we don't need to run it again
+	// 3. Run pipeline if not reused
+	if cfg.Reuse {
 		return sUUID, nil
 	}
 
-	if err = m.etl.RunPipeline(pUUID); err != nil { // Spinup pipeline components
+	if err = m.etl.RunPipeline(cfg.PUUID); err != nil { // Spinup pipeline components
 		return core.NilSUUID(), err
 	}
 
 	return sUUID, nil
-
 }
 
 // BuildPipelineCfg ... Builds a pipeline config provided a set of invariant request params
@@ -179,10 +200,8 @@ func (m *manager) BuildPipelineCfg(params *models.InvRequestParams) (*core.Pipel
 		ClientConfig: &core.ClientConfig{
 			Network:      params.NetworkType(),
 			PollInterval: pollInterval,
-			NumOfRetries: 3,
 			StartHeight:  params.StartHeight,
 			EndHeight:    params.EndHeight,
 		},
 	}, nil
-
 }

@@ -21,7 +21,7 @@ type store struct {
 	invariantstore map[core.SUUID]core.AlertDestination
 }
 
-// Newstore ... Initializer
+// NewStore ... Initializer
 func NewStore() Store {
 	return &store{
 		invariantstore: make(map[core.SUUID]core.AlertDestination),

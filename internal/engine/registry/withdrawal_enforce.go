@@ -56,7 +56,6 @@ type WthdrawlEnforceInv struct {
 
 // NewWthdrawlEnforceInv ... Initializer
 func NewWthdrawlEnforceInv(ctx context.Context, cfg *WthdrawlEnforceCfg) (invariant.Invariant, error) {
-
 	l2Client, err := client.FromContext(ctx, core.Layer2)
 	if err != nil {
 		return nil, err
@@ -101,12 +100,12 @@ func (wi *WthdrawlEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutcom
 	}
 
 	if td.Address.String() != wi.cfg.L1PortalAddress {
-		return nil, false, fmt.Errorf("invalid address supplied")
+		return nil, false, fmt.Errorf(invalidAddrErr, td.Address.String(), wi.cfg.L1PortalAddress)
 	}
 
 	log, success := td.Value.(types.Log)
 	if !success {
-		return nil, false, fmt.Errorf("could not convert transit data to log")
+		return nil, false, fmt.Errorf(couldNotCastErr, "types.Log")
 	}
 
 	provenWithdrawl, err := wi.l1PortalFilter.ParseWithdrawalProven(log)

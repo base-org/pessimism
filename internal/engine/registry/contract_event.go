@@ -48,7 +48,7 @@ const eventReportMsg = `
 `
 
 // NewEventInvariant ... Initializer
-func NewEventInvariant(cfg *EventInvConfig) (invariant.Invariant, error) {
+func NewEventInvariant(cfg *EventInvConfig) invariant.Invariant {
 	var sigs []common.Hash
 
 	for _, sig := range cfg.Sigs {
@@ -60,27 +60,26 @@ func NewEventInvariant(cfg *EventInvConfig) (invariant.Invariant, error) {
 		sigs: sigs,
 
 		Invariant: invariant.NewBaseInvariant(core.EventLog),
-	}, nil
+	}
 }
 
 // Invalidate ... Checks if the balance is within the bounds
 // specified in the config
 func (ei *EventInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
 	if td.Type != ei.InputType() {
-		return nil, false, fmt.Errorf("invalid type supplied")
+		return nil, false, fmt.Errorf(invalidInTypeErr, td.Type.String(), ei.InputType().String())
 	}
 
 	if td.Address.String() != ei.cfg.Address {
-		return nil, false, fmt.Errorf("invalid address supplied")
+		return nil, false, fmt.Errorf(invalidAddrErr, ei.cfg.Address, td.Address.String())
 	}
 
 	log, success := td.Value.(types.Log)
 	if !success {
-		return nil, false, fmt.Errorf("could not convert transit data to log")
+		return nil, false, fmt.Errorf(couldNotCastErr, "types.Log")
 	}
 
-	var invalidated = false
-
+	invalidated := false
 	for _, sig := range ei.sigs {
 		if log.Topics[0] == sig {
 			invalidated = true

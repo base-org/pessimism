@@ -74,18 +74,23 @@ func (a *Application) End() <-chan os.Signal {
 }
 
 // BootStrap ... Bootstraps the application
-func (a *Application) BootStrap(sessions []BootSession) error {
+func (a *Application) BootStrap(sessions []*BootSession) error {
 	logger := logging.WithContext(a.ctx)
 
 	for _, session := range sessions {
-		pConfig, err := a.sub.BuildPipelineCfg(&session)
+		pConfig, err := a.sub.BuildPipelineCfg(session)
 		if err != nil {
 			return err
 		}
 
 		sConfig := session.SessionConfig()
 
-		sUUID, err := a.sub.RunInvSession(pConfig, sConfig)
+		deployCfg, err := a.sub.BuildDeployCfg(pConfig, sConfig)
+		if err != nil {
+			return err
+		}
+
+		sUUID, err := a.sub.RunInvSession(deployCfg)
 		if err != nil {
 			return err
 		}

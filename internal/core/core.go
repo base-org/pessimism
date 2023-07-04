@@ -102,8 +102,8 @@ type InvSessionParams struct {
 }
 
 // Bytes ... Returns a marshalled byte array of the invariant session params
-func (isp *InvSessionParams) Bytes() []byte {
-	bytes, _ := json.Marshal(isp.params)
+func (sp *InvSessionParams) Bytes() []byte {
+	bytes, _ := json.Marshal(sp.params)
 	return bytes
 }
 
@@ -126,18 +126,18 @@ func (sp *InvSessionParams) Value(key string) (any, error) {
 }
 
 // Address ... Returns the address from the invariant session params
-func (sp *InvSessionParams) Address() string {
+func (sp *InvSessionParams) Address() common.Address {
 	rawAddr, found := sp.params[AddressKey]
 	if !found {
-		return ""
+		return common.Address{0}
 	}
 
 	addr, success := rawAddr.(string)
 	if !success {
-		return ""
+		return common.Address{0}
 	}
 
-	return addr
+	return common.HexToAddress(addr)
 }
 
 // SetValue ... Sets a value in the invariant session params
@@ -181,6 +181,6 @@ type Subsystem interface {
 }
 
 const (
-	L1Portal          = "l1_portal_address"
-	L2ToL1MessgPasser = "l2_to_l1_address"
+	L1Portal          = "l1_portal_address" //#nosec G101: False positive, this isn't a credential
+	L2ToL1MessgPasser = "l2_to_l1_address"  //#nosec G101: False positive, this isn't a credential
 )

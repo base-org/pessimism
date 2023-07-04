@@ -58,7 +58,6 @@ func NewConfig(fileName FilePath) *Config {
 		SlackURL:      getEnvStrWithDefault("SLACK_URL", ""),
 
 		SystemConfig: &subsystem.Config{
-
 			L1PollInterval: getEnvInt("L1_POLL_INTERVAL"),
 			L2PollInterval: getEnvInt("L2_POLL_INTERVAL"),
 		},

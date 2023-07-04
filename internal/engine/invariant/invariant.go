@@ -1,3 +1,5 @@
+//go:generate mockgen -package mocks --destination ../../mocks/invariant.go . Invariant
+
 package invariant
 
 import (
@@ -60,6 +62,7 @@ func (bi *BaseInvariant) Invalidate(core.TransitData) (*core.InvalOutcome, bool,
 	return nil, false, nil
 }
 
+// SetSUUID ... Sets the invariant session UUID
 func (bi *BaseInvariant) SetSUUID(sUUID core.SUUID) {
 	bi.sUUID = sUUID
 }

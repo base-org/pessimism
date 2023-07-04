@@ -39,13 +39,13 @@ func Test_Balance_Enforcement(t *testing.T) {
 	bob := ts.L2Cfg.Secrets.Addresses().Bob
 
 	// Deploy a balance enforcement invariant session for Alice.
-	err := ts.App.BootStrap([]models.InvRequestParams{{
-		Network:      "layer2",
-		PType:        "live",
-		InvType:      "balance_enforcement",
+	err := ts.App.BootStrap([]*models.InvRequestParams{{
+		Network:      core.Layer2.String(),
+		PType:        core.Live.String(),
+		InvType:      core.BalanceEnforcement.String(),
 		StartHeight:  nil,
 		EndHeight:    nil,
-		AlertingDest: "slack",
+		AlertingDest: core.Slack.String(),
 		SessionParams: map[string]interface{}{
 			"address": alice.String(),
 			"lower":   3, // i.e. alert if balance is less than 3 ETH
@@ -141,7 +141,7 @@ func Test_Contract_Event(t *testing.T) {
 	updateSig := "ConfigUpdate(uint256,uint8,bytes)"
 
 	// Deploy a contract event invariant session for the L1 system config addresss.
-	err := ts.App.BootStrap([]models.InvRequestParams{{
+	err := ts.App.BootStrap([]*models.InvRequestParams{{
 		Network:      core.Layer1.String(),
 		PType:        core.Live.String(),
 		InvType:      core.ContractEvent.String(),
@@ -245,7 +245,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	// We use two invariants here; one configured with a dummy L1 message passer
 	// and one configured with the real L1->L2 message passer contract. This allows us to
 	// ensure that an alert is only produced using faulty message passer.
-	err = ts.App.BootStrap([]models.InvRequestParams{{
+	err = ts.App.BootStrap([]*models.InvRequestParams{{
 		// This is the one that should produce an alert
 		Network:      core.Layer1.String(),
 		PType:        core.Live.String(),

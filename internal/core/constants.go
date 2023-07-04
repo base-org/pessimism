@@ -19,8 +19,6 @@ type Network uint8
 const (
 	Layer1 Network = iota + 1
 	Layer2
-
-	UnknownNetwork
 )
 
 const (
@@ -35,9 +33,10 @@ func (n Network) String() string {
 
 	case Layer2:
 		return "layer2"
-	}
 
-	return UnknownType
+	default:
+		return UnknownType
+	}
 }
 
 // StringToNetwork ... Converts a string to a network
@@ -48,10 +47,19 @@ func StringToNetwork(stringType string) Network {
 
 	case "layer2":
 		return Layer2
-	}
 
-	return UnknownNetwork
+	default:
+		return Network(0)
+	}
 }
+
+type ChainSubscription uint8
+
+const (
+	OnlyLayer1 ChainSubscription = iota + 1
+	OnlyLayer2
+	BothNetworks
+)
 
 type FetchType int
 
