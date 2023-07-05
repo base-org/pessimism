@@ -21,7 +21,6 @@ type Manager interface {
 	GetInputType(invType core.InvariantType) (core.RegisterType, error)
 	Transit() chan core.InvariantInput
 
-	// TODO( ) : Session deletion logic
 	DeleteInvariantSession(core.SUUID) (core.SUUID, error)
 	DeployInvariantSession(cfg *invariant.DeployConfig) (core.SUUID, error)
 
@@ -192,7 +191,7 @@ func (em *engineManager) EventLoop() error {
 	}
 }
 
-// GetInputType ... Returns the input type for the invariant type
+// GetInputType ... Returns the register input type for the invariant type
 func (em *engineManager) GetInputType(invType core.InvariantType) (core.RegisterType, error) {
 	val, exists := em.invTable[invType]
 	if !exists {
