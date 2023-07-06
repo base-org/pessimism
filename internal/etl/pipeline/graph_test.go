@@ -1,4 +1,4 @@
-package pipeline
+package pipeline_test
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/base-org/pessimism/internal/core"
+
+	pl "github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/mocks"
 
 	"github.com/stretchr/testify/assert"
@@ -22,16 +24,16 @@ func Test_Graph(t *testing.T) {
 		function    string
 		description string
 
-		constructionLogic func() ComponentGraph
-		testLogic         func(*testing.T, ComponentGraph)
+		constructionLogic func() pl.ComponentGraph
+		testLogic         func(*testing.T, pl.ComponentGraph)
 	}{
 		{
 			name:        "Successful Component Node Insertion",
 			function:    "AddComponent",
 			description: "When a component is added to the graph, it should persist within the graph's edge mapping",
 
-			constructionLogic: NewComponentGraph,
-			testLogic: func(t *testing.T, g ComponentGraph) {
+			constructionLogic: pl.NewComponentGraph,
+			testLogic: func(t *testing.T, g pl.ComponentGraph) {
 				cUUID := core.MakeCUUID(69, 69, 69, 69)
 
 				component, err := mocks.NewDummyPipe(context.Background(), core.GethBlock, core.AccountBalance)
@@ -58,8 +60,8 @@ func Test_Graph(t *testing.T) {
 			function:    "addEdge",
 			description: "When an edge between two components already exists (A->B), then an inverted edge (B->A) should not be possible",
 
-			constructionLogic: func() ComponentGraph {
-				g := NewComponentGraph()
+			constructionLogic: func() pl.ComponentGraph {
+				g := pl.NewComponentGraph()
 
 				comp1, err := mocks.NewDummyOracle(context.Background(), core.GethBlock)
 				if err != nil {
@@ -86,7 +88,7 @@ func Test_Graph(t *testing.T) {
 				return g
 			},
 
-			testLogic: func(t *testing.T, g ComponentGraph) {
+			testLogic: func(t *testing.T, g pl.ComponentGraph) {
 				err := g.AddEdge(testCUUID2, testCUUID1)
 				assert.Error(t, err)
 
@@ -97,8 +99,8 @@ func Test_Graph(t *testing.T) {
 			function:    "AddEdge",
 			description: "When a unique edge exists between two components (A->B), a new edge should not be possible",
 
-			constructionLogic: func() ComponentGraph {
-				g := NewComponentGraph()
+			constructionLogic: func() pl.ComponentGraph {
+				g := pl.NewComponentGraph()
 
 				comp1, err := mocks.NewDummyOracle(context.Background(), core.GethBlock)
 				if err != nil {
@@ -125,7 +127,7 @@ func Test_Graph(t *testing.T) {
 				return g
 			},
 
-			testLogic: func(t *testing.T, g ComponentGraph) {
+			testLogic: func(t *testing.T, g pl.ComponentGraph) {
 				err := g.AddEdge(testCUUID1, testCUUID2)
 				assert.Error(t, err)
 
@@ -136,8 +138,8 @@ func Test_Graph(t *testing.T) {
 			function:    "AddEdge",
 			description: "When two components are inserted, an edge should be possible between them",
 
-			constructionLogic: func() ComponentGraph {
-				g := NewComponentGraph()
+			constructionLogic: func() pl.ComponentGraph {
+				g := pl.NewComponentGraph()
 
 				comp1, err := mocks.NewDummyOracle(context.Background(), core.GethBlock)
 				if err != nil {
@@ -160,7 +162,7 @@ func Test_Graph(t *testing.T) {
 				return g
 			},
 
-			testLogic: func(t *testing.T, g ComponentGraph) {
+			testLogic: func(t *testing.T, g pl.ComponentGraph) {
 				comp1, _ := g.GetComponent(testCUUID1)
 
 				err := g.AddEdge(testCUUID1, testCUUID2)

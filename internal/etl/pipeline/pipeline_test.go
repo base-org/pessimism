@@ -1,41 +1,55 @@
-package pipeline
+package pipeline_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
-)
 
-// TODO(#33): No Unit Tests for Pipeline & ETL Manager Logic
+	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/etl/component"
+	"github.com/base-org/pessimism/internal/etl/pipeline"
+	"github.com/base-org/pessimism/internal/mocks"
+	"github.com/stretchr/testify/assert"
+)
 
 func Test_Pipeline(t *testing.T) {
 	var tests = []struct {
-		name        string
-		function    string
-		description string
+		name     string
+		function string
 
-		constructionLogic func() Pipeline
-		testLogic         func(t *testing.T, pl Pipeline)
+		constructionLogic func() pipeline.Pipeline
+		testLogic         func(t *testing.T, pl pipeline.Pipeline)
 	}{
-		// {
-		// 	name:        "Successful Add When PID Already Exists",
-		// 	function:    "addPipeline",
-		// 	description: "",
+		{
+			name:     "Successful Run",
+			function: "RunPipeline",
+			constructionLogic: func() pipeline.Pipeline {
+				testPipe, _ := mocks.NewDummyPipe(
+					context.Background(),
+					core.GethBlock,
+					core.EventLog)
 
-		// 	constructionLogic: func() Pipeline {
-		// 		return getTestPipeLine(context.Background())
-		// 	},
+				testO, _ := mocks.NewDummyOracle(
+					context.Background(),
+					core.GethBlock)
 
-		// 	testLogic: func(t *testing.T, pl Pipeline) {
-		// 		wg := sync.WaitGroup{}
+				pl, err := pipeline.NewPipeline(
+					nil,
+					core.NilPUUID(),
+					[]component.Component{testPipe, testO})
 
-		// 		err := pl.RunPipeline(&wg)
-		// 		assert.NoError(t, err)
+				if err != nil {
+					panic(err)
+				}
 
-		// 		err = pl.Close()
-		// 		assert.NoError(t, err)
+				return pl
+			},
+			testLogic: func(t *testing.T, pl pipeline.Pipeline) {
 
-		// 	},
-		// },
+				assert.Equal(t, pl.Components()[0].OutputType(), core.EventLog)
+				assert.Equal(t, pl.Components()[1].OutputType(), core.GethBlock)
+			},
+		},
 	}
 
 	for i, tc := range tests {

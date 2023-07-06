@@ -82,7 +82,6 @@ func Test_EventLoop(t *testing.T) {
 	ticker := time.NewTicker(1 * time.Second)
 
 	// Receive alert from event loop
-
 	select {
 	case <-ticker.C:
 		assert.FailNow(t, "Timed out waiting for alert data")

@@ -22,11 +22,10 @@ type Pipeline interface {
 
 // pipeline ... Pipeline implementation
 type pipeline struct {
-	cfg  *core.PipelineConfig
-	uuid core.PUUID
+	id  core.PUUID
+	cfg *core.PipelineConfig
 
 	aState ActivityState
-	pType  core.PipelineType //nolint:unused // will be implemented soon
 
 	components []component.Component
 }
@@ -35,7 +34,7 @@ type pipeline struct {
 func NewPipeline(cfg *core.PipelineConfig, pUUID core.PUUID, comps []component.Component) (Pipeline, error) {
 	pl := &pipeline{
 		cfg:        cfg,
-		uuid:       pUUID,
+		id:         pUUID,
 		components: comps,
 		aState:     Booting,
 	}
@@ -55,18 +54,18 @@ func (pl *pipeline) Components() []component.Component {
 
 // UUID ... Returns pipeline UUID
 func (pl *pipeline) UUID() core.PUUID {
-	return pl.uuid
+	return pl.id
 }
 
 // AddEngineRelay ... Adds a relay to the pipeline that forces it to send transformed invariant input
 // to a risk engine
 func (pl *pipeline) AddEngineRelay(engineChan chan core.InvariantInput) error {
 	lastComponent := pl.components[0]
-	eir := core.NewEngineRelay(pl.uuid, engineChan)
+	eir := core.NewEngineRelay(pl.id, engineChan)
 
 	logging.NoContext().Debug("Adding engine relay to pipeline",
 		zap.String(core.CUUIDKey, lastComponent.UUID().String()),
-		zap.String(core.PUUIDKey, pl.uuid.String()))
+		zap.String(core.PUUIDKey, pl.id.String()))
 
 	return lastComponent.AddRelay(eir)
 }
@@ -76,9 +75,6 @@ func (pl *pipeline) AddEngineRelay(engineChan chan core.InvariantInput) error {
 func (pl *pipeline) RunPipeline(wg *sync.WaitGroup) error {
 	for _, comp := range pl.components {
 		wg.Add(1)
-		// NOTE - This is a hack and a bit leaky since
-		// we're teaching callee level absractions about the pipelines
-		// which they execute within.
 
 		go func(c component.Component, wg *sync.WaitGroup) {
 			defer wg.Done()
@@ -86,12 +82,12 @@ func (pl *pipeline) RunPipeline(wg *sync.WaitGroup) error {
 			logging.NoContext().
 				Debug("Attempting to start component event loop",
 					zap.String(core.CUUIDKey, c.UUID().String()),
-					zap.String(core.PUUIDKey, pl.uuid.String()))
+					zap.String(core.PUUIDKey, pl.id.String()))
 
 			if err := c.EventLoop(); err != nil {
 				logging.NoContext().Error("Obtained error from event loop", zap.Error(err),
 					zap.String(core.CUUIDKey, c.UUID().String()),
-					zap.String(core.PUUIDKey, pl.uuid.String()))
+					zap.String(core.PUUIDKey, pl.id.String()))
 			}
 		}(comp, wg)
 	}
@@ -106,7 +102,7 @@ func (pl *pipeline) Close() error {
 			logging.NoContext().
 				Debug("Shutting down pipeline component",
 					zap.String(core.CUUIDKey, comp.UUID().String()),
-					zap.String(core.PUUIDKey, pl.uuid.String()))
+					zap.String(core.PUUIDKey, pl.id.String()))
 
 			if err := comp.Close(); err != nil {
 				return err
