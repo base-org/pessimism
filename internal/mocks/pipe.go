@@ -11,11 +11,6 @@ import (
 type mockPipeDefinition struct {
 }
 
-// ConfigureRoutine ... Mocked configure routine function that returns nil
-func (md *mockPipeDefinition) ConfigureRoutine(core.PUUID) error {
-	return nil
-}
-
 // Transform ... Mocked transform function that returns an empty slice
 func (md *mockPipeDefinition) Transform(_ context.Context, td core.TransitData) ([]core.TransitData, error) {
 	return []core.TransitData{td}, nil

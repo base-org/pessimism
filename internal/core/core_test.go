@@ -35,7 +35,10 @@ func Test_EngineRelay(t *testing.T) {
 
 	// Verify relay and wrapping
 
-	go eir.RelayTransitData(dummyTD)
+	go func() {
+		_ = eir.RelayTransitData(dummyTD)
+	}()
+
 	invInput := <-outChan
 
 	assert.NotNil(t, invInput, "InvariantInput should not be nil")

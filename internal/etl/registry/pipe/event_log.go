@@ -27,12 +27,6 @@ type EventDefinition struct {
 	ss     state.Store
 }
 
-// ConfigureRoutine ... Sets up the pipe client connection and persists puuid to definition state
-func (ed *EventDefinition) ConfigureRoutine(pUUID core.PUUID) error {
-	ed.pUUID = pUUID
-	return nil
-}
-
 // NewEventParserPipe ... Initializer
 func NewEventParserPipe(ctx context.Context, cfg *core.ClientConfig,
 	opts ...component.Option) (component.Component, error) {
@@ -41,7 +35,7 @@ func NewEventParserPipe(ctx context.Context, cfg *core.ClientConfig,
 		return nil, err
 	}
 
-	stateStore, err := state.FromContext(ctx)
+	ss, err := state.FromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +43,7 @@ func NewEventParserPipe(ctx context.Context, cfg *core.ClientConfig,
 	ed := &EventDefinition{
 		cfg:    cfg,
 		client: client,
-		ss:     stateStore,
+		ss:     ss,
 	}
 
 	p, err := component.NewPipe(ctx, ed, core.GethBlock, core.EventLog, opts...)

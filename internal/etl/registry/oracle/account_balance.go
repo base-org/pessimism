@@ -55,12 +55,6 @@ func NewAddressBalanceOracle(ctx context.Context, cfg *core.ClientConfig,
 	return o, nil
 }
 
-// ConfigureRoutine ... Sets up the oracle client connection and persists puuid to definition state
-func (oracle *AddressBalanceODef) ConfigureRoutine(pUUID core.PUUID) error {
-	oracle.pUUID = pUUID
-	return nil
-}
-
 // BackTestRoutine ...
 // NOTE - This oracle does not support backtesting
 // TODO (#59) : Add account balance backtesting support
