@@ -1,0 +1,25 @@
+?   	github.com/base-org/pessimism/internal/api/handlers/middleware	[no test files]
+?   	github.com/base-org/pessimism/internal/api/server	[no test files]
+?   	github.com/base-org/pessimism/internal/app	[no test files]
+?   	github.com/base-org/pessimism/internal/client	[no test files]
+ok  	github.com/base-org/pessimism/internal/alert	0.536s	coverage: 24.4% of statements
+ok  	github.com/base-org/pessimism/internal/api/handlers	0.754s	coverage: 95.8% of statements
+ok  	github.com/base-org/pessimism/internal/api/models	0.702s	coverage: 50.0% of statements
+ok  	github.com/base-org/pessimism/internal/api/service	1.022s	coverage: 89.7% of statements
+ok  	github.com/base-org/pessimism/internal/common	0.991s	coverage: 100.0% of statements
+ok  	github.com/base-org/pessimism/internal/config	1.366s	coverage: 69.6% of statements
+ok  	github.com/base-org/pessimism/internal/core	1.333s	coverage: 50.4% of statements
+ok  	github.com/base-org/pessimism/internal/engine	0.603s	coverage: 68.8% of statements
+ok  	github.com/base-org/pessimism/internal/engine/invariant	0.577s	coverage: 75.0% of statements
+ok  	github.com/base-org/pessimism/internal/engine/registry	0.825s	coverage: 45.5% of statements
+?   	github.com/base-org/pessimism/internal/etl/registry/pipe	[no test files]
+?   	github.com/base-org/pessimism/internal/logging	[no test files]
+?   	github.com/base-org/pessimism/internal/metrics	[no test files]
+?   	github.com/base-org/pessimism/internal/mocks	[no test files]
+ok  	github.com/base-org/pessimism/internal/etl/component	1.161s	coverage: 44.4% of statements
+ok  	github.com/base-org/pessimism/internal/etl/pipeline	1.120s	coverage: 38.2% of statements
+ok  	github.com/base-org/pessimism/internal/etl/registry	1.326s	coverage: 90.5% of statements
+ok  	github.com/base-org/pessimism/internal/etl/registry/oracle	7.720s	coverage: 51.6% of statements
+ok  	github.com/base-org/pessimism/internal/state	0.661s	coverage: 53.1% of statements
+ok  	github.com/base-org/pessimism/internal/subsystem	0.958s	coverage: 52.8% of statements
+total:											(statements)			52.2%
