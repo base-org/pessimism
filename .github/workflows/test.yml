@@ -51,6 +51,8 @@ jobs:
       uses: actions/github-script@v6
       env:
         DATA: ${{ steps.fc.outputs.comment-id }}
+        
+      with:
         script: | 
           console.log(process.env.DATA);
           const fs = require('fs');
