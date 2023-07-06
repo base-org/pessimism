@@ -243,7 +243,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 
 	// Setup Pessimism to listen for fraudulent withdrawals
 	// We use two invariants here; one configured with a dummy L1 message passer
-	// and one configured with the real L1->L2 message passer contract. This allows us to
+	// and one configured with the real L2->L1 message passer contract. This allows us to
 	// ensure that an alert is only produced using faulty message passer.
 	err = ts.App.BootStrap([]*models.InvRequestParams{{
 		// This is the one that should produce an alert
