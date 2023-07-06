@@ -43,7 +43,7 @@ jobs:
       with:
         issue-number: ${{ github.event.pull_request.number }}
         comment-author: 'github-actions[bot]'
-        body-includes: '###Current Test Coverage'
+        body-includes: '### Current Test Coverage'
 
     - name: Update Coverage Comment
       if: steps.fc.outputs.comment-id != ''
@@ -51,7 +51,7 @@ jobs:
       uses: actions/github-script@v6
       env:
         DATA: ${{ steps.fc.outputs.comment-id }}
-        
+
       with:
         script: | 
           console.log(process.env.DATA);
