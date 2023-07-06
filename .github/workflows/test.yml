@@ -50,15 +50,16 @@ jobs:
 
       uses: actions/github-script@v6
       env:
-        ID: ${{ steps.fc.outputs.comment-id }}
+        DATA: ${{ steps.fc.outputs.comment-id }}
         script: | 
+          console.log(process.env.DATA);
           const fs = require('fs');
           const coverage = fs.readFileSync('out.txt', 'utf8');
 
           github.rest.issues.updateComment({
             owner: context.repo.owner,
             repo: context.repo.repo,
-            comment_id: process.env.ID,
+            comment_id: process.env.DATA,
             body: '### Current Test Coverage\n' + '```' + coverage + '```'
           })
 
