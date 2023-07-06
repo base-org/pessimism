@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/mocks"
@@ -211,6 +212,92 @@ func Test_RunInvSession(t *testing.T) {
 				actualSUUID, err := ts.subsys.RunInvSession(testCfg)
 				assert.NoError(t, err)
 				assert.Equal(t, testSUUID, actualSUUID)
+			},
+		},
+	}
+
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("%d-%s", i, test.name), func(t *testing.T) {
+			ts := test.constructor(t)
+			test.testLogic(t, ts)
+		})
+	}
+}
+
+func Test_BuildPipelineCfg(t *testing.T) {
+
+	var tests = []struct {
+		name        string
+		constructor func(t *testing.T) *testSuite
+		testLogic   func(t *testing.T, ts *testSuite)
+	}{
+		{
+			name: "Failure when getting input type",
+			constructor: func(t *testing.T) *testSuite {
+				ts := createTestSuite(t)
+				ts.mockEng.EXPECT().GetInputType(core.BalanceEnforcement).
+					Return(core.AccountBalance, testErr()).
+					Times(1)
+
+				return ts
+			},
+			testLogic: func(t *testing.T, ts *testSuite) {
+				testParams := &models.InvRequestParams{
+					Network: core.Layer1.String(),
+					PType:   core.Live.String(),
+					InvType: core.BalanceEnforcement.String(),
+				}
+
+				cfg, err := ts.subsys.BuildPipelineCfg(testParams)
+				assert.Error(t, err)
+				assert.Nil(t, cfg)
+			},
+		},
+		{
+			name: "Failure when getting poll interval for invalid network",
+			constructor: func(t *testing.T) *testSuite {
+				ts := createTestSuite(t)
+				ts.mockEng.EXPECT().GetInputType(core.BalanceEnforcement).
+					Return(core.AccountBalance, nil).
+					Times(1)
+
+				return ts
+			},
+			testLogic: func(t *testing.T, ts *testSuite) {
+				testParams := &models.InvRequestParams{
+					Network: "layer0",
+					PType:   core.Live.String(),
+					InvType: core.BalanceEnforcement.String(),
+				}
+
+				cfg, err := ts.subsys.BuildPipelineCfg(testParams)
+				assert.Error(t, err)
+				assert.Nil(t, cfg)
+			},
+		},
+		{
+			name: "Success with valid params",
+			constructor: func(t *testing.T) *testSuite {
+				ts := createTestSuite(t)
+				ts.mockEng.EXPECT().GetInputType(core.BalanceEnforcement).
+					Return(core.AccountBalance, nil).
+					Times(1)
+
+				return ts
+			},
+			testLogic: func(t *testing.T, ts *testSuite) {
+				testParams := &models.InvRequestParams{
+					Network: core.Layer1.String(),
+					PType:   core.Live.String(),
+					InvType: core.BalanceEnforcement.String(),
+				}
+
+				cfg, err := ts.subsys.BuildPipelineCfg(testParams)
+				assert.NoError(t, err)
+				assert.NotNil(t, cfg)
+
+				assert.Equal(t, core.Layer1, cfg.Network)
+				assert.Equal(t, core.Live, cfg.PipelineType)
 			},
 		},
 	}
