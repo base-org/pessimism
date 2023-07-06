@@ -40,6 +40,10 @@ func Test_WithdrawEnforcePreprocess(t *testing.T) {
 
 	isp.SetValue(core.L1Portal, "0x69")
 	err = registry.WithdrawEnforcePreprocess(isp)
+	assert.Error(t, err, "failure should occur when no l2tol1 passer is provided")
+
+	isp.SetValue(core.L2ToL1MessgPasser, "0x666")
+	err = registry.WithdrawEnforcePreprocess(isp)
 	assert.NoError(t, err)
 
 	isp.SetNestedArg("transfer(address,address,uint256)")

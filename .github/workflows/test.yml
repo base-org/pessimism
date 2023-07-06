@@ -35,7 +35,7 @@ jobs:
 
     - name: Run Unit Tests
       id: unit-test
-      run: go test -coverprofile=coverage.out ./...
+      run: go test -coverprofile=coverage.out ./internal/...
 
   e2e-test:
     runs-on: ubuntu-latest
