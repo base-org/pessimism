@@ -56,10 +56,10 @@ jobs:
           const coverage = fs.readFileSync('out.txt', 'utf8');
 
           github.rest.issues.updateComment({
-            comment_id: process.env.ID,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: '###Current Test Coverage\n' + '```' + coverage + '```'
+            comment_id: process.env.ID,
+            body: '### Current Test Coverage\n' + '```' + coverage + '```'
           })
 
     - name: Create Coverage Comment
@@ -75,7 +75,7 @@ jobs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: '###Current Test Coverage\n' + '```' + coverage + '```'
+            body: '### Current Test Coverage\n' + '```' + coverage + '```'
           })
 
   e2e-test:
