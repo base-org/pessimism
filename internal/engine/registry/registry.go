@@ -24,19 +24,19 @@ type InvRegister struct {
 func NewInvariantTable() InvariantTable {
 	tbl := map[core.InvariantType]*InvRegister{
 		core.BalanceEnforcement: {
-			Preprocess:  addressPreprocess,
+			Preprocess:  AddressPreprocess,
 			Policy:      core.BothNetworks,
 			InputType:   core.AccountBalance,
 			Constructor: constructBalanceInv,
 		},
 		core.ContractEvent: {
-			Preprocess:  eventPreprocess,
+			Preprocess:  EventPreprocess,
 			Policy:      core.BothNetworks,
 			InputType:   core.EventLog,
 			Constructor: constructEventInv,
 		},
 		core.WithdrawalEnforcement: {
-			Preprocess:  preprocWithdrwlEnforce,
+			Preprocess:  WithdrawEnforcePreprocess,
 			Policy:      core.OnlyLayer1,
 			InputType:   core.EventLog,
 			Constructor: constructWithdrawlEnforceInv,
@@ -76,9 +76,9 @@ func constructBalanceInv(_ context.Context, isp *core.InvSessionParams) (invaria
 	return NewBalanceInvariant(cfg)
 }
 
-// eventPreprocess ... Ensures that an address and nesteed args exist in the session params
-func eventPreprocess(cfg *core.InvSessionParams) error {
-	err := addressPreprocess(cfg)
+// EventPreprocess ... Ensures that an address and nesteed args exist in the session params
+func EventPreprocess(cfg *core.InvSessionParams) error {
+	err := AddressPreprocess(cfg)
 	if err != nil {
 		return err
 	}
@@ -89,8 +89,8 @@ func eventPreprocess(cfg *core.InvSessionParams) error {
 	return nil
 }
 
-// NewBalanceInvariant ... Ensures that an address exists in the session params
-func addressPreprocess(cfg *core.InvSessionParams) error {
+// AddressPreprocess ... Ensures that an address exists in the session params
+func AddressPreprocess(cfg *core.InvSessionParams) error {
 	nilAddr := common.Address{0}
 	if cfg.Address() == nilAddr {
 		return fmt.Errorf("address not found")
@@ -99,12 +99,17 @@ func addressPreprocess(cfg *core.InvSessionParams) error {
 	return nil
 }
 
-// preprocWithdrwlEnforce ... Ensures that the l2 to l1 message passer exists
+// WithdrawEnforcePreprocess ... Ensures that the l2 to l1 message passer exists
 // and performs a "hack" operation to set the address key as the l2tol1MessagePasser
 // address for upstream ETL components (ie. event log) to know which L1 address to
 // query for events
-func preprocWithdrwlEnforce(cfg *core.InvSessionParams) error {
+func WithdrawEnforcePreprocess(cfg *core.InvSessionParams) error {
 	l1Portal, err := cfg.Value(core.L1Portal)
+	if err != nil {
+		return err
+	}
+
+	_, err = cfg.Value(core.L2ToL1MessgPasser)
 	if err != nil {
 		return err
 	}
