@@ -30,6 +30,7 @@ func Test_EventPreprocess(t *testing.T) {
 
 	isp.SetNestedArg("transfer(address,address,uint256)")
 	err = registry.EventPreprocess(isp)
+	assert.Nil(t, err, "no error should occur when nested args are provided")
 }
 
 func Test_WithdrawEnforcePreprocess(t *testing.T) {
