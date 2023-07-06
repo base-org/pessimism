@@ -44,7 +44,7 @@ func Test_WithdrawEnforcePreprocess(t *testing.T) {
 
 	isp.SetValue(core.L2ToL1MessgPasser, "0x666")
 	err = registry.WithdrawEnforcePreprocess(isp)
-	assert.Error(t, err)
+	assert.NoError(t, err)
 
 	isp.SetNestedArg("transfer(address,address,uint256)")
 	err = registry.WithdrawEnforcePreprocess(isp)

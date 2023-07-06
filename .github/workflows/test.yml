@@ -37,6 +37,10 @@ jobs:
       id: unit
       run: go test -coverprofile=coverage.out ./internal/... >> out.txt
 
+    - name: Export Test Coverage
+      id: cov-gen
+      run: echo coverage=$(cat out.txt) >> $GITHUB_OUTPUT
+
   e2e-test:
     runs-on: ubuntu-latest
     steps:
