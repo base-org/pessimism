@@ -45,7 +45,7 @@ jobs:
         comment-author: 'github-actions[bot]'
         body-includes: '### Current Test Coverage'
 
-    - name: Update Coverage Comment
+    - name: Add Coverage Comment
       if: steps.fc.outputs.comment-id != ''
 
       uses: actions/github-script@v6
@@ -54,32 +54,9 @@ jobs:
 
       with:
         script: | 
-          console.log(process.env.DATA);
-          const fs = require('fs');
-          const coverage = fs.readFileSync('out.txt', 'utf8');
+          const script = require('./path/to/script.js')
+          await script({github, context, core})
 
-          github.rest.issues.updateComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            comment_id: process.env.DATA,
-            body: '### Current Test Coverage\n' + '```' + coverage + '```'
-          })
-
-    - name: Create Coverage Comment
-      if: steps.fc.outputs.comment-id == ''
-
-      uses: actions/github-script@v6
-      with:
-        script: | 
-          const fs = require('fs');
-          const coverage = fs.readFileSync('out.txt', 'utf8');
-
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: '### Current Test Coverage\n' + '```' + coverage + '```'
-          })
 
   e2e-test:
     runs-on: ubuntu-latest
