@@ -196,7 +196,7 @@ func (m *manager) BuildPipelineCfg(params *models.InvRequestParams) (*core.Pipel
 	return &core.PipelineConfig{
 		Network:      params.NetworkType(),
 		DataType:     inType,
-		PipelineType: params.PiplineType(),
+		PipelineType: params.PipelineType(),
 		ClientConfig: &core.ClientConfig{
 			Network:      params.NetworkType(),
 			PollInterval: pollInterval,

@@ -75,7 +75,7 @@ func (irp *InvRequestParams) NetworkType() core.Network {
 }
 
 // PipelineType ... Returns the pipeline type
-func (irp *InvRequestParams) PiplineType() core.PipelineType {
+func (irp *InvRequestParams) PipelineType() core.PipelineType {
 	return core.StringToPipelineType(irp.PType)
 }
 
@@ -90,7 +90,7 @@ func (irp *InvRequestParams) GeneratePipelineConfig(pollInterval time.Duration,
 	return &core.PipelineConfig{
 		Network:      irp.NetworkType(),
 		DataType:     regType,
-		PipelineType: irp.PiplineType(),
+		PipelineType: irp.PipelineType(),
 		ClientConfig: &core.ClientConfig{
 			Network:      irp.NetworkType(),
 			PollInterval: pollInterval,
@@ -106,7 +106,7 @@ func (irp *InvRequestParams) SessionConfig() *core.SessionConfig {
 		AlertDest: irp.AlertingDestType(),
 		Type:      irp.InvariantType(),
 		Params:    irp.Params(),
-		PT:        irp.PiplineType(),
+		PT:        irp.PipelineType(),
 	}
 }
 
