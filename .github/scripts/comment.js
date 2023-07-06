@@ -1,6 +1,11 @@
+/*
+  This script will create a comment on the pull request with the current test coverage.
+  If the comment already exists, it will update the existing comment.
 
-
-
+  This script is called from the .github/workflows/test.yml workflow file. It is very difficult to degug
+  given the way GitHub Actions works. To debug, you can add the following line to the top of the file:
+  
+*/
 module.exports = async ({github, context, core}) => {
   const fs = require('fs');
   const coverage = fs.readFileSync('out.txt', 'utf8');

@@ -46,15 +46,13 @@ jobs:
         body-includes: '### Current Test Coverage'
 
     - name: Add Coverage Comment
-      if: steps.fc.outputs.comment-id != ''
-
       uses: actions/github-script@v6
       env:
         DATA: ${{ steps.fc.outputs.comment-id }}
 
       with:
         script: | 
-          const script = require('./path/to/script.js')
+          const script = require('./.github/scripts/comment.js')
           await script({github, context, core})
 
 
