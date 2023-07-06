@@ -4,14 +4,14 @@
 
   This script is called from the .github/workflows/test.yml workflow file. It is very difficult to degug
   given the way GitHub Actions works. To debug, you can add the following line to the top of the file:
-  
+
 */
 module.exports = async ({github, context, core}) => {
   const fs = require('fs');
   const coverage = fs.readFileSync('out.txt', 'utf8');
   const reportBody = '### Current Test Coverage\n' + '```' + coverage + '```';
 
-  if (process.env.DATA != null || process.env.DATA == ''){
+  if (process.env.DATA == null || process.env.DATA == ''){
     // Create a comment on pull request
     github.rest.issues.createComment({
         issue_number: context.issue.number,
