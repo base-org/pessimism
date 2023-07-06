@@ -37,7 +37,34 @@ jobs:
       id: unit
       run: go test -coverprofile=coverage.out ./internal/... >> out.txt 
 
-    - name: Export Coverage
+    - name: Find Coverage Comment
+      uses: peter-evans/find-comment@v1
+      id: fc
+      with:
+        issue-number: ${{ github.event.pull_request.number }}
+        comment-author: 'github-actions[bot]'
+        body-includes: '###Current Test Coverage'
+
+    - name: Update Coverage Comment
+      if: steps.fc.outputs.comment-id != ''
+
+      uses: actions/github-script@v6
+      env:
+        ID: ${{ steps.fc.outputs.comment-id }}
+        script: | 
+          const fs = require('fs');
+          const coverage = fs.readFileSync('out.txt', 'utf8');
+
+          github.rest.issues.updateComment({
+            comment_id: process.env.ID,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '###Current Test Coverage\n' + '```' + coverage + '```'
+          })
+
+    - name: Create Coverage Comment
+      if: steps.fc.outputs.comment-id == ''
+
       uses: actions/github-script@v6
       with:
         script: | 
