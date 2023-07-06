@@ -42,7 +42,7 @@ jobs:
       with:
         script: | 
           const fs = require('fs');
-          const coverage = fs.readFileSync('coverage.out', 'utf8');
+          const coverage = fs.readFileSync('out.txt', 'utf8');
 
           github.rest.issues.createComment({
             issue_number: context.issue.number,
