@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum-optimism/optimism/op-bindings/predeploys"
 
 	"github.com/ethereum-optimism/optimism/op-node/withdrawals"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -198,7 +199,6 @@ type TestAccount struct {
 func Test_Withdrawal_Enforcement(t *testing.T) {
 
 	ts := e2e.CreateSysTestSuite(t)
-	ts.Cfg.DeployConfig.FinalizationPeriodSeconds = 6
 	defer ts.Close()
 
 	// Obtain our sequencer, verifier, and transactor keypair.
@@ -344,4 +344,74 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	assert.Equal(t, 1, len(alerts), "expected 1 alert")
 	assert.Contains(t, alerts[0].Text, "withdrawal_enforcement", "expected alert to be for withdrawal_enforcement")
 	assert.Contains(t, alerts[0].Text, fakeAddr.String(), "expected alert to be for dummy L2ToL1MessagePasser")
+}
+
+func Test_Fault_Detector(t *testing.T) {
+	ts := e2e.CreateSysTestSuite(t)
+	defer ts.Close()
+
+	l1Client := ts.Sys.Clients["l1"]
+	l2Client := ts.Sys.Clients["sequencer"]
+
+	txTimeoutDuration := 10 * time.Duration(ts.Cfg.DeployConfig.L1BlockTime) * time.Second
+
+	aliceKey := ts.Cfg.Secrets.Alice
+	tractr, err := bind.NewKeyedTransactorWithChainID(ts.Cfg.Secrets.Proposer, ts.Cfg.L1ChainIDBig())
+	assert.Nil(t, err)
+
+	l2Tractr, err := bind.NewKeyedTransactorWithChainID(aliceKey, ts.Cfg.L2ChainIDBig())
+	assert.Nil(t, err)
+
+	outputOracle, err := bindings.NewL2OutputOracleTransactor(predeploys.DevL2OutputOracleAddr, l1Client)
+	assert.Nil(t, err)
+
+	reader, err := bindings.NewL2OutputOracleCaller(predeploys.DevL2OutputOracleAddr, l1Client)
+	assert.Nil(t, err)
+
+	err = ts.App.BootStrap([]*models.InvRequestParams{{
+		Network:      core.Layer1.String(),
+		PType:        core.Live.String(),
+		InvType:      core.FaultDetector.String(),
+		StartHeight:  nil,
+		EndHeight:    nil,
+		AlertingDest: core.Slack.String(),
+		SessionParams: map[string]interface{}{
+			core.L2OutputOracle:    predeploys.DevL2OutputOracle,
+			core.L2ToL1MessgPasser: predeploys.L2ToL1MessagePasser,
+		},
+	}})
+
+	assert.Nil(t, err)
+
+	// Deploy a dummy L2ToL1 message passer for testing.
+	_, tx, _, err := bindings.DeployL2ToL1MessagePasser(l2Tractr, l2Client)
+	assert.NoError(t, err, "error deploying message passer on L2")
+
+	_, err = e2e.WaitForTransaction(tx.Hash(), l2Client, txTimeoutDuration)
+	assert.NoError(t, err, "error waiting for transaction")
+	// Submit a dummy transaction
+
+	_, err = l2Client.BlockByNumber(context.Background(), nil)
+	assert.Nil(t, err)
+
+	dummyRoot := [32]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	l1Hash := [32]byte{0}
+
+	latestNum, err := reader.NextBlockNumber(&bind.CallOpts{})
+	assert.Nil(t, err)
+
+	tx, err = outputOracle.ProposeL2Output(tractr, dummyRoot, latestNum, l1Hash, big.NewInt(0))
+	assert.Nil(t, err)
+
+	_, err = e2e.WaitForTransaction(tx.Hash(), l1Client, txTimeoutDuration)
+	assert.Nil(t, err)
+
+	_, err = l2Client.BlockByNumber(context.Background(), latestNum)
+	assert.Nil(t, err)
+
+	time.Sleep(2 * time.Second)
+
+	alerts := ts.TestSvr.SlackAlerts()
+	assert.Equal(t, 1, len(alerts), "expected 1 alert")
+	assert.Contains(t, alerts[0].Text, "fault_detector", "expected alert to be for fault_detector")
 }

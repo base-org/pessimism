@@ -52,6 +52,7 @@ func NewEventParserPipe(ctx context.Context, cfg *core.ClientConfig,
 	}
 
 	ed.sk = p.StateKey().Clone()
+	ed.pUUID = p.PUUID()
 	return p, nil
 }
 
@@ -65,7 +66,7 @@ func (ed *EventDefinition) getTopics(ctx context.Context,
 			Nesting: false,
 			Prefix:  ed.sk.Prefix,
 			ID:      address,
-			PUUID:   &ed.pUUID,
+			PUUID:   ed.sk.PUUID,
 		}
 
 		sigs, err := ss.GetSlice(ctx, innerKey)

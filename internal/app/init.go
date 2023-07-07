@@ -23,15 +23,18 @@ import (
 
 // InitializeContext ... Performs dependency injection to build context struct
 func InitializeContext(ctx context.Context, ss state.Store,
-	l1Client, l2Client client.EthClientInterface) context.Context {
+	l1Client, l2Client client.EthClientInterface, l2geth client.GethClient) context.Context {
 	ctx = context.WithValue(
 		ctx, core.State, ss)
 
 	ctx = context.WithValue(
 		ctx, core.L1Client, l1Client)
 
-	return context.WithValue(
+	ctx = context.WithValue(
 		ctx, core.L2Client, l2Client)
+
+	return context.WithValue(
+		ctx, core.L2Geth, l2geth)
 }
 
 // InitializeMetrics ... Performs dependency injection to build metrics struct

@@ -69,12 +69,13 @@ func NewWthdrawlEnforceInv(ctx context.Context, cfg *WthdrawlEnforceCfg) (invari
 	withdrawalHash := crypto.Keccak256Hash([]byte("WithdrawalProven(bytes32,address,address)"))
 
 	addr := common.HexToAddress(cfg.L2ToL1Address)
+	addr2 := common.HexToAddress(cfg.L1PortalAddress)
 	l2Messager, err := bindings.NewL2ToL1MessagePasserCaller(addr, l2Client)
 	if err != nil {
 		return nil, err
 	}
 
-	filter, err := bindings.NewOptimismPortalFilterer(addr, l1Client)
+	filter, err := bindings.NewOptimismPortalFilterer(addr2, l1Client)
 	if err != nil {
 		return nil, err
 	}
@@ -90,8 +91,8 @@ func NewWthdrawlEnforceInv(ctx context.Context, cfg *WthdrawlEnforceCfg) (invari
 	}, nil
 }
 
-// Invalidate ... Checks if the balance is within the bounds
-// specified in the config
+// Invalidate ... Verifies than an L1 WithdrawwlProven has a correlating hash
+// to the withdrawal storage of the L2ToL1MessagePasser
 func (wi *WthdrawlEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
 	logging.NoContext().Debug("Checking invalidation for balance invariant", zap.String("data", fmt.Sprintf("%v", td)))
 

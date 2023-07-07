@@ -15,13 +15,17 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/ethereum/go-ethereum"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/ethclient/gethclient"
+	"github.com/ethereum/go-ethereum/rpc"
 )
 
 // TODO (#20) : Introduce optional Retry-able EthClient
 type EthClient struct {
+	url    string
 	client *ethclient.Client
 }
 
@@ -38,6 +42,14 @@ type EthClientInterface interface {
 	FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error)
 	SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery,
 		ch chan<- types.Log) (ethereum.Subscription, error)
+}
+
+func L2GethFromContext(ctx context.Context) (*gethclient.Client, error) {
+	if client, ok := ctx.Value(core.L2Geth).(*gethclient.Client); ok {
+		return client, nil
+	}
+
+	return nil, fmt.Errorf("could not load eth client object from context")
 }
 
 // FromContext ... Retrieves ethClient from context
@@ -57,46 +69,60 @@ func FromContext(ctx context.Context, layer core.Network) (EthClientInterface, e
 // NewEthClient ... Initializer
 func NewEthClient(ctx context.Context, rawURL string) (EthClientInterface, error) {
 	client, err := ethclient.DialContext(ctx, rawURL)
-
 	if err != nil {
 		return nil, err
 	}
 
-	return &EthClient{client}, nil
+	return &EthClient{rawURL, client}, nil
 }
 
-// HeaderByNumber ... Wraps go-ethereum headerByNumber client method call
+// HeaderByNumber ... Wraps go-ethereum headerByNumber JSON-RPC method call
 func (ec *EthClient) HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error) {
 	return ec.client.HeaderByNumber(ctx, number)
 }
 
-// BlockByNumber ... Wraps go-ethereum blockByNumber client method call
+// BlockByNumber ... Wraps go-ethereum blockByNumber JSON-RPC method call
 func (ec *EthClient) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
 	return ec.client.BlockByNumber(ctx, number)
 }
 
-// BalanceAt ... Wraps go-ethereum balanceAt client method call
+// BalanceAt ... Wraps go-ethereum balanceAt JSON-RPC method call
 func (ec *EthClient) BalanceAt(ctx context.Context, account common.Address, number *big.Int) (*big.Int, error) {
 	return ec.client.BalanceAt(ctx, account, number)
 }
 
-// FilterLogs ... Wraps go-ethereum balanceAt client method call
+// FilterLogs ... Wraps go-ethereum balanceAt JSON-RPC method call
 func (ec *EthClient) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
 	return ec.client.FilterLogs(ctx, query)
 }
 
-// CallContract ... Wraps go-ethereum callContract client method call
+// CallContract ... Wraps go-ethereum callContract JSON-RPC method call
 func (ec *EthClient) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
 	return ec.client.CallContract(ctx, msg, blockNumber)
 }
 
-// CodeAt ... Wraps go-ethereum codeAt client method call
+// CodeAt ... Wraps go-ethereum codeAt JSON-RPC method call
 func (ec *EthClient) CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error) {
 	return ec.client.CodeAt(ctx, account, blockNumber)
 }
 
-// SubscribeFilterLogs ... Wraps go-ethereum subscribeFilterLogs client method call
+// SubscribeFilterLogs ... Wraps go-ethereum subscribeFilterLogs JSON-RPC method call
 func (ec *EthClient) SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery,
 	ch chan<- types.Log) (ethereum.Subscription, error) {
 	return ec.client.SubscribeFilterLogs(ctx, query, ch)
+}
+
+type GethClient interface {
+	GetProof(ctx context.Context, account common.Address, keys []string,
+		blockNumber *big.Int) (*gethclient.AccountResult, error)
+}
+
+func NewGethClient(rawURL string) (GethClient, error) {
+	rpcClient, err := rpc.Dial(rawURL)
+	if err != nil {
+		return nil, err
+	}
+
+	gethClient := gethclient.New(rpcClient)
+	return gethClient, nil
 }

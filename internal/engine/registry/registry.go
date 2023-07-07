@@ -41,6 +41,12 @@ func NewInvariantTable() InvariantTable {
 			InputType:   core.EventLog,
 			Constructor: constructWithdrawlEnforceInv,
 		},
+		core.FaultDetector: {
+			Preprocess:  FaultDetectPreprocess,
+			Policy:      core.OnlyLayer1,
+			InputType:   core.EventLog,
+			Constructor: constructFaultDetector,
+		},
 	}
 
 	return tbl
@@ -74,6 +80,15 @@ func constructBalanceInv(_ context.Context, isp *core.InvSessionParams) (invaria
 	}
 
 	return NewBalanceInvariant(cfg)
+}
+
+func constructFaultDetector(ctx context.Context, isp *core.InvSessionParams) (invariant.Invariant, error) {
+	cfg, err := UnmarshalToFaulDetectorCfg(isp)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewFaultDetector(ctx, cfg)
 }
 
 // EventPreprocess ... Ensures that an address and nesteed args exist in the session params
@@ -123,5 +138,27 @@ func WithdrawEnforcePreprocess(cfg *core.InvSessionParams) error {
 	}
 
 	cfg.SetNestedArg("WithdrawalProven(bytes32,address,address)")
+	return nil
+}
+
+// FaultDetectPreprocess ...
+func FaultDetectPreprocess(cfg *core.InvSessionParams) error {
+	l2OutputOracle, err := cfg.Value(core.L2OutputOracle)
+	if err != nil {
+		return err
+	}
+
+	_, err = cfg.Value(core.L2ToL1MessgPasser)
+	if err != nil {
+		return err
+	}
+
+	cfg.SetValue(core.AddrKey, l2OutputOracle)
+
+	if len(cfg.NestedArgs()) != 0 {
+		return fmt.Errorf("no nested args should be present")
+	}
+
+	cfg.SetNestedArg("OutputProposed(bytes32,uint256,uint256,uint256)")
 	return nil
 }

@@ -10,6 +10,7 @@ const (
 	State
 	L1Client
 	L2Client
+	L2Geth
 )
 
 // Network ... Represents the network for which a pipeline's oracle
@@ -81,6 +82,7 @@ const (
 	BalanceEnforcement InvariantType = iota + 1
 	ContractEvent
 	WithdrawalEnforcement
+	FaultDetector
 )
 
 // String ... Converts an invariant type to a string
@@ -94,6 +96,9 @@ func (it InvariantType) String() string {
 
 	case WithdrawalEnforcement:
 		return "withdrawal_enforcement"
+
+	case FaultDetector:
+		return "fault_detector"
 
 	default:
 		return "unknown"
@@ -111,6 +116,9 @@ func StringToInvariantType(stringType string) InvariantType {
 
 	case "withdrawal_enforcement":
 		return WithdrawalEnforcement
+
+	case "fault_detector":
+		return FaultDetector
 
 	default:
 		return InvariantType(0)

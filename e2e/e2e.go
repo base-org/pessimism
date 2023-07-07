@@ -8,6 +8,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/app"
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
@@ -59,8 +60,7 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 	}
 
 	ss := state.NewMemState()
-
-	ctx = app.InitializeContext(ctx, ss, node.L2Client, node.L2Client)
+	ctx = app.InitializeContext(ctx, ss, node.L2Client, node.L2Client, nil)
 
 	appCfg := DefaultTestConfig()
 
@@ -105,10 +105,15 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 		t.Fatal(err)
 	}
 
+	gethClient, err := client.NewGethClient(sys.Nodes["sequencer"].HTTPEndpoint())
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	ss := state.NewMemState()
 	ctx = app.InitializeContext(ctx, ss,
 		sys.Clients["l1"],
-		sys.Clients["sequencer"])
+		sys.Clients["sequencer"], gethClient)
 
 	appCfg := DefaultTestConfig()
 

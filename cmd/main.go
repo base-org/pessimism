@@ -70,9 +70,15 @@ func RunPessimism(_ *cli.Context) error {
 		return err
 	}
 
+	l2Geth, err := client.NewGethClient(cfg.L2RpcEndpoint)
+	if err != nil {
+		logger.Fatal("Error creating L2 GETH client", zap.Error(err))
+		return err
+	}
+
 	ss := state.NewMemState()
 
-	ctx = app.InitializeContext(ctx, ss, l1Client, l2Client)
+	ctx = app.InitializeContext(ctx, ss, l1Client, l2Client, l2Geth)
 
 	pessimism, shutDown, err := app.NewPessimismApp(ctx, cfg)
 
