@@ -21,9 +21,6 @@ jobs:
     - name: Build App
       run: make build-app
 
-    - name: Build Metric Doc
-      run: make metric-docs
-
   go-test:
     outputs:
       COVERAGE: ${{ steps.unit.outputs.coverage }}

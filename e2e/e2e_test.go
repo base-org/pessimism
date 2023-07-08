@@ -187,7 +187,7 @@ func Test_Contract_Event(t *testing.T) {
 	assert.Contains(t, posts[0].Text, "contract_event", "System contract event alert was not sent")
 }
 
-// TestAccount defines an account generated b
+// TestAccount defines an account for testing.
 type TestAccount struct {
 	Key    *ecdsa.PrivateKey
 	Addr   common.Address
@@ -409,7 +409,7 @@ func Test_Fault_Detector(t *testing.T) {
 	_, err = l2Client.BlockByNumber(context.Background(), latestNum)
 	assert.Nil(t, err)
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 
 	alerts := ts.TestSvr.SlackAlerts()
 	assert.Equal(t, 1, len(alerts), "expected 1 alert")
