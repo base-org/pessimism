@@ -88,7 +88,8 @@ func NewWithdrawalEnforceInv(ctx context.Context, cfg *WithdrawalEnforceCfg) (in
 // Invalidate ... Verifies than an L1 WithdrawalProven has a correlating hash
 // to the withdrawal storage of the L2ToL1MessagePasser
 func (wi *WithdrawalEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
-	logging.NoContext().Debug("Checking invalidation for balance invariant", zap.String("data", fmt.Sprintf("%v", td)))
+	logging.NoContext().Debug("Checking invalidation for withdrawal enforcement invariant",
+		zap.String("data", fmt.Sprintf("%v", td)))
 
 	if td.Type != wi.InputType() {
 		return nil, false, fmt.Errorf("invalid type supplied")

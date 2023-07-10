@@ -111,7 +111,8 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (invariant.Inv
 
 // Invalidate ...
 func (fd *faultDetectorInv) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
-	logging.NoContext().Debug("Checking invalidation for balance invariant", zap.String("data", fmt.Sprintf("%v", td)))
+	logging.NoContext().Debug("Checking invalidation for fault detector invariant",
+		zap.String("data", fmt.Sprintf("%v", td)))
 
 	err := fd.ValidateInput(td)
 	if err != nil {
