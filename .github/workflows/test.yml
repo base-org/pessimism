@@ -38,9 +38,9 @@ jobs:
       run: | 
         go test -coverprofile=coverage.out ./internal/... >> out.txt
 
-    - name: Generate Total Coverage
+    - name: Generate Coverage
       run: |
-        go tool cover -func=coverage.out | grep total | >> out.txt
+        go tool cover -func=coverage.out | grep total | awk '{print $3}' >> out.txt
         echo "::set-output name=coverage::$(cat out.txt)"
 
     - name: Find Coverage Comment
