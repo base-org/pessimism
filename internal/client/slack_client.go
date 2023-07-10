@@ -13,6 +13,7 @@ import (
 	"net/http"
 
 	"github.com/base-org/pessimism/internal/logging"
+	"go.uber.org/zap"
 )
 
 // SlackClient ... Interface for slack client
@@ -86,7 +87,13 @@ func (sc slackClient) PostData(ctx context.Context, str string) (*SlackAPIRespon
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			logging.WithContext(ctx).Warn("Could not close slack response body",
+				zap.Error(err))
+		}
+	}()
 
 	// read response
 	bytes, err := io.ReadAll(resp.Body)
