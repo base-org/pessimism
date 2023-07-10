@@ -10,7 +10,6 @@ import (
 
 type PipeDefinition interface {
 	Transform(ctx context.Context, data core.TransitData) ([]core.TransitData, error)
-	ConfigureRoutine(pUUID core.PUUID) error
 }
 
 // Pipe ... Component used to represent any arbitrary computation; pipes must can read from all component types
@@ -68,10 +67,6 @@ func (p *Pipe) EventLoop() error {
 
 	inChan, err := p.GetIngress(p.inType)
 	if err != nil {
-		return err
-	}
-
-	if err = p.def.ConfigureRoutine(p.pUUID); err != nil {
 		return err
 	}
 

@@ -38,6 +38,7 @@ const (
 	cUUIDExistsErr   = "component with ID %s already exists in component graph"
 	edgeExistsErr    = "edge already exists from (%s) to (%s) in component graph"
 
+	emptyPipelineError = "pipeline must contain at least one component"
 	// Manager error constants
 	unknownCompType = "unknown component type %s provided"
 

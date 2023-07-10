@@ -79,6 +79,21 @@ func (mr *EngineManagerMockRecorder) EventLoop() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventLoop", reflect.TypeOf((*EngineManager)(nil).EventLoop))
 }
 
+// GetInputType mocks base method.
+func (m *EngineManager) GetInputType(arg0 core.InvariantType) (core.RegisterType, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetInputType", arg0)
+	ret0, _ := ret[0].(core.RegisterType)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetInputType indicates an expected call of GetInputType.
+func (mr *EngineManagerMockRecorder) GetInputType(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetInputType", reflect.TypeOf((*EngineManager)(nil).GetInputType), arg0)
+}
+
 // Shutdown mocks base method.
 func (m *EngineManager) Shutdown() error {
 	m.ctrl.T.Helper()

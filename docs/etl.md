@@ -118,7 +118,7 @@ _Only send output at the update of a single ingress stream_
 
 Single Value Subscription refers to a synchronization policy where a bucketed multi-data tuple is submitted every time there’s an update to a single input data queue.
 
-For example we can have an invariant that subscribes to blocks from two heterogenous chains (layer1, layer2) or `{ChainA, ChainB}`, let's assume `BLOCK_TIME(ChainA)> BLOCK_TIME(ChainB)`.
+For example we can have an invariant that subscribes to blocks from two heterogenous chains (layer1, layer2) or `{ChainA, ChainB}`, let's assume `BLOCK_TIME(ChainA) > BLOCK_TIME(ChainB)`.
 
 We can either specify that the invariant will run every-time there's an update or a new block from `ChainA`:
 ```

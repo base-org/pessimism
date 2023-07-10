@@ -127,3 +127,18 @@ func (mr *MockEthClientInterfaceMockRecorder) HeaderByNumber(arg0, arg1 interfac
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HeaderByNumber", reflect.TypeOf((*MockEthClientInterface)(nil).HeaderByNumber), arg0, arg1)
 }
+
+// SubscribeFilterLogs mocks base method.
+func (m *MockEthClientInterface) SubscribeFilterLogs(arg0 context.Context, arg1 ethereum.FilterQuery, arg2 chan<- types.Log) (ethereum.Subscription, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SubscribeFilterLogs", arg0, arg1, arg2)
+	ret0, _ := ret[0].(ethereum.Subscription)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SubscribeFilterLogs indicates an expected call of SubscribeFilterLogs.
+func (mr *MockEthClientInterfaceMockRecorder) SubscribeFilterLogs(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SubscribeFilterLogs", reflect.TypeOf((*MockEthClientInterface)(nil).SubscribeFilterLogs), arg0, arg1, arg2)
+}

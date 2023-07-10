@@ -20,7 +20,7 @@ import (
 type Manager interface {
 	InferComponent(cc *core.ClientConfig, cUUID core.CUUID, pUUID core.PUUID,
 		register *core.DataRegister) (component.Component, error)
-	GetRegister(rt core.RegisterType) (*core.DataRegister, error)
+	GetStateKey(rt core.RegisterType) (*core.StateKey, bool, error)
 	CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, bool, error)
 	RunPipeline(pID core.PUUID) error
 
@@ -253,4 +253,18 @@ func (em *etlManager) InferComponent(cc *core.ClientConfig, cUUID core.CUUID, pU
 	default:
 		return nil, fmt.Errorf(unknownCompType, register.ComponentType.String())
 	}
+}
+
+// GetStateKey ... Returns a state key provided a register type
+func (em *etlManager) GetStateKey(rt core.RegisterType) (*core.StateKey, bool, error) {
+	dr, err := em.registry.GetRegister(rt)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if dr.Stateful() {
+		return dr.StateKey(), true, nil
+	}
+
+	return nil, false, nil
 }

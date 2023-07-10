@@ -10,6 +10,7 @@ const (
 	State
 	L1Client
 	L2Client
+	L2Geth
 )
 
 // Network ... Represents the network for which a pipeline's oracle
@@ -17,10 +18,8 @@ const (
 type Network uint8
 
 const (
-	Layer1 = iota + 1
+	Layer1 Network = iota + 1
 	Layer2
-
-	UnknownNetwork
 )
 
 const (
@@ -35,9 +34,10 @@ func (n Network) String() string {
 
 	case Layer2:
 		return "layer2"
-	}
 
-	return UnknownType
+	default:
+		return UnknownType
+	}
 }
 
 // StringToNetwork ... Converts a string to a network
@@ -48,10 +48,19 @@ func StringToNetwork(stringType string) Network {
 
 	case "layer2":
 		return Layer2
-	}
 
-	return UnknownNetwork
+	default:
+		return Network(0)
+	}
 }
+
+type ChainSubscription uint8
+
+const (
+	OnlyLayer1 ChainSubscription = iota + 1
+	OnlyLayer2
+	BothNetworks
+)
 
 type FetchType int
 
@@ -70,9 +79,10 @@ const (
 type InvariantType uint8
 
 const (
-	BalanceEnforcement = iota + 1
+	BalanceEnforcement InvariantType = iota + 1
 	ContractEvent
 	WithdrawalEnforcement
+	FaultDetector
 )
 
 // String ... Converts an invariant type to a string
@@ -86,6 +96,9 @@ func (it InvariantType) String() string {
 
 	case WithdrawalEnforcement:
 		return "withdrawal_enforcement"
+
+	case FaultDetector:
+		return "fault_detector"
 
 	default:
 		return "unknown"
@@ -103,6 +116,9 @@ func StringToInvariantType(stringType string) InvariantType {
 
 	case "withdrawal_enforcement":
 		return WithdrawalEnforcement
+
+	case "fault_detector":
+		return FaultDetector
 
 	default:
 		return InvariantType(0)

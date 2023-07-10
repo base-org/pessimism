@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum-optimism/optimism/op-bindings/predeploys"
 
 	"github.com/ethereum-optimism/optimism/op-node/withdrawals"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -25,6 +26,7 @@ import (
 	"github.com/base-org/pessimism/e2e"
 
 	"github.com/base-org/pessimism/internal/api/models"
+	"github.com/base-org/pessimism/internal/core"
 )
 
 // Test_Balance_Enforcement ... Tests the E2E flow of a single
@@ -38,13 +40,13 @@ func Test_Balance_Enforcement(t *testing.T) {
 	bob := ts.L2Cfg.Secrets.Addresses().Bob
 
 	// Deploy a balance enforcement invariant session for Alice.
-	err := ts.App.BootStrap([]models.InvRequestParams{{
-		Network:      "layer2",
-		PType:        "live",
-		InvType:      "balance_enforcement",
+	err := ts.App.BootStrap([]*models.InvRequestParams{{
+		Network:      core.Layer2.String(),
+		PType:        core.Live.String(),
+		InvType:      core.BalanceEnforcement.String(),
 		StartHeight:  nil,
 		EndHeight:    nil,
-		AlertingDest: "slack",
+		AlertingDest: core.Slack.String(),
 		SessionParams: map[string]interface{}{
 			"address": alice.String(),
 			"lower":   3, // i.e. alert if balance is less than 3 ETH
@@ -140,13 +142,13 @@ func Test_Contract_Event(t *testing.T) {
 	updateSig := "ConfigUpdate(uint256,uint8,bytes)"
 
 	// Deploy a contract event invariant session for the L1 system config addresss.
-	err := ts.App.BootStrap([]models.InvRequestParams{{
-		Network:      "layer1",
-		PType:        "live",
-		InvType:      "contract_event",
+	err := ts.App.BootStrap([]*models.InvRequestParams{{
+		Network:      core.Layer1.String(),
+		PType:        core.Live.String(),
+		InvType:      core.ContractEvent.String(),
 		StartHeight:  nil,
 		EndHeight:    nil,
-		AlertingDest: "slack",
+		AlertingDest: core.Slack.String(),
 		SessionParams: map[string]interface{}{
 			"address": predeploys.DevSystemConfigAddr.String(),
 			"args":    []interface{}{updateSig},
@@ -185,7 +187,7 @@ func Test_Contract_Event(t *testing.T) {
 	assert.Contains(t, posts[0].Text, "contract_event", "System contract event alert was not sent")
 }
 
-// TestAccount defines an account generated b
+// TestAccount defines an account for testing.
 type TestAccount struct {
 	Key    *ecdsa.PrivateKey
 	Addr   common.Address
@@ -197,13 +199,12 @@ type TestAccount struct {
 func Test_Withdrawal_Enforcement(t *testing.T) {
 
 	ts := e2e.CreateSysTestSuite(t)
-	ts.Cfg.DeployConfig.FinalizationPeriodSeconds = 6
 	defer ts.Close()
 
 	// Obtain our sequencer, verifier, and transactor keypair.
 	l1Client := ts.Sys.Clients["l1"]
 	l2Seq := ts.Sys.Clients["sequencer"]
-	l2Verif := ts.Sys.Clients["verifier"]
+	l2Verifier := ts.Sys.Clients["verifier"]
 
 	// Define our L1 transaction timeout duration.
 	txTimeoutDuration := 10 * time.Duration(ts.Cfg.DeployConfig.L1BlockTime) * time.Second
@@ -240,6 +241,39 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	// Determine the address our request will come from.
 	fromAddr := crypto.PubkeyToAddress(transactor.Key.PublicKey)
 
+	// Setup Pessimism to listen for fraudulent withdrawals
+	// We use two invariants here; one configured with a dummy L1 message passer
+	// and one configured with the real L2->L1 message passer contract. This allows us to
+	// ensure that an alert is only produced using faulty message passer.
+	err = ts.App.BootStrap([]*models.InvRequestParams{{
+		// This is the one that should produce an alert
+		Network:      core.Layer1.String(),
+		PType:        core.Live.String(),
+		InvType:      core.WithdrawalEnforcement.String(),
+		StartHeight:  nil,
+		EndHeight:    nil,
+		AlertingDest: core.Slack.String(),
+		SessionParams: map[string]interface{}{
+			core.L1Portal:            predeploys.DevOptimismPortal,
+			core.L2ToL1MessagePasser: fakeAddr.String(),
+		},
+	},
+		{
+			// This is the one that shouldn't produce an alert
+			Network:      core.Layer1.String(),
+			PType:        core.Live.String(),
+			InvType:      core.WithdrawalEnforcement.String(),
+			StartHeight:  nil,
+			EndHeight:    nil,
+			AlertingDest: core.Slack.String(),
+			SessionParams: map[string]interface{}{
+				core.L1Portal:            predeploys.DevOptimismPortal,
+				core.L2ToL1MessagePasser: predeploys.L2ToL1MessagePasserAddr.String(),
+			},
+		},
+	})
+	assert.NoError(t, err, "Error bootstrapping invariant session")
+
 	// Initiate Withdrawal.
 	withdrawAmount := big.NewInt(500_000_000_000)
 	transactor.L2Opts.Value = withdrawAmount
@@ -247,7 +281,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	assert.Nil(t, err, "sending initiate withdraw tx")
 
 	// Wait for the transaction to appear in the L2 verifier.
-	receipt, err := e2e.WaitForTransaction(tx.Hash(), l2Verif, txTimeoutDuration)
+	receipt, err := e2e.WaitForTransaction(tx.Hash(), l2Verifier, txTimeoutDuration)
 	assert.Nil(t, err, "withdrawal initiated on L2 sequencer")
 	assert.Equal(t, receipt.Status, types.ReceiptStatusSuccessful, "transaction failed")
 
@@ -258,7 +292,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	assert.Nil(t, err)
 
 	ctx, cancel = context.WithTimeout(context.Background(), txTimeoutDuration)
-	header, err := l2Verif.HeaderByNumber(ctx, new(big.Int).SetUint64(blockNumber))
+	header, err := l2Verifier.HeaderByNumber(ctx, new(big.Int).SetUint64(blockNumber))
 	cancel()
 	assert.Nil(t, err)
 
@@ -288,38 +322,6 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	outputRootProofParam := params.OutputRootProof
 	withdrawalProofParam := params.WithdrawalProof
 
-	// Setup Pessimism to listen for fraudulent withdrawals
-	// We use two invariants here; one configured with a dummy L1 message passer
-	// and one configured with the real L1->L2 message passer contract. This allows us to
-	// ensure that an alert is only produced using faulty message passer.
-	err = ts.App.BootStrap([]models.InvRequestParams{{
-		// This is the one that should produce an alert
-		Network:      "layer1",
-		PType:        "live",
-		InvType:      "withdrawal_enforcement",
-		StartHeight:  nil,
-		EndHeight:    nil,
-		AlertingDest: "slack",
-		SessionParams: map[string]interface{}{
-			"l1_portal":   predeploys.DevOptimismPortal,
-			"l2_messager": fakeAddr.String(),
-		},
-	},
-		{
-			// This is the one that shouldn't produce an alert
-			Network:      "layer1",
-			PType:        "live",
-			InvType:      "withdrawal_enforcement",
-			StartHeight:  nil,
-			EndHeight:    nil,
-			AlertingDest: "slack",
-			SessionParams: map[string]interface{}{
-				"l1_portal":   predeploys.DevOptimismPortal,
-				"l2_messager": predeploys.L2ToL1MessagePasserAddr.String(),
-			},
-		},
-	})
-	assert.NoError(t, err, "Error bootstrapping invariant session")
 	time.Sleep(1 * time.Second)
 
 	// Prove withdrawal. This checks the proof so we only finalize if this succeeds
@@ -342,4 +344,75 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	assert.Equal(t, 1, len(alerts), "expected 1 alert")
 	assert.Contains(t, alerts[0].Text, "withdrawal_enforcement", "expected alert to be for withdrawal_enforcement")
 	assert.Contains(t, alerts[0].Text, fakeAddr.String(), "expected alert to be for dummy L2ToL1MessagePasser")
+}
+
+// Test_Fault_Detector ... Ensures that an alert is produced in the presence of a faulty L2Output root
+// on the L1 Optimism portal contract.
+func Test_Fault_Detector(t *testing.T) {
+	ts := e2e.CreateSysTestSuite(t)
+	defer ts.Close()
+
+	l1Client := ts.Sys.Clients["l1"]
+	l2Client := ts.Sys.Clients["sequencer"]
+
+	txTimeoutDuration := 10 * time.Duration(ts.Cfg.DeployConfig.L1BlockTime) * time.Second
+
+	// Generate transactor opts
+	aliceKey := ts.Cfg.Secrets.Alice
+	l1Opts, err := bind.NewKeyedTransactorWithChainID(ts.Cfg.Secrets.Proposer, ts.Cfg.L1ChainIDBig())
+	assert.Nil(t, err)
+
+	l2Opts, err := bind.NewKeyedTransactorWithChainID(aliceKey, ts.Cfg.L2ChainIDBig())
+	assert.Nil(t, err)
+
+	// Generate output oracle bindings
+	outputOracle, err := bindings.NewL2OutputOracleTransactor(predeploys.DevL2OutputOracleAddr, l1Client)
+	assert.Nil(t, err)
+
+	reader, err := bindings.NewL2OutputOracleCaller(predeploys.DevL2OutputOracleAddr, l1Client)
+	assert.Nil(t, err)
+
+	// Deploys a fault detector invariant session instance using the locally spun-up Op-Stack chain
+	err = ts.App.BootStrap([]*models.InvRequestParams{{
+		Network:      core.Layer1.String(),
+		PType:        core.Live.String(),
+		InvType:      core.FaultDetector.String(),
+		StartHeight:  big.NewInt(0),
+		EndHeight:    nil,
+		AlertingDest: core.Slack.String(),
+		SessionParams: map[string]interface{}{
+			core.L2OutputOracle:      predeploys.DevL2OutputOracle,
+			core.L2ToL1MessagePasser: predeploys.L2ToL1MessagePasser,
+		},
+	}})
+
+	assert.Nil(t, err)
+
+	// Deploy a dummy L2ToL1 message passer for testing.
+	_, tx, _, err := bindings.DeployL2ToL1MessagePasser(l2Opts, l2Client)
+	assert.NoError(t, err, "error deploying message passer on L2")
+
+	_, err = e2e.WaitForTransaction(tx.Hash(), l2Client, txTimeoutDuration)
+	assert.NoError(t, err, "error waiting for transaction")
+
+	// Propose a forged L2 output root.
+
+	dummyRoot := [32]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	l1Hash := [32]byte{0}
+
+	latestNum, err := reader.NextBlockNumber(&bind.CallOpts{})
+	assert.Nil(t, err)
+
+	tx, err = outputOracle.ProposeL2Output(l1Opts, dummyRoot, latestNum, l1Hash, big.NewInt(0))
+	assert.Nil(t, err)
+
+	_, err = e2e.WaitForTransaction(tx.Hash(), l1Client, txTimeoutDuration)
+	assert.Nil(t, err)
+
+	// Wait for a fault detection alert to be produced.
+	time.Sleep(1 * time.Second)
+
+	alerts := ts.TestSvr.SlackAlerts()
+	assert.Equal(t, 1, len(alerts), "expected 1 alert")
+	assert.Contains(t, alerts[0].Text, "fault_detector", "expected alert to be for fault_detector")
 }

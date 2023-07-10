@@ -15,7 +15,7 @@ import (
 
 // Manager ... Interface for alert manager
 type Manager interface {
-	AddInvariantSession(core.SUUID, core.AlertDestination) error
+	AddSession(core.SUUID, core.AlertDestination) error
 	Transit() chan core.Alert
 
 	core.Subsystem
@@ -55,11 +55,12 @@ func NewManager(ctx context.Context, sc client.SlackClient) Manager {
 	return am
 }
 
-// AddInvariantSession ... Adds an invariant session to the alert manager store
-func (am *alertManager) AddInvariantSession(sUUID core.SUUID, alertDestination core.AlertDestination) error {
+// AddSession ... Adds an invariant session to the alert manager store
+func (am *alertManager) AddSession(sUUID core.SUUID, alertDestination core.AlertDestination) error {
 	return am.store.AddAlertDestination(sUUID, alertDestination)
 }
 
+// TODO - Rename this to ingress()
 // Transit ... Returns inter-subsystem transit channel for receiving alerts
 func (am *alertManager) Transit() chan core.Alert {
 	return am.alertTransit

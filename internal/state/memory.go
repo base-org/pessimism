@@ -78,29 +78,3 @@ func (ss *stateStore) Remove(_ context.Context, key *core.StateKey) error {
 	delete(ss.sliceStore, key.String())
 	return nil
 }
-
-// GetNestedSubset ... Fetches a subset of a nested slice provided a nested
-// key/value pair (ie. filters the state object into a subset object that
-// contains only the values that match the nested key/value pair)
-func (ss *stateStore) GetNestedSubset(_ context.Context,
-	key *core.StateKey) (map[string][]string, error) {
-	ss.RLock()
-	defer ss.RUnlock()
-
-	values, exists := ss.sliceStore[key.String()]
-	if !exists {
-		return map[string][]string{}, fmt.Errorf(notFoundError, key)
-	}
-
-	var nestedMap = make(map[string][]string, 0)
-	for _, val := range values {
-		if _, exists := ss.sliceStore[val]; !exists {
-			return map[string][]string{}, fmt.Errorf(notFoundError, val)
-		}
-
-		nestedValues := ss.sliceStore[val]
-		nestedMap[val] = nestedValues
-	}
-
-	return nestedMap, nil
-}
