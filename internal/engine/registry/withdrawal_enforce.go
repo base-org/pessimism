@@ -46,7 +46,6 @@ type WithdrawalEnforceInv struct {
 // Unmarshal ... Converts a general config to a balance invariant config
 func (cfg *WithdrawalEnforceCfg) Unmarshal(isp *core.InvSessionParams) error {
 	return json.Unmarshal(isp.Bytes(), &cfg)
-
 }
 
 // NewWithdrawalEnforceInv ... Initializer
@@ -65,7 +64,7 @@ func NewWithdrawalEnforceInv(ctx context.Context, cfg *WithdrawalEnforceCfg) (in
 
 	addr := common.HexToAddress(cfg.L2ToL1Address)
 	addr2 := common.HexToAddress(cfg.L1PortalAddress)
-	l2Messager, err := bindings.NewL2ToL1MessagePasserCaller(addr, l2Client)
+	l2MessagePasser, err := bindings.NewL2ToL1MessagePasserCaller(addr, l2Client)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +79,7 @@ func NewWithdrawalEnforceInv(ctx context.Context, cfg *WithdrawalEnforceCfg) (in
 
 		eventHash:           withdrawalHash,
 		l1PortalFilter:      filter,
-		l2tol1MessagePasser: l2Messager,
+		l2tol1MessagePasser: l2MessagePasser,
 
 		Invariant: invariant.NewBaseInvariant(core.EventLog),
 	}, nil

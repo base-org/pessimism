@@ -20,10 +20,12 @@ func Test_EventLoop(t *testing.T) {
 	am := alert.NewManager(ctx, sc)
 
 	go func() {
-		am.EventLoop()
+		_ = am.EventLoop()
 	}()
 
-	defer am.Shutdown()
+	defer func() {
+		_ = am.Shutdown()
+	}()
 
 	ingress := am.Transit()
 
