@@ -64,7 +64,7 @@ func (mr *MockServiceMockRecorder) CheckHealth() *gomock.Call {
 }
 
 // ProcessInvariantRequest mocks base method.
-func (m *MockService) ProcessInvariantRequest(arg0 models.InvRequestBody) (core.SUUID, error) {
+func (m *MockService) ProcessInvariantRequest(arg0 *models.InvRequestBody) (core.SUUID, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProcessInvariantRequest", arg0)
 	ret0, _ := ret[0].(core.SUUID)
@@ -79,7 +79,7 @@ func (mr *MockServiceMockRecorder) ProcessInvariantRequest(arg0 interface{}) *go
 }
 
 // RunInvariantSession mocks base method.
-func (m *MockService) RunInvariantSession(arg0 models.InvRequestParams) (core.SUUID, error) {
+func (m *MockService) RunInvariantSession(arg0 *models.InvRequestParams) (core.SUUID, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RunInvariantSession", arg0)
 	ret0, _ := ret[0].(core.SUUID)

@@ -13,19 +13,18 @@ import (
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/state"
 
-	"github.com/ethereum/go-ethereum/common"
 	"go.uber.org/zap"
 )
 
 // Manager ... Engine manager interface
 type Manager interface {
-	core.Subsystem
-
+	GetInputType(invType core.InvariantType) (core.RegisterType, error)
 	Transit() chan core.InvariantInput
 
-	// TODO( ) : Session deletion logic
 	DeleteInvariantSession(core.SUUID) (core.SUUID, error)
 	DeployInvariantSession(cfg *invariant.DeployConfig) (core.SUUID, error)
+
+	core.Subsystem
 }
 
 /*
@@ -46,11 +45,12 @@ type engineManager struct {
 	engine    RiskEngine
 	addresser AddressingMap
 	store     SessionStore
+	invTable  registry.InvariantTable
 }
 
 // NewManager ... Initializer
 func NewManager(ctx context.Context, engine RiskEngine, addr AddressingMap,
-	store SessionStore, alertOutgress chan core.Alert) Manager {
+	store SessionStore, it registry.InvariantTable, alertOutgress chan core.Alert) Manager {
 	ctx, cancel := context.WithCancel(ctx)
 	stats := metrics.WithContext(ctx)
 
@@ -62,6 +62,7 @@ func NewManager(ctx context.Context, engine RiskEngine, addr AddressingMap,
 		engine:        engine,
 		addresser:     addr,
 		store:         store,
+		invTable:      it,
 		metrics:       stats,
 	}
 
@@ -82,7 +83,7 @@ func (em *engineManager) DeleteInvariantSession(_ core.SUUID) (core.SUUID, error
 // updateSharedState ... Updates the shared state store
 // with contextual information about the invariant session
 // to the ETL (e.g. address, events)
-func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
+func (em *engineManager) updateSharedState(invParams *core.InvSessionParams,
 	sk *core.StateKey, pUUID core.PUUID) error {
 	err := sk.SetPUUID(pUUID)
 	// PUUID already exists in key but is different than the one we want
@@ -91,21 +92,27 @@ func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
 	}
 
 	// Use accessor method to insert entry into state store
-	err = state.InsertUnique(em.ctx, sk, invParams.Address())
+	err = state.InsertUnique(em.ctx, sk, invParams.Address().String())
 	if err != nil {
 		return err
 	}
 
 	if sk.IsNested() { // Nested addressing
 		for _, arg := range invParams.NestedArgs() {
+			argStr, success := arg.(string)
+			if !success {
+				return fmt.Errorf("invalid event string")
+			}
+
+			// Build nested key
 			innerKey := &core.StateKey{
 				Nesting: false,
 				Prefix:  sk.Prefix,
-				ID:      invParams.Address(),
+				ID:      invParams.Address().String(),
 				PUUID:   &pUUID,
 			}
 
-			err = state.InsertUnique(em.ctx, innerKey, arg)
+			err = state.InsertUnique(em.ctx, innerKey, argStr)
 			if err != nil {
 				return err
 			}
@@ -114,18 +121,32 @@ func (em *engineManager) updateSharedState(invParams core.InvSessionParams,
 
 	logging.WithContext(em.ctx).Debug("Setting to state store",
 		zap.String(core.PUUIDKey, pUUID.String()),
-		zap.String(core.AddrKey, invParams.Address()))
+		zap.String(core.AddrKey, invParams.Address().String()))
 
 	return nil
 }
 
 // DeployInvariantSession ... Deploys an invariant session to be processed by the engine
 func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (core.SUUID, error) {
-	inv, err := registry.GetInvariant(em.ctx, cfg.InvType, cfg.InvParams)
+	reg, exists := em.invTable[cfg.InvType]
+	if !exists {
+		return core.NilSUUID(), fmt.Errorf("invariant type %s not found", cfg.InvType)
+	}
+
+	if reg.Preprocess != nil { // Preprocess invariant params
+		err := reg.Preprocess(cfg.InvParams)
+		if err != nil {
+			return core.NilSUUID(), err
+		}
+	}
+
+	// Build invariant instance using constructor function from register definition
+	inv, err := reg.Constructor(em.ctx, cfg.InvParams)
 	if err != nil {
 		return core.NilSUUID(), err
 	}
 
+	// Generate session UUID and set it to the invariant
 	sUUID := core.MakeSUUID(cfg.Network, cfg.PUUID.PipelineType(), cfg.InvType)
 	inv.SetSUUID(sUUID)
 
@@ -134,22 +155,20 @@ func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (co
 		return core.NilSUUID(), err
 	}
 
-	if cfg.Register.Addressing {
-		gethAddr := common.HexToAddress(cfg.InvParams.Address())
-
-		err = em.addresser.Insert(gethAddr, cfg.PUUID, sUUID)
+	// Shared subsytem state management
+	if cfg.Stateful {
+		err = em.addresser.Insert(cfg.InvParams.Address(), cfg.PUUID, sUUID)
 		if err != nil {
 			return core.NilSUUID(), err
 		}
 
-		err = em.updateSharedState(cfg.InvParams, cfg.Register.StateKey(), cfg.PUUID)
+		err = em.updateSharedState(cfg.InvParams, cfg.StateKey, cfg.PUUID)
 		if err != nil {
 			return core.NilSUUID(), err
 		}
 	}
 
 	em.metrics.IncActiveInvariants()
-
 	return sUUID, nil
 }
 
@@ -170,6 +189,16 @@ func (em *engineManager) EventLoop() error {
 			return nil
 		}
 	}
+}
+
+// GetInputType ... Returns the register input type for the invariant type
+func (em *engineManager) GetInputType(invType core.InvariantType) (core.RegisterType, error) {
+	val, exists := em.invTable[invType]
+	if !exists {
+		return 0, fmt.Errorf("invariant type %s not found", invType)
+	}
+
+	return val.InputType, nil
 }
 
 // Shutdown ... Shuts down the engine manager
@@ -200,7 +229,7 @@ func (em *engineManager) executeAddressInvariants(ctx context.Context, data core
 	}
 
 	for _, sUUID := range ids {
-		inv, err := em.store.GetInvSessionByUUID(sUUID)
+		inv, err := em.store.GetInstanceByUUID(sUUID)
 		if err != nil {
 			logger.Error("Could not session by invariant sUUID",
 				zap.Error(err),
@@ -216,16 +245,16 @@ func (em *engineManager) executeAddressInvariants(ctx context.Context, data core
 func (em *engineManager) executeNonAddressInvariants(ctx context.Context, data core.InvariantInput) {
 	logger := logging.WithContext(ctx)
 
-	// Fetch all invariants associated with the pipeline
-	sUUIDs, err := em.store.GetInvSessionsForPipeline(data.PUUID)
+	// Fetch all session UUIDs associated with the pipeline
+	sUUIDs, err := em.store.GetSUUIDsByPUUID(data.PUUID)
 	if err != nil {
 		logger.Error("Could not fetch invariants for pipeline",
 			zap.Error(err),
 			zap.String(core.PUUIDKey, data.PUUID.String()))
 	}
 
-	// Fetch all invariants by SUUIDs
-	invs, err := em.store.GetInvariantsByUUIDs(sUUIDs...)
+	// Fetch all invariants for a slice of SUUIDs
+	invs, err := em.store.GetInstancesByUUIDs(sUUIDs)
 	if err != nil {
 		logger.Error("Could not fetch invariants for pipeline",
 			zap.Error(err),
@@ -242,9 +271,10 @@ func (em *engineManager) executeInvariant(ctx context.Context, data core.Invaria
 	logger := logging.WithContext(ctx)
 
 	// Execute invariant using risk engine and return alert if invalidation occurs
-	outcome, invalid := em.engine.Execute(ctx, data.Input, inv)
+	outcome, invalidated := em.engine.Execute(ctx, data.Input, inv)
 
-	if invalid {
+	if invalidated {
+		// Generate & send alert
 		alert := core.Alert{
 			Timestamp: outcome.TimeStamp,
 			SUUID:     inv.SUUID(),

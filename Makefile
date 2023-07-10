@@ -50,11 +50,6 @@ gosec:
 	@echo "$(GREEN) Running security scan with gosec...$(COLOR_END)"
 	gosec ./...
 
-.PHONY: metric-docs
-metric-docs: build-app
-	@echo "$(GREEN) Generating metric documentation...$(COLOR_END)"
-	@./bin/$(APP_NAME) doc metrics
-
 .PHONY: docker-build
 docker-build:
 	@echo "$(GREEN) Building docker image...$(COLOR_END)"

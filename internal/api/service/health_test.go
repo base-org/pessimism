@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	svc "github.com/base-org/pessimism/internal/api/service"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,19 +16,18 @@ func Test_GetHealth(t *testing.T) {
 		description string
 		function    string
 
-		constructionLogic func() testSuite
-		testLogic         func(*testing.T, testSuite)
+		constructionLogic func() *testSuite
+		testLogic         func(*testing.T, *testSuite)
 	}{
 		{
 			name:        "Get Health Success",
 			description: "",
 			function:    "ProcessInvariantRequest",
 
-			constructionLogic: func() testSuite {
-				cfg := svc.Config{}
-				ts := createTestSuite(ctrl, cfg)
+			constructionLogic: func() *testSuite {
+				ts := createTestSuite(ctrl)
 
-				ts.mockEthClientInterface.EXPECT().
+				ts.mockClient.EXPECT().
 					HeaderByNumber(gomock.Any(), gomock.Any()).
 					Return(nil, nil).
 					Times(2)
@@ -37,7 +35,7 @@ func Test_GetHealth(t *testing.T) {
 				return ts
 			},
 
-			testLogic: func(t *testing.T, ts testSuite) {
+			testLogic: func(t *testing.T, ts *testSuite) {
 				hc := ts.apiSvc.CheckHealth()
 
 				assert.True(t, hc.Healthy)
@@ -51,11 +49,10 @@ func Test_GetHealth(t *testing.T) {
 			description: "Emulates unhealthy rpc endpoints",
 			function:    "ProcessInvariantRequest",
 
-			constructionLogic: func() testSuite {
-				cfg := svc.Config{}
-				ts := createTestSuite(ctrl, cfg)
+			constructionLogic: func() *testSuite {
+				ts := createTestSuite(ctrl)
 
-				ts.mockEthClientInterface.EXPECT().
+				ts.mockClient.EXPECT().
 					HeaderByNumber(gomock.Any(), gomock.Any()).
 					Return(nil, testErr1()).
 					Times(2)
@@ -63,7 +60,7 @@ func Test_GetHealth(t *testing.T) {
 				return ts
 			},
 
-			testLogic: func(t *testing.T, ts testSuite) {
+			testLogic: func(t *testing.T, ts *testSuite) {
 				hc := ts.apiSvc.CheckHealth()
 				assert.False(t, hc.Healthy)
 				assert.False(t, hc.ChainConnectionStatus.IsL2Healthy)

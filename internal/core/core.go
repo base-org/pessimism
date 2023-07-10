@@ -1,6 +1,8 @@
 package core
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -95,41 +97,75 @@ const (
 )
 
 // InvSessionParams ... Parameters used to initialize an invariant session
-type InvSessionParams map[string]interface{}
+type InvSessionParams struct {
+	params map[string]any
+}
+
+// Bytes ... Returns a marshalled byte array of the invariant session params
+func (sp *InvSessionParams) Bytes() []byte {
+	bytes, _ := json.Marshal(sp.params)
+	return bytes
+}
+
+// NewSessionParams ... Initializes invariant session params
+func NewSessionParams() *InvSessionParams {
+	isp := &InvSessionParams{
+		params: make(map[string]any, 0),
+	}
+	isp.params[NestedArgs] = []any{}
+	return isp
+}
+
+func (sp *InvSessionParams) Value(key string) (any, error) {
+	val, found := sp.params[key]
+	if !found {
+		return nil, fmt.Errorf("key %s not found", key)
+	}
+
+	return val, nil
+}
 
 // Address ... Returns the address from the invariant session params
-func (sp *InvSessionParams) Address() string {
-	rawAddr, found := (*sp)[AddressKey]
+func (sp *InvSessionParams) Address() common.Address {
+	rawAddr, found := sp.params[AddressKey]
 	if !found {
-		return ""
+		return common.Address{0}
 	}
 
 	addr, success := rawAddr.(string)
 	if !success {
-		return ""
+		return common.Address{0}
 	}
 
-	return addr
+	return common.HexToAddress(addr)
 }
 
-// Address ... Returns the address from the invariant session params
-func (sp *InvSessionParams) NestedArgs() []string {
-	rawArgs, found := (*sp)[NestedArgs]
+// SetValue ... Sets a value in the invariant session params
+func (sp *InvSessionParams) SetValue(key string, val any) {
+	sp.params[key] = val
+}
+
+// SetNestedArg ... Sets a nested argument in the invariant session params
+// unique nested key/value space
+func (sp *InvSessionParams) SetNestedArg(arg interface{}) {
+	args := sp.NestedArgs()
+	args = append(args, arg)
+	sp.params[NestedArgs] = args
+}
+
+// NestedArgs ... Returns the nested arguments from the invariant session params
+func (sp *InvSessionParams) NestedArgs() []any {
+	rawArgs, found := sp.params[NestedArgs]
 	if !found {
-		return []string{}
+		return []any{}
 	}
 
-	args, success := rawArgs.([]interface{})
+	args, success := rawArgs.([]any)
 	if !success {
-		return []string{}
+		return []any{}
 	}
 
-	var strArgs []string
-	for _, arg := range args {
-		strArgs = append(strArgs, arg.(string))
-	}
-
-	return strArgs
+	return args
 }
 
 // InvalOutcome ... Represents an invalidation outcome
@@ -143,3 +179,9 @@ type Subsystem interface {
 	EventLoop() error
 	Shutdown() error
 }
+
+const (
+	L1Portal            = "l1_portal_address" //#nosec G101: False positive, this isn't a credential
+	L2ToL1MessagePasser = "l2_to_l1_address"  //#nosec G101: False positive, this isn't a credential
+	L2OutputOracle      = "l2_output_address" //#nosec G101: False positive, this isn't a credential
+)

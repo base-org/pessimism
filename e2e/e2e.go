@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/base-org/pessimism/internal/api/server"
-	"github.com/base-org/pessimism/internal/api/service"
 	"github.com/base-org/pessimism/internal/app"
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/state"
+	"github.com/base-org/pessimism/internal/subsystem"
 	op_e2e "github.com/ethereum-optimism/optimism/op-e2e"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -59,8 +60,7 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 	}
 
 	ss := state.NewMemState()
-
-	ctx = app.InitializeContext(ctx, ss, node.L2Client, node.L2Client)
+	ctx = app.InitializeContext(ctx, ss, node.L2Client, node.L2Client, nil)
 
 	appCfg := DefaultTestConfig()
 
@@ -105,10 +105,15 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 		t.Fatal(err)
 	}
 
+	gethClient, err := client.NewGethClient(sys.Nodes["sequencer"].HTTPEndpoint())
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	ss := state.NewMemState()
 	ctx = app.InitializeContext(ctx, ss,
 		sys.Clients["l1"],
-		sys.Clients["sequencer"])
+		sys.Clients["sequencer"], gethClient)
 
 	appCfg := DefaultTestConfig()
 
@@ -151,7 +156,7 @@ func DefaultTestConfig() *config.Config {
 	return &config.Config{
 		Environment:   config.Development,
 		BootStrapPath: "",
-		SvcConfig: &service.Config{
+		SystemConfig: &subsystem.Config{
 			L2PollInterval: l2PollInterval,
 			L1PollInterval: l1PollInterval,
 		},

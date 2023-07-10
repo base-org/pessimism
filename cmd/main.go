@@ -70,9 +70,15 @@ func RunPessimism(_ *cli.Context) error {
 		return err
 	}
 
+	l2Geth, err := client.NewGethClient(cfg.L2RpcEndpoint)
+	if err != nil {
+		logger.Fatal("Error creating L2 GETH client", zap.Error(err))
+		return err
+	}
+
 	ss := state.NewMemState()
 
-	ctx = app.InitializeContext(ctx, ss, l1Client, l2Client)
+	ctx = app.InitializeContext(ctx, ss, l1Client, l2Client, l2Geth)
 
 	pessimism, shutDown, err := app.NewPessimismApp(ctx, cfg)
 
@@ -113,7 +119,7 @@ func RunPessimism(_ *cli.Context) error {
 }
 
 // fetchBootSessions ... Loads the bootstrap file
-func fetchBootSessions(path string) ([]app.BootSession, error) {
+func fetchBootSessions(path string) ([]*app.BootSession, error) {
 	if !strings.HasSuffix(path, extJSON) {
 		return nil, fmt.Errorf("invalid bootstrap file format; expected %s", extJSON)
 	}
@@ -123,7 +129,7 @@ func fetchBootSessions(path string) ([]app.BootSession, error) {
 		return nil, err
 	}
 
-	data := []app.BootSession{}
+	data := []*app.BootSession{}
 
 	err = json.Unmarshal(file, &data)
 	if err != nil {

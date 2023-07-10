@@ -16,9 +16,11 @@ type ClientConfig struct {
 
 // SessionConfig ... Configuration passed through to a session constructor
 type SessionConfig struct {
+	Network   Network
+	PT        PipelineType
 	AlertDest AlertDestination
 	Type      InvariantType
-	Params    InvSessionParams
+	Params    *InvSessionParams
 }
 
 // PipelineConfig ... Configuration passed through to a pipeline constructor

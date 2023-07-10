@@ -55,11 +55,6 @@ func NewGethBlockOracle(ctx context.Context, cfg *core.ClientConfig,
 	return oracle, nil
 }
 
-// ConfigureRoutine ... Sets up the oracle client connection and persists puuid to definition state
-func (oracle *GethBlockODef) ConfigureRoutine(core.PUUID) error {
-	return nil
-}
-
 // getCurrentHeightFromNetwork ... Gets the current height of the network and will not quit until found
 func (oracle *GethBlockODef) getCurrentHeightFromNetwork(ctx context.Context) *types.Header {
 	for {
