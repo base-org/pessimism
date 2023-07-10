@@ -174,7 +174,7 @@ func (m *manager) RunInvSession(cfg *invariant.DeployConfig) (core.SUUID, error)
 		return sUUID, nil
 	}
 
-	if err = m.etl.RunPipeline(cfg.PUUID); err != nil { // Spinup pipeline components
+	if err = m.etl.RunPipeline(cfg.PUUID); err != nil { // Spin-up pipeline components
 		return core.NilSUUID(), err
 	}
 

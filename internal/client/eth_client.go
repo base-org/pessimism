@@ -22,10 +22,6 @@ import (
 )
 
 // TODO (#20) : Introduce optional Retry-able EthClient
-type EthClient struct {
-	url    string
-	client *ethclient.Client
-}
 
 // EthClientInterface ... Provides interface wrapper for ethClient functions
 // Useful for mocking go-etheruem node client logic
@@ -63,41 +59,5 @@ func NewEthClient(ctx context.Context, rawURL string) (EthClientInterface, error
 		return nil, err
 	}
 
-	return &EthClient{rawURL, client}, nil
-}
-
-// HeaderByNumber ... Wraps go-ethereum headerByNumber JSON-RPC method call
-func (ec *EthClient) HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error) {
-	return ec.client.HeaderByNumber(ctx, number)
-}
-
-// BlockByNumber ... Wraps go-ethereum blockByNumber JSON-RPC method call
-func (ec *EthClient) BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error) {
-	return ec.client.BlockByNumber(ctx, number)
-}
-
-// BalanceAt ... Wraps go-ethereum balanceAt JSON-RPC method call
-func (ec *EthClient) BalanceAt(ctx context.Context, account common.Address, number *big.Int) (*big.Int, error) {
-	return ec.client.BalanceAt(ctx, account, number)
-}
-
-// FilterLogs ... Wraps go-ethereum balanceAt JSON-RPC method call
-func (ec *EthClient) FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error) {
-	return ec.client.FilterLogs(ctx, query)
-}
-
-// CallContract ... Wraps go-ethereum callContract JSON-RPC method call
-func (ec *EthClient) CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error) {
-	return ec.client.CallContract(ctx, msg, blockNumber)
-}
-
-// CodeAt ... Wraps go-ethereum codeAt JSON-RPC method call
-func (ec *EthClient) CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error) {
-	return ec.client.CodeAt(ctx, account, blockNumber)
-}
-
-// SubscribeFilterLogs ... Wraps go-ethereum subscribeFilterLogs JSON-RPC method call
-func (ec *EthClient) SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery,
-	ch chan<- types.Log) (ethereum.Subscription, error) {
-	return ec.client.SubscribeFilterLogs(ctx, query, ch)
+	return client, nil
 }

@@ -77,8 +77,8 @@ func InitializeAlerting(ctx context.Context, cfg *config.Config) alert.Manager {
 	return alert.NewManager(ctx, sc)
 }
 
-// InitalizeETL ... Performs dependency injection to build etl struct
-func InitalizeETL(ctx context.Context, transit chan core.InvariantInput) pipeline.Manager {
+// InitializeETL ... Performs dependency injection to build etl struct
+func InitializeETL(ctx context.Context, transit chan core.InvariantInput) pipeline.Manager {
 	compRegistry := registry.NewRegistry()
 	analyzer := pipeline.NewAnalyzer(compRegistry)
 	store := pipeline.NewEtlStore()
@@ -104,11 +104,11 @@ func NewPessimismApp(ctx context.Context, cfg *config.Config) (*Application, fun
 		return nil, nil, err
 	}
 
-	alrt := InitializeAlerting(ctx, cfg)
-	engine := InitializeEngine(ctx, alrt.Transit())
-	etl := InitalizeETL(ctx, engine.Transit())
+	alerting := InitializeAlerting(ctx, cfg)
+	engine := InitializeEngine(ctx, alerting.Transit())
+	etl := InitializeETL(ctx, engine.Transit())
 
-	m := subsystem.NewManager(ctx, cfg.SystemConfig, etl, engine, alrt)
+	m := subsystem.NewManager(ctx, cfg.SystemConfig, etl, engine, alerting)
 
 	svr, shutDown, err := InitializeServer(ctx, cfg, m)
 	if err != nil {

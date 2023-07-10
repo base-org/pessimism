@@ -72,8 +72,8 @@ The hardcoded `withdrawal_enforcement` invariant scans for active `WithdrawalPro
 ### Parameters
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| l1_portal | string | The address of the L1Portal contract |
-| l2_messager | string | The address of the L2ToL1MessagePasser contract |
+| l1_portal_address | string | The address of the L1Portal contract |
+| l2_to_l1_address | string | The address of the L2ToL1MessagePasser contract |
 
 
 ### Example Deploy Request
@@ -89,8 +89,40 @@ curl --location --request POST 'http://localhost:8080/v0/invariant' \
 		"start_height":  null,
 		"alert_destination": "slack",
     "invariant_params": {
-      "l1_portal":   "0x111",
-      "l2_messager": "0x333",
+      "l1_portal_address": "0x111",
+      "l2_to_l1_address":  "0x333",
+    },
+}'
+```
+
+## Fault Detection
+**NOTE:** This invariant requires an active RPC connection to both L1 and L2 networks. Furthermore, the Pessimism implementation of fault-detector assumes that a submitted L2 output on L1 will correspond to a canonical block on L2.
+ 
+The hardcoded `fault_detector` invariant scans for active `OutputProposed` events on an L1 Output Oracle contract. Once an event is detected, the invariant implementation proceeds to reconstruct a local state output for the corresponding L2 block. If there is a mismatch between the L1 output and the local state output, the invariant alerts. 
+
+
+### Parameters
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| l2_output_address | string | The address of the L1 output oracle |
+| l2_to_l1_address | string | The address of the L2ToL1MessagePasser contract |
+
+
+### Example Deploy Request
+```
+curl --location --request POST 'http://localhost:8080/v0/invariant' \
+--header 'Content-Type: text/plain' \
+--data-raw '{
+  "method": "run",
+	"params": {
+		"network": "layer1",
+		"pipeline_type": "live",
+		"type": "fault_detector",
+		"start_height":  null,
+		"alert_destination": "slack",
+    "invariant_params": {
+      "l2_output_address":  "0x111",
+      "l2_to_l1_address":   "0x333",
     },
 }'
 ```
