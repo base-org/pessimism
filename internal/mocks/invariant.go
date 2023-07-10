@@ -89,3 +89,17 @@ func (mr *MockInvariantMockRecorder) SetSUUID(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSUUID", reflect.TypeOf((*MockInvariant)(nil).SetSUUID), arg0)
 }
+
+// ValidateInput mocks base method.
+func (m *MockInvariant) ValidateInput(arg0 core.TransitData) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidateInput", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ValidateInput indicates an expected call of ValidateInput.
+func (mr *MockInvariantMockRecorder) ValidateInput(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateInput", reflect.TypeOf((*MockInvariant)(nil).ValidateInput), arg0)
+}

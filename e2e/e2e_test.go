@@ -204,7 +204,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	// Obtain our sequencer, verifier, and transactor keypair.
 	l1Client := ts.Sys.Clients["l1"]
 	l2Seq := ts.Sys.Clients["sequencer"]
-	l2Verif := ts.Sys.Clients["verifier"]
+	l2Verifier := ts.Sys.Clients["verifier"]
 
 	// Define our L1 transaction timeout duration.
 	txTimeoutDuration := 10 * time.Duration(ts.Cfg.DeployConfig.L1BlockTime) * time.Second
@@ -254,8 +254,8 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 		EndHeight:    nil,
 		AlertingDest: core.Slack.String(),
 		SessionParams: map[string]interface{}{
-			core.L1Portal:          predeploys.DevOptimismPortal,
-			core.L2ToL1MessgPasser: fakeAddr.String(),
+			core.L1Portal:            predeploys.DevOptimismPortal,
+			core.L2ToL1MessagePasser: fakeAddr.String(),
 		},
 	},
 		{
@@ -267,8 +267,8 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 			EndHeight:    nil,
 			AlertingDest: core.Slack.String(),
 			SessionParams: map[string]interface{}{
-				core.L1Portal:          predeploys.DevOptimismPortal,
-				core.L2ToL1MessgPasser: predeploys.L2ToL1MessagePasserAddr.String(),
+				core.L1Portal:            predeploys.DevOptimismPortal,
+				core.L2ToL1MessagePasser: predeploys.L2ToL1MessagePasserAddr.String(),
 			},
 		},
 	})
@@ -281,7 +281,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	assert.Nil(t, err, "sending initiate withdraw tx")
 
 	// Wait for the transaction to appear in the L2 verifier.
-	receipt, err := e2e.WaitForTransaction(tx.Hash(), l2Verif, txTimeoutDuration)
+	receipt, err := e2e.WaitForTransaction(tx.Hash(), l2Verifier, txTimeoutDuration)
 	assert.Nil(t, err, "withdrawal initiated on L2 sequencer")
 	assert.Equal(t, receipt.Status, types.ReceiptStatusSuccessful, "transaction failed")
 
@@ -292,7 +292,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	assert.Nil(t, err)
 
 	ctx, cancel = context.WithTimeout(context.Background(), txTimeoutDuration)
-	header, err := l2Verif.HeaderByNumber(ctx, new(big.Int).SetUint64(blockNumber))
+	header, err := l2Verifier.HeaderByNumber(ctx, new(big.Int).SetUint64(blockNumber))
 	cancel()
 	assert.Nil(t, err)
 
@@ -346,6 +346,8 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	assert.Contains(t, alerts[0].Text, fakeAddr.String(), "expected alert to be for dummy L2ToL1MessagePasser")
 }
 
+// Test_Fault_Detector ... Ensures that an alert is produced in the presence of a faulty L2Output root
+// on the L1 Optimism portal contract.
 func Test_Fault_Detector(t *testing.T) {
 	ts := e2e.CreateSysTestSuite(t)
 	defer ts.Close()
@@ -355,44 +357,45 @@ func Test_Fault_Detector(t *testing.T) {
 
 	txTimeoutDuration := 10 * time.Duration(ts.Cfg.DeployConfig.L1BlockTime) * time.Second
 
+	// Generate transactor opts
 	aliceKey := ts.Cfg.Secrets.Alice
-	tractr, err := bind.NewKeyedTransactorWithChainID(ts.Cfg.Secrets.Proposer, ts.Cfg.L1ChainIDBig())
+	l1Opts, err := bind.NewKeyedTransactorWithChainID(ts.Cfg.Secrets.Proposer, ts.Cfg.L1ChainIDBig())
 	assert.Nil(t, err)
 
-	l2Tractr, err := bind.NewKeyedTransactorWithChainID(aliceKey, ts.Cfg.L2ChainIDBig())
+	l2Opts, err := bind.NewKeyedTransactorWithChainID(aliceKey, ts.Cfg.L2ChainIDBig())
 	assert.Nil(t, err)
 
+	// Generate output oracle bindings
 	outputOracle, err := bindings.NewL2OutputOracleTransactor(predeploys.DevL2OutputOracleAddr, l1Client)
 	assert.Nil(t, err)
 
 	reader, err := bindings.NewL2OutputOracleCaller(predeploys.DevL2OutputOracleAddr, l1Client)
 	assert.Nil(t, err)
 
+	// Deploys a fault detector invariant session instance using the locally spun-up Op-Stack chain
 	err = ts.App.BootStrap([]*models.InvRequestParams{{
 		Network:      core.Layer1.String(),
 		PType:        core.Live.String(),
 		InvType:      core.FaultDetector.String(),
-		StartHeight:  nil,
+		StartHeight:  big.NewInt(0),
 		EndHeight:    nil,
 		AlertingDest: core.Slack.String(),
 		SessionParams: map[string]interface{}{
-			core.L2OutputOracle:    predeploys.DevL2OutputOracle,
-			core.L2ToL1MessgPasser: predeploys.L2ToL1MessagePasser,
+			core.L2OutputOracle:      predeploys.DevL2OutputOracle,
+			core.L2ToL1MessagePasser: predeploys.L2ToL1MessagePasser,
 		},
 	}})
 
 	assert.Nil(t, err)
 
 	// Deploy a dummy L2ToL1 message passer for testing.
-	_, tx, _, err := bindings.DeployL2ToL1MessagePasser(l2Tractr, l2Client)
+	_, tx, _, err := bindings.DeployL2ToL1MessagePasser(l2Opts, l2Client)
 	assert.NoError(t, err, "error deploying message passer on L2")
 
 	_, err = e2e.WaitForTransaction(tx.Hash(), l2Client, txTimeoutDuration)
 	assert.NoError(t, err, "error waiting for transaction")
-	// Submit a dummy transaction
 
-	_, err = l2Client.BlockByNumber(context.Background(), nil)
-	assert.Nil(t, err)
+	// Propose a forged L2 output root.
 
 	dummyRoot := [32]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 	l1Hash := [32]byte{0}
@@ -400,15 +403,13 @@ func Test_Fault_Detector(t *testing.T) {
 	latestNum, err := reader.NextBlockNumber(&bind.CallOpts{})
 	assert.Nil(t, err)
 
-	tx, err = outputOracle.ProposeL2Output(tractr, dummyRoot, latestNum, l1Hash, big.NewInt(0))
+	tx, err = outputOracle.ProposeL2Output(l1Opts, dummyRoot, latestNum, l1Hash, big.NewInt(0))
 	assert.Nil(t, err)
 
 	_, err = e2e.WaitForTransaction(tx.Hash(), l1Client, txTimeoutDuration)
 	assert.Nil(t, err)
 
-	_, err = l2Client.BlockByNumber(context.Background(), latestNum)
-	assert.Nil(t, err)
-
+	// Wait for a fault detection alert to be produced.
 	time.Sleep(1 * time.Second)
 
 	alerts := ts.TestSvr.SlackAlerts()

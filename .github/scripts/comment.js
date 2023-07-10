@@ -3,7 +3,7 @@
   If the comment already exists, it will update the existing comment.
 
   This script is called from the .github/workflows/test.yml workflow file. It is very difficult to degug
-  given the way GitHub Actions works. To debug, you can add the following line to the top of the file:
+  given the way GitHub Actions works.
 
 */
 module.exports = async ({github, context, core}) => {

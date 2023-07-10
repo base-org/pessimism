@@ -11,22 +11,16 @@ import (
 	"go.uber.org/zap"
 )
 
-// BalanceInvConfig  ... Configuration for the balance invariant
+// BalanceInvConfig ... Configuration for the balance invariant
 type BalanceInvConfig struct {
 	Address    string   `json:"address"`
 	UpperBound *float64 `json:"upper"`
 	LowerBound *float64 `json:"lower"`
 }
 
-// UnmarshalToBalanceInvConfig ... Converts a general config to a balance invariant config
-func UnmarshalToBalanceInvConfig(cfg *core.InvSessionParams) (*BalanceInvConfig, error) {
-	invConfg := BalanceInvConfig{}
-	err := json.Unmarshal(cfg.Bytes(), &invConfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return &invConfg, nil
+// Unmarshal ... Converts a general config to a balance invariant config
+func (bi *BalanceInvConfig) Unmarshal(isp *core.InvSessionParams) error {
+	return json.Unmarshal(isp.Bytes(), &bi)
 }
 
 // BalanceInvariant ...
@@ -59,8 +53,9 @@ func NewBalanceInvariant(cfg *BalanceInvConfig) (invariant.Invariant, error) {
 func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
 	logging.NoContext().Debug("Checking invalidation for balance invariant", zap.String("data", fmt.Sprintf("%v", td)))
 
-	if td.Type != bi.InputType() {
-		return nil, false, fmt.Errorf(invalidInTypeErr, bi.InputType(), td.Type)
+	err := bi.ValidateInput(td)
+	if err != nil {
+		return nil, false, err
 	}
 
 	balance, ok := td.Value.(float64)

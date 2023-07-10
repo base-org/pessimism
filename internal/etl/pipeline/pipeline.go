@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/base-org/pessimism/internal/core"
@@ -32,6 +33,10 @@ type pipeline struct {
 
 // NewPipeline ... Initializer
 func NewPipeline(cfg *core.PipelineConfig, pUUID core.PUUID, comps []component.Component) (Pipeline, error) {
+	if len(comps) == 0 {
+		return nil, fmt.Errorf(emptyPipelineError)
+	}
+
 	pl := &pipeline{
 		cfg:        cfg,
 		id:         pUUID,

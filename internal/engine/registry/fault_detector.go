@@ -31,8 +31,13 @@ const faultDetectMsg = `
 
 // FaultDetectorCfg  ... Configuration for the fault detector invariant
 type FaultDetectorCfg struct {
-	L2OuptputOracle string `json:"l2_output_address"`
-	L2ToL1Address   string `json:"l2_to_l1_address"`
+	L2OutputOracle string `json:"l2_output_address"`
+	L2ToL1Address  string `json:"l2_to_l1_address"`
+}
+
+// Unmarshal ... Converts a general config to a fault detector invariant config
+func (fdc *FaultDetectorCfg) Unmarshal(isp *core.InvSessionParams) error {
+	return json.Unmarshal(isp.Bytes(), &fdc)
 }
 
 // blockInfo ... Wrapper for a block
@@ -41,6 +46,7 @@ type blockInfo struct {
 	*types.Block
 }
 
+// HeaderRLP ... Returns the RLP encoded header of a block
 func (b blockInfo) HeaderRLP() ([]byte, error) {
 	return rlp.EncodeToBytes(b.Header())
 }
@@ -48,17 +54,6 @@ func (b blockInfo) HeaderRLP() ([]byte, error) {
 // blockToInfo ... Converts a block to a blockInfo
 func blockToInfo(b *types.Block) blockInfo {
 	return blockInfo{b}
-}
-
-// UnmarshalToFaulDetectorCfg ... Converts a general config to a fault detector invariant config
-func UnmarshalToFaulDetectorCfg(isp *core.InvSessionParams) (*FaultDetectorCfg, error) {
-	invConfg := FaultDetectorCfg{}
-	err := json.Unmarshal(isp.Bytes(), &invConfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return &invConfg, nil
 }
 
 // faultDetectorInv ... faultDetectorInv implementation
@@ -92,7 +87,7 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (invariant.Inv
 		return nil, err
 	}
 
-	outputSig := crypto.Keccak256Hash([]byte("OutputProposed(bytes32,uint256,uint256,uint256)"))
+	outputSig := crypto.Keccak256Hash([]byte(OutputProposedEvent))
 	addr := common.HexToAddress(cfg.L2ToL1Address)
 
 	outputOracle, err := bindings.NewL2OutputOracleFilterer(addr, l1Client)
@@ -118,12 +113,13 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (invariant.Inv
 func (fd *faultDetectorInv) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
 	logging.NoContext().Debug("Checking invalidation for balance invariant", zap.String("data", fmt.Sprintf("%v", td)))
 
-	if td.Type != fd.InputType() {
-		return nil, false, fmt.Errorf("invalid type supplied")
+	err := fd.ValidateInput(td)
+	if err != nil {
+		return nil, false, err
 	}
 
-	if td.Address.String() != fd.cfg.L2OuptputOracle {
-		return nil, false, fmt.Errorf(invalidAddrErr, td.Address.String(), fd.cfg.L2OuptputOracle)
+	if td.Address.String() != fd.cfg.L2OutputOracle {
+		return nil, false, fmt.Errorf(invalidAddrErr, td.Address.String(), fd.cfg.L2OutputOracle)
 	}
 
 	log, success := td.Value.(types.Log)
@@ -158,7 +154,7 @@ func (fd *faultDetectorInv) Invalidate(td core.TransitData) (*core.InvalOutcome,
 	if expectedStateRoot != actualStateRoot {
 		return &core.InvalOutcome{
 			TimeStamp: time.Now(),
-			Message:   fmt.Sprintf(faultDetectMsg, fd.cfg.L2OuptputOracle, fd.cfg.L2ToL1Address, fd.SUUID(), log.TxHash),
+			Message:   fmt.Sprintf(faultDetectMsg, fd.cfg.L2OutputOracle, fd.cfg.L2ToL1Address, fd.SUUID(), log.TxHash),
 		}, true, nil
 	}
 

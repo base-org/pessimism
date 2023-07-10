@@ -27,7 +27,7 @@ func NewInvariantTable() InvariantTable {
 			Preprocess:  AddressPreprocess,
 			Policy:      core.BothNetworks,
 			InputType:   core.AccountBalance,
-			Constructor: constructBalanceInv,
+			Constructor: constructBalanceEnforcement,
 		},
 		core.ContractEvent: {
 			Preprocess:  EventPreprocess,
@@ -39,7 +39,7 @@ func NewInvariantTable() InvariantTable {
 			Preprocess:  WithdrawEnforcePreprocess,
 			Policy:      core.OnlyLayer1,
 			InputType:   core.EventLog,
-			Constructor: constructWithdrawlEnforceInv,
+			Constructor: constructWithdrawalEnforce,
 		},
 		core.FaultDetector: {
 			Preprocess:  FaultDetectPreprocess,
@@ -52,19 +52,11 @@ func NewInvariantTable() InvariantTable {
 	return tbl
 }
 
-// constructWithdrawlEnforceInv ... Constructs a withdrawal enforcement invariant
-func constructWithdrawlEnforceInv(ctx context.Context, isp *core.InvSessionParams) (invariant.Invariant, error) {
-	cfg, err := UnmarshalToWthdrawlEnforceCfg(isp)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewWthdrawlEnforceInv(ctx, cfg)
-}
-
 // constructEventInv ... Constructs an event invariant instance
 func constructEventInv(_ context.Context, isp *core.InvSessionParams) (invariant.Invariant, error) {
-	cfg, err := UnmarshalToEventInvConfig(isp)
+	cfg := &EventInvConfig{}
+
+	err := cfg.Unmarshal(isp)
 	if err != nil {
 		return nil, err
 	}
@@ -72,9 +64,11 @@ func constructEventInv(_ context.Context, isp *core.InvSessionParams) (invariant
 	return NewEventInvariant(cfg), nil
 }
 
-// constructBalanceInv ... Constructs a balance invariant instance
-func constructBalanceInv(_ context.Context, isp *core.InvSessionParams) (invariant.Invariant, error) {
-	cfg, err := UnmarshalToBalanceInvConfig(isp)
+// constructBalanceEnforcement ... Constructs a balance invariant instance
+func constructBalanceEnforcement(_ context.Context, isp *core.InvSessionParams) (invariant.Invariant, error) {
+	cfg := &BalanceInvConfig{}
+
+	err := cfg.Unmarshal(isp)
 	if err != nil {
 		return nil, err
 	}
@@ -82,8 +76,11 @@ func constructBalanceInv(_ context.Context, isp *core.InvSessionParams) (invaria
 	return NewBalanceInvariant(cfg)
 }
 
+// constructFaultDetector ...
 func constructFaultDetector(ctx context.Context, isp *core.InvSessionParams) (invariant.Invariant, error) {
-	cfg, err := UnmarshalToFaulDetectorCfg(isp)
+	cfg := &FaultDetectorCfg{}
+	err := cfg.Unmarshal(isp)
+
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +88,19 @@ func constructFaultDetector(ctx context.Context, isp *core.InvSessionParams) (in
 	return NewFaultDetector(ctx, cfg)
 }
 
-// EventPreprocess ... Ensures that an address and nesteed args exist in the session params
+// constructWithdrawalEnforce ...
+func constructWithdrawalEnforce(ctx context.Context, isp *core.InvSessionParams) (invariant.Invariant, error) {
+	cfg := &WithdrawalEnforceCfg{}
+	err := cfg.Unmarshal(isp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return NewWithdrawalEnforceInv(ctx, cfg)
+}
+
+// EventPreprocess ... Ensures that an address and nested args exist in the session params
 func EventPreprocess(cfg *core.InvSessionParams) error {
 	err := AddressPreprocess(cfg)
 	if err != nil {
@@ -124,7 +133,7 @@ func WithdrawEnforcePreprocess(cfg *core.InvSessionParams) error {
 		return err
 	}
 
-	_, err = cfg.Value(core.L2ToL1MessgPasser)
+	_, err = cfg.Value(core.L2ToL1MessagePasser)
 	if err != nil {
 		return err
 	}
@@ -137,7 +146,7 @@ func WithdrawEnforcePreprocess(cfg *core.InvSessionParams) error {
 		return fmt.Errorf("no nested args should be present")
 	}
 
-	cfg.SetNestedArg("WithdrawalProven(bytes32,address,address)")
+	cfg.SetNestedArg(WithdrawalProvenEvent)
 	return nil
 }
 
@@ -148,7 +157,7 @@ func FaultDetectPreprocess(cfg *core.InvSessionParams) error {
 		return err
 	}
 
-	_, err = cfg.Value(core.L2ToL1MessgPasser)
+	_, err = cfg.Value(core.L2ToL1MessagePasser)
 	if err != nil {
 		return err
 	}
@@ -159,6 +168,6 @@ func FaultDetectPreprocess(cfg *core.InvSessionParams) error {
 		return fmt.Errorf("no nested args should be present")
 	}
 
-	cfg.SetNestedArg("OutputProposed(bytes32,uint256,uint256,uint256)")
+	cfg.SetNestedArg(OutputProposedEvent)
 	return nil
 }

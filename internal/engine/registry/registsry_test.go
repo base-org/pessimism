@@ -43,7 +43,7 @@ func Test_WithdrawEnforcePreprocess(t *testing.T) {
 	err = registry.WithdrawEnforcePreprocess(isp)
 	assert.Error(t, err, "failure should occur when no l2tol1 passer is provided")
 
-	isp.SetValue(core.L2ToL1MessgPasser, "0x666")
+	isp.SetValue(core.L2ToL1MessagePasser, "0x666")
 	err = registry.WithdrawEnforcePreprocess(isp)
 	assert.NoError(t, err)
 
@@ -51,4 +51,17 @@ func Test_WithdrawEnforcePreprocess(t *testing.T) {
 	err = registry.WithdrawEnforcePreprocess(isp)
 	assert.Error(t, err, "failure should when nested args are provided")
 
+}
+
+func Test_InvTable(t *testing.T) {
+	tabl := registry.NewInvariantTable()
+
+	for key, inv := range tabl {
+		t.Run(key.String(), func(t *testing.T) {
+
+			assert.NotNil(t, inv.Constructor)
+			assert.NotNil(t, inv.Preprocess)
+			assert.NotEqual(t, inv.InputType.String(), core.UnknownType)
+		})
+	}
 }

@@ -4,8 +4,8 @@ package client
 
 /*
 	NOTE
-	geth client docs: https://pkg.go.dev/github.com/ethereum/go-ethereum/ethclient
-	geth api docs: https://geth.ethereum.org/docs/rpc/server
+	eth client docs: https://pkg.go.dev/github.com/ethereum/go-ethereum/ethclient
+	eth api docs: https://geth.ethereum.org/docs/rpc/server
 */
 
 import (
@@ -19,8 +19,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/ethclient/gethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 )
 
 // TODO (#20) : Introduce optional Retry-able EthClient
@@ -42,14 +40,6 @@ type EthClientInterface interface {
 	FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error)
 	SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery,
 		ch chan<- types.Log) (ethereum.Subscription, error)
-}
-
-func L2GethFromContext(ctx context.Context) (*gethclient.Client, error) {
-	if client, ok := ctx.Value(core.L2Geth).(*gethclient.Client); ok {
-		return client, nil
-	}
-
-	return nil, fmt.Errorf("could not load eth client object from context")
 }
 
 // FromContext ... Retrieves ethClient from context
@@ -110,19 +100,4 @@ func (ec *EthClient) CodeAt(ctx context.Context, account common.Address, blockNu
 func (ec *EthClient) SubscribeFilterLogs(ctx context.Context, query ethereum.FilterQuery,
 	ch chan<- types.Log) (ethereum.Subscription, error) {
 	return ec.client.SubscribeFilterLogs(ctx, query, ch)
-}
-
-type GethClient interface {
-	GetProof(ctx context.Context, account common.Address, keys []string,
-		blockNumber *big.Int) (*gethclient.AccountResult, error)
-}
-
-func NewGethClient(rawURL string) (GethClient, error) {
-	rpcClient, err := rpc.Dial(rawURL)
-	if err != nil {
-		return nil, err
-	}
-
-	gethClient := gethclient.New(rpcClient)
-	return gethClient, nil
 }

@@ -181,7 +181,7 @@ type Subsystem interface {
 }
 
 const (
-	L1Portal          = "l1_portal_address" //#nosec G101: False positive, this isn't a credential
-	L2ToL1MessgPasser = "l2_to_l1_address"  //#nosec G101: False positive, this isn't a credential
-	L2OutputOracle    = "l2_output_address" //#nosec G101: False positive, this isn't a credential
+	L1Portal            = "l1_portal_address" //#nosec G101: False positive, this isn't a credential
+	L2ToL1MessagePasser = "l2_to_l1_address"  //#nosec G101: False positive, this isn't a credential
+	L2OutputOracle      = "l2_output_address" //#nosec G101: False positive, this isn't a credential
 )

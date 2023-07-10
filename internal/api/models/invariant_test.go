@@ -48,3 +48,18 @@ func Test_InvRequestParams(t *testing.T) {
 	assert.Equal(t, sConfig.PT, core.Live)
 	assert.Equal(t, sConfig.Params, params)
 }
+
+func Test_InvariantRequestBody(t *testing.T) {
+	irb := &models.InvRequestBody{
+		Method: "test",
+		Params: models.InvRequestParams{},
+	}
+
+	// Ensure clone works
+	clone := irb.Clone()
+	assert.Equal(t, clone.Method, irb.Method)
+	assert.Equal(t, clone.Params, irb.Params)
+
+	// Ensure that method type works
+	assert.Equal(t, irb.MethodType(), models.InvariantMethod(0))
+}

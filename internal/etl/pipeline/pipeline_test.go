@@ -50,6 +50,33 @@ func Test_Pipeline(t *testing.T) {
 				assert.Equal(t, pl.Components()[1].OutputType(), core.GethBlock)
 			},
 		},
+		{
+			name:     "Successful Run",
+			function: "Add Engine Relay",
+			constructionLogic: func() pipeline.Pipeline {
+
+				testO, _ := mocks.NewDummyOracle(
+					context.Background(),
+					core.GethBlock)
+
+				pl, err := pipeline.NewPipeline(
+					nil,
+					core.NilPUUID(),
+					[]component.Component{testO})
+
+				if err != nil {
+					panic(err)
+				}
+
+				return pl
+			},
+			testLogic: func(t *testing.T, pl pipeline.Pipeline) {
+
+				relay := make(chan core.InvariantInput)
+				err := pl.AddEngineRelay(relay)
+				assert.NoError(t, err)
+			},
+		},
 	}
 
 	for i, tc := range tests {

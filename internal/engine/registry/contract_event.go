@@ -18,15 +18,9 @@ type EventInvConfig struct {
 	Sigs         []string `json:"args"`
 }
 
-// UnmarshalToEventInvConfig ... Converts a general config to an event invariant config
-func UnmarshalToEventInvConfig(isp *core.InvSessionParams) (*EventInvConfig, error) {
-	invConfg := EventInvConfig{}
-	err := json.Unmarshal(isp.Bytes(), &invConfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return &invConfg, nil
+// Unmarshal ... Converts a general config to an event invariant config
+func (eic *EventInvConfig) Unmarshal(isp *core.InvSessionParams) error {
+	return json.Unmarshal(isp.Bytes(), &eic)
 }
 
 // EventInvariant ...
@@ -66,8 +60,9 @@ func NewEventInvariant(cfg *EventInvConfig) invariant.Invariant {
 // Invalidate ... Checks if the balance is within the bounds
 // specified in the config
 func (ei *EventInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
-	if td.Type != ei.InputType() {
-		return nil, false, fmt.Errorf(invalidInTypeErr, td.Type.String(), ei.InputType().String())
+	err := ei.ValidateInput(td)
+	if err != nil {
+		return nil, false, err
 	}
 
 	if td.Address.String() != ei.cfg.Address {

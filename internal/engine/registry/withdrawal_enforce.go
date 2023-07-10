@@ -27,35 +27,30 @@ const withdrawalEnforceMsg = `
 	Transaction Hash: %s
 `
 
-// WthdrawlEnforceCfg  ... Configuration for the balance invariant
-type WthdrawlEnforceCfg struct {
+// WithdrawalEnforceCfg  ... Configuration for the balance invariant
+type WithdrawalEnforceCfg struct {
 	L1PortalAddress string `json:"l1_portal_address"`
 	L2ToL1Address   string `json:"l2_to_l1_address"`
 }
 
-// UnmarshalToWthdrawlEnforceCfg ... Converts a general config to a balance invariant config
-func UnmarshalToWthdrawlEnforceCfg(isp *core.InvSessionParams) (*WthdrawlEnforceCfg, error) {
-	invConfg := WthdrawlEnforceCfg{}
-	err := json.Unmarshal(isp.Bytes(), &invConfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return &invConfg, nil
-}
-
-// WthdrawlEnforceInv ... WithdrawalEnforceInvariant implementation
-type WthdrawlEnforceInv struct {
+// WithdrawalEnforceInv ... WithdrawalEnforceInvariant implementation
+type WithdrawalEnforceInv struct {
 	eventHash           common.Hash
-	cfg                 *WthdrawlEnforceCfg
+	cfg                 *WithdrawalEnforceCfg
 	l2tol1MessagePasser *bindings.L2ToL1MessagePasserCaller
 	l1PortalFilter      *bindings.OptimismPortalFilterer
 
 	invariant.Invariant
 }
 
-// NewWthdrawlEnforceInv ... Initializer
-func NewWthdrawlEnforceInv(ctx context.Context, cfg *WthdrawlEnforceCfg) (invariant.Invariant, error) {
+// Unmarshal ... Converts a general config to a balance invariant config
+func (cfg *WithdrawalEnforceCfg) Unmarshal(isp *core.InvSessionParams) error {
+	return json.Unmarshal(isp.Bytes(), &cfg)
+
+}
+
+// NewWithdrawalEnforceInv ... Initializer
+func NewWithdrawalEnforceInv(ctx context.Context, cfg *WithdrawalEnforceCfg) (invariant.Invariant, error) {
 	l2Client, err := client.FromContext(ctx, core.Layer2)
 	if err != nil {
 		return nil, err
@@ -66,7 +61,7 @@ func NewWthdrawlEnforceInv(ctx context.Context, cfg *WthdrawlEnforceCfg) (invari
 		return nil, err
 	}
 
-	withdrawalHash := crypto.Keccak256Hash([]byte("WithdrawalProven(bytes32,address,address)"))
+	withdrawalHash := crypto.Keccak256Hash([]byte(WithdrawalProvenEvent))
 
 	addr := common.HexToAddress(cfg.L2ToL1Address)
 	addr2 := common.HexToAddress(cfg.L1PortalAddress)
@@ -80,7 +75,7 @@ func NewWthdrawlEnforceInv(ctx context.Context, cfg *WthdrawlEnforceCfg) (invari
 		return nil, err
 	}
 
-	return &WthdrawlEnforceInv{
+	return &WithdrawalEnforceInv{
 		cfg: cfg,
 
 		eventHash:           withdrawalHash,
@@ -91,9 +86,9 @@ func NewWthdrawlEnforceInv(ctx context.Context, cfg *WthdrawlEnforceCfg) (invari
 	}, nil
 }
 
-// Invalidate ... Verifies than an L1 WithdrawwlProven has a correlating hash
+// Invalidate ... Verifies than an L1 WithdrawalProven has a correlating hash
 // to the withdrawal storage of the L2ToL1MessagePasser
-func (wi *WthdrawlEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
+func (wi *WithdrawalEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
 	logging.NoContext().Debug("Checking invalidation for balance invariant", zap.String("data", fmt.Sprintf("%v", td)))
 
 	if td.Type != wi.InputType() {
@@ -109,12 +104,12 @@ func (wi *WthdrawlEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutcom
 		return nil, false, fmt.Errorf(couldNotCastErr, "types.Log")
 	}
 
-	provenWithdrawl, err := wi.l1PortalFilter.ParseWithdrawalProven(log)
+	provenWithdrawal, err := wi.l1PortalFilter.ParseWithdrawalProven(log)
 	if err != nil {
 		return nil, false, err
 	}
 
-	exists, err := wi.l2tol1MessagePasser.SentMessages(nil, provenWithdrawl.WithdrawalHash)
+	exists, err := wi.l2tol1MessagePasser.SentMessages(nil, provenWithdrawal.WithdrawalHash)
 	if err != nil {
 		return nil, false, err
 	}

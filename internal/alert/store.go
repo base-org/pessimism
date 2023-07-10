@@ -18,13 +18,13 @@ type Store interface {
 
 // store ... Alert store implementation
 type store struct {
-	invariantstore map[core.SUUID]core.AlertDestination
+	alertMap map[core.SUUID]core.AlertDestination
 }
 
 // NewStore ... Initializer
 func NewStore() Store {
 	return &store{
-		invariantstore: make(map[core.SUUID]core.AlertDestination),
+		alertMap: make(map[core.SUUID]core.AlertDestination),
 	}
 }
 
@@ -32,20 +32,20 @@ func NewStore() Store {
 // NOTE - There can only be one alert destination per invariant session UUID
 func (am *store) AddAlertDestination(sUUID core.SUUID,
 	alertDestination core.AlertDestination) error {
-	if _, exists := am.invariantstore[sUUID]; exists {
+	if _, exists := am.alertMap[sUUID]; exists {
 		return fmt.Errorf("alert destination already exists for invariant session %s", sUUID.String())
 	}
 
-	am.invariantstore[sUUID] = alertDestination
+	am.alertMap[sUUID] = alertDestination
 	return nil
 }
 
 // GetAlertDestination ... Returns the alert destination for the given invariant session UUID
 func (am *store) GetAlertDestination(sUUID core.SUUID) (core.AlertDestination, error) {
-	alertDestination, exists := am.invariantstore[sUUID]
+	dest, exists := am.alertMap[sUUID]
 	if !exists {
 		return 0, fmt.Errorf("alert destination does not exist for invariant session %s", sUUID.String())
 	}
 
-	return alertDestination, nil
+	return dest, nil
 }
