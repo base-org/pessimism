@@ -40,7 +40,7 @@ jobs:
 
     - name: Generate Coverage
       run: |
-        go tool cover -func=coverage.out | grep total | awk '{print $3}' >> out.txt
+        go tool cover -func=coverage.out | grep total | >> out.txt
         echo "::set-output name=coverage::$(cat out.txt)"
 
     - name: Find Coverage Comment
