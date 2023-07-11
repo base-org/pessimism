@@ -11,7 +11,6 @@ import (
 // TODO() - Add optional redis store implementation
 type Store interface {
 	GetSlice(context.Context, *core.StateKey) ([]string, error)
-	GetNestedSubset(ctx context.Context, key *core.StateKey) (map[string][]string, error)
 
 	SetSlice(context.Context, *core.StateKey, string) (string, error)
 	Remove(context.Context, *core.StateKey) error

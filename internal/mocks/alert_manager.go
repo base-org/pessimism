@@ -34,18 +34,18 @@ func (m *AlertManager) EXPECT() *AlertManagerMockRecorder {
 	return m.recorder
 }
 
-// AddInvariantSession mocks base method.
-func (m *AlertManager) AddInvariantSession(arg0 core.SUUID, arg1 core.AlertDestination) error {
+// AddSession mocks base method.
+func (m *AlertManager) AddSession(arg0 core.SUUID, arg1 core.AlertDestination) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddInvariantSession", arg0, arg1)
+	ret := m.ctrl.Call(m, "AddSession", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// AddInvariantSession indicates an expected call of AddInvariantSession.
-func (mr *AlertManagerMockRecorder) AddInvariantSession(arg0, arg1 interface{}) *gomock.Call {
+// AddSession indicates an expected call of AddSession.
+func (mr *AlertManagerMockRecorder) AddSession(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddInvariantSession", reflect.TypeOf((*AlertManager)(nil).AddInvariantSession), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSession", reflect.TypeOf((*AlertManager)(nil).AddSession), arg0, arg1)
 }
 
 // EventLoop mocks base method.

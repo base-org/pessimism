@@ -9,12 +9,13 @@ import (
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"go.uber.org/zap"
 )
 
 // Manager ... Interface for alert manager
 type Manager interface {
-	AddInvariantSession(core.SUUID, core.AlertDestination) error
+	AddSession(core.SUUID, core.AlertDestination) error
 	Transit() chan core.Alert
 
 	core.Subsystem
@@ -29,6 +30,7 @@ type alertManager struct {
 	store        Store
 	interpolator Interpolator
 
+	metrics      metrics.Metricer
 	alertTransit chan core.Alert
 }
 
@@ -47,16 +49,18 @@ func NewManager(ctx context.Context, sc client.SlackClient) Manager {
 		interpolator: NewInterpolator(),
 		store:        NewStore(),
 		alertTransit: make(chan core.Alert),
+		metrics:      metrics.WithContext(ctx),
 	}
 
 	return am
 }
 
-// AddInvariantSession ... Adds an invariant session to the alert manager store
-func (am *alertManager) AddInvariantSession(sUUID core.SUUID, alertDestination core.AlertDestination) error {
+// AddSession ... Adds an invariant session to the alert manager store
+func (am *alertManager) AddSession(sUUID core.SUUID, alertDestination core.AlertDestination) error {
 	return am.store.AddAlertDestination(sUUID, alertDestination)
 }
 
+// TODO - Rename this to ingress()
 // Transit ... Returns inter-subsystem transit channel for receiving alerts
 func (am *alertManager) Transit() chan core.Alert {
 	return am.alertTransit
@@ -96,6 +100,9 @@ func (am *alertManager) EventLoop() error {
 				logger.Error("Could not determine alerting destination", zap.Error(err))
 				continue
 			}
+
+			alert.Dest = alertDest
+			am.metrics.RecordAlertGenerated(alert)
 
 			switch alertDest {
 			case core.Slack: // TODO: add more alert destinations

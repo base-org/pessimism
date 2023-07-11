@@ -9,10 +9,12 @@ import (
 	"go.uber.org/zap"
 )
 
+// Type ... Risk engine execution type
 type Type int
 
 const (
-	HardCoded Type = iota
+	HardCoded Type = iota + 1
+	// NOTE: Dynamic invariant support is not implemented
 	Dynamic
 )
 
@@ -24,7 +26,7 @@ type RiskEngine interface {
 }
 
 // hardCodedEngine ... Hard coded execution engine
-// IE: native application code for invariant implementation
+// IE: native hardcoded application code for invariant implementation
 type hardCodedEngine struct {
 	// TODO: Add any engine specific fields here
 }

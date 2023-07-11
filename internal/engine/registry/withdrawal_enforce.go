@@ -2,6 +2,7 @@ package registry
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -17,10 +18,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-	expTopicCount = 4
-)
-
 const withdrawalEnforceMsg = `
 	Proven withdrawal on L1 does not exist on L2
 	L1PortalAddress: %s
@@ -30,74 +27,89 @@ const withdrawalEnforceMsg = `
 	Transaction Hash: %s
 `
 
-// WthdrawlEnforceCfg  ... Configuration for the balance invariant
-type WthdrawlEnforceCfg struct {
-	L1PortalAddress string `json:"l1_portal"`
-	L2ToL1Address   string `json:"l2_messager"`
+// WithdrawalEnforceCfg  ... Configuration for the balance invariant
+type WithdrawalEnforceCfg struct {
+	L1PortalAddress string `json:"l1_portal_address"`
+	L2ToL1Address   string `json:"l2_to_l1_address"`
 }
 
-// WthdrawlEnforceInv ... WithdrawalEnforceInvariant implementation
-type WthdrawlEnforceInv struct {
-	eventHash  common.Hash
-	cfg        *WthdrawlEnforceCfg
-	l2Messager *bindings.L2ToL1MessagePasserCaller
+// WithdrawalEnforceInv ... WithdrawalEnforceInvariant implementation
+type WithdrawalEnforceInv struct {
+	eventHash           common.Hash
+	cfg                 *WithdrawalEnforceCfg
+	l2tol1MessagePasser *bindings.L2ToL1MessagePasserCaller
+	l1PortalFilter      *bindings.OptimismPortalFilterer
 
 	invariant.Invariant
 }
 
-// NewWthdrawlEnforceInv ... Initializer
-func NewWthdrawlEnforceInv(ctx context.Context, cfg *WthdrawlEnforceCfg) (invariant.Invariant, error) {
+// Unmarshal ... Converts a general config to a balance invariant config
+func (cfg *WithdrawalEnforceCfg) Unmarshal(isp *core.InvSessionParams) error {
+	return json.Unmarshal(isp.Bytes(), &cfg)
+}
+
+// NewWithdrawalEnforceInv ... Initializer
+func NewWithdrawalEnforceInv(ctx context.Context, cfg *WithdrawalEnforceCfg) (invariant.Invariant, error) {
 	l2Client, err := client.FromContext(ctx, core.Layer2)
 	if err != nil {
 		return nil, err
 	}
 
-	withdrawalHash := crypto.Keccak256Hash([]byte("WithdrawalProven(bytes32,address,address)"))
-
-	addr := common.HexToAddress(cfg.L2ToL1Address)
-	l2Messager, err := bindings.NewL2ToL1MessagePasserCaller(addr, l2Client)
+	l1Client, err := client.FromContext(ctx, core.Layer1)
 	if err != nil {
 		return nil, err
 	}
 
-	return &WthdrawlEnforceInv{
+	withdrawalHash := crypto.Keccak256Hash([]byte(WithdrawalProvenEvent))
+
+	addr := common.HexToAddress(cfg.L2ToL1Address)
+	addr2 := common.HexToAddress(cfg.L1PortalAddress)
+	l2MessagePasser, err := bindings.NewL2ToL1MessagePasserCaller(addr, l2Client)
+	if err != nil {
+		return nil, err
+	}
+
+	filter, err := bindings.NewOptimismPortalFilterer(addr2, l1Client)
+	if err != nil {
+		return nil, err
+	}
+
+	return &WithdrawalEnforceInv{
 		cfg: cfg,
 
-		eventHash:  withdrawalHash,
-		l2Messager: l2Messager,
+		eventHash:           withdrawalHash,
+		l1PortalFilter:      filter,
+		l2tol1MessagePasser: l2MessagePasser,
 
 		Invariant: invariant.NewBaseInvariant(core.EventLog),
 	}, nil
 }
 
-// Invalidate ... Checks if the balance is within the bounds
-// specified in the config
-func (wi *WthdrawlEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
-	logging.NoContext().Debug("Checking invalidation for balance invariant", zap.String("data", fmt.Sprintf("%v", td)))
+// Invalidate ... Verifies than an L1 WithdrawalProven has a correlating hash
+// to the withdrawal storage of the L2ToL1MessagePasser
+func (wi *WithdrawalEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
+	logging.NoContext().Debug("Checking invalidation for withdrawal enforcement invariant",
+		zap.String("data", fmt.Sprintf("%v", td)))
 
 	if td.Type != wi.InputType() {
 		return nil, false, fmt.Errorf("invalid type supplied")
 	}
 
 	if td.Address.String() != wi.cfg.L1PortalAddress {
-		return nil, false, fmt.Errorf("invalid address supplied")
+		return nil, false, fmt.Errorf(invalidAddrErr, td.Address.String(), wi.cfg.L1PortalAddress)
 	}
 
 	log, success := td.Value.(types.Log)
 	if !success {
-		return nil, false, fmt.Errorf("could not convert transit data to log")
+		return nil, false, fmt.Errorf(couldNotCastErr, "types.Log")
 	}
 
-	if log.Topics[0] != wi.eventHash {
-		return nil, false, fmt.Errorf("invalid log topic")
+	provenWithdrawal, err := wi.l1PortalFilter.ParseWithdrawalProven(log)
+	if err != nil {
+		return nil, false, err
 	}
 
-	if len(log.Topics) != expTopicCount {
-		return nil, false, fmt.Errorf("invalid number of log topics")
-	}
-
-	withdrawalHash := log.Topics[1]
-	exists, err := wi.l2Messager.SentMessages(nil, withdrawalHash)
+	exists, err := wi.l2tol1MessagePasser.SentMessages(nil, provenWithdrawal.WithdrawalHash)
 	if err != nil {
 		return nil, false, err
 	}
