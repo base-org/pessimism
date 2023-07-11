@@ -89,7 +89,7 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 			Help:      "Number of active invariants",
 			Namespace: metricsNamespace,
 			Subsystem: SubsystemInvariants,
-		}, []string{"network", "invariant", "pipeline"}),
+		}, []string{"invariant", "network", "pipeline"}),
 
 		ActivePipelines: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Name:      "active_pipelines",
