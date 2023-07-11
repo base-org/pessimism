@@ -116,10 +116,6 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, 
 
 	em.store.AddPipeline(pUUID, pipeline)
 
-	if len(components) == 1 {
-		return pUUID, false, nil
-	}
-
 	// Pipeline successfully created, increment for type and network
 	em.metrics.IncActivePipelines(pUUID.PipelineType().String(), pUUID.NetworkType().String())
 
