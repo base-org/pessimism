@@ -110,7 +110,7 @@ Aggregators are used to solve the problem where a pipe or an invariant input wil
 
 #### Attributes
 * Able to read heterogenous transit data from an arbitrary number of component ingresses
-* A synchronization policy that defines how different transit data from multiple ingress streams will be aggregated into a collectivly bound single piece of data
+* A synchronization policy that defines how different transit data from multiple ingress streams will be aggregated into a collectively bound single piece of data
 * EgressHandler to handle downstream transit data routing to other components or destinations
 
 #### Single Value Subscription
@@ -120,7 +120,7 @@ Single Value Subscription refers to a synchronization policy where a bucketed mu
 
 For example we can have an invariant that subscribes to blocks from two heterogenous chains (layer1, layer2) or `{ChainA, ChainB}`, let's assume `BLOCK_TIME(ChainA) > BLOCK_TIME(ChainB)`.
 
-We can either specify that the invariant will run every-time there's an update or a new block from `ChainA`:
+We can either specify that the invariant will run every time there's an update or a new block from `ChainA`:
 ```
 {
    "A:latest_blocks": [xi] where cardinality = 1,
@@ -184,7 +184,7 @@ graph LR;
 A `GethBlock` register refers to a block output extracted from a go-ethereum node. This register is used for creating `Oracle` components that poll and extract block data from a go-ethereum node in real-time.
 
 ### Geth Account Balance Oracle Register
-An `AccountBalance` register refers to a native ETH balance output extracted from a go-ethereum node. This register is used for creating `Oracle` components that poll and extract native ETH balance data for some state persisted addreses from a go-ethereum node in real-time.
+An `AccountBalance` register refers to a native ETH balance output extracted from a go-ethereum node. This register is used for creating `Oracle` components that poll and extract native ETH balance data for some state persisted addresses from a go-ethereum node in real-time.
 Unlike, the `GethBlock` register, this register requires knowledge of an address set that's shared with the risk engine to properly function and is therefore addressable. Because of this, any invariant that uses this register must also be addressable.
 
 ## Managed ETL
@@ -192,7 +192,7 @@ Unlike, the `GethBlock` register, this register requires knowledge of an address
 ### Component Graph
 The ETL uses a `ComponentGraph` construct to represent and store critical component inter-connectivity data _(ie. component node entries and graph edges)_.
 
-A graph edge is represented as a binded communication path between two arbitrary component nodes (`c1`, `c2`). Adding an edge from some component (`c1`) to some downstream component (`c2`) results in `c1` having a path to the ingress of `c2` in it's [egress handler](#egress-handler). This would look something like:
+A graph edge is represented as a binded communication path between two arbitrary component nodes (`c1`, `c2`). Adding an edge from some component (`c1`) to some downstream component (`c2`) results in `c1` having a path to the ingress of `c2` in its [egress handler](#egress-handler). This would look something like:
 
 ```mermaid
 graph TB;
@@ -220,11 +220,11 @@ graph TB;
 Pipelines are used to represent some full component path in a DAG based `ComponentGraph`. A pipeline is a sequence of components that are connected together in a way to express meaningful ETL operations for extracting some invariant input for consumption by the Risk Engine.
 
 ### Pipeline States
-- `Backfill` - Backfill denotes that the pipeline is currently performing a backfill operation. This means the pipeline is sequentially reading data from some starting height to the most recent block height. This is useful for building state dependendent pipelines that require some knowledge of prior history to make live assessments. For example, detecting imbalances between the native ETH deposit supply on the L1 portal contract and the TVL unlocked on the L2 chain would require indexing the prior history of L1 deposits to construct correct supply values. 
+- `Backfill` - Backfill denotes that the pipeline is currently performing a backfill operation. This means the pipeline is sequentially reading data from some starting height to the most recent block height. This is useful for building state dependent pipelines that require some knowledge of prior history to make live assessments. For example, detecting imbalances between the native ETH deposit supply on the L1 portal contract and the TVL unlocked on the L2 chain would require indexing the prior history of L1 deposits to construct correct supply values. 
 - `Live` - Live denotes that the pipeline is currently performing live operations. This means the pipeline is reading data from the most recent block height.
 - `Stopped` - Stopped denotes that the pipeline is currently not performing any operations. This means the pipeline is neither reading nor processing any data.
 - `Paused` - Paused denotes that the pipeline is currently not performing any operations. This means the pipeline is neither reading nor processing any data. The difference between `Stopped` and `Paused` is that a `Paused` pipeline can be resumed at any time while a `Stopped` pipeline must be restarted.
-- `Error` - Error denotes that the pipeline is currently in an error state. This means the pipeline is neither reading nor processing any data. The difference between `Stopped` and `Error` is that a `Error` pipeline can be resumed at any time while a `Stopped` pipeline must be restarted.
+- `Error` - Error denotes that the pipeline is currently in an error state. This means the pipeline is neither reading nor processing any data. The difference between `Stopped` and `Error` is that an `Error` pipeline can be resumed at any time while a `Stopped` pipeline must be restarted.
 
 ### Pipeline Types
 There are two types of pipelines:
@@ -242,7 +242,7 @@ All pipelines have a PUUID that stores critical identification data. Pipeline UU
 * Route invariant inputs between the ETL and Risk Engine
 * Understand when pipeline collisions between `PIDs` occur
 
-Pipeline UUID's constitute of both a randomly generated `UUID` and a deterministic `PID`. This is done to ensure uniqueness of each component instance while also ensuring collision based properties so that overlaping components can be deduplicated when viable. 
+Pipeline UUID's constitute of both a randomly generated `UUID` and a deterministic `PID`. This is done to ensure uniqueness of each component instance while also ensuring collision based properties so that overlapping components can be deduplicated when viable. 
 
 A `PipelinePID` is encoded using the following 9 byte array sequence:
 ```
