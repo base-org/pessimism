@@ -59,3 +59,9 @@ docker-build:
 docker-run:
 	@echo "$(GREEN) Running docker image...$(COLOR_END)"
 	@docker run -p 8080:8080 -p 7300:7300 -e config.env $(APP_NAME)
+
+.PHONY: metrics-docs
+metrics-docs: build-app
+		@echo "$(GREEN) Generating metric documentation...$(COLOR_END)"
+		@./bin/pessimism doc metrics
+

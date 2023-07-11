@@ -13,11 +13,11 @@ To generate documentation for metrics, run `make docs` from the root of the repo
 which can be pasted directly below to keep current system metric documentation up to date.
 
 ## Current Metrics
-|                  METRIC                   |                      DESCRIPTION                       |  LABELS   |  TYPE   |
-|-------------------------------------------|--------------------------------------------------------|-----------|---------|
-| pessimism_up                              | 1 if the service is up                                 |           | gauge   |
-| pessimism_invariants_active_invariants    | Number of active invariants                            |           | gauge   |
-| pessimism_etl_active_pipelines            | Number of active pipelines                             |           | gauge   |
-| pessimism_invariants_invariant_runs_total | Number of times a specific invariant has been run      | invariant | counter |
-| pessimism_alarms_generated_total          | Number of total alarms generated for a given invariant | invariant | counter |
-| pessimism_node_errors_total               | Number of node errors caught                           | node      | counter |
+|                  METRIC                   |                      DESCRIPTION                       |                 LABELS                 |  TYPE   |
+|-------------------------------------------|--------------------------------------------------------|----------------------------------------|---------|
+| pessimism.up                              | 1 if the service is up                                 |                                        | gauge   |
+| pessimism.invariants.active_invariants    | Number of active invariants                            |                                        | gauge   |
+| pessimism.etl.active_pipelines            | Number of active pipelines                             | pipeline,network                       | gauge   |
+| pessimism.invariants.invariant_runs_total | Number of times a specific invariant has been run      | network,invariant                      | counter |
+| pessimism.alerts_generated_total          | Number of total alerts generated for a given invariant | network,invariant,pipeline,destination | counter |
+| pessimism.node_errors_total               | Number of node errors caught                           | node                                   | counter |
