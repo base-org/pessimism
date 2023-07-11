@@ -30,10 +30,9 @@ type Config struct {
 }
 
 type Metricer interface {
-	IncActiveInvariants()
-	DecActiveInvariants()
-	IncActivePipelines()
-	DecActivePipelines()
+	IncActiveInvariants(invType, network, pipelineType string)
+	IncActivePipelines(pipelineType, network string)
+	DecActivePipelines(pipelineType, network string)
 	RecordInvariantRun(invariant invariant.Invariant)
 	RecordAlertGenerated(alert core.Alert)
 	RecordNodeError(node string)
@@ -44,9 +43,9 @@ type Metricer interface {
 }
 
 type Metrics struct {
-	ActiveInvariants prometheus.Gauge
-	ActivePipelines  prometheus.Gauge
 	Up               prometheus.Gauge
+	ActivePipelines  *prometheus.GaugeVec
+	ActiveInvariants *prometheus.GaugeVec
 	InvariantRuns    *prometheus.CounterVec
 	AlertsGenerated  *prometheus.CounterVec
 	NodeErrors       *prometheus.CounterVec
@@ -85,19 +84,19 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 			Name:      "up",
 			Help:      "1 if the service is up",
 		}),
-		ActiveInvariants: factory.NewGauge(prometheus.GaugeOpts{
+		ActiveInvariants: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Name:      "active_invariants",
 			Help:      "Number of active invariants",
 			Namespace: metricsNamespace,
 			Subsystem: SubsystemInvariants,
-		}),
+		}, []string{"invariant", "network", "pipeline"}),
 
-		ActivePipelines: factory.NewGauge(prometheus.GaugeOpts{
+		ActivePipelines: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Name:      "active_pipelines",
 			Help:      "Number of active pipelines",
 			Namespace: metricsNamespace,
 			Subsystem: SubsystemEtl,
-		}),
+		}, []string{"pipeline", "network"}),
 
 		InvariantRuns: factory.NewCounterVec(prometheus.CounterOpts{
 			Name:      "invariant_runs_total",
@@ -143,23 +142,18 @@ func (m *Metrics) RecordUp() {
 }
 
 // IncActiveInvariants ... Increments the number of active invariants
-func (m *Metrics) IncActiveInvariants() {
-	m.ActiveInvariants.Inc()
-}
-
-// DecActiveInvariants ... Decrements the number of active invariants
-func (m *Metrics) DecActiveInvariants() {
-	m.ActiveInvariants.Dec()
+func (m *Metrics) IncActiveInvariants(invType, network, pipelineType string) {
+	m.ActiveInvariants.WithLabelValues(invType, network, pipelineType).Inc()
 }
 
 // IncActivePipelines ... Increments the number of active pipelines
-func (m *Metrics) IncActivePipelines() {
-	m.ActivePipelines.Inc()
+func (m *Metrics) IncActivePipelines(pipelineType, network string) {
+	m.ActivePipelines.WithLabelValues(pipelineType, network).Inc()
 }
 
 // DecActivePipelines ... Decrements the number of active pipelines
-func (m *Metrics) DecActivePipelines() {
-	m.ActivePipelines.Dec()
+func (m *Metrics) DecActivePipelines(pipelineType, network string) {
+	m.ActivePipelines.WithLabelValues(pipelineType, network).Dec()
 }
 
 // RecordInvariantRun ... Records that a given invariant has been run
@@ -197,10 +191,10 @@ type noopMetricer struct{}
 
 var NoopMetrics Metricer = new(noopMetricer)
 
-func (n *noopMetricer) IncActiveInvariants()                     {}
-func (n *noopMetricer) DecActiveInvariants()                     {}
-func (n *noopMetricer) IncActivePipelines()                      {}
-func (n *noopMetricer) DecActivePipelines()                      {}
+func (n *noopMetricer) IncActiveInvariants(_, _, _ string)       {}
+func (n *noopMetricer) DecActiveInvariants(_, _, _ string)       {}
+func (n *noopMetricer) IncActivePipelines(_, _ string)           {}
+func (n *noopMetricer) DecActivePipelines(_, _ string)           {}
 func (n *noopMetricer) RecordInvariantRun(_ invariant.Invariant) {}
 func (n *noopMetricer) RecordAlertGenerated(_ core.Alert)        {}
 func (n *noopMetricer) RecordNodeError(_ string)                 {}

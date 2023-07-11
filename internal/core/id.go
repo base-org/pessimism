@@ -67,6 +67,10 @@ func (uuid PUUID) PipelineType() PipelineType {
 	return PipelineType(uuid.PID[0])
 }
 
+func (uuid PUUID) NetworkType() Network {
+	return Network(uuid.PID[1])
+}
+
 // InvSessionPID ... Invariant session Primary ID
 type InvSessionPID [3]byte
 

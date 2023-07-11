@@ -15,6 +15,7 @@ import (
 	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"go.uber.org/zap"
 )
 
@@ -53,9 +54,10 @@ type manager struct {
 	cfg *Config
 	ctx context.Context
 
-	etl  pipeline.Manager
-	eng  engine.Manager
-	alrt alert.Manager
+	etl   pipeline.Manager
+	eng   engine.Manager
+	alrt  alert.Manager
+	stats metrics.Metricer
 
 	*sync.WaitGroup
 }
@@ -70,6 +72,7 @@ func NewManager(ctx context.Context, cfg *Config, etl pipeline.Manager, eng engi
 		etl:       etl,
 		eng:       eng,
 		alrt:      alrt,
+		stats:     metrics.WithContext(ctx),
 		WaitGroup: &sync.WaitGroup{},
 	}
 }
