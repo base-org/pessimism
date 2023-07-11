@@ -75,6 +75,7 @@ func (oracle *AddressBalanceODef) ReadRoutine(ctx context.Context, componentChan
 	for {
 		select {
 		case <-ticker.C: // Polling
+			ts := time.Now()
 			logging.NoContext().Debug("Getting addresess",
 				zap.String(core.PUUIDKey, oracle.pUUID.String()))
 
@@ -114,7 +115,7 @@ func (oracle *AddressBalanceODef) ReadRoutine(ctx context.Context, componentChan
 
 				// Send parsed float64 balance value to downstream component channel
 				componentChan <- core.NewTransitData(core.AccountBalance, ethBalance,
-					core.WithAddress(gethAddress))
+					core.WithAddress(gethAddress), core.WithOriginTS(ts))
 			}
 
 		case <-ctx.Done(): // Shutdown

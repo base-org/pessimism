@@ -8,6 +8,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/mocks"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -308,7 +309,7 @@ func Test_ReadRoutine(t *testing.T) {
 					EndHeight:    big.NewInt(1),
 					NumOfRetries: 3,
 					PollInterval: 1000,
-				}, currHeight: nil, client: testObj}
+				}, currHeight: nil, client: testObj, stats: metrics.NoopMetrics}
 				outChan := make(chan core.TransitData)
 				return od, outChan
 			},
@@ -354,7 +355,7 @@ func Test_ReadRoutine(t *testing.T) {
 					EndHeight:    big.NewInt(5),
 					NumOfRetries: 3,
 					PollInterval: 1000,
-				}, currHeight: nil, client: testObj}
+				}, currHeight: nil, client: testObj, stats: metrics.NoopMetrics}
 				outChan := make(chan core.TransitData, 10)
 				return od, outChan
 			},

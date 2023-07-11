@@ -33,9 +33,11 @@ type Metricer interface {
 	IncActiveInvariants(invType, network, pipelineType string)
 	IncActivePipelines(pipelineType, network string)
 	DecActivePipelines(pipelineType, network string)
+	RecordBlockLatency(network, pipeline string, latency float64)
 	RecordInvariantRun(invariant invariant.Invariant)
 	RecordAlertGenerated(alert core.Alert)
 	RecordNodeError(node string)
+	RecordPipelineLatency(pUUID string, latency float64)
 	RecordUp()
 	Start()
 	Shutdown(ctx context.Context) error
@@ -49,6 +51,8 @@ type Metrics struct {
 	InvariantRuns    *prometheus.CounterVec
 	AlertsGenerated  *prometheus.CounterVec
 	NodeErrors       *prometheus.CounterVec
+	BlockLatency     *prometheus.GaugeVec
+	PipelineLatency  *prometheus.GaugeVec
 
 	registry *prometheus.Registry
 	factory  Factory
@@ -116,6 +120,17 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 			Help:      "Number of node errors caught",
 			Namespace: metricsNamespace,
 		}, []string{"node"}),
+		BlockLatency: factory.NewGaugeVec(prometheus.GaugeOpts{
+			Name:      "block_latency",
+			Help:      "Latency of block processing",
+			Namespace: metricsNamespace,
+		}, []string{"network", "pipeline"}),
+
+		PipelineLatency: factory.NewGaugeVec(prometheus.GaugeOpts{
+			Name:      "pipeline_latency",
+			Help:      "Latency of pipeline processing",
+			Namespace: metricsNamespace,
+		}, []string{"puuid"}),
 
 		registry: registry,
 		factory:  factory,
@@ -177,6 +192,16 @@ func (m *Metrics) RecordNodeError(node string) {
 	m.NodeErrors.WithLabelValues(node).Inc()
 }
 
+// RecordBlockLatency ... Records the latency of block processing
+func (m *Metrics) RecordBlockLatency(network, pipeline string, latency float64) {
+	m.BlockLatency.WithLabelValues(network, pipeline).Set(latency)
+}
+
+// RecordPipelineLatency ... Records the latency of pipeline processing
+func (m *Metrics) RecordPipelineLatency(puuid string, latency float64) {
+	m.PipelineLatency.WithLabelValues(puuid).Set(latency)
+}
+
 // Shutdown ... Shuts down the metrics server
 func (m *Metrics) Shutdown(ctx context.Context) error {
 	return m.server.Shutdown(ctx)
@@ -191,14 +216,16 @@ type noopMetricer struct{}
 
 var NoopMetrics Metricer = new(noopMetricer)
 
-func (n *noopMetricer) IncActiveInvariants(_, _, _ string)       {}
-func (n *noopMetricer) DecActiveInvariants(_, _, _ string)       {}
-func (n *noopMetricer) IncActivePipelines(_, _ string)           {}
-func (n *noopMetricer) DecActivePipelines(_, _ string)           {}
-func (n *noopMetricer) RecordInvariantRun(_ invariant.Invariant) {}
-func (n *noopMetricer) RecordAlertGenerated(_ core.Alert)        {}
-func (n *noopMetricer) RecordNodeError(_ string)                 {}
-func (n *noopMetricer) RecordUp()                                {}
+func (n *noopMetricer) RecordPipelineLatency(_ string, _ float64) {}
+func (n *noopMetricer) RecordBlockLatency(_, _ string, _ float64) {}
+func (n *noopMetricer) IncActiveInvariants(_, _, _ string)        {}
+func (n *noopMetricer) DecActiveInvariants(_, _, _ string)        {}
+func (n *noopMetricer) IncActivePipelines(_, _ string)            {}
+func (n *noopMetricer) DecActivePipelines(_, _ string)            {}
+func (n *noopMetricer) RecordInvariantRun(_ invariant.Invariant)  {}
+func (n *noopMetricer) RecordAlertGenerated(_ core.Alert)         {}
+func (n *noopMetricer) RecordNodeError(_ string)                  {}
+func (n *noopMetricer) RecordUp()                                 {}
 func (n *noopMetricer) Shutdown(_ context.Context) error {
 	return nil
 }

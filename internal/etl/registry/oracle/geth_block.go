@@ -10,6 +10,7 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 )
@@ -22,17 +23,22 @@ const (
 // GethBlockODef ...GethBlock register oracle definition used to drive oracle component
 type GethBlockODef struct {
 	cUUID      core.CUUID
+	pUUID      core.PUUID
 	cfg        *core.ClientConfig
 	client     client.EthClientInterface
 	currHeight *big.Int
+
+	stats metrics.Metricer
 }
 
 // NewGethBlockODef ... Initializer for geth.block oracle definition
-func NewGethBlockODef(cfg *core.ClientConfig, client client.EthClientInterface, h *big.Int) *GethBlockODef {
+func NewGethBlockODef(cfg *core.ClientConfig, client client.EthClientInterface,
+	h *big.Int, stats metrics.Metricer) *GethBlockODef {
 	return &GethBlockODef{
 		cfg:        cfg,
 		client:     client,
 		currHeight: h,
+		stats:      stats,
 	}
 }
 
@@ -44,7 +50,7 @@ func NewGethBlockOracle(ctx context.Context, cfg *core.ClientConfig,
 		return nil, err
 	}
 
-	od := NewGethBlockODef(cfg, client, nil)
+	od := NewGethBlockODef(cfg, client, nil, metrics.WithContext(ctx))
 
 	oracle, err := component.NewOracle(ctx, core.GethBlock, od, opts...)
 	if err != nil {
@@ -52,6 +58,7 @@ func NewGethBlockOracle(ctx context.Context, cfg *core.ClientConfig,
 	}
 
 	od.cUUID = oracle.UUID()
+	od.pUUID = oracle.PUUID()
 	return oracle, nil
 }
 
@@ -107,6 +114,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 
 			// TODO - Add support for database persistence
 			componentChan <- core.TransitData{
+				OriginTS:  time.Now(),
 				Timestamp: time.Now(),
 				Type:      core.GethBlock,
 				Value:     *blockAsserted,
@@ -217,7 +225,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			}
 
 			blockAsInterface, err := oracle.fetchData(ctx, headerAsserted.Number, core.FetchBlock)
-			blockAsserted, blockAssertedOk := blockAsInterface.(*types.Block)
+			block, blockAssertedOk := blockAsInterface.(*types.Block)
 
 			if err != nil || !blockAssertedOk {
 				logging.WithContext(ctx).Error("problem fetching or asserting block", zap.NamedError("blockFetch", err),
@@ -225,10 +233,15 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 				continue
 			}
 
+			blockTS := time.Unix(int64(block.Time()), 0)
+			oracle.stats.RecordBlockLatency(oracle.cfg.Network.String(), oracle.pUUID.String(),
+				float64(time.Since(blockTS).Milliseconds()))
+
 			componentChan <- core.TransitData{
+				OriginTS:  blockTS,
 				Timestamp: time.Now(),
 				Type:      core.GethBlock,
-				Value:     *blockAsserted,
+				Value:     *block,
 			}
 
 			// check has to be done here to include the end height block

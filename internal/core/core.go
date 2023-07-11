@@ -18,9 +18,17 @@ func WithAddress(address common.Address) TransitOption {
 	}
 }
 
+// WithOriginTS ... Injects origin timestamp to transit data
+func WithOriginTS(t time.Time) TransitOption {
+	return func(td *TransitData) {
+		td.OriginTS = t
+	}
+}
+
 // TransitData ... Standardized type used for data inter-communication
 // between all ETL components and Risk Engine
 type TransitData struct {
+	OriginTS  time.Time
 	Timestamp time.Time
 
 	Network Network
