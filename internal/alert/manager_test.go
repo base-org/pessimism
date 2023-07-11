@@ -17,7 +17,7 @@ func Test_EventLoop(t *testing.T) {
 	sc := mocks.NewMockSlackClient(gomock.NewController(t))
 	ctx := context.Background()
 
-	am := alert.NewManager(ctx, sc)
+	am := alert.NewSlackManager(ctx, sc)
 
 	go func() {
 		_ = am.EventLoop()

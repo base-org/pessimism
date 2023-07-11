@@ -129,8 +129,9 @@ func StringToInvariantType(stringType string) InvariantType {
 type AlertDestination uint8
 
 const (
-	Slack      AlertDestination = iota + 1
-	ThirdParty                  // 2
+	Slack AlertDestination = iota + 1
+	Log
+	ThirdParty
 )
 
 // String ... Converts an alerting destination type to a string
@@ -138,6 +139,8 @@ func (ad AlertDestination) String() string {
 	switch ad {
 	case Slack:
 		return "slack"
+	case Log:
+		return "log"
 	case ThirdParty:
 		return "third_party"
 	default:
@@ -150,7 +153,8 @@ func StringToAlertingDestType(stringType string) AlertDestination {
 	switch stringType {
 	case "slack":
 		return Slack
-
+	case "log":
+		return Log
 	case "third_party":
 		return ThirdParty
 	}

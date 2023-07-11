@@ -35,7 +35,7 @@ type alertManager struct {
 }
 
 // NewManager ... Instantiates a new alert manager
-func NewManager(ctx context.Context, sc client.SlackClient) Manager {
+func NewSlackManager(ctx context.Context, sc client.SlackClient) Manager {
 	// NOTE - Consider constructing dependencies in higher level
 	// abstraction and passing them in
 
@@ -55,6 +55,7 @@ func NewManager(ctx context.Context, sc client.SlackClient) Manager {
 	return am
 }
 
+
 // AddSession ... Adds an invariant session to the alert manager store
 func (am *alertManager) AddSession(sUUID core.SUUID, alertDestination core.AlertDestination) error {
 	return am.store.AddAlertDestination(sUUID, alertDestination)
@@ -66,7 +67,7 @@ func (am *alertManager) Transit() chan core.Alert {
 	return am.alertTransit
 }
 
-// handleSlackPost ... Handles posting an alert to slack channel
+// handleSlackPost ... Handles posting an alert to Slack channel
 func (am *alertManager) handleSlackPost(alert core.Alert) error {
 	slackMsg := am.interpolator.InterpolateSlackMessage(alert.SUUID, alert.Content)
 
@@ -80,6 +81,17 @@ func (am *alertManager) handleSlackPost(alert core.Alert) error {
 	}
 
 	return nil
+}
+
+// handleSlackPost ... Handles posting an alert to console log
+func (am *alertManager) handleLogPost(alert core.Alert) {
+	logger := logging.WithContext(am.ctx)
+
+	logger.Error("Pessimism Alert",
+		zap.String("Invariant Condition", alert.SUUID.PID.InvType().String()),
+		zap.String("Network", alert.SUUID.PID.Network().String()),
+		zap.String("Session UUID", alert.SUUID.String()),
+		zap.String("Assessment Content", alert.Content))
 }
 
 // EventLoop ... Event loop for alert manager subsystem
@@ -112,6 +124,9 @@ func (am *alertManager) EventLoop() error {
 				if err != nil {
 					logger.Error("Could not post alert to slack", zap.Error(err))
 				}
+
+			case core.Log:
+				am.handleLogPost(alert)
 
 			case core.ThirdParty:
 				logger.Error("Attempting to post alert to third_party which is not yet supported")
