@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -10,11 +11,16 @@ import (
 	"go.uber.org/zap"
 )
 
-// BalanceInvConfig  ... Configuration for the balance invariant
+// BalanceInvConfig ... Configuration for the balance invariant
 type BalanceInvConfig struct {
 	Address    string   `json:"address"`
 	UpperBound *float64 `json:"upper"`
 	LowerBound *float64 `json:"lower"`
+}
+
+// Unmarshal ... Converts a general config to a balance invariant config
+func (bi *BalanceInvConfig) Unmarshal(isp *core.InvSessionParams) error {
+	return json.Unmarshal(isp.Bytes(), &bi)
 }
 
 // BalanceInvariant ...
@@ -24,7 +30,7 @@ type BalanceInvariant struct {
 	invariant.Invariant
 }
 
-// reportMsg ... Message to be sent to the alerting system
+// reportMsg ... Message to be sent to the alerting subsystem
 const reportMsg = `
 	Current value: %3f
 	Upper bound: %s
@@ -35,12 +41,11 @@ const reportMsg = `
 `
 
 // NewBalanceInvariant ... Initializer
-func NewBalanceInvariant(cfg *BalanceInvConfig) invariant.Invariant {
+func NewBalanceInvariant(cfg *BalanceInvConfig) (invariant.Invariant, error) {
 	return &BalanceInvariant{
-		cfg: cfg,
-
+		cfg:       cfg,
 		Invariant: invariant.NewBaseInvariant(core.AccountBalance),
-	}
+	}, nil
 }
 
 // Invalidate ... Checks if the balance is within the bounds
@@ -48,13 +53,14 @@ func NewBalanceInvariant(cfg *BalanceInvConfig) invariant.Invariant {
 func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
 	logging.NoContext().Debug("Checking invalidation for balance invariant", zap.String("data", fmt.Sprintf("%v", td)))
 
-	if td.Type != bi.InputType() {
-		return nil, false, fmt.Errorf("invalid type supplied")
+	err := bi.ValidateInput(td)
+	if err != nil {
+		return nil, false, err
 	}
 
 	balance, ok := td.Value.(float64)
 	if !ok {
-		return nil, false, fmt.Errorf("could not cast transit data value to float type")
+		return nil, false, fmt.Errorf(couldNotCastErr, "float64")
 	}
 
 	invalidated := false

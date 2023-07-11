@@ -18,7 +18,7 @@ func renderInvariantResponse(w http.ResponseWriter, r *http.Request,
 
 // RunInvariant ... Handle invariant run request
 func (ph *PessimismHandler) RunInvariant(w http.ResponseWriter, r *http.Request) {
-	var body models.InvRequestBody
+	var body *models.InvRequestBody
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		logging.WithContext(ph.ctx).

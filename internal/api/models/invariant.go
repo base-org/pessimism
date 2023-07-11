@@ -53,6 +53,17 @@ type InvRequestParams struct {
 	AlertingDest string `json:"alert_destination"`
 }
 
+// Params ... Returns the invariant session params
+func (irp *InvRequestParams) Params() *core.InvSessionParams {
+	isp := core.NewSessionParams()
+
+	for k, v := range irp.SessionParams {
+		isp.SetValue(k, v)
+	}
+
+	return isp
+}
+
 // AlertingDestType ... Returns the alerting destination type
 func (irp *InvRequestParams) AlertingDestType() core.AlertDestination {
 	return core.StringToAlertingDestType(irp.AlertingDest)
@@ -63,8 +74,8 @@ func (irp *InvRequestParams) NetworkType() core.Network {
 	return core.StringToNetwork(irp.Network)
 }
 
-// PiplineType ... Returns the pipeline type
-func (irp *InvRequestParams) PiplineType() core.PipelineType {
+// PipelineType ... Returns the pipeline type
+func (irp *InvRequestParams) PipelineType() core.PipelineType {
 	return core.StringToPipelineType(irp.PType)
 }
 
@@ -79,7 +90,7 @@ func (irp *InvRequestParams) GeneratePipelineConfig(pollInterval time.Duration,
 	return &core.PipelineConfig{
 		Network:      irp.NetworkType(),
 		DataType:     regType,
-		PipelineType: irp.PiplineType(),
+		PipelineType: irp.PipelineType(),
 		ClientConfig: &core.ClientConfig{
 			Network:      irp.NetworkType(),
 			PollInterval: pollInterval,
@@ -94,7 +105,8 @@ func (irp *InvRequestParams) SessionConfig() *core.SessionConfig {
 	return &core.SessionConfig{
 		AlertDest: irp.AlertingDestType(),
 		Type:      irp.InvariantType(),
-		Params:    irp.SessionParams,
+		Params:    irp.Params(),
+		PT:        irp.PipelineType(),
 	}
 }
 
@@ -102,6 +114,13 @@ func (irp *InvRequestParams) SessionConfig() *core.SessionConfig {
 type InvRequestBody struct {
 	Method string           `json:"method"`
 	Params InvRequestParams `json:"params"`
+}
+
+func (irb *InvRequestBody) Clone() *InvRequestBody {
+	return &InvRequestBody{
+		Method: irb.Method,
+		Params: irb.Params,
+	}
 }
 
 // MethodType ... Returns the invariant method type

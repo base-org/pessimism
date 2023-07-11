@@ -1,6 +1,10 @@
+//go:generate mockgen -package mocks --destination ../../mocks/invariant.go . Invariant
+
 package invariant
 
 import (
+	"fmt"
+
 	"github.com/base-org/pessimism/internal/core"
 )
 
@@ -10,11 +14,14 @@ type ExecutionType int
 const (
 	// HardCoded ... Hard coded execution type (ie native application code)
 	HardCoded ExecutionType = iota
+
+	invalidInTypeErr = "invalid input type provided for invariant. expected %s, got %s"
 )
 
 // Invariant ... Interface that all invariant implementations must adhere to
 type Invariant interface {
 	InputType() core.RegisterType
+	ValidateInput(core.TransitData) error
 	Invalidate(core.TransitData) (*core.InvalOutcome, bool, error)
 	SUUID() core.SUUID
 	SetSUUID(core.SUUID)
@@ -60,6 +67,15 @@ func (bi *BaseInvariant) Invalidate(core.TransitData) (*core.InvalOutcome, bool,
 	return nil, false, nil
 }
 
+// SetSUUID ... Sets the invariant session UUID
 func (bi *BaseInvariant) SetSUUID(sUUID core.SUUID) {
 	bi.sUUID = sUUID
+}
+
+func (bi *BaseInvariant) ValidateInput(td core.TransitData) error {
+	if td.Type != bi.InputType() {
+		return fmt.Errorf(invalidInTypeErr, bi.InputType(), td.Type)
+	}
+
+	return nil
 }

@@ -33,23 +33,27 @@ func (am *addressingMap) GetSUUIDsByPair(address common.Address, pUUID core.PUUI
 
 // Insert ... Inserts a new entry into the addressing map
 func (am *addressingMap) Insert(addr common.Address, pUUID core.PUUID, sUUID core.SUUID) error {
+	// 1. Check if address exists; create nested entry & return if not
 	if _, found := am.m[addr]; !found {
 		am.m[addr] = make(map[core.PUUID][]core.SUUID)
 		am.m[addr][pUUID] = []core.SUUID{sUUID}
 		return nil
 	}
 
+	// 2. Check if pipeline UUID exists; create entry & return if not
 	if _, found := am.m[addr][pUUID]; !found {
 		am.m[addr][pUUID] = []core.SUUID{sUUID}
 		return nil
 	}
 
+	// 3. Ensure that entry doesn't already exist
 	for _, entry := range am.m[addr][pUUID] {
 		if entry == sUUID {
 			return fmt.Errorf("entry already exists")
 		}
 	}
 
+	// 4. Append entry and return
 	am.m[addr][pUUID] = append(am.m[addr][pUUID], sUUID)
 	return nil
 }

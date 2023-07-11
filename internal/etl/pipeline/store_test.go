@@ -1,4 +1,4 @@
-package pipeline
+package pipeline_test
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
+	pl "github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/mocks"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,7 +20,7 @@ var (
 )
 
 // getTestPipeLine ... Returns a test pipeline
-func getTestPipeLine(ctx context.Context) Pipeline {
+func getTestPipeLine(ctx context.Context) pl.Pipeline {
 
 	c1, err := mocks.NewDummyOracle(ctx, core.GethBlock, component.WithCUUID(cID2))
 	if err != nil {
@@ -36,7 +37,7 @@ func getTestPipeLine(ctx context.Context) Pipeline {
 		c2,
 	}
 
-	pipeLine, err := NewPipeline(&core.PipelineConfig{}, core.NilPUUID(), comps)
+	pipeLine, err := pl.NewPipeline(&core.PipelineConfig{}, core.NilPUUID(), comps)
 	if err != nil {
 		panic(err)
 	}
@@ -50,24 +51,24 @@ func Test_EtlStore(t *testing.T) {
 		function    string
 		description string
 
-		constructionLogic func() EtlStore
-		testLogic         func(*testing.T, EtlStore)
+		constructionLogic func() pl.EtlStore
+		testLogic         func(*testing.T, pl.EtlStore)
 	}{
 		{
 			name:        "Successful Add When PID Already Exists",
 			function:    "addPipeline",
 			description: "",
 
-			constructionLogic: func() EtlStore {
+			constructionLogic: func() pl.EtlStore {
 				ctx := context.Background()
 
-				testRegistry := NewEtlStore()
+				testRegistry := pl.NewEtlStore()
 				testPipeLine := getTestPipeLine(ctx)
 
 				testRegistry.AddPipeline(core.NilPUUID(), testPipeLine)
 				return testRegistry
 			},
-			testLogic: func(t *testing.T, store EtlStore) {
+			testLogic: func(t *testing.T, store pl.EtlStore) {
 				ctx := context.Background()
 				testPipeLine := getTestPipeLine(ctx)
 
@@ -95,11 +96,11 @@ func Test_EtlStore(t *testing.T) {
 			function:    "addPipeline",
 			description: "",
 
-			constructionLogic: func() EtlStore {
-				pr := NewEtlStore()
+			constructionLogic: func() pl.EtlStore {
+				pr := pl.NewEtlStore()
 				return pr
 			},
-			testLogic: func(t *testing.T, store EtlStore) {
+			testLogic: func(t *testing.T, store pl.EtlStore) {
 				ctx := context.Background()
 				testPipeLine := getTestPipeLine(ctx)
 
@@ -126,8 +127,8 @@ func Test_EtlStore(t *testing.T) {
 			function:    "getPipeLineIDs",
 			description: "",
 
-			constructionLogic: NewEtlStore,
-			testLogic: func(t *testing.T, store EtlStore) {
+			constructionLogic: pl.NewEtlStore,
+			testLogic: func(t *testing.T, store pl.EtlStore) {
 				cID := core.MakeCUUID(0, 0, 0, 0)
 				pID := core.MakePUUID(0, cID, cID)
 
@@ -146,8 +147,8 @@ func Test_EtlStore(t *testing.T) {
 			function:    "getPipeLineIDs",
 			description: "",
 
-			constructionLogic: NewEtlStore,
-			testLogic: func(t *testing.T, store EtlStore) {
+			constructionLogic: pl.NewEtlStore,
+			testLogic: func(t *testing.T, store pl.EtlStore) {
 				cID := core.MakeCUUID(0, 0, 0, 0)
 
 				_, err := store.GetPUUIDs(cID)
@@ -160,14 +161,13 @@ func Test_EtlStore(t *testing.T) {
 			function:    "getPipeline",
 			description: "",
 
-			constructionLogic: NewEtlStore,
-			testLogic: func(t *testing.T, store EtlStore) {
+			constructionLogic: pl.NewEtlStore,
+			testLogic: func(t *testing.T, store pl.EtlStore) {
 				cID := core.MakeCUUID(0, 0, 0, 0)
 				pID := core.MakePUUID(0, cID, cID)
 
 				_, err := store.GetPipelineFromPUUID(pID)
 				assert.Error(t, err)
-				assert.Equal(t, err.Error(), fmt.Sprintf(pIDNotFoundErr, pID))
 
 			},
 		}, {
@@ -175,11 +175,11 @@ func Test_EtlStore(t *testing.T) {
 			function:    "getPipeline",
 			description: "",
 
-			constructionLogic: func() EtlStore {
-				store := NewEtlStore()
+			constructionLogic: func() pl.EtlStore {
+				store := pl.NewEtlStore()
 				return store
 			},
-			testLogic: func(t *testing.T, store EtlStore) {
+			testLogic: func(t *testing.T, store pl.EtlStore) {
 				cID := core.MakeCUUID(0, 0, 0, 0)
 				pID := core.MakePUUID(0, cID, cID)
 
@@ -191,7 +191,6 @@ func Test_EtlStore(t *testing.T) {
 				_, err := store.GetPipelineFromPUUID(pID2)
 
 				assert.Error(t, err)
-				assert.Equal(t, err.Error(), uuidNotFoundErr)
 
 			},
 		}, {
@@ -199,11 +198,11 @@ func Test_EtlStore(t *testing.T) {
 			function:    "getPipeline",
 			description: "",
 
-			constructionLogic: func() EtlStore {
-				store := NewEtlStore()
+			constructionLogic: func() pl.EtlStore {
+				store := pl.NewEtlStore()
 				return store
 			},
-			testLogic: func(t *testing.T, store EtlStore) {
+			testLogic: func(t *testing.T, store pl.EtlStore) {
 				cID := core.MakeCUUID(0, 0, 0, 0)
 				pID := core.MakePUUID(0, cID, cID)
 
@@ -222,11 +221,11 @@ func Test_EtlStore(t *testing.T) {
 			function:    "getAllPipelines",
 			description: "",
 
-			constructionLogic: func() EtlStore {
-				store := NewEtlStore()
+			constructionLogic: func() pl.EtlStore {
+				store := pl.NewEtlStore()
 				return store
 			},
-			testLogic: func(t *testing.T, store EtlStore) {
+			testLogic: func(t *testing.T, store pl.EtlStore) {
 				cID := core.MakeCUUID(0, 0, 0, 0)
 				pID := core.MakePUUID(0, cID, cID)
 

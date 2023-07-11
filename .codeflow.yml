@@ -1,0 +1,5 @@
+secure:
+  required_reviews: 1
+  upstream_repository: base-org/pessimism
+
+auto_assign_reviewers: true
