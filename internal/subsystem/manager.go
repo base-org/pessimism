@@ -5,7 +5,6 @@ package subsystem
 import (
 	"context"
 	"fmt"
-	"github.com/base-org/pessimism/internal/metrics"
 	"sync"
 	"time"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"go.uber.org/zap"
 )
 
