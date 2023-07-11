@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	svc "github.com/base-org/pessimism/internal/api/service"
-	"github.com/base-org/pessimism/internal/subsystem"
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/mocks"
@@ -19,57 +18,29 @@ const (
 )
 
 type testSuite struct {
-	testCfg svc.Config
-
-	mockAlertMan           *mocks.AlertManager
-	mockEngineMan          *mocks.EngineManager
-	mockEtlMan             *mocks.EtlManager
-	mockEthClientInterface *mocks.MockEthClientInterface
-
-	apiSvc   svc.Service
-	mockCtrl *gomock.Controller
+	apiSvc     svc.Service
+	mockClient *mocks.MockEthClientInterface
+	mockSub    *mocks.SubManager
+	mockCtrl   *gomock.Controller
 }
 
 func testErr1() error {
 	return fmt.Errorf(testErrMsg1)
 }
-func testErr2() error {
-	return fmt.Errorf(testErrMsg2)
-}
-func testErr3() error {
-	return fmt.Errorf(testErrMsg3)
-}
 
-func testSUUID1() core.SUUID {
-	return core.MakeSUUID(1, 1, 1)
-}
-
-func createTestSuite(ctrl *gomock.Controller, cfg svc.Config) testSuite {
-	engineManager := mocks.NewEngineManager(ctrl)
-	etlManager := mocks.NewEtlManager(ctrl)
-	alertManager := mocks.NewAlertManager(ctrl)
+func createTestSuite(ctrl *gomock.Controller) *testSuite {
+	sysMock := mocks.NewSubManager(ctrl)
 	ethClient := mocks.NewMockEthClientInterface(ctrl)
-
-	// NOTE - These tests should be migrated to the subsystem manager package
-	// TODO(#76): No Subsystem Manager Tests
-
 	ctx := context.Background()
 
 	ctx = context.WithValue(ctx, core.L1Client, ethClient)
 	ctx = context.WithValue(ctx, core.L2Client, ethClient)
 
-	m := subsystem.NewManager(ctx, etlManager, engineManager, alertManager)
-
-	service := svc.New(ctx, &cfg, m)
-	return testSuite{
-		testCfg: cfg,
-
-		mockAlertMan:           alertManager,
-		mockEngineMan:          engineManager,
-		mockEtlMan:             etlManager,
-		mockEthClientInterface: ethClient,
-
-		apiSvc:   service,
-		mockCtrl: ctrl,
+	service := svc.New(ctx, sysMock)
+	return &testSuite{
+		apiSvc:     service,
+		mockClient: ethClient,
+		mockSub:    sysMock,
+		mockCtrl:   ctrl,
 	}
 }

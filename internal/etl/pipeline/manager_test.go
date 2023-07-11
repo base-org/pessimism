@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TODO(#33): No Unit Tests for Pipeline & ETL Manager Logic
 func Test_Manager(t *testing.T) {
 	var tests = []struct {
 		name        string

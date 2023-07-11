@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/base-org/pessimism/internal/core"
@@ -15,6 +16,11 @@ type EventInvConfig struct {
 	ContractName string   `json:"contract_name"`
 	Address      string   `json:"address"`
 	Sigs         []string `json:"args"`
+}
+
+// Unmarshal ... Converts a general config to an event invariant config
+func (eic *EventInvConfig) Unmarshal(isp *core.InvSessionParams) error {
+	return json.Unmarshal(isp.Bytes(), &eic)
 }
 
 // EventInvariant ...
@@ -38,6 +44,7 @@ const eventReportMsg = `
 // NewEventInvariant ... Initializer
 func NewEventInvariant(cfg *EventInvConfig) invariant.Invariant {
 	var sigs []common.Hash
+
 	for _, sig := range cfg.Sigs {
 		sigs = append(sigs, crypto.Keccak256Hash([]byte(sig)))
 	}
@@ -46,29 +53,28 @@ func NewEventInvariant(cfg *EventInvConfig) invariant.Invariant {
 		cfg:  cfg,
 		sigs: sigs,
 
-		Invariant: invariant.NewBaseInvariant(core.EventLog,
-			invariant.WithAddressing()),
+		Invariant: invariant.NewBaseInvariant(core.EventLog),
 	}
 }
 
 // Invalidate ... Checks if the balance is within the bounds
 // specified in the config
 func (ei *EventInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
-	if td.Type != ei.InputType() {
-		return nil, false, fmt.Errorf("invalid type supplied")
+	err := ei.ValidateInput(td)
+	if err != nil {
+		return nil, false, err
 	}
 
 	if td.Address.String() != ei.cfg.Address {
-		return nil, false, fmt.Errorf("invalid address supplied")
+		return nil, false, fmt.Errorf(invalidAddrErr, ei.cfg.Address, td.Address.String())
 	}
 
 	log, success := td.Value.(types.Log)
 	if !success {
-		return nil, false, fmt.Errorf("could not convert transit data to log")
+		return nil, false, fmt.Errorf(couldNotCastErr, "types.Log")
 	}
 
-	var invalidated = false
-
+	invalidated := false
 	for _, sig := range ei.sigs {
 		if log.Topics[0] == sig {
 			invalidated = true

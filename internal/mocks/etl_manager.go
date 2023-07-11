@@ -36,12 +36,13 @@ func (m *EtlManager) EXPECT() *EtlManagerMockRecorder {
 }
 
 // CreateDataPipeline mocks base method.
-func (m *EtlManager) CreateDataPipeline(arg0 *core.PipelineConfig) (core.PUUID, error) {
+func (m *EtlManager) CreateDataPipeline(arg0 *core.PipelineConfig) (core.PUUID, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateDataPipeline", arg0)
 	ret0, _ := ret[0].(core.PUUID)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // CreateDataPipeline indicates an expected call of CreateDataPipeline.
@@ -64,19 +65,20 @@ func (mr *EtlManagerMockRecorder) EventLoop() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventLoop", reflect.TypeOf((*EtlManager)(nil).EventLoop))
 }
 
-// GetRegister mocks base method.
-func (m *EtlManager) GetRegister(arg0 core.RegisterType) (*core.DataRegister, error) {
+// GetStateKey mocks base method.
+func (m *EtlManager) GetStateKey(arg0 core.RegisterType) (*core.StateKey, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRegister", arg0)
-	ret0, _ := ret[0].(*core.DataRegister)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret := m.ctrl.Call(m, "GetStateKey", arg0)
+	ret0, _ := ret[0].(*core.StateKey)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// GetRegister indicates an expected call of GetRegister.
-func (mr *EtlManagerMockRecorder) GetRegister(arg0 interface{}) *gomock.Call {
+// GetStateKey indicates an expected call of GetStateKey.
+func (mr *EtlManagerMockRecorder) GetStateKey(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegister", reflect.TypeOf((*EtlManager)(nil).GetRegister), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStateKey", reflect.TypeOf((*EtlManager)(nil).GetStateKey), arg0)
 }
 
 // InferComponent mocks base method.

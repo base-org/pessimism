@@ -13,6 +13,7 @@ import (
 	"net/http"
 
 	"github.com/base-org/pessimism/internal/logging"
+	"go.uber.org/zap"
 )
 
 // SlackClient ... Interface for slack client
@@ -68,7 +69,7 @@ type SlackAPIResponse struct {
 
 // PostAlert ... handles posting data to slack
 func (sc slackClient) PostData(ctx context.Context, str string) (*SlackAPIResponse, error) {
-	// make & marshal payload
+	// 1. make & marshal payload into request object body
 	payload, err := newSlackPayload(str).marshal()
 	if err != nil {
 		return nil, err
@@ -81,14 +82,20 @@ func (sc slackClient) PostData(ctx context.Context, str string) (*SlackAPIRespon
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	// make request
+	// 2. make request to slack
 	resp, err := sc.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			logging.WithContext(ctx).Warn("Could not close slack response body",
+				zap.Error(err))
+		}
+	}()
 
-	// read response
+	// 3. read and unmarshal response
 	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err

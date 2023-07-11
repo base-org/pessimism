@@ -1,7 +1,7 @@
 # pessimism
 __Because you can't always be optimistic__
 
-_Pessimism_ is a public good monitoring service that allows for [Op-Stack](https://stack.optimism.io/) and EVM compatible blockchains to be continously assessed for real-time threats using customly defined user invariant rulesets. To learn about Pessimism's architecture, please advise the documentation. 
+_Pessimism_ is a public good monitoring service that allows for [Op-Stack](https://stack.optimism.io/) and EVM compatible blockchains to be continuously assessed for real-time threats using custom defined user invariant rule sets. To learn about Pessimism's architecture, please advise the documentation. 
 
 <!-- Badge row 1 - status -->
 
@@ -46,14 +46,14 @@ It can be ran using the following project level command(s):
 ### Unit Tests
 Unit tests are written using the native [go test](https://pkg.go.dev/testing) library with test mocks generated using the golang native [mock](https://github.com/golang/mock) library. These tests live throughout the the project's `/internal` directory and are named with the suffix `_test.go`.
 
-Unit tests can ran using the following project level command(s):
+Unit tests can run using the following project level command(s):
 * Using Make: `make test`
 * Direct Call: `go test ./...`
 
 ### Integration Tests
 Integration tests are written that leverage the existing [op-e2e](https://github.com/ethereum-optimism/optimism/tree/develop/op-e2e) testing framwork for spinning up pieces of the bedrock system. Additionally, the [httptest](https://pkg.go.dev/net/http/httptest) library is used to mock downstream alerting services (e.g. Slack's webhook API). These tests live in the project's `/e2e` directory.
 
-Integration tests can ran using the following project level command(s):
+Integration tests can run using the following project level command(s):
 * Using Make: `make e2e-test`
 * Direct Call: `go test ./e2e/...`
 
@@ -92,4 +92,4 @@ A bootstrap config file is used to define the initial state of the pessimism ser
 
 
 ## Spawning an invariant session
-To learn about the currently supported invariants and how to spawn them, please advise the [invariants documentation](./docs/invariants.md).
+To learn about the currently supported invariants and how to spawn them, please advise the [invariants' documentation](./docs/invariants.md).

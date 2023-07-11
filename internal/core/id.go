@@ -6,7 +6,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// UUID ... third-party wrapper struct
+// UUID ... third-party wrapper struct for
+// https://pkg.go.dev/github.com/google/UUID
 type UUID struct {
 	uuid.UUID
 }
@@ -64,6 +65,10 @@ type PUUID struct {
 // PipelineType ... Returns pipeline type decoding from encoded pid byte
 func (uuid PUUID) PipelineType() PipelineType {
 	return PipelineType(uuid.PID[0])
+}
+
+func (uuid PUUID) NetworkType() Network {
+	return Network(uuid.PID[1])
 }
 
 // InvSessionPID ... Invariant session Primary ID
@@ -202,7 +207,7 @@ func (uuid PUUID) String() string {
 	)
 }
 
-// String ... Returns string representation of an invariant sesion PID
+// String ... Returns string representation of an invariant session PID
 func (pid InvSessionPID) String() string {
 	return fmt.Sprintf("%s:%s:%s",
 		Network(pid[0]).String(),
@@ -211,7 +216,7 @@ func (pid InvSessionPID) String() string {
 	)
 }
 
-// String ... Returns string reprsentation of an invariant session UUID
+// String ... Returns string representation of an invariant session UUID
 func (uuid SUUID) String() string {
 	return fmt.Sprintf("%s::%s",
 		uuid.PID.String(), uuid.UUID.ShortString())

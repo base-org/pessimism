@@ -8,6 +8,16 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
+const (
+	valAlreadySetError = "value already exists in state store"
+	notFoundError      = "could not find state store value for key %s"
+)
+
+// IsValAlreadySetError ... Checks if the error is a ValAlreadySetError
+func isValAlreadySetError(err error) bool {
+	return err.Error() == valAlreadySetError
+}
+
 /*
 	NOTE - This is a temporary implementation of the state store.
 */
@@ -39,7 +49,7 @@ func (ss *stateStore) GetSlice(_ context.Context, key *core.StateKey) ([]string,
 
 	val, exists := ss.sliceStore[key.String()]
 	if !exists {
-		return []string{}, fmt.Errorf("could not find state store value for key %s", key)
+		return []string{}, fmt.Errorf(notFoundError, key)
 	}
 
 	return val, nil
@@ -50,8 +60,13 @@ func (ss *stateStore) SetSlice(_ context.Context, key *core.StateKey, value stri
 	ss.Lock()
 	defer ss.Unlock()
 
-	ss.sliceStore[key.String()] = append(ss.sliceStore[key.String()], value)
-
+	entries := ss.sliceStore[key.String()]
+	for _, entry := range entries {
+		if entry == value {
+			return "", fmt.Errorf(valAlreadySetError)
+		}
+	}
+	ss.sliceStore[key.String()] = append(entries, value)
 	return value, nil
 }
 
@@ -62,30 +77,4 @@ func (ss *stateStore) Remove(_ context.Context, key *core.StateKey) error {
 
 	delete(ss.sliceStore, key.String())
 	return nil
-}
-
-// GetNestedSubset ... Fetches a subset of a nested slice provided a nested
-// key/value pair (ie. filters the state object into a subset object that
-// contains only the values that match the nested key/value pair)
-func (ss *stateStore) GetNestedSubset(_ context.Context,
-	key *core.StateKey) (map[string][]string, error) {
-	ss.RLock()
-	defer ss.RUnlock()
-
-	values, exists := ss.sliceStore[key.String()]
-	if !exists {
-		return map[string][]string{}, fmt.Errorf("could not find state store value for key %s", key)
-	}
-
-	var nestedMap = make(map[string][]string, 0)
-	for _, val := range values {
-		if _, exists := ss.sliceStore[val]; !exists {
-			return map[string][]string{}, fmt.Errorf("could not find state store value for key %s", key)
-		}
-
-		nestedValues := ss.sliceStore[val]
-		nestedMap[val] = nestedValues
-	}
-
-	return nestedMap, nil
 }

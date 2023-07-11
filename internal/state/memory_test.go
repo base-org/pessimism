@@ -14,9 +14,7 @@ func Test_MemState(t *testing.T) {
 
 	testKey := &core.StateKey{false, 1, "test", nil}
 	testValue := "0xabc"
-	testValue2 := "0xdef"
 
-	innerTestKey := &core.StateKey{false, 1, "best", nil}
 	var tests = []struct {
 		name        string
 		description string
@@ -66,30 +64,6 @@ func Test_MemState(t *testing.T) {
 			testLogic: func(t *testing.T, ss state.Store) {
 				err := ss.Remove(context.Background(), testKey)
 				assert.NoError(t, err, "should not error")
-			},
-		},
-		{
-			name:        "Test_GetNestedSubset_Success",
-			description: "Test get nested subset",
-			function:    "GetNestedSubset",
-			construction: func() state.Store {
-				ss := state.NewMemState()
-				_, err := ss.SetSlice(context.Background(), testKey, innerTestKey.String())
-				if err != nil {
-					panic(err)
-				}
-
-				_, err = ss.SetSlice(context.Background(), innerTestKey, testValue2)
-				if err != nil {
-					panic(err)
-				}
-				return ss
-			},
-			testLogic: func(t *testing.T, ss state.Store) {
-				subGraph, err := ss.GetNestedSubset(context.Background(), testKey)
-				assert.NoError(t, err, "should not error")
-
-				assert.Contains(t, subGraph, innerTestKey.String(), "should contain inner key")
 			},
 		},
 	}
