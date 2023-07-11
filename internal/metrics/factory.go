@@ -125,7 +125,7 @@ func (d *documentor) Document() []DocumentedMetric {
 func fullName(ns, subsystem, name string) string {
 	out := ns
 	if subsystem != "" {
-		out += "." + subsystem
+		out += "_" + subsystem
 	}
-	return out + "." + name
+	return out + "_" + name
 }
