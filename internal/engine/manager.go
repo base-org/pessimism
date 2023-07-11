@@ -75,7 +75,6 @@ func (em *engineManager) Transit() chan core.InvariantInput {
 
 // DeleteInvariantSession ... Deletes an invariant session
 func (em *engineManager) DeleteInvariantSession(_ core.SUUID) (core.SUUID, error) {
-	em.metrics.DecActiveInvariants()
 	return core.NilSUUID(), nil
 }
 
@@ -167,7 +166,8 @@ func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (co
 		}
 	}
 
-	em.metrics.IncActiveInvariants()
+	em.metrics.IncActiveInvariants(cfg.InvType.String(), cfg.Network.String(), cfg.PUUID.PipelineType().String())
+
 	return sUUID, nil
 }
 

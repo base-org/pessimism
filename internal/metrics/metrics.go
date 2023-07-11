@@ -30,8 +30,7 @@ type Config struct {
 }
 
 type Metricer interface {
-	IncActiveInvariants()
-	DecActiveInvariants()
+	IncActiveInvariants(invType, network, pipelineType string)
 	IncActivePipelines(pipelineType, network string)
 	DecActivePipelines(pipelineType, network string)
 	RecordInvariantRun(invariant invariant.Invariant)
@@ -44,9 +43,9 @@ type Metricer interface {
 }
 
 type Metrics struct {
-	ActiveInvariants prometheus.Gauge
 	Up               prometheus.Gauge
 	ActivePipelines  *prometheus.GaugeVec
+	ActiveInvariants *prometheus.GaugeVec
 	InvariantRuns    *prometheus.CounterVec
 	AlertsGenerated  *prometheus.CounterVec
 	NodeErrors       *prometheus.CounterVec
@@ -85,12 +84,12 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 			Name:      "up",
 			Help:      "1 if the service is up",
 		}),
-		ActiveInvariants: factory.NewGauge(prometheus.GaugeOpts{
+		ActiveInvariants: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Name:      "active_invariants",
 			Help:      "Number of active invariants",
 			Namespace: metricsNamespace,
 			Subsystem: SubsystemInvariants,
-		}),
+		}, []string{"network", "invariant", "pipeline"}),
 
 		ActivePipelines: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Name:      "active_pipelines",
@@ -143,13 +142,8 @@ func (m *Metrics) RecordUp() {
 }
 
 // IncActiveInvariants ... Increments the number of active invariants
-func (m *Metrics) IncActiveInvariants() {
-	m.ActiveInvariants.Inc()
-}
-
-// DecActiveInvariants ... Decrements the number of active invariants
-func (m *Metrics) DecActiveInvariants() {
-	m.ActiveInvariants.Dec()
+func (m *Metrics) IncActiveInvariants(invType, network, pipelineType string) {
+	m.ActiveInvariants.WithLabelValues(invType, network, pipelineType).Inc()
 }
 
 // IncActivePipelines ... Increments the number of active pipelines
@@ -197,8 +191,8 @@ type noopMetricer struct{}
 
 var NoopMetrics Metricer = new(noopMetricer)
 
-func (n *noopMetricer) IncActiveInvariants()                     {}
-func (n *noopMetricer) DecActiveInvariants()                     {}
+func (n *noopMetricer) IncActiveInvariants(_, _, _ string)       {}
+func (n *noopMetricer) DecActiveInvariants(_, _, _ string)       {}
 func (n *noopMetricer) IncActivePipelines(_, _ string)           {}
 func (n *noopMetricer) DecActivePipelines(_, _ string)           {}
 func (n *noopMetricer) RecordInvariantRun(_ invariant.Invariant) {}
