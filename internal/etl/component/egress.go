@@ -22,6 +22,11 @@ func newEgressHandler() *egressHandler {
 	}
 }
 
+// PathEnd ... Returns true if no egresses exist and an engine relay exists, false otherwise
+func (eh *egressHandler) PathEnd() bool {
+	return len(eh.egresses) == 0 && eh.HasEngineRelay()
+}
+
 // Send ... Sends single piece of transitData to all innner mapping value channels
 func (eh *egressHandler) Send(td core.TransitData) error {
 	if len(eh.egresses) == 0 && !eh.HasEngineRelay() {

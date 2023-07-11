@@ -4,9 +4,11 @@ import (
 	"context"
 	"math/big"
 	"sync"
+	"time"
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"go.uber.org/zap"
 )
 
@@ -97,6 +99,12 @@ func (o *Oracle) EventLoop() error {
 
 			if err := o.egressHandler.Send(registerData); err != nil {
 				logger.Error(transitErr, zap.String("ID", o.id.String()))
+			}
+
+			if o.egressHandler.PathEnd() {
+				latency := float64(time.Since(registerData.OriginTS).Milliseconds())
+				metrics.WithContext(o.ctx).
+					RecordPipelineLatency(o.pUUID.String(), latency)
 			}
 
 		case <-o.closeChan:

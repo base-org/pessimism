@@ -128,7 +128,8 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 	result := make([]core.TransitData, 0)
 	for _, log := range logs {
 		result = append(result,
-			core.NewTransitData(core.EventLog, log, core.WithAddress(log.Address)))
+			core.NewTransitData(core.EventLog, log, core.WithAddress(log.Address),
+				core.WithOriginTS(td.OriginTS)))
 	}
 
 	return result, nil
