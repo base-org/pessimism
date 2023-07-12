@@ -10,6 +10,7 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 )
@@ -22,17 +23,22 @@ const (
 // GethBlockODef ...GethBlock register oracle definition used to drive oracle component
 type GethBlockODef struct {
 	cUUID      core.CUUID
+	pUUID      core.PUUID
 	cfg        *core.ClientConfig
 	client     client.EthClientInterface
 	currHeight *big.Int
+
+	stats metrics.Metricer
 }
 
 // NewGethBlockODef ... Initializer for geth.block oracle definition
-func NewGethBlockODef(cfg *core.ClientConfig, client client.EthClientInterface, h *big.Int) *GethBlockODef {
+func NewGethBlockODef(cfg *core.ClientConfig, client client.EthClientInterface,
+	h *big.Int, stats metrics.Metricer) *GethBlockODef {
 	return &GethBlockODef{
 		cfg:        cfg,
 		client:     client,
 		currHeight: h,
+		stats:      stats,
 	}
 }
 
@@ -44,7 +50,7 @@ func NewGethBlockOracle(ctx context.Context, cfg *core.ClientConfig,
 		return nil, err
 	}
 
-	od := NewGethBlockODef(cfg, client, nil)
+	od := NewGethBlockODef(cfg, client, nil, metrics.WithContext(ctx))
 
 	oracle, err := component.NewOracle(ctx, core.GethBlock, od, opts...)
 	if err != nil {
@@ -52,6 +58,7 @@ func NewGethBlockOracle(ctx context.Context, cfg *core.ClientConfig,
 	}
 
 	od.cUUID = oracle.UUID()
+	od.pUUID = oracle.PUUID()
 	return oracle, nil
 }
 
@@ -60,6 +67,7 @@ func (oracle *GethBlockODef) getCurrentHeightFromNetwork(ctx context.Context) *t
 	for {
 		header, err := oracle.client.HeaderByNumber(ctx, nil)
 		if err != nil {
+			oracle.stats.RecordNodeError(oracle.cfg.Network)
 			logging.WithContext(ctx).Error("problem fetching current height from network", zap.Error(err))
 			continue
 		}
@@ -93,6 +101,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 			if err != nil || !headerAssertedOk {
 				logging.WithContext(ctx).Error("problem fetching or asserting header", zap.NamedError("headerFetch", err),
 					zap.Bool("headerAsserted", headerAssertedOk))
+				oracle.stats.RecordNodeError(oracle.cfg.Network)
 				continue
 			}
 
@@ -102,11 +111,13 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 			if err != nil || !blockAssertedOk {
 				// logging.WithContext(ctx).Error("problem fetching or asserting block", zap.NamedError("blockFetch", err),
 				// 	zap.Bool("blockAsserted", blockAssertedOk))
+				oracle.stats.RecordNodeError(oracle.cfg.Network)
 				continue
 			}
 
 			// TODO - Add support for database persistence
 			componentChan <- core.TransitData{
+				OriginTS:  time.Now(),
 				Timestamp: time.Now(),
 				Type:      core.GethBlock,
 				Value:     *blockAsserted,
@@ -206,6 +217,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			headerAsInterface, err := oracle.fetchData(ctx, height, core.FetchHeader)
 			headerAsserted, headerAssertedOk := headerAsInterface.(*types.Header)
 
+			// Ensure err is indicative of block not existing yet
 			if err != nil && err.Error() == notFoundMsg {
 				continue
 			}
@@ -213,22 +225,28 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			if err != nil || !headerAssertedOk {
 				logging.WithContext(ctx).Error("problem fetching or asserting header", zap.NamedError("headerFetch", err),
 					zap.Bool("headerAsserted", headerAssertedOk), zap.String(core.CUUIDKey, oracle.cUUID.String()))
+				oracle.stats.RecordNodeError(oracle.cfg.Network)
 				continue
 			}
 
 			blockAsInterface, err := oracle.fetchData(ctx, headerAsserted.Number, core.FetchBlock)
-			blockAsserted, blockAssertedOk := blockAsInterface.(*types.Block)
+			block, blockAssertedOk := blockAsInterface.(*types.Block)
 
 			if err != nil || !blockAssertedOk {
 				logging.WithContext(ctx).Error("problem fetching or asserting block", zap.NamedError("blockFetch", err),
 					zap.Bool("blockAsserted", blockAssertedOk), zap.String(core.CUUIDKey, oracle.cUUID.String()))
+				oracle.stats.RecordNodeError(oracle.cfg.Network)
 				continue
 			}
 
+			blockTS := time.Unix(int64(block.Time()), 0)
+			oracle.stats.RecordBlockLatency(oracle.cfg.Network, float64(time.Since(blockTS).Milliseconds()))
+
 			componentChan <- core.TransitData{
+				OriginTS:  blockTS,
 				Timestamp: time.Now(),
 				Type:      core.GethBlock,
-				Value:     *blockAsserted,
+				Value:     *block,
 			}
 
 			// check has to be done here to include the end height block

@@ -2,9 +2,11 @@ package component
 
 import (
 	"context"
+	"time"
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"go.uber.org/zap"
 )
 
@@ -78,6 +80,14 @@ func (p *Pipe) EventLoop() error {
 				// TODO - Introduce metrics service (`prometheus`) call
 				logger.Error(err.Error(), zap.String("ID", p.id.String()))
 				continue
+			}
+
+			if p.egressHandler.PathEnd() {
+				latency := float64(time.Since(inputData.OriginTS).Milliseconds())
+
+				metrics.WithContext(p.ctx).
+					RecordPipelineLatency(p.pUUID,
+						latency)
 			}
 
 			if length := len(outputData); length > 0 {

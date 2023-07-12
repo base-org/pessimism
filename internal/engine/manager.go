@@ -5,6 +5,7 @@ package engine
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
@@ -153,7 +154,7 @@ func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (co
 		return core.NilSUUID(), err
 	}
 
-	// Shared subsytem state management
+	// Shared subsystem state management
 	if cfg.Stateful {
 		err = em.addresser.Insert(cfg.InvParams.Address(), cfg.PUUID, sUUID)
 		if err != nil {
@@ -166,7 +167,7 @@ func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (co
 		}
 	}
 
-	em.metrics.IncActiveInvariants(cfg.InvType.String(), cfg.Network.String(), cfg.PUUID.PipelineType().String())
+	em.metrics.IncActiveInvariants(cfg.InvType, cfg.Network, cfg.PUUID.PipelineType())
 
 	return sUUID, nil
 }
@@ -269,9 +270,12 @@ func (em *engineManager) executeNonAddressInvariants(ctx context.Context, data c
 func (em *engineManager) executeInvariant(ctx context.Context, data core.InvariantInput, inv invariant.Invariant) {
 	logger := logging.WithContext(ctx)
 
+	start := time.Now()
 	// Execute invariant using risk engine and return alert if invalidation occurs
 	outcome, invalidated := em.engine.Execute(ctx, data.Input, inv)
+
 	em.metrics.RecordInvariantRun(inv)
+	em.metrics.RecordInvExecutionTime(inv, float64(time.Since(start).Nanoseconds()))
 
 	if invalidated {
 		// Generate & send alert

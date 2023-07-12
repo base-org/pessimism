@@ -65,7 +65,7 @@ func (ei *EventInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, b
 		return nil, false, err
 	}
 
-	if td.Address.String() != ei.cfg.Address {
+	if td.Address != common.HexToAddress(ei.cfg.Address) {
 		return nil, false, fmt.Errorf(invalidAddrErr, ei.cfg.Address, td.Address.String())
 	}
 
