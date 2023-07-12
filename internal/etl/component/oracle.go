@@ -104,7 +104,7 @@ func (o *Oracle) EventLoop() error {
 			if o.egressHandler.PathEnd() {
 				latency := float64(time.Since(registerData.OriginTS).Milliseconds())
 				metrics.WithContext(o.ctx).
-					RecordPipelineLatency(o.pUUID.String(), latency)
+					RecordPipelineLatency(o.pUUID, latency)
 			}
 
 		case <-o.closeChan:
