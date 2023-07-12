@@ -53,6 +53,7 @@ func NewBalanceInvariant(cfg *BalanceInvConfig) (invariant.Invariant, error) {
 func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
 	logging.NoContext().Debug("Checking invalidation for balance invariant", zap.String("data", fmt.Sprintf("%v", td)))
 
+	// 1. Validate and extract balance input
 	err := bi.ValidateInput(td)
 	if err != nil {
 		return nil, false, err
@@ -65,18 +66,19 @@ func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome,
 
 	invalidated := false
 
-	// balance > upper bound
+	// 2. Invalidate if balance > upper bound
 	if bi.cfg.UpperBound != nil &&
 		*bi.cfg.UpperBound < balance {
 		invalidated = true
 	}
 
-	// balance < lower bound
+	// 3. Invalidate if balance < lower bound
 	if bi.cfg.LowerBound != nil &&
 		*bi.cfg.LowerBound > balance {
 		invalidated = true
 	}
 
+	/// 4. Generate invalidation outcome if invalidated
 	if invalidated {
 		var upper, lower string
 

@@ -91,6 +91,7 @@ func (wi *WithdrawalEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutc
 	logging.NoContext().Debug("Checking invalidation for withdrawal enforcement invariant",
 		zap.String("data", fmt.Sprintf("%v", td)))
 
+	// 1. Validate and extract data input
 	if td.Type != wi.InputType() {
 		return nil, false, fmt.Errorf("invalid type supplied")
 	}
@@ -104,17 +105,20 @@ func (wi *WithdrawalEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutc
 		return nil, false, fmt.Errorf(couldNotCastErr, "types.Log")
 	}
 
+	// 2. Parse the log to a WithdrawalProven structured type
 	provenWithdrawal, err := wi.l1PortalFilter.ParseWithdrawalProven(log)
 	if err != nil {
 		return nil, false, err
 	}
 
+	// 3. Check if the withdrawal exists in the message outbox of the L2ToL1MessagePasser contract
 	exists, err := wi.l2tol1MessagePasser.SentMessages(nil, provenWithdrawal.WithdrawalHash)
 	if err != nil {
 		return nil, false, err
 	}
 
-	if !exists { // Proven withdrawal does not exist on L1
+	// 4. If the withdrawal does not exist, invalidate
+	if !exists {
 		return &core.InvalOutcome{
 			TimeStamp: time.Now(),
 			Message: fmt.Sprintf(withdrawalEnforceMsg,
