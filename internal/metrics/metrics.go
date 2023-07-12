@@ -38,6 +38,7 @@ type Metricer interface {
 	RecordAlertGenerated(alert core.Alert)
 	RecordNodeError(network core.Network)
 	RecordPipelineLatency(pUUID core.PUUID, latency float64)
+	RecordInvExecutionTime(inv invariant.Invariant, latency float64)
 	RecordUp()
 	Start()
 	Shutdown(ctx context.Context) error
