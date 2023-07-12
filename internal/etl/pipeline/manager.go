@@ -117,7 +117,7 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, 
 	em.store.AddPipeline(pUUID, pipeline)
 
 	// Pipeline successfully created, increment for type and network
-	em.metrics.IncActivePipelines(pUUID.PipelineType().String(), pUUID.NetworkType().String())
+	em.metrics.IncActivePipelines(pUUID.PipelineType(), pUUID.NetworkType())
 
 	return pUUID, false, nil
 }
@@ -160,7 +160,7 @@ func (em *etlManager) Shutdown() error {
 				zap.String(core.PUUIDKey, pl.UUID().String()))
 			return err
 		}
-		em.metrics.DecActivePipelines(pl.UUID().PipelineType().String(), pl.UUID().NetworkType().String())
+		em.metrics.DecActivePipelines(pl.UUID().PipelineType(), pl.UUID().NetworkType())
 	}
 	logger.Debug("Waiting for all component routines to end")
 	em.wg.Wait()

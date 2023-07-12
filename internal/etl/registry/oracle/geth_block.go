@@ -67,7 +67,7 @@ func (oracle *GethBlockODef) getCurrentHeightFromNetwork(ctx context.Context) *t
 	for {
 		header, err := oracle.client.HeaderByNumber(ctx, nil)
 		if err != nil {
-			oracle.stats.RecordNodeError(oracle.cfg.Network.String())
+			oracle.stats.RecordNodeError(oracle.cfg.Network)
 			logging.WithContext(ctx).Error("problem fetching current height from network", zap.Error(err))
 			continue
 		}
@@ -101,7 +101,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 			if err != nil || !headerAssertedOk {
 				logging.WithContext(ctx).Error("problem fetching or asserting header", zap.NamedError("headerFetch", err),
 					zap.Bool("headerAsserted", headerAssertedOk))
-				oracle.stats.RecordNodeError(oracle.cfg.Network.String())
+				oracle.stats.RecordNodeError(oracle.cfg.Network)
 				continue
 			}
 
@@ -111,7 +111,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 			if err != nil || !blockAssertedOk {
 				// logging.WithContext(ctx).Error("problem fetching or asserting block", zap.NamedError("blockFetch", err),
 				// 	zap.Bool("blockAsserted", blockAssertedOk))
-				oracle.stats.RecordNodeError(oracle.cfg.Network.String())
+				oracle.stats.RecordNodeError(oracle.cfg.Network)
 				continue
 			}
 
@@ -217,15 +217,15 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			headerAsInterface, err := oracle.fetchData(ctx, height, core.FetchHeader)
 			headerAsserted, headerAssertedOk := headerAsInterface.(*types.Header)
 
+			// Ensure err is indicative of block not existing yet
 			if err != nil && err.Error() == notFoundMsg {
-				oracle.stats.RecordNodeError(oracle.cfg.Network.String())
 				continue
 			}
 
 			if err != nil || !headerAssertedOk {
 				logging.WithContext(ctx).Error("problem fetching or asserting header", zap.NamedError("headerFetch", err),
 					zap.Bool("headerAsserted", headerAssertedOk), zap.String(core.CUUIDKey, oracle.cUUID.String()))
-				oracle.stats.RecordNodeError(oracle.cfg.Network.String())
+				oracle.stats.RecordNodeError(oracle.cfg.Network)
 				continue
 			}
 
@@ -235,13 +235,12 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			if err != nil || !blockAssertedOk {
 				logging.WithContext(ctx).Error("problem fetching or asserting block", zap.NamedError("blockFetch", err),
 					zap.Bool("blockAsserted", blockAssertedOk), zap.String(core.CUUIDKey, oracle.cUUID.String()))
-				oracle.stats.RecordNodeError(oracle.cfg.Network.String())
+				oracle.stats.RecordNodeError(oracle.cfg.Network)
 				continue
 			}
 
 			blockTS := time.Unix(int64(block.Time()), 0)
-			oracle.stats.RecordBlockLatency(oracle.cfg.Network.String(), oracle.pUUID.String(),
-				float64(time.Since(blockTS).Milliseconds()))
+			oracle.stats.RecordBlockLatency(oracle.cfg.Network, float64(time.Since(blockTS).Milliseconds()))
 
 			componentChan <- core.TransitData{
 				OriginTS:  blockTS,

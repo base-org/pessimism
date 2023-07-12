@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/base-org/pessimism/internal/metrics"
 	"time"
 
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
 	"github.com/ethereum-optimism/optimism/op-node/rollup"
 	"github.com/ethereum/go-ethereum/common"
@@ -133,20 +133,20 @@ func (fd *faultDetectorInv) Invalidate(td core.TransitData) (*core.InvalOutcome,
 
 	output, err := fd.l2OutputOracleFilter.ParseOutputProposed(log)
 	if err != nil {
-		fd.stats.RecordNodeError("layer2")
+		fd.stats.RecordNodeError(core.Layer2)
 		return nil, false, err
 	}
 
 	outputBlock, err := fd.l2Client.BlockByNumber(context.Background(), output.L2BlockNumber)
 	if err != nil {
-		fd.stats.RecordNodeError("layer2")
+		fd.stats.RecordNodeError(core.Layer2)
 		return nil, false, err
 	}
 
 	proofResp, err := fd.l2GethClient.GetProof(context.Background(),
 		fd.l2tol1MessagePasser, []string{}, output.L2BlockNumber)
 	if err != nil {
-		fd.stats.RecordNodeError("layer2")
+		fd.stats.RecordNodeError(core.Layer2)
 		return nil, false, err
 	}
 

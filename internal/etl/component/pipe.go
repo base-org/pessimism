@@ -86,7 +86,7 @@ func (p *Pipe) EventLoop() error {
 				latency := float64(time.Since(inputData.OriginTS).Milliseconds())
 
 				metrics.WithContext(p.ctx).
-					RecordPipelineLatency(p.pUUID.String(),
+					RecordPipelineLatency(p.pUUID,
 						latency)
 			}
 

@@ -30,14 +30,14 @@ type Config struct {
 }
 
 type Metricer interface {
-	IncActiveInvariants(invType, network, pipelineType string)
-	IncActivePipelines(pipelineType, network string)
-	DecActivePipelines(pipelineType, network string)
-	RecordBlockLatency(network, pipeline string, latency float64)
+	IncActiveInvariants(invType core.InvariantType, network core.Network, pipelineType core.PipelineType)
+	IncActivePipelines(pipelineType core.PipelineType, network core.Network)
+	DecActivePipelines(pipelineType core.PipelineType, network core.Network)
+	RecordBlockLatency(network core.Network, latency float64)
 	RecordInvariantRun(invariant invariant.Invariant)
 	RecordAlertGenerated(alert core.Alert)
-	RecordNodeError(node string)
-	RecordPipelineLatency(pUUID string, latency float64)
+	RecordNodeError(network core.Network)
+	RecordPipelineLatency(pUUID core.PUUID, latency float64)
 	RecordUp()
 	Start()
 	Shutdown(ctx context.Context) error
@@ -124,7 +124,7 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 			Name:      "block_latency",
 			Help:      "Latency of block processing",
 			Namespace: metricsNamespace,
-		}, []string{"network", "pipeline"}),
+		}, []string{"network"}),
 
 		PipelineLatency: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Name:      "pipeline_latency",
@@ -157,18 +157,19 @@ func (m *Metrics) RecordUp() {
 }
 
 // IncActiveInvariants ... Increments the number of active invariants
-func (m *Metrics) IncActiveInvariants(invType, network, pipelineType string) {
-	m.ActiveInvariants.WithLabelValues(invType, network, pipelineType).Inc()
+func (m *Metrics) IncActiveInvariants(invType core.InvariantType, network core.Network,
+	pipelineType core.PipelineType) {
+	m.ActiveInvariants.WithLabelValues(invType.String(), network.String(), pipelineType.String()).Inc()
 }
 
 // IncActivePipelines ... Increments the number of active pipelines
-func (m *Metrics) IncActivePipelines(pipelineType, network string) {
-	m.ActivePipelines.WithLabelValues(pipelineType, network).Inc()
+func (m *Metrics) IncActivePipelines(pipelineType core.PipelineType, network core.Network) {
+	m.ActivePipelines.WithLabelValues(pipelineType.String(), network.String()).Inc()
 }
 
 // DecActivePipelines ... Decrements the number of active pipelines
-func (m *Metrics) DecActivePipelines(pipelineType, network string) {
-	m.ActivePipelines.WithLabelValues(pipelineType, network).Dec()
+func (m *Metrics) DecActivePipelines(pipelineType core.PipelineType, network core.Network) {
+	m.ActivePipelines.WithLabelValues(pipelineType.String(), network.String()).Dec()
 }
 
 // RecordInvariantRun ... Records that a given invariant has been run
@@ -188,18 +189,18 @@ func (m *Metrics) RecordAlertGenerated(alert core.Alert) {
 }
 
 // RecordNodeError ... Records that an error has been caught for a given node
-func (m *Metrics) RecordNodeError(node string) {
-	m.NodeErrors.WithLabelValues(node).Inc()
+func (m *Metrics) RecordNodeError(network core.Network) {
+	m.NodeErrors.WithLabelValues(network.String()).Inc()
 }
 
 // RecordBlockLatency ... Records the latency of block processing
-func (m *Metrics) RecordBlockLatency(network, pipeline string, latency float64) {
-	m.BlockLatency.WithLabelValues(network, pipeline).Set(latency)
+func (m *Metrics) RecordBlockLatency(network core.Network, latency float64) {
+	m.BlockLatency.WithLabelValues(network.String()).Set(latency)
 }
 
 // RecordPipelineLatency ... Records the latency of pipeline processing
-func (m *Metrics) RecordPipelineLatency(puuid string, latency float64) {
-	m.PipelineLatency.WithLabelValues(puuid).Set(latency)
+func (m *Metrics) RecordPipelineLatency(pUUID core.PUUID, latency float64) {
+	m.PipelineLatency.WithLabelValues(pUUID.String()).Set(latency)
 }
 
 // Shutdown ... Shuts down the metrics server
@@ -216,16 +217,17 @@ type noopMetricer struct{}
 
 var NoopMetrics Metricer = new(noopMetricer)
 
-func (n *noopMetricer) RecordPipelineLatency(_ string, _ float64) {}
-func (n *noopMetricer) RecordBlockLatency(_, _ string, _ float64) {}
-func (n *noopMetricer) IncActiveInvariants(_, _, _ string)        {}
-func (n *noopMetricer) DecActiveInvariants(_, _, _ string)        {}
-func (n *noopMetricer) IncActivePipelines(_, _ string)            {}
-func (n *noopMetricer) DecActivePipelines(_, _ string)            {}
-func (n *noopMetricer) RecordInvariantRun(_ invariant.Invariant)  {}
-func (n *noopMetricer) RecordAlertGenerated(_ core.Alert)         {}
-func (n *noopMetricer) RecordNodeError(_ string)                  {}
-func (n *noopMetricer) RecordUp()                                 {}
+func (n *noopMetricer) RecordUp() {}
+func (n *noopMetricer) IncActiveInvariants(_ core.InvariantType, _ core.Network, _ core.PipelineType) {
+}
+func (n *noopMetricer) IncActivePipelines(_ core.PipelineType, _ core.Network) {}
+func (n *noopMetricer) DecActivePipelines(_ core.PipelineType, _ core.Network) {}
+func (n *noopMetricer) RecordInvariantRun(_ invariant.Invariant)               {}
+func (n *noopMetricer) RecordAlertGenerated(_ core.Alert)                      {}
+func (n *noopMetricer) RecordNodeError(_ core.Network)                         {}
+func (n *noopMetricer) RecordBlockLatency(_ core.Network, _ float64)           {}
+func (n *noopMetricer) RecordPipelineLatency(_ core.PUUID, _ float64)          {}
+
 func (n *noopMetricer) Shutdown(_ context.Context) error {
 	return nil
 }
