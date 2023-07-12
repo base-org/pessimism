@@ -6,6 +6,8 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
+
 	"go.uber.org/zap"
 )
 
@@ -51,6 +53,10 @@ func (e *hardCodedEngine) Execute(ctx context.Context, data core.TransitData,
 	outcome, invalid, err := inv.Invalidate(data)
 	if err != nil {
 		logger.Error("Failed to perform invalidation option for invariant", zap.Error(err))
+
+		metrics.WithContext(ctx).
+			RecordInvExecutionError(inv)
+
 		return nil, false
 	}
 
