@@ -124,18 +124,18 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 		}, []string{"node"}),
 		BlockLatency: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Name:      "block_latency",
-			Help:      "Latency of block processing",
+			Help:      "Millisecond latency of block processing",
 			Namespace: metricsNamespace,
 		}, []string{"network"}),
 
 		PipelineLatency: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Name:      "pipeline_latency",
-			Help:      "Latency of pipeline processing",
+			Help:      "Millisecond latency of pipeline processing",
 			Namespace: metricsNamespace,
 		}, []string{"puuid"}),
 		InvExecutionTime: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Name:      "invariant_execution_time",
-			Help:      "Time of invariant execution",
+			Help:      "Nanosecond time of invariant execution",
 			Namespace: metricsNamespace,
 		}, []string{"invariant"}),
 
