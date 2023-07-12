@@ -10,6 +10,7 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
 	"github.com/ethereum-optimism/optimism/op-node/rollup"
 	"github.com/ethereum/go-ethereum/common"
@@ -66,6 +67,7 @@ type faultDetectorInv struct {
 
 	l2Client     client.EthClientInterface
 	l2GethClient client.GethClient
+	stats        metrics.Metricer
 
 	invariant.Invariant
 }
@@ -101,6 +103,7 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (invariant.Inv
 		eventHash:            outputSig,
 		l2OutputOracleFilter: outputOracle,
 		l2tol1MessagePasser:  addr,
+		stats:                metrics.WithContext(ctx),
 
 		l2Client:     l2Client,
 		l2GethClient: l2Geth,
@@ -130,17 +133,20 @@ func (fd *faultDetectorInv) Invalidate(td core.TransitData) (*core.InvalOutcome,
 
 	output, err := fd.l2OutputOracleFilter.ParseOutputProposed(log)
 	if err != nil {
+		fd.stats.RecordNodeError(core.Layer2)
 		return nil, false, err
 	}
 
 	outputBlock, err := fd.l2Client.BlockByNumber(context.Background(), output.L2BlockNumber)
 	if err != nil {
+		fd.stats.RecordNodeError(core.Layer2)
 		return nil, false, err
 	}
 
 	proofResp, err := fd.l2GethClient.GetProof(context.Background(),
 		fd.l2tol1MessagePasser, []string{}, output.L2BlockNumber)
 	if err != nil {
+		fd.stats.RecordNodeError(core.Layer2)
 		return nil, false, err
 	}
 

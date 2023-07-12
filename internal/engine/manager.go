@@ -166,7 +166,7 @@ func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (co
 		}
 	}
 
-	em.metrics.IncActiveInvariants(cfg.InvType.String(), cfg.Network.String(), cfg.PUUID.PipelineType().String())
+	em.metrics.IncActiveInvariants(cfg.InvType, cfg.Network, cfg.PUUID.PipelineType())
 
 	return sUUID, nil
 }
