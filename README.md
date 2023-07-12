@@ -20,7 +20,7 @@ _Pessimism_ is a public good monitoring service that allows for [Op-Stack](https
 Pessimism is currently experimental and very much in development. It means Pessimism is currently unstable, so code will change and builds can break over the coming months. If you come across problems, it would help greatly to open issues so that we can fix them as quickly as possible.
 
 ## Setup
-To use the template, run the following the command(s):
+To use the template, run the following command(s):
 1. Create local config file (`config.env`) to store all necessary environmental variables. There's already an example `config.env.template` in the repo that stores default env vars.
 
 2. [Download](https://go.dev/doc/install) or upgrade to `golang 1.19`.
@@ -44,14 +44,14 @@ It can be ran using the following project level command(s):
 ## Testing
 
 ### Unit Tests
-Unit tests are written using the native [go test](https://pkg.go.dev/testing) library with test mocks generated using the golang native [mock](https://github.com/golang/mock) library. These tests live throughout the the project's `/internal` directory and are named with the suffix `_test.go`.
+Unit tests are written using the native [go test](https://pkg.go.dev/testing) library with test mocks generated using the golang native [mock](https://github.com/golang/mock) library. These tests live throughout the project's `/internal` directory and are named with the suffix `_test.go`.
 
 Unit tests can run using the following project level command(s):
 * Using Make: `make test`
 * Direct Call: `go test ./...`
 
 ### Integration Tests
-Integration tests are written that leverage the existing [op-e2e](https://github.com/ethereum-optimism/optimism/tree/develop/op-e2e) testing framwork for spinning up pieces of the bedrock system. Additionally, the [httptest](https://pkg.go.dev/net/http/httptest) library is used to mock downstream alerting services (e.g. Slack's webhook API). These tests live in the project's `/e2e` directory.
+Integration tests are written that leverage the existing [op-e2e](https://github.com/ethereum-optimism/optimism/tree/develop/op-e2e) testing framework for spinning up pieces of the bedrock system. Additionally, the [httptest](https://pkg.go.dev/net/http/httptest) library is used to mock downstream alerting services (e.g. Slack's webhook API). These tests live in the project's `/e2e` directory.
 
 Integration tests can run using the following project level command(s):
 * Using Make: `make e2e-test`
