@@ -94,8 +94,8 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 		return []core.TransitData{}, fmt.Errorf("could not convert to block")
 	}
 
-	// 2. Fetch the addresess and events to monitor for
-	logging.NoContext().Debug("Getting addresess",
+	// 2. Fetch the addresses and events to monitor for
+	logging.NoContext().Debug("Getting addresses",
 		zap.String(core.PUUIDKey, ed.pUUID.String()))
 
 	addresses, err := ed.ss.GetSlice(ctx, ed.sk)

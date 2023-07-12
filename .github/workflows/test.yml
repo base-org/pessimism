@@ -38,28 +38,28 @@ jobs:
       run: | 
         go test -coverprofile=coverage.out ./internal/... >> out.txt
 
-    - name: Generate Coverage
-      run: |
-        go tool cover -func=coverage.out | grep total | awk '{print $3}' >> out.txt
-        echo "::set-output name=coverage::$(cat out.txt)"
+    # - name: Generate Coverage
+    #   run: |
+    #     go tool cover -func=coverage.out | grep total | awk '{print $3}' >> out.txt
+    #     echo "::set-output name=coverage::$(cat out.txt)"
 
-    - name: Find Coverage Comment
-      uses: peter-evans/find-comment@v1
-      id: fc
-      with:
-        issue-number: ${{ github.event.pull_request.number }}
-        comment-author: 'github-actions[bot]'
-        body-includes: '### Current Test Coverage'
+    # - name: Find Coverage Comment
+    #   uses: peter-evans/find-comment@v1
+    #   id: fc
+    #   with:
+    #     issue-number: ${{ github.event.pull_request.number }}
+    #     comment-author: 'github-actions[bot]'
+    #     body-includes: '### Current Test Coverage'
 
-    - name: Add Coverage Comment
-      uses: actions/github-script@v6
-      env:
-        DATA: ${{ steps.fc.outputs.comment-id }}
+    # - name: Add Coverage Comment
+    #   uses: actions/github-script@v6
+    #   env:
+    #     DATA: ${{ steps.fc.outputs.comment-id }}
 
-      with:
-        script: | 
-          const script = require('./.github/scripts/comment.js')
-          await script({github, context, core})
+    #   with:
+    #     script: | 
+    #       const script = require('./.github/scripts/comment.js')
+    #       await script({github, context, core})
 
   e2e-test:
     runs-on: ubuntu-latest
