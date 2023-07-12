@@ -67,6 +67,7 @@ func (oracle *GethBlockODef) getCurrentHeightFromNetwork(ctx context.Context) *t
 	for {
 		header, err := oracle.client.HeaderByNumber(ctx, nil)
 		if err != nil {
+			oracle.stats.RecordNodeError(oracle.cfg.Network.String())
 			logging.WithContext(ctx).Error("problem fetching current height from network", zap.Error(err))
 			continue
 		}
@@ -100,6 +101,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 			if err != nil || !headerAssertedOk {
 				logging.WithContext(ctx).Error("problem fetching or asserting header", zap.NamedError("headerFetch", err),
 					zap.Bool("headerAsserted", headerAssertedOk))
+				oracle.stats.RecordNodeError(oracle.cfg.Network.String())
 				continue
 			}
 
@@ -109,6 +111,7 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 			if err != nil || !blockAssertedOk {
 				// logging.WithContext(ctx).Error("problem fetching or asserting block", zap.NamedError("blockFetch", err),
 				// 	zap.Bool("blockAsserted", blockAssertedOk))
+				oracle.stats.RecordNodeError(oracle.cfg.Network.String())
 				continue
 			}
 
@@ -215,12 +218,14 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			headerAsserted, headerAssertedOk := headerAsInterface.(*types.Header)
 
 			if err != nil && err.Error() == notFoundMsg {
+				oracle.stats.RecordNodeError(oracle.cfg.Network.String())
 				continue
 			}
 
 			if err != nil || !headerAssertedOk {
 				logging.WithContext(ctx).Error("problem fetching or asserting header", zap.NamedError("headerFetch", err),
 					zap.Bool("headerAsserted", headerAssertedOk), zap.String(core.CUUIDKey, oracle.cUUID.String()))
+				oracle.stats.RecordNodeError(oracle.cfg.Network.String())
 				continue
 			}
 
@@ -230,6 +235,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			if err != nil || !blockAssertedOk {
 				logging.WithContext(ctx).Error("problem fetching or asserting block", zap.NamedError("blockFetch", err),
 					zap.Bool("blockAsserted", blockAssertedOk), zap.String(core.CUUIDKey, oracle.cUUID.String()))
+				oracle.stats.RecordNodeError(oracle.cfg.Network.String())
 				continue
 			}
 
