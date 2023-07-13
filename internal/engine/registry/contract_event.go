@@ -60,6 +60,7 @@ func NewEventInvariant(cfg *EventInvConfig) invariant.Invariant {
 // Invalidate ... Checks if the balance is within the bounds
 // specified in the config
 func (ei *EventInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
+	// 1. Validate and extract the log event from the transit data
 	err := ei.ValidateInput(td)
 	if err != nil {
 		return nil, false, err
@@ -74,6 +75,7 @@ func (ei *EventInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, b
 		return nil, false, fmt.Errorf(couldNotCastErr, "types.Log")
 	}
 
+	// 2. Check if the log event signature is in the list of signatures
 	invalidated := false
 	for _, sig := range ei.sigs {
 		if log.Topics[0] == sig {

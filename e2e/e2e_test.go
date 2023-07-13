@@ -245,21 +245,21 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	// We use two invariants here; one configured with a dummy L1 message passer
 	// and one configured with the real L2->L1 message passer contract. This allows us to
 	// ensure that an alert is only produced using faulty message passer.
-	err = ts.App.BootStrap([]*models.InvRequestParams{{
-		// This is the one that should produce an alert
-		Network:      core.Layer1.String(),
-		PType:        core.Live.String(),
-		InvType:      core.WithdrawalEnforcement.String(),
-		StartHeight:  nil,
-		EndHeight:    nil,
-		AlertingDest: core.Slack.String(),
-		SessionParams: map[string]interface{}{
-			core.L1Portal:            predeploys.DevOptimismPortal,
-			core.L2ToL1MessagePasser: fakeAddr.String(),
-		},
-	},
+	err = ts.App.BootStrap([]*models.InvRequestParams{
 		{
-			// This is the one that shouldn't produce an alert
+			// This is the one that should produce an alert
+			Network:      core.Layer1.String(),
+			PType:        core.Live.String(),
+			InvType:      core.WithdrawalEnforcement.String(),
+			StartHeight:  nil,
+			EndHeight:    nil,
+			AlertingDest: core.Slack.String(),
+			SessionParams: map[string]interface{}{
+				core.L1Portal:            predeploys.DevOptimismPortal,
+				core.L2ToL1MessagePasser: fakeAddr.String(),
+			},
+		},
+		{
 			Network:      core.Layer1.String(),
 			PType:        core.Live.String(),
 			InvType:      core.WithdrawalEnforcement.String(),

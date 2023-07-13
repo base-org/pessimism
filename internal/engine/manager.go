@@ -132,8 +132,8 @@ func (em *engineManager) DeployInvariantSession(cfg *invariant.DeployConfig) (co
 		return core.NilSUUID(), fmt.Errorf("invariant type %s not found", cfg.InvType)
 	}
 
-	if reg.Preprocess != nil { // Preprocess invariant params
-		err := reg.Preprocess(cfg.InvParams)
+	if reg.PrepareValidate != nil { // Prepare & validate the invariant params for stateful consumption
+		err := reg.PrepareValidate(cfg.InvParams)
 		if err != nil {
 			return core.NilSUUID(), err
 		}

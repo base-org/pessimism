@@ -14,38 +14,38 @@ type InvariantTable map[core.InvariantType]*InvRegister
 
 // InvRegister ... Invariant register struct
 type InvRegister struct {
-	Preprocess  func(*core.InvSessionParams) error
-	Policy      core.ChainSubscription
-	InputType   core.RegisterType
-	Constructor func(ctx context.Context, isp *core.InvSessionParams) (invariant.Invariant, error)
+	PrepareValidate func(*core.InvSessionParams) error
+	Policy          core.ChainSubscription
+	InputType       core.RegisterType
+	Constructor     func(ctx context.Context, isp *core.InvSessionParams) (invariant.Invariant, error)
 }
 
 // NewInvariantTable ... Initializer
 func NewInvariantTable() InvariantTable {
 	tbl := map[core.InvariantType]*InvRegister{
 		core.BalanceEnforcement: {
-			Preprocess:  AddressPreprocess,
-			Policy:      core.BothNetworks,
-			InputType:   core.AccountBalance,
-			Constructor: constructBalanceEnforcement,
+			PrepareValidate: ValidateAddressing,
+			Policy:          core.BothNetworks,
+			InputType:       core.AccountBalance,
+			Constructor:     constructBalanceEnforcement,
 		},
 		core.ContractEvent: {
-			Preprocess:  EventPreprocess,
-			Policy:      core.BothNetworks,
-			InputType:   core.EventLog,
-			Constructor: constructEventInv,
-		},
-		core.WithdrawalEnforcement: {
-			Preprocess:  WithdrawEnforcePreprocess,
-			Policy:      core.OnlyLayer1,
-			InputType:   core.EventLog,
-			Constructor: constructWithdrawalEnforce,
+			PrepareValidate: ValidateEventTracking,
+			Policy:          core.BothNetworks,
+			InputType:       core.EventLog,
+			Constructor:     constructEventInv,
 		},
 		core.FaultDetector: {
-			Preprocess:  FaultDetectPreprocess,
-			Policy:      core.OnlyLayer1,
-			InputType:   core.EventLog,
-			Constructor: constructFaultDetector,
+			PrepareValidate: FaultDetectionPrepare,
+			Policy:          core.OnlyLayer1,
+			InputType:       core.EventLog,
+			Constructor:     constructFaultDetector,
+		},
+		core.WithdrawalEnforcement: {
+			PrepareValidate: WithdrawEnforcePrepare,
+			Policy:          core.OnlyLayer1,
+			InputType:       core.EventLog,
+			Constructor:     constructWithdrawalEnforce,
 		},
 	}
 
@@ -76,7 +76,7 @@ func constructBalanceEnforcement(_ context.Context, isp *core.InvSessionParams) 
 	return NewBalanceInvariant(cfg)
 }
 
-// constructFaultDetector ...
+// constructFaultDetector ... Constructs a fault detector invariant instance
 func constructFaultDetector(ctx context.Context, isp *core.InvSessionParams) (invariant.Invariant, error) {
 	cfg := &FaultDetectorCfg{}
 	err := cfg.Unmarshal(isp)
@@ -88,7 +88,7 @@ func constructFaultDetector(ctx context.Context, isp *core.InvSessionParams) (in
 	return NewFaultDetector(ctx, cfg)
 }
 
-// constructWithdrawalEnforce ...
+// constructWithdrawalEnforce ... Constructs a withdrawal enforcement invariant instance
 func constructWithdrawalEnforce(ctx context.Context, isp *core.InvSessionParams) (invariant.Invariant, error) {
 	cfg := &WithdrawalEnforceCfg{}
 	err := cfg.Unmarshal(isp)
@@ -100,34 +100,48 @@ func constructWithdrawalEnforce(ctx context.Context, isp *core.InvSessionParams)
 	return NewWithdrawalEnforceInv(ctx, cfg)
 }
 
-// EventPreprocess ... Ensures that an address and nested args exist in the session params
-func EventPreprocess(cfg *core.InvSessionParams) error {
-	err := AddressPreprocess(cfg)
+// ValidateEventTracking ... Ensures that an address and nested args exist in the session params
+func ValidateEventTracking(cfg *core.InvSessionParams) error {
+	err := ValidateAddressing(cfg)
 	if err != nil {
 		return err
 	}
 
-	if len(cfg.NestedArgs()) == 0 {
-		return fmt.Errorf("no events found")
-	}
-	return nil
+	return ValidateTopicsExist(cfg)
 }
 
-// AddressPreprocess ... Ensures that an address exists in the session params
-func AddressPreprocess(cfg *core.InvSessionParams) error {
+// ValidateAddressing ... Ensures that an address exists in the session params
+func ValidateAddressing(cfg *core.InvSessionParams) error {
 	nilAddr := common.Address{0}
 	if cfg.Address() == nilAddr {
-		return fmt.Errorf("address not found")
+		return fmt.Errorf(zeroAddressErr)
 	}
 
 	return nil
 }
 
-// WithdrawEnforcePreprocess ... Ensures that the l2 to l1 message passer exists
+// ValidateTopicsExist ... Ensures that some nested args exist in the session params
+func ValidateTopicsExist(cfg *core.InvSessionParams) error {
+	if len(cfg.NestedArgs()) == 0 {
+		return fmt.Errorf(noNestedArgsErr)
+	}
+	return nil
+}
+
+// ValidateNoTopicsExist ... Ensures that no nested args exist in the session params
+func ValidateNoTopicsExist(cfg *core.InvSessionParams) error {
+	if len(cfg.NestedArgs()) != 0 {
+		return fmt.Errorf(noNestedArgsErr)
+	}
+	return nil
+
+}
+
+// WithdrawEnforcePrepare ... Ensures that the l2 to l1 message passer exists
 // and performs a "hack" operation to set the address key as the l2tol1MessagePasser
 // address for upstream ETL components (ie. event log) to know which L1 address to
 // query for events
-func WithdrawEnforcePreprocess(cfg *core.InvSessionParams) error {
+func WithdrawEnforcePrepare(cfg *core.InvSessionParams) error {
 	l1Portal, err := cfg.Value(core.L1Portal)
 	if err != nil {
 		return err
@@ -142,16 +156,18 @@ func WithdrawEnforcePreprocess(cfg *core.InvSessionParams) error {
 	// to withdrawal proof events from the L1Portal contract
 	cfg.SetValue(core.AddrKey, l1Portal)
 
-	if len(cfg.NestedArgs()) != 0 {
-		return fmt.Errorf("no nested args should be present")
+	err = ValidateNoTopicsExist(cfg)
+	if err != nil {
+		return err
 	}
 
 	cfg.SetNestedArg(WithdrawalProvenEvent)
 	return nil
 }
 
-// FaultDetectPreprocess ...
-func FaultDetectPreprocess(cfg *core.InvSessionParams) error {
+// FaultDetectionPrepare ... Configures the session params with the appropriate
+// address key and nested args for the ETL to subscribe to L2OutputOracle events
+func FaultDetectionPrepare(cfg *core.InvSessionParams) error {
 	l2OutputOracle, err := cfg.Value(core.L2OutputOracle)
 	if err != nil {
 		return err
@@ -162,11 +178,12 @@ func FaultDetectPreprocess(cfg *core.InvSessionParams) error {
 		return err
 	}
 
-	cfg.SetValue(core.AddrKey, l2OutputOracle)
-
-	if len(cfg.NestedArgs()) != 0 {
-		return fmt.Errorf("no nested args should be present")
+	err = ValidateNoTopicsExist(cfg)
+	if err != nil {
+		return err
 	}
+
+	cfg.SetValue(core.AddrKey, l2OutputOracle)
 
 	cfg.SetNestedArg(OutputProposedEvent)
 	return nil
