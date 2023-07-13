@@ -42,6 +42,7 @@ func NoContext() *zap.Logger {
 	return logger
 }
 
+// New ... A helper to create a logger based on environment
 func New(env string) *zap.Logger {
 	_ = zap.RegisterEncoder(StringJSONEncoderName, NewStringJSONEncoder) //nolint:nolintlint
 
@@ -58,6 +59,7 @@ func New(env string) *zap.Logger {
 	return logger
 }
 
+// NewProduction ... A logger for production
 func NewProduction() *zap.Logger {
 	cfg := zap.NewProductionConfig()
 
@@ -74,6 +76,7 @@ func NewProduction() *zap.Logger {
 	return logger
 }
 
+// NewDevelopment ... A logger for development
 func NewDevelopment() *zap.Logger {
 	cfg := zap.NewDevelopmentConfig()
 
@@ -90,6 +93,7 @@ func NewDevelopment() *zap.Logger {
 	return logger
 }
 
+// NewLocal ... A logger for local development
 func NewLocal() *zap.Logger {
 	cfg := zap.NewDevelopmentConfig()
 

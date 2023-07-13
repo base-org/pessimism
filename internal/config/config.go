@@ -98,10 +98,6 @@ func (cfg *Config) IsBootstrap() bool {
 	return cfg.BootStrapPath != ""
 }
 
-func (cfg *Config) GetEnv() string {
-	return string(cfg.Environment)
-}
-
 // getEnvStr ... Reads env var from process environment, panics if not found
 func getEnvStr(key string) string {
 	envVar, ok := os.LookupEnv(key)
