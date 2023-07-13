@@ -3,13 +3,10 @@ package logging
 import (
 	"context"
 	"encoding/json"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/buffer"
 	"go.uber.org/zap/zapcore"
-)
-
-const (
-	tagPackage = "package"
 )
 
 type LogKey = string
@@ -17,6 +14,11 @@ type LogKey = string
 type loggerKeyType int
 
 const loggerKey loggerKeyType = iota
+
+const (
+	messageKey = "message"
+	levelKey   = "level"
+)
 
 // NOTE - Logger is set to Nop as default to avoid redundant testing
 var logger *zap.Logger = zap.NewNop()
@@ -41,7 +43,7 @@ func NoContext() *zap.Logger {
 }
 
 func New(env string) *zap.Logger {
-	_ = zap.RegisterEncoder(StringJSONEncoderName, NewStringJSONEncoder) //nolint
+	_ = zap.RegisterEncoder(StringJSONEncoderName, NewStringJSONEncoder) //nolint:nolintlint
 
 	switch env {
 	case "local":
@@ -60,8 +62,8 @@ func NewProduction() *zap.Logger {
 	cfg := zap.NewProductionConfig()
 
 	cfg.Encoding = StringJSONEncoderName
-	cfg.EncoderConfig.MessageKey = "message"
-	cfg.EncoderConfig.LevelKey = "level"
+	cfg.EncoderConfig.MessageKey = messageKey
+	cfg.EncoderConfig.LevelKey = levelKey
 	cfg.EncoderConfig.EncodeLevel = zapcore.LowercaseLevelEncoder
 
 	logger, err := cfg.Build(zap.AddStacktrace(zap.FatalLevel))
@@ -77,8 +79,8 @@ func NewDevelopment() *zap.Logger {
 
 	cfg.Encoding = StringJSONEncoderName
 	cfg.EncoderConfig.EncodeLevel = zapcore.LowercaseLevelEncoder
-	cfg.EncoderConfig.MessageKey = "message"
-	cfg.EncoderConfig.LevelKey = "level"
+	cfg.EncoderConfig.MessageKey = messageKey
+	cfg.EncoderConfig.LevelKey = levelKey
 
 	logger, err := cfg.Build(zap.AddStacktrace(zap.FatalLevel))
 	if err != nil {
@@ -92,7 +94,7 @@ func NewLocal() *zap.Logger {
 	cfg := zap.NewDevelopmentConfig()
 
 	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	cfg.EncoderConfig.MessageKey = "message"
+	cfg.EncoderConfig.MessageKey = messageKey
 
 	logger, err := cfg.Build(zap.AddStacktrace(zap.FatalLevel))
 	if err != nil {
@@ -122,12 +124,12 @@ func newStringJSONEncoder(cfg zapcore.EncoderConfig) *stringJSONEncoder {
 func (enc *stringJSONEncoder) EncodeEntry(ent zapcore.Entry, fields []zapcore.Field) (*buffer.Buffer, error) {
 	var stringifiedFields []zapcore.Field
 	for i := range fields {
-		switch fields[i].Type {
+		switch fields[i].Type { //nolint:exhaustive // We only care about the types we handle
 		// Indicates that the field carries an interface{}
 		case zapcore.ReflectType:
 			marshaled, err := json.Marshal(fields[i].Interface)
 			if err != nil {
-				return nil, nil
+				return nil, err
 			}
 			newField := zap.String(fields[i].Key, string(marshaled))
 			stringifiedFields = append(stringifiedFields, newField)
@@ -136,5 +138,4 @@ func (enc *stringJSONEncoder) EncodeEntry(ent zapcore.Entry, fields []zapcore.Fi
 		}
 	}
 	return enc.Encoder.EncodeEntry(ent, stringifiedFields)
-
 }

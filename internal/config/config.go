@@ -4,7 +4,6 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/metrics"
@@ -130,11 +129,6 @@ func getEnvStrWithDefault(key string, defaultValue string) string {
 // getEnvBool ... Reads env vars and converts to booleans
 func getEnvBool(key string) bool {
 	return getEnvStr(key) == trueEnvVal
-}
-
-// getEnvSlice ... Reads env vars and converts to string slice
-func getEnvSlice(key string) []string {
-	return strings.Split(getEnvStr(key), ",")
 }
 
 // getEnvInt ... Reads env vars and converts to int

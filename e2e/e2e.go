@@ -77,7 +77,7 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 
 	go pess.ListenForShutdown(kill)
 
-	logging.NewLogger(appCfg.LoggerConfig, "development")
+	logging.New("development")
 
 	return &L2TestSuite{
 		t:      t,
@@ -130,7 +130,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 
 	go pess.ListenForShutdown(kill)
 
-	logging.NewLogger(appCfg.LoggerConfig, "development")
+	logging.New("development")
 
 	return &SysTestSuite{
 		t:   t,
@@ -168,9 +168,6 @@ func DefaultTestConfig() *config.Config {
 		ServerConfig: &server.Config{
 			Host: "localhost",
 			Port: port,
-		},
-		LoggerConfig: &logging.Config{
-			Level: -1,
 		},
 	}
 }
