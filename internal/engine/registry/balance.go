@@ -103,5 +103,5 @@ func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome,
 	}
 
 	// No invalidation
-	return nil, false, nil
+	return nil, false, fmt.Errorf("testing")
 }
