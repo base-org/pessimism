@@ -112,8 +112,8 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (invariant.Inv
 	}, nil
 }
 
-// Invalidate ...
-func (fd *faultDetectorInv) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
+// Invalidate ... Performs the fault detection invariant logic
+func (fd *faultDetectorInv) Invalidate(td core.TransitData) (*core.Invalidation, bool, error) {
 	logging.NoContext().Debug("Checking invalidation for fault detector invariant",
 		zap.String("data", fmt.Sprintf("%v", td)))
 
@@ -135,7 +135,7 @@ func (fd *faultDetectorInv) Invalidate(td core.TransitData) (*core.InvalOutcome,
 	// 2. Convert raw log to structured output proposal type
 	output, err := fd.l2OutputOracleFilter.ParseOutputProposed(log)
 	if err != nil {
-		fd.stats.RecordNodeError(core.Layer2)
+		fd.stats.RecordNodeError(core.Layer1)
 		return nil, false, err
 	}
 
@@ -165,7 +165,7 @@ func (fd *faultDetectorInv) Invalidate(td core.TransitData) (*core.InvalOutcome,
 
 	// 6. Compare the expected state root with the actual state root; if they are not equal, then invalidate
 	if expectedStateRoot != actualStateRoot {
-		return &core.InvalOutcome{
+		return &core.Invalidation{
 			TimeStamp: time.Now(),
 			Message:   fmt.Sprintf(faultDetectMsg, fd.cfg.L2OutputOracle, fd.cfg.L2ToL1Address, fd.SUUID(), log.TxHash),
 		}, true, nil

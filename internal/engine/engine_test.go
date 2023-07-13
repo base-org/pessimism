@@ -58,7 +58,7 @@ func Test_HardCodedEngine(t *testing.T) {
 			test: func(t *testing.T, ts *testSuite) {
 				td := core.TransitData{}
 
-				expectedOut := &core.InvalOutcome{
+				expectedOut := &core.Invalidation{
 					Message: "20 inch blade on the Impala",
 				}
 

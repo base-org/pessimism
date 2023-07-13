@@ -176,8 +176,8 @@ func (sp *InvSessionParams) NestedArgs() []any {
 	return args
 }
 
-// InvalOutcome ... Represents an invalidation outcome
-type InvalOutcome struct {
+// Invalidation ... Represents an invalidation event
+type Invalidation struct {
 	TimeStamp time.Time
 	Message   string
 }

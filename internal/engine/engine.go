@@ -24,7 +24,7 @@ const (
 type RiskEngine interface {
 	Type() Type
 	Execute(context.Context, core.TransitData,
-		invariant.Invariant) (*core.InvalOutcome, bool)
+		invariant.Invariant) (*core.Invalidation, bool)
 }
 
 // hardCodedEngine ... Hard coded execution engine
@@ -45,7 +45,7 @@ func (e *hardCodedEngine) Type() Type {
 
 // Execute ... Executes the invariant
 func (e *hardCodedEngine) Execute(ctx context.Context, data core.TransitData,
-	inv invariant.Invariant) (*core.InvalOutcome, bool) {
+	inv invariant.Invariant) (*core.Invalidation, bool) {
 	logger := logging.WithContext(ctx)
 
 	logger.Debug("Performing invariant invalidation",

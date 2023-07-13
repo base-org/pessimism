@@ -206,6 +206,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 	for {
 		select {
 		case <-ticker.C:
+			opStart := time.Now()
 
 			height := oracle.getHeightToProcess(ctx)
 			if height != nil {
@@ -243,7 +244,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			oracle.stats.RecordBlockLatency(oracle.cfg.Network, float64(time.Since(blockTS).Milliseconds()))
 
 			componentChan <- core.TransitData{
-				OriginTS:  blockTS,
+				OriginTS:  opStart,
 				Timestamp: time.Now(),
 				Type:      core.GethBlock,
 				Value:     *block,
