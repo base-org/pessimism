@@ -134,7 +134,6 @@ func ValidateNoTopicsExist(cfg *core.InvSessionParams) error {
 		return fmt.Errorf(noNestedArgsErr)
 	}
 	return nil
-
 }
 
 // WithdrawEnforcePrepare ... Ensures that the l2 to l1 message passer exists
