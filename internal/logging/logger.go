@@ -2,14 +2,10 @@ package logging
 
 import (
 	"context"
-	"runtime"
-	"strconv"
-
+	"encoding/json"
 	"go.uber.org/zap"
+	"go.uber.org/zap/buffer"
 	"go.uber.org/zap/zapcore"
-	"path/filepath"
-
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 const (
@@ -45,16 +41,28 @@ func NoContext() *zap.Logger {
 }
 
 func New(env string) *zap.Logger {
-	if env == "local" || env == "development" {
+	_ = zap.RegisterEncoder(StringJSONEncoderName, NewStringJSONEncoder) //nolint
+
+	switch env {
+	case "local":
+		logger = NewLocal()
+	case "development":
 		logger = NewDevelopment()
-	} else {
+	case "production":
 		logger = NewProduction()
+	default:
+		panic("Invalid environment")
 	}
 	return logger
 }
 
 func NewProduction() *zap.Logger {
 	cfg := zap.NewProductionConfig()
+
+	cfg.Encoding = StringJSONEncoderName
+	cfg.EncoderConfig.MessageKey = "message"
+	cfg.EncoderConfig.LevelKey = "level"
+	cfg.EncoderConfig.EncodeLevel = zapcore.LowercaseLevelEncoder
 
 	logger, err := cfg.Build(zap.AddStacktrace(zap.FatalLevel))
 	if err != nil {
@@ -66,9 +74,13 @@ func NewProduction() *zap.Logger {
 
 func NewDevelopment() *zap.Logger {
 	cfg := zap.NewDevelopmentConfig()
-	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 
-	logger, err := cfg.Build(zap.AddStacktrace(zap.ErrorLevel))
+	cfg.Encoding = StringJSONEncoderName
+	cfg.EncoderConfig.EncodeLevel = zapcore.LowercaseLevelEncoder
+	cfg.EncoderConfig.MessageKey = "message"
+	cfg.EncoderConfig.LevelKey = "level"
+
+	logger, err := cfg.Build(zap.AddStacktrace(zap.FatalLevel))
 	if err != nil {
 		panic(err)
 	}
@@ -76,32 +88,53 @@ func NewDevelopment() *zap.Logger {
 	return logger
 }
 
-// WithPackage adds a package tag to the logger, using the package name of the caller.
-func WithPackage(logger *zap.Logger) *zap.Logger {
-	const skipOffset = 1 // skip WithPackage
+func NewLocal() *zap.Logger {
+	cfg := zap.NewDevelopmentConfig()
 
-	_, file, _, ok := runtime.Caller(skipOffset)
-	if !ok {
-		return logger
-	}
+	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	cfg.EncoderConfig.MessageKey = "message"
 
-	packageName := filepath.Base(filepath.Dir(file))
-	return WithPackageName(logger, packageName)
-}
-
-func WithPackageName(logger *zap.Logger, packageName string) *zap.Logger {
-	return logger.With(zap.String(tagPackage, packageName))
-}
-
-// WithSpan adds datadog span trace id for datadog https://docs.datadoghq.com/tracing/connect_logs_and_traces/go/
-func WithSpan(ctx context.Context, logger *zap.Logger) *zap.Logger {
-	if span, ok := tracer.SpanFromContext(ctx); ok {
-		spanContext := span.Context()
-		return logger.With(
-			zap.String("dd.trace_id", strconv.Itoa(int(spanContext.TraceID()))),
-			zap.String("dd.span_id", strconv.Itoa(int(spanContext.SpanID()))),
-		)
+	logger, err := cfg.Build(zap.AddStacktrace(zap.FatalLevel))
+	if err != nil {
+		panic(err)
 	}
 
 	return logger
+}
+
+// StringJSONEncoderName is used for registering this encoder with zap.
+const StringJSONEncoderName string = "string_json"
+
+type stringJSONEncoder struct {
+	zapcore.Encoder
+}
+
+// NewStringJSONEncoder returns an encoder that encodes the JSON log dict as a string
+// so the log processing pipeline can correctly process logs with nested JSON.
+func NewStringJSONEncoder(cfg zapcore.EncoderConfig) (zapcore.Encoder, error) {
+	return newStringJSONEncoder(cfg), nil
+}
+
+func newStringJSONEncoder(cfg zapcore.EncoderConfig) *stringJSONEncoder {
+	return &stringJSONEncoder{zapcore.NewJSONEncoder(cfg)}
+}
+
+func (enc *stringJSONEncoder) EncodeEntry(ent zapcore.Entry, fields []zapcore.Field) (*buffer.Buffer, error) {
+	var stringifiedFields []zapcore.Field
+	for i := range fields {
+		switch fields[i].Type {
+		// Indicates that the field carries an interface{}
+		case zapcore.ReflectType:
+			marshaled, err := json.Marshal(fields[i].Interface)
+			if err != nil {
+				return nil, nil
+			}
+			newField := zap.String(fields[i].Key, string(marshaled))
+			stringifiedFields = append(stringifiedFields, newField)
+		default:
+			stringifiedFields = append(stringifiedFields, fields[i])
+		}
+	}
+	return enc.Encoder.EncodeEntry(ent, stringifiedFields)
+
 }
