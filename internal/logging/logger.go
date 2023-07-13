@@ -41,8 +41,16 @@ func NewLogger(cfg *Config, env string) {
 
 	if env == "production" {
 		zapCfg = zap.NewProductionConfig()
-	} else {
+		zapCfg.Encoding = StringJSONEncoderName
+
+	} else if env == "development" {
 		zapCfg = zap.NewDevelopmentConfig()
+		zapCfg.Encoding = StringJSONEncoderName
+
+	} else if env == "local" {
+		zapCfg = zap.NewDevelopmentConfig()
+		zapCfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+
 	}
 
 	if cfg != nil && cfg.UseCustom {
@@ -58,7 +66,6 @@ func NewLogger(cfg *Config, env string) {
 	}
 
 	zapCfg.EncoderConfig.MessageKey = messageKey
-	zapCfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	zapCfg.EncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
 	zapCfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
