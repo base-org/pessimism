@@ -2,8 +2,10 @@ package logging
 
 import (
 	"context"
+	"encoding/json"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/buffer"
 	"go.uber.org/zap/zapcore"
 )
 
@@ -15,6 +17,10 @@ const loggerKey loggerKeyType = iota
 
 // NOTE - Logger is set to Nop as default to avoid redundant testing
 var logger *zap.Logger = zap.NewNop()
+
+const (
+	messageKey = "message"
+)
 
 // Config ... Configuration passed through to the logging constructor
 type Config struct {
@@ -29,6 +35,8 @@ type Config struct {
 
 // NewLogger ... initializes logging from config
 func NewLogger(cfg *Config, env string) {
+	_ = zap.RegisterEncoder(StringJSONEncoderName, NewStringJSONEncoder) //nolint:nolintlint
+
 	var zapCfg zap.Config
 
 	if env == "production" {
@@ -49,12 +57,13 @@ func NewLogger(cfg *Config, env string) {
 		// InitialFields not defined in cfg
 	}
 
+	zapCfg.EncoderConfig.MessageKey = messageKey
 	zapCfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	zapCfg.EncoderConfig.EncodeCaller = zapcore.ShortCallerEncoder
 	zapCfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
 	var err error
-	logger, err = zapCfg.Build()
+	logger, err = zapCfg.Build(zap.AddStacktrace(zap.FatalLevel))
 	if err != nil {
 		panic("could not initialize logging")
 	}
@@ -81,4 +90,40 @@ func WithContext(ctx context.Context) *zap.Logger {
 // NoContext ... A log helper to log when there's no context. Rare case usage
 func NoContext() *zap.Logger {
 	return logger
+}
+
+// StringJSONEncoderName is used for registering this encoder with zap.
+const StringJSONEncoderName string = "string_json"
+
+type stringJSONEncoder struct {
+	zapcore.Encoder
+}
+
+// NewStringJSONEncoder returns an encoder that encodes the JSON log dict as a string
+// so the log processing pipeline can correctly process logs with nested JSON.
+func NewStringJSONEncoder(cfg zapcore.EncoderConfig) (zapcore.Encoder, error) {
+	return newStringJSONEncoder(cfg), nil
+}
+
+func newStringJSONEncoder(cfg zapcore.EncoderConfig) *stringJSONEncoder {
+	return &stringJSONEncoder{zapcore.NewJSONEncoder(cfg)}
+}
+
+func (enc *stringJSONEncoder) EncodeEntry(ent zapcore.Entry, fields []zapcore.Field) (*buffer.Buffer, error) {
+	var stringifiedFields []zapcore.Field
+	for i := range fields {
+		switch fields[i].Type { //nolint:exhaustive // We only care about the types we handle
+		// Indicates that the field carries an interface{}
+		case zapcore.ReflectType:
+			marshaled, err := json.Marshal(fields[i].Interface)
+			if err != nil {
+				return nil, err
+			}
+			newField := zap.String(fields[i].Key, string(marshaled))
+			stringifiedFields = append(stringifiedFields, newField)
+		default:
+			stringifiedFields = append(stringifiedFields, fields[i])
+		}
+	}
+	return enc.Encoder.EncodeEntry(ent, stringifiedFields)
 }
