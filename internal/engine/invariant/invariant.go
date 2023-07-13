@@ -22,7 +22,7 @@ const (
 type Invariant interface {
 	InputType() core.RegisterType
 	ValidateInput(core.TransitData) error
-	Invalidate(core.TransitData) (*core.InvalOutcome, bool, error)
+	Invalidate(core.TransitData) (*core.Invalidation, bool, error)
 	SUUID() core.SUUID
 	SetSUUID(core.SUUID)
 }
@@ -63,7 +63,7 @@ func (bi *BaseInvariant) InputType() core.RegisterType {
 }
 
 // Invalidate ... Invalidates the invariant; defaults to no-op
-func (bi *BaseInvariant) Invalidate(core.TransitData) (*core.InvalOutcome, bool, error) {
+func (bi *BaseInvariant) Invalidate(core.TransitData) (*core.Invalidation, bool, error) {
 	return nil, false, nil
 }
 

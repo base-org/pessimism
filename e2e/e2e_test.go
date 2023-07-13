@@ -112,7 +112,7 @@ func Test_Balance_Enforcement(t *testing.T) {
 		Data:      nil,
 	})
 
-	// Send the transaction to redispurse the ETH from Bob back to Alice.
+	// Send the transaction to redisperse the ETH from Bob back to Alice.
 	_, err = ts.L2Geth.AddL2Block(context.Background(), drainBobTx)
 	assert.NoError(t, err, "Failed to create L2 block with transaction")
 
@@ -141,7 +141,7 @@ func Test_Contract_Event(t *testing.T) {
 	// The string declaration of the event we want to listen for.
 	updateSig := "ConfigUpdate(uint256,uint8,bytes)"
 
-	// Deploy a contract event invariant session for the L1 system config addresss.
+	// Deploy a contract event invariant session for the L1 system config address.
 	err := ts.App.BootStrap([]*models.InvRequestParams{{
 		Network:      core.Layer1.String(),
 		PType:        core.Live.String(),
@@ -157,7 +157,7 @@ func Test_Contract_Event(t *testing.T) {
 	assert.NoError(t, err, "Error bootstrapping invariant session")
 
 	// Get bindings for the L1 system config contract.
-	sysconfig, err := bindings.NewSystemConfig(predeploys.DevSystemConfigAddr, l1Client)
+	sysCfg, err := bindings.NewSystemConfig(predeploys.DevSystemConfigAddr, l1Client)
 	assert.NoError(t, err, "Error getting system config")
 
 	// Obtain our signer.
@@ -169,7 +169,7 @@ func Test_Contract_Event(t *testing.T) {
 	scalar := big.NewInt(1)
 
 	// Call setGasConfig method on the L1 system config contract.
-	tx, err := sysconfig.SetGasConfig(opts, overhead, scalar)
+	tx, err := sysCfg.SetGasConfig(opts, overhead, scalar)
 	assert.NoError(t, err, "Error setting gas config")
 
 	// Wait for the transaction to be canonicalized.
@@ -195,13 +195,17 @@ type TestAccount struct {
 	L2Opts *bind.TransactOpts
 }
 
-// Test_Withdrawal_Enforcement ...
+// Test_Withdrawal_Enforcement ... Tests the E2E flow of a withdrawal
+// / enforce invariant session. This test uses two L2ToL1 message passer contracts;
+// one that is configured to be "faulty" and one that is not. The invariant session
+// should only produce an alert when the faulty L2ToL1 message passer is used given
+// that it's state is empty.
 func Test_Withdrawal_Enforcement(t *testing.T) {
 
 	ts := e2e.CreateSysTestSuite(t)
 	defer ts.Close()
 
-	// Obtain our sequencer, verifier, and transactor keypair.
+	// Obtain our sequencer, verifier, and transactor key-pair.
 	l1Client := ts.Sys.Clients["l1"]
 	l2Seq := ts.Sys.Clients["sequencer"]
 	l2Verifier := ts.Sys.Clients["verifier"]

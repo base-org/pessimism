@@ -87,7 +87,7 @@ func NewWithdrawalEnforceInv(ctx context.Context, cfg *WithdrawalEnforceCfg) (in
 
 // Invalidate ... Verifies than an L1 WithdrawalProven has a correlating hash
 // to the withdrawal storage of the L2ToL1MessagePasser
-func (wi *WithdrawalEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
+func (wi *WithdrawalEnforceInv) Invalidate(td core.TransitData) (*core.Invalidation, bool, error) {
 	logging.NoContext().Debug("Checking invalidation for withdrawal enforcement invariant",
 		zap.String("data", fmt.Sprintf("%v", td)))
 
@@ -119,7 +119,7 @@ func (wi *WithdrawalEnforceInv) Invalidate(td core.TransitData) (*core.InvalOutc
 
 	// 4. If the withdrawal does not exist, invalidate
 	if !exists {
-		return &core.InvalOutcome{
+		return &core.Invalidation{
 			TimeStamp: time.Now(),
 			Message: fmt.Sprintf(withdrawalEnforceMsg,
 				wi.cfg.L1PortalAddress, wi.cfg.L2ToL1Address, wi.SUUID(), log.TxHash.Hex()),
