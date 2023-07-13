@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/base-org/pessimism/internal/api/server"
-	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/subsystem"
 	"github.com/joho/godotenv"
@@ -40,7 +39,6 @@ type Config struct {
 	SystemConfig  *subsystem.Config
 	ServerConfig  *server.Config
 	MetricsConfig *metrics.Config
-	LoggerConfig  *logging.Config
 }
 
 // NewConfig ... Initializer
@@ -67,16 +65,6 @@ func NewConfig(fileName FilePath) *Config {
 			Port:              getEnvInt("METRICS_PORT"),
 			Enabled:           getEnvBool("ENABLE_METRICS"),
 			ReadHeaderTimeout: getEnvInt("METRICS_READ_HEADER_TIMEOUT"),
-		},
-
-		LoggerConfig: &logging.Config{
-			UseCustom:         getEnvBool("LOGGER_USE_CUSTOM"),
-			Level:             getEnvInt("LOGGER_LEVEL"),
-			DisableCaller:     getEnvBool("LOGGER_DISABLE_CALLER"),
-			DisableStacktrace: getEnvBool("LOGGER_DISABLE_STACKTRACE"),
-			Encoding:          getEnvStr("LOGGER_ENCODING"),
-			OutputPaths:       getEnvSlice("LOGGER_OUTPUT_PATHS"),
-			ErrorOutputPaths:  getEnvSlice("LOGGER_ERROR_OUTPUT_PATHS"),
 		},
 
 		ServerConfig: &server.Config{
@@ -109,6 +97,10 @@ func (cfg *Config) IsLocal() bool {
 // IsBootstrap ... Returns true if a state bootstrap is required
 func (cfg *Config) IsBootstrap() bool {
 	return cfg.BootStrapPath != ""
+}
+
+func (cfg *Config) GetEnv() string {
+	return string(cfg.Environment)
 }
 
 // getEnvStr ... Reads env var from process environment, panics if not found

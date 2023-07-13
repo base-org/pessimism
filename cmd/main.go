@@ -55,7 +55,7 @@ func RunPessimism(_ *cli.Context) error {
 	ctx := context.Background()
 
 	// Init logger
-	logging.NewLogger(cfg.LoggerConfig, string(cfg.Environment))
+	logging.New(string(cfg.Environment))
 	logger := logging.WithContext(ctx)
 
 	l1Client, err := client.NewEthClient(ctx, cfg.L1RpcEndpoint)
