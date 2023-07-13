@@ -50,7 +50,7 @@ func NewBalanceInvariant(cfg *BalanceInvConfig) (invariant.Invariant, error) {
 
 // Invalidate ... Checks if the balance is within the bounds
 // specified in the config
-func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome, bool, error) {
+func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.Invalidation, bool, error) {
 	logging.NoContext().Debug("Checking invalidation for balance invariant", zap.String("data", fmt.Sprintf("%v", td)))
 
 	// 1. Validate and extract balance input
@@ -94,7 +94,7 @@ func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.InvalOutcome,
 			lower = "-∞"
 		}
 
-		return &core.InvalOutcome{
+		return &core.Invalidation{
 			TimeStamp: time.Now(),
 			Message: fmt.Sprintf(reportMsg, balance,
 				upper, lower,

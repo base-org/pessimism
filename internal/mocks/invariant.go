@@ -49,10 +49,10 @@ func (mr *MockInvariantMockRecorder) InputType() *gomock.Call {
 }
 
 // Invalidate mocks base method.
-func (m *MockInvariant) Invalidate(arg0 core.TransitData) (*core.InvalOutcome, bool, error) {
+func (m *MockInvariant) Invalidate(arg0 core.TransitData) (*core.Invalidation, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Invalidate", arg0)
-	ret0, _ := ret[0].(*core.InvalOutcome)
+	ret0, _ := ret[0].(*core.Invalidation)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
