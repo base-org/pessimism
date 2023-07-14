@@ -10,6 +10,7 @@ import (
 	"github.com/base-org/pessimism/internal/app"
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/config"
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/state"
@@ -78,7 +79,7 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 
 	go pess.ListenForShutdown(kill)
 
-	logging.New("development")
+	logging.New(core.Development)
 
 	return &L2TestSuite{
 		t:      t,
@@ -131,7 +132,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 
 	go pess.ListenForShutdown(kill)
 
-	logging.New("development")
+	logging.New(core.Development)
 
 	return &SysTestSuite{
 		t:   t,
@@ -155,7 +156,7 @@ func DefaultTestConfig() *config.Config {
 	l2PollInterval := 300
 
 	return &config.Config{
-		Environment:   "development",
+		Environment:   core.Development,
 		BootStrapPath: "",
 		SystemConfig: &subsystem.Config{
 			L2PollInterval: l2PollInterval,

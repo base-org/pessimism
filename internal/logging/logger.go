@@ -60,10 +60,9 @@ func NoContext() *zap.Logger {
 
 // New ... A helper to create a logger based on environment
 func New(env core.Env) {
-	err := zap.RegisterEncoder(StringJSONEncoderName, NewStringJSONEncoder) //nolint:nolintlint
-	if err != nil {
-		panic(err)
-	}
+	// Register our custom encoder. Ignoring this error as we want to override the default string_json encoder
+	// Ignoring this error will not break the logger
+	_ = zap.RegisterEncoder(StringJSONEncoderName, NewStringJSONEncoder) //nolint:nolintlint
 
 	switch env {
 	case core.Local:
