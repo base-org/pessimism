@@ -14,6 +14,7 @@ import (
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/state"
 	"github.com/base-org/pessimism/internal/subsystem"
+
 	op_e2e "github.com/ethereum-optimism/optimism/op-e2e"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -154,7 +155,7 @@ func DefaultTestConfig() *config.Config {
 	l2PollInterval := 300
 
 	return &config.Config{
-		Environment:   config.Development,
+		Environment:   "development",
 		BootStrapPath: "",
 		SystemConfig: &subsystem.Config{
 			L2PollInterval: l2PollInterval,

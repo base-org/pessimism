@@ -93,7 +93,7 @@ func (am *alertManager) EventLoop() error {
 
 		case alert := <-am.alertTransit:
 			logger.Info("received alert",
-				zap.String(core.SUUIDKey, alert.SUUID.String()))
+				zap.String(logging.SUUIDKey, alert.SUUID.String()))
 
 			alertDest, err := am.store.GetAlertDestination(alert.SUUID)
 			if err != nil {

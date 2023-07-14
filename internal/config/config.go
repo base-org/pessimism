@@ -6,28 +6,17 @@ import (
 	"strconv"
 
 	"github.com/base-org/pessimism/internal/api/server"
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/subsystem"
+
 	"github.com/joho/godotenv"
-)
-
-type FilePath string
-
-type Env string
-
-const (
-	Development Env = "development"
-	Production  Env = "production"
-	Local       Env = "local"
-
-	// trueEnvVal ... Represents the encoded string value for true (ie. 1)
-	trueEnvVal = "1"
 )
 
 // Config ... Application level configuration defined by `FilePath` value
 // TODO - Consider renaming to "environment config"
 type Config struct {
-	Environment   Env
+	Environment   core.Env
 	BootStrapPath string
 	L1RpcEndpoint string
 	L2RpcEndpoint string
@@ -41,7 +30,7 @@ type Config struct {
 }
 
 // NewConfig ... Initializer
-func NewConfig(fileName FilePath) *Config {
+func NewConfig(fileName core.FilePath) *Config {
 	if err := godotenv.Load(string(fileName)); err != nil {
 		log.Fatalf("config file not found for file: %s", fileName)
 	}
@@ -51,7 +40,7 @@ func NewConfig(fileName FilePath) *Config {
 		L2RpcEndpoint: getEnvStr("L2_RPC_ENDPOINT"),
 
 		BootStrapPath: getEnvStrWithDefault("BOOTSTRAP_PATH", ""),
-		Environment:   Env(getEnvStr("ENV")),
+		Environment:   core.Env(getEnvStr("ENV")),
 		SlackURL:      getEnvStrWithDefault("SLACK_URL", ""),
 
 		SystemConfig: &subsystem.Config{
@@ -80,17 +69,17 @@ func NewConfig(fileName FilePath) *Config {
 
 // IsProduction ... Returns true if the env is production
 func (cfg *Config) IsProduction() bool {
-	return cfg.Environment == Production
+	return cfg.Environment == core.Production
 }
 
 // IsDevelopment ... Returns true if the env is development
 func (cfg *Config) IsDevelopment() bool {
-	return cfg.Environment == Development
+	return cfg.Environment == core.Development
 }
 
 // IsLocal ... Returns true if the env is local
 func (cfg *Config) IsLocal() bool {
-	return cfg.Environment == Local
+	return cfg.Environment == core.Local
 }
 
 // IsBootstrap ... Returns true if a state bootstrap is required
@@ -124,7 +113,7 @@ func getEnvStrWithDefault(key string, defaultValue string) string {
 
 // getEnvBool ... Reads env vars and converts to booleans
 func getEnvBool(key string) bool {
-	return getEnvStr(key) == trueEnvVal
+	return getEnvStr(key) == core.TrueEnvVal
 }
 
 // getEnvInt ... Reads env vars and converts to int

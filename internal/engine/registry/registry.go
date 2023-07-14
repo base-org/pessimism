@@ -6,6 +6,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/invariant"
+	"github.com/base-org/pessimism/internal/logging"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -153,7 +154,7 @@ func WithdrawEnforcePrepare(cfg *core.InvSessionParams) error {
 
 	// Configure the session to inform the ETL to subscribe
 	// to withdrawal proof events from the L1Portal contract
-	cfg.SetValue(core.AddrKey, l1Portal)
+	cfg.SetValue(logging.AddrKey, l1Portal)
 
 	err = ValidateNoTopicsExist(cfg)
 	if err != nil {
@@ -182,7 +183,7 @@ func FaultDetectionPrepare(cfg *core.InvSessionParams) error {
 		return err
 	}
 
-	cfg.SetValue(core.AddrKey, l2OutputOracle)
+	cfg.SetValue(logging.AddrKey, l2OutputOracle)
 
 	cfg.SetNestedArg(OutputProposedEvent)
 	return nil

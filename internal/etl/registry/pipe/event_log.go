@@ -96,7 +96,7 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 
 	// 2. Fetch the addresses and events to monitor for
 	logging.NoContext().Debug("Getting addresses",
-		zap.String(core.PUUIDKey, ed.pUUID.String()))
+		zap.String(logging.PUUIDKey, ed.pUUID.String()))
 
 	addresses, err := ed.ss.GetSlice(ctx, ed.sk)
 	if err != nil {

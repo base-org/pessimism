@@ -5,6 +5,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/registry"
+	"github.com/base-org/pessimism/internal/logging"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,7 +14,7 @@ func Test_AddressPreprocess(t *testing.T) {
 	err := registry.ValidateAddressing(isp)
 	assert.Error(t, err, "failure should occur when no address is provided")
 
-	isp.SetValue(core.AddrKey, "0x69")
+	isp.SetValue(logging.AddrKey, "0x69")
 
 	err = registry.ValidateAddressing(isp)
 	assert.NoError(t, err)
@@ -24,7 +25,7 @@ func Test_EventPreprocess(t *testing.T) {
 	err := registry.ValidateEventTracking(isp)
 	assert.Error(t, err, "failure should occur when no address is provided")
 
-	isp.SetValue(core.AddrKey, "0x69")
+	isp.SetValue(logging.AddrKey, "0x69")
 	err = registry.ValidateEventTracking(isp)
 	assert.Error(t, err, "failure should occur when no event is provided")
 

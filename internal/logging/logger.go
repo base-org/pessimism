@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/base-org/pessimism/internal/core"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/buffer"
 	"go.uber.org/zap/zapcore"
@@ -20,6 +22,15 @@ const (
 	levelKey   = "level"
 )
 
+// ID keys used for logging
+const (
+	AddrKey LogKey = "address"
+
+	CUUIDKey LogKey = "cuuid"
+	PUUIDKey LogKey = "puuid"
+	SUUIDKey LogKey = "suuid"
+)
+
 // NOTE - Logger is set to Nop as default to avoid redundant testing
 var logger *zap.Logger = zap.NewNop()
 
@@ -34,6 +45,11 @@ func WithContext(ctx context.Context) *zap.Logger {
 	if ctx == nil {
 		return logger
 	}
+
+	if ctxLogger, ok := ctx.Value(loggerKey).(*zap.Logger); ok {
+		return ctxLogger
+	}
+
 	return logger
 }
 
@@ -43,20 +59,22 @@ func NoContext() *zap.Logger {
 }
 
 // New ... A helper to create a logger based on environment
-func New(env string) *zap.Logger {
-	_ = zap.RegisterEncoder(StringJSONEncoderName, NewStringJSONEncoder) //nolint:nolintlint
+func New(env core.Env) {
+	err := zap.RegisterEncoder(StringJSONEncoderName, NewStringJSONEncoder) //nolint:nolintlint
+	if err != nil {
+		panic(err)
+	}
 
 	switch env {
-	case "local":
+	case core.Local:
 		logger = NewLocal()
-	case "development":
+	case core.Development:
 		logger = NewDevelopment()
-	case "production":
+	case core.Production:
 		logger = NewProduction()
 	default:
 		panic("Invalid environment")
 	}
-	return logger
 }
 
 // NewProduction ... A logger for production
@@ -125,6 +143,7 @@ func newStringJSONEncoder(cfg zapcore.EncoderConfig) *stringJSONEncoder {
 	return &stringJSONEncoder{zapcore.NewJSONEncoder(cfg)}
 }
 
+// EncodeEntry ... Encodes the entry and fields, and returns a buffer with the encoded log dict as a string.
 func (enc *stringJSONEncoder) EncodeEntry(ent zapcore.Entry, fields []zapcore.Field) (*buffer.Buffer, error) {
 	var stringifiedFields []zapcore.Field
 	for i := range fields {

@@ -9,7 +9,6 @@ import (
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/config"
-	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/subsystem"
@@ -96,7 +95,7 @@ func (a *Application) BootStrap(sessions []*BootSession) error {
 		}
 
 		logger.Info("invariant session started",
-			zap.String(core.SUUIDKey, sUUID.String()))
+			zap.String(logging.SUUIDKey, sUUID.String()))
 	}
 	return nil
 }
