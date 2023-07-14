@@ -25,14 +25,14 @@ type GethBlockODef struct {
 	cUUID      core.CUUID
 	pUUID      core.PUUID
 	cfg        *core.ClientConfig
-	client     client.EthClientInterface
+	client     client.EthClient
 	currHeight *big.Int
 
 	stats metrics.Metricer
 }
 
 // NewGethBlockODef ... Initializer for geth.block oracle definition
-func NewGethBlockODef(cfg *core.ClientConfig, client client.EthClientInterface,
+func NewGethBlockODef(cfg *core.ClientConfig, client client.EthClient,
 	h *big.Int, stats metrics.Metricer) *GethBlockODef {
 	return &GethBlockODef{
 		cfg:        cfg,

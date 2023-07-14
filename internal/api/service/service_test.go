@@ -19,7 +19,7 @@ const (
 
 type testSuite struct {
 	apiSvc     svc.Service
-	mockClient *mocks.MockEthClientInterface
+	mockClient *mocks.MockEthClient
 	mockSub    *mocks.SubManager
 	mockCtrl   *gomock.Controller
 }
@@ -30,7 +30,7 @@ func testErr1() error {
 
 func createTestSuite(ctrl *gomock.Controller) *testSuite {
 	sysMock := mocks.NewSubManager(ctrl)
-	ethClient := mocks.NewMockEthClientInterface(ctrl)
+	ethClient := mocks.NewMockEthClient(ctrl)
 	ctx := context.Background()
 
 	ctx = context.WithValue(ctx, core.L1Client, ethClient)

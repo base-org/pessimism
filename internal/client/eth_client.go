@@ -1,4 +1,4 @@
-//go:generate mockgen -package mocks --destination ../mocks/eth_client.go . EthClientInterface
+//go:generate mockgen -package mocks --destination ../mocks/eth_client.go . EthClient
 
 package client
 
@@ -23,9 +23,9 @@ import (
 
 // TODO (#20) : Introduce optional Retry-able EthClient
 
-// EthClientInterface ... Provides interface wrapper for ethClient functions
-// Useful for mocking go-etheruem node client logic
-type EthClientInterface interface {
+// EthClient ... Provides interface wrapper for ethClient functions
+// Useful for mocking go-ethereum json rpc client logic
+type EthClient interface {
 	CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error)
 	CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error)
 
@@ -38,14 +38,14 @@ type EthClientInterface interface {
 		ch chan<- types.Log) (ethereum.Subscription, error)
 }
 
-// FromContext ... Retrieves ethClient from context
-func FromContext(ctx context.Context, layer core.Network) (EthClientInterface, error) {
+// FromContext ... Retrieves EthClient from context
+func FromContext(ctx context.Context, layer core.Network) (EthClient, error) {
 	key := core.L1Client
 	if layer == core.Layer2 {
 		key = core.L2Client
 	}
 
-	if client, ok := ctx.Value(key).(EthClientInterface); ok {
+	if client, ok := ctx.Value(key).(EthClient); ok {
 		return client, nil
 	}
 
@@ -53,11 +53,6 @@ func FromContext(ctx context.Context, layer core.Network) (EthClientInterface, e
 }
 
 // NewEthClient ... Initializer
-func NewEthClient(ctx context.Context, rawURL string) (EthClientInterface, error) {
-	client, err := ethclient.DialContext(ctx, rawURL)
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
+func NewEthClient(ctx context.Context, rawURL string) (EthClient, error) {
+	return ethclient.DialContext(ctx, rawURL)
 }

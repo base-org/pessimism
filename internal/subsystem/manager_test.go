@@ -33,7 +33,9 @@ func createTestSuite(t *testing.T) *testSuite {
 	etlMock := mocks.NewEtlManager(ctrl)
 	engMock := mocks.NewEngineManager(ctrl)
 	alrtMock := mocks.NewAlertManager(ctrl)
-	cfg := &subsystem.Config{}
+	cfg := &subsystem.Config{
+		MaxPipelineCount: 10,
+	}
 
 	subsys := subsystem.NewManager(context.Background(), cfg, etlMock, engMock, alrtMock)
 
@@ -137,6 +139,10 @@ func Test_RunInvSession(t *testing.T) {
 			name: "Failure when deploying invariant session",
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
+				ts.mockEtl.EXPECT().
+					ActiveCount().Return(1).
+					Times(1)
+
 				ts.mockEng.EXPECT().DeployInvariantSession(testCfg).
 					Return(core.NilSUUID(), testErr()).
 					Times(1)
@@ -153,6 +159,10 @@ func Test_RunInvSession(t *testing.T) {
 			name: "Failure when adding invariant session to alerting system",
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
+				ts.mockEtl.EXPECT().
+					ActiveCount().Return(1).
+					Times(1)
+
 				ts.mockEng.EXPECT().DeployInvariantSession(testCfg).
 					Return(testSUUID, nil).
 					Times(1)
@@ -173,6 +183,11 @@ func Test_RunInvSession(t *testing.T) {
 			name: "Success with no reuse",
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
+
+				ts.mockEtl.EXPECT().
+					ActiveCount().Return(1).
+					Times(1)
+
 				ts.mockEng.EXPECT().DeployInvariantSession(testCfg).
 					Return(testSUUID, nil).
 					Times(1)
@@ -197,6 +212,7 @@ func Test_RunInvSession(t *testing.T) {
 			name: "Success with reuse",
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
+
 				ts.mockEng.EXPECT().DeployInvariantSession(testCfg).
 					Return(testSUUID, nil).
 					Times(1)
@@ -212,6 +228,24 @@ func Test_RunInvSession(t *testing.T) {
 				actualSUUID, err := ts.subsys.RunInvSession(testCfg)
 				assert.NoError(t, err)
 				assert.Equal(t, testSUUID, actualSUUID)
+			},
+		},
+		{
+			name: "Failure when active pipeline count is reached",
+			constructor: func(t *testing.T) *testSuite {
+				ts := createTestSuite(t)
+
+				ts.mockEtl.EXPECT().
+					ActiveCount().Return(10).
+					Times(1)
+
+				return ts
+			},
+			testLogic: func(t *testing.T, ts *testSuite) {
+				testCfg.Reuse = false
+				actualSUUID, err := ts.subsys.RunInvSession(testCfg)
+				assert.Error(t, err)
+				assert.Equal(t, core.NilSUUID(), actualSUUID)
 			},
 		},
 	}

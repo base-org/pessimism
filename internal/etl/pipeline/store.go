@@ -11,6 +11,7 @@ import (
 type EtlStore interface {
 	AddComponentLink(cID core.CUUID, pID core.PUUID)
 	AddPipeline(id core.PUUID, pl Pipeline)
+	ActiveCount() int
 	GetAllPipelines() []Pipeline
 	GetExistingPipelinesByPID(pPID core.PipelinePID) []core.PUUID
 	GetPUUIDs(cID core.CUUID) ([]core.PUUID, error)
@@ -21,7 +22,6 @@ type EtlStore interface {
 // pipeline with necessary metadata
 type pipelineEntry struct {
 	id core.PUUID
-	as ActivityState
 	p  Pipeline
 }
 
@@ -46,7 +46,7 @@ func NewEtlStore() EtlStore {
 
 /*
 Note - PUUIDs can only conflict
-       when whenpipeLineType = Live && activityState = Active
+       when pipeLineType = Live && activityState = Active
 */
 
 // addComponentLink ... Creates an entry for some new C_UUID:P_UUID mapping
@@ -63,7 +63,6 @@ func (store *etlStore) AddComponentLink(cUUID core.CUUID, pUUID core.PUUID) {
 func (store *etlStore) AddPipeline(pUUID core.PUUID, pl Pipeline) {
 	entry := pipelineEntry{
 		id: pUUID,
-		as: Booting,
 		p:  pl,
 	}
 
@@ -81,7 +80,7 @@ func (store *etlStore) AddPipeline(pUUID core.PUUID, pl Pipeline) {
 	}
 }
 
-// GetPUUIDs ... Returns all entried PIDs for some CID
+// GetPUUIDs ... Returns all entry PIDs for some CID
 func (store *etlStore) GetPUUIDs(cID core.CUUID) ([]core.PUUID, error) {
 	pIDs, found := store.compPipelines[cID]
 
@@ -92,7 +91,7 @@ func (store *etlStore) GetPUUIDs(cID core.CUUID) ([]core.PUUID, error) {
 	return pIDs, nil
 }
 
-// getPipelineByPID ... Returns pipeline storeovided some PID
+// getPipelineByPID ... Returns pipeline store provided some PID
 func (store *etlStore) GetPipelineFromPUUID(pUUID core.PUUID) (Pipeline, error) {
 	if _, found := store.pipelines[pUUID.PID]; !found {
 		return nil, fmt.Errorf(pIDNotFoundErr, pUUID.String())
@@ -123,13 +122,28 @@ func (store *etlStore) GetExistingPipelinesByPID(pPID core.PipelinePID) []core.P
 	return pUUIDs
 }
 
+// Count ... Returns the number of active pipelines
+func (store *etlStore) ActiveCount() int {
+	count := 0
+
+	for _, entrySlice := range store.pipelines {
+		for _, entry := range entrySlice {
+			if entry.p.State() == ACTIVE {
+				count++
+			}
+		}
+	}
+
+	return count
+}
+
 // GetAllPipelines ... Returns all existing/current pipelines
 func (store *etlStore) GetAllPipelines() []Pipeline {
 	pipeLines := make([]Pipeline, 0)
 
-	for _, pLines := range store.pipelines {
-		for _, pipeLine := range pLines {
-			pipeLines = append(pipeLines, pipeLine.p)
+	for _, entrySlice := range store.pipelines {
+		for _, entry := range entrySlice {
+			pipeLines = append(pipeLines, entry.p)
 		}
 	}
 

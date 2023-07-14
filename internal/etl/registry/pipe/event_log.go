@@ -20,7 +20,7 @@ import (
 
 // EventDefinition ...
 type EventDefinition struct {
-	client client.EthClientInterface
+	client client.EthClient
 	sk     *core.StateKey
 	pUUID  core.PUUID
 	cfg    *core.ClientConfig

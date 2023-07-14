@@ -35,6 +35,20 @@ func (m *EtlManager) EXPECT() *EtlManagerMockRecorder {
 	return m.recorder
 }
 
+// ActiveCount mocks base method.
+func (m *EtlManager) ActiveCount() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ActiveCount")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// ActiveCount indicates an expected call of ActiveCount.
+func (mr *EtlManagerMockRecorder) ActiveCount() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ActiveCount", reflect.TypeOf((*EtlManager)(nil).ActiveCount))
+}
+
 // CreateDataPipeline mocks base method.
 func (m *EtlManager) CreateDataPipeline(arg0 *core.PipelineConfig) (core.PUUID, bool, error) {
 	m.ctrl.T.Helper()

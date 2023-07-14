@@ -26,7 +26,7 @@ func Test_GetCurrentHeightFromNetwork(t *testing.T) {
 	// setup mock
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	testObj := mocks.NewMockEthClientInterface(ctrl)
+	testObj := mocks.NewMockEthClient(ctrl)
 
 	header := types.Header{
 		ParentHash: common.HexToHash("0x123456789"),
@@ -54,7 +54,7 @@ func Test_GetHeightToProcess(t *testing.T) {
 	// setup mock
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	testObj := mocks.NewMockEthClientInterface(ctrl)
+	testObj := mocks.NewMockEthClient(ctrl)
 
 	header := types.Header{
 		ParentHash: common.HexToHash("0x123456789"),
@@ -99,7 +99,7 @@ func Test_Backroutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mocks.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClient(ctrl)
 
 				header := types.Header{
 					ParentHash: common.HexToHash("0x123456789"),
@@ -139,7 +139,7 @@ func Test_Backroutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mocks.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClient(ctrl)
 
 				od := &GethBlockODef{cfg: &core.ClientConfig{
 					NumOfRetries: 3,
@@ -200,7 +200,7 @@ func Test_Backroutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mocks.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClient(ctrl)
 
 				header := types.Header{
 					ParentHash: common.HexToHash("0x123456789"),
@@ -273,7 +273,7 @@ func Test_ReadRoutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mocks.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClient(ctrl)
 
 				od := &GethBlockODef{cfg: &core.ClientConfig{
 					StartHeight:  big.NewInt(2),
@@ -302,7 +302,7 @@ func Test_ReadRoutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mocks.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClient(ctrl)
 
 				od := &GethBlockODef{cfg: &core.ClientConfig{
 					StartHeight:  nil,
@@ -331,7 +331,7 @@ func Test_ReadRoutine(t *testing.T) {
 				// setup mock
 				ctrl := gomock.NewController(t)
 				defer ctrl.Finish()
-				testObj := mocks.NewMockEthClientInterface(ctrl)
+				testObj := mocks.NewMockEthClient(ctrl)
 
 				header := types.Header{
 					ParentHash: common.HexToHash("0x123456789"),

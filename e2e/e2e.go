@@ -154,13 +154,15 @@ func DefaultTestConfig() *config.Config {
 	metPort := 6300
 	l1PollInterval := 900
 	l2PollInterval := 300
+	maxPipelines := 10
 
 	return &config.Config{
 		Environment:   core.Development,
 		BootStrapPath: "",
 		SystemConfig: &subsystem.Config{
-			L2PollInterval: l2PollInterval,
-			L1PollInterval: l1PollInterval,
+			MaxPipelineCount: maxPipelines,
+			L2PollInterval:   l2PollInterval,
+			L1PollInterval:   l1PollInterval,
 		},
 		MetricsConfig: &metrics.Config{
 			Enabled: false,

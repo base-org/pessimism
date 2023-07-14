@@ -25,7 +25,7 @@ func testErr() error {
 type fdTestSuite struct {
 	ctrl *gomock.Controller
 
-	mockEthClient  *mocks.MockEthClientInterface
+	mockEthClient  *mocks.MockEthClient
 	mockGethClient *mocks.MockGethClient
 
 	fd invariant.Invariant
@@ -39,7 +39,7 @@ func createFdTestSuite(t *testing.T) *fdTestSuite {
 	}
 	ctx := context.Background()
 
-	mockEthClient := mocks.NewMockEthClientInterface(ctrl)
+	mockEthClient := mocks.NewMockEthClient(ctrl)
 	mockGethClient := mocks.NewMockGethClient(ctrl)
 
 	ctx = app.InitializeContext(ctx, nil, mockEthClient, mockEthClient,
