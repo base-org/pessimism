@@ -120,7 +120,7 @@ func (m *manager) StartEventRoutines(ctx context.Context) {
 	go func() { // ETL driver thread
 		defer m.Done()
 
-		if err := m.alert.EventLoop(); err != nil {
+		if err := m.etl.EventLoop(); err != nil {
 			logger.Error("ETL manager event loop error", zap.Error(err))
 		}
 	}()
