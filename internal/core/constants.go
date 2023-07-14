@@ -8,9 +8,6 @@ const (
 	Development Env = "development"
 	Production  Env = "production"
 	Local       Env = "local"
-
-	// TrueEnvVal ... Represents the encoded string value for true (ie. 1)
-	TrueEnvVal = "1"
 )
 
 type CtxKey uint8

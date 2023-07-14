@@ -13,6 +13,9 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// TrueEnvVal ... Represents the encoded string value for true (ie. 1)
+const trueEnvVal = "1"
+
 // Config ... Application level configuration defined by `FilePath` value
 // TODO - Consider renaming to "environment config"
 type Config struct {
@@ -113,7 +116,7 @@ func getEnvStrWithDefault(key string, defaultValue string) string {
 
 // getEnvBool ... Reads env vars and converts to booleans
 func getEnvBool(key string) bool {
-	return getEnvStr(key) == core.TrueEnvVal
+	return getEnvStr(key) == trueEnvVal
 }
 
 // getEnvInt ... Reads env vars and converts to int
