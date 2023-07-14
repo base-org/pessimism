@@ -1,6 +1,14 @@
 package core
 
-import "github.com/base-org/pessimism/internal/logging"
+type FilePath string
+
+type Env string
+
+const (
+	Development Env = "development"
+	Production  Env = "production"
+	Local       Env = "local"
+)
 
 type CtxKey uint8
 
@@ -157,12 +165,3 @@ func StringToAlertingDestType(stringType string) AlertDestination {
 
 	return AlertDestination(0)
 }
-
-// ID keys used for logging
-const (
-	AddrKey logging.LogKey = "address"
-
-	CUUIDKey logging.LogKey = "cuuid"
-	PUUIDKey logging.LogKey = "puuid"
-	SUUIDKey logging.LogKey = "suuid"
-)

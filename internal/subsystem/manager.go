@@ -141,7 +141,7 @@ func (m *manager) BuildDeployCfg(pConfig *core.PipelineConfig,
 	}
 
 	logging.WithContext(m.ctx).
-		Info("Created etl pipeline", zap.String(core.PUUIDKey, pUUID.String()))
+		Info("Created etl pipeline", zap.String(logging.PUUIDKey, pUUID.String()))
 
 	// 3. Create a deploy config
 	return &invariant.DeployConfig{
@@ -164,7 +164,7 @@ func (m *manager) RunInvSession(cfg *invariant.DeployConfig) (core.SUUID, error)
 		return core.NilSUUID(), err
 	}
 	logging.WithContext(m.ctx).
-		Info("Deployed invariant session to risk engine", zap.String(core.SUUIDKey, sUUID.String()))
+		Info("Deployed invariant session to risk engine", zap.String(logging.SUUIDKey, sUUID.String()))
 
 	// 2. Add session to alert manager
 	err = m.alrt.AddSession(sUUID, cfg.AlertDest)

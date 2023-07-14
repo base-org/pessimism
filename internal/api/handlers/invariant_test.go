@@ -11,6 +11,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/logging"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -134,7 +135,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 
 				assert.Equal(t, actualResp.Status, models.OK)
 				assert.Equal(t, actualResp.Code, http.StatusAccepted)
-				assert.Contains(t, actualResp.Result[core.SUUIDKey], testSUUID1().PID.String())
+				assert.Contains(t, actualResp.Result[logging.SUUIDKey], testSUUID1().PID.String())
 			},
 		},
 	}

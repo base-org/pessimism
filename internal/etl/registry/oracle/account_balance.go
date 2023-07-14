@@ -77,7 +77,7 @@ func (oracle *AddressBalanceODef) ReadRoutine(ctx context.Context, componentChan
 		case <-ticker.C: // Polling
 			ts := time.Now()
 			logging.NoContext().Debug("Getting addresess",
-				zap.String(core.PUUIDKey, oracle.pUUID.String()))
+				zap.String(logging.PUUIDKey, oracle.pUUID.String()))
 
 			// Get addresses from shared state store for pipeline uuid
 
@@ -91,7 +91,7 @@ func (oracle *AddressBalanceODef) ReadRoutine(ctx context.Context, componentChan
 				// Convert to go-ethereum address type
 				gethAddress := common.HexToAddress(address)
 				logging.NoContext().Debug("Balance query",
-					zap.String(core.AddrKey, gethAddress.String()))
+					zap.String(logging.AddrKey, gethAddress.String()))
 
 				// Get balance using go-ethereum client
 				weiBalance, err := oracle.client.BalanceAt(ctx, gethAddress, nil)
@@ -106,11 +106,11 @@ func (oracle *AddressBalanceODef) ReadRoutine(ctx context.Context, componentChan
 				ethBalance, _ := pess_common.WeiToEther(weiBalance).Float64()
 
 				logging.NoContext().Debug("Balance",
-					zap.String(core.AddrKey, gethAddress.String()),
+					zap.String(logging.AddrKey, gethAddress.String()),
 					zap.Int64("wei balance ", weiBalance.Int64()))
 
 				logging.NoContext().Debug("Balance",
-					zap.String(core.AddrKey, gethAddress.String()),
+					zap.String(logging.AddrKey, gethAddress.String()),
 					zap.Float64("balance", ethBalance))
 
 				// Send parsed float64 balance value to downstream component channel

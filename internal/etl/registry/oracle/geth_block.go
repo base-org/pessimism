@@ -200,7 +200,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 
 	logging.WithContext(ctx).
 		Debug("Starting poll routine", zap.Duration("poll_interval", oracle.cfg.PollInterval),
-			zap.String(core.CUUIDKey, oracle.cUUID.String()))
+			zap.String(logging.CUUIDKey, oracle.cUUID.String()))
 
 	ticker := time.NewTicker(oracle.cfg.PollInterval * time.Millisecond) //nolint:durationcheck // inapplicable
 	for {
@@ -212,7 +212,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			if height != nil {
 				logging.WithContext(ctx).Debug("Polling block for processing",
 					zap.Int("Height", int(height.Int64())),
-					zap.String(core.CUUIDKey, oracle.cUUID.String()))
+					zap.String(logging.CUUIDKey, oracle.cUUID.String()))
 			}
 
 			headerAsInterface, err := oracle.fetchData(ctx, height, core.FetchHeader)
@@ -225,7 +225,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 
 			if err != nil || !headerAssertedOk {
 				logging.WithContext(ctx).Error("problem fetching or asserting header", zap.NamedError("headerFetch", err),
-					zap.Bool("headerAsserted", headerAssertedOk), zap.String(core.CUUIDKey, oracle.cUUID.String()))
+					zap.Bool("headerAsserted", headerAssertedOk), zap.String(logging.CUUIDKey, oracle.cUUID.String()))
 				oracle.stats.RecordNodeError(oracle.cfg.Network)
 				continue
 			}
@@ -235,7 +235,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 
 			if err != nil || !blockAssertedOk {
 				logging.WithContext(ctx).Error("problem fetching or asserting block", zap.NamedError("blockFetch", err),
-					zap.Bool("blockAsserted", blockAssertedOk), zap.String(core.CUUIDKey, oracle.cUUID.String()))
+					zap.Bool("blockAsserted", blockAssertedOk), zap.String(logging.CUUIDKey, oracle.cUUID.String()))
 				oracle.stats.RecordNodeError(oracle.cfg.Network)
 				continue
 			}
@@ -263,12 +263,12 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			}
 
 			logging.NoContext().Debug("New height", zap.Int("Height", int(height.Int64())),
-				zap.String(core.CUUIDKey, oracle.cUUID.String()))
+				zap.String(logging.CUUIDKey, oracle.cUUID.String()))
 
 			oracle.currHeight = height
 
 		case <-ctx.Done():
-			logging.NoContext().Info("Geth.block oracle routine ending", zap.String(core.CUUIDKey, oracle.cUUID.String()))
+			logging.NoContext().Info("Geth.block oracle routine ending", zap.String(logging.CUUIDKey, oracle.cUUID.String()))
 			return nil
 		}
 	}

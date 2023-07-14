@@ -69,8 +69,8 @@ func (pl *pipeline) AddEngineRelay(engineChan chan core.InvariantInput) error {
 	eir := core.NewEngineRelay(pl.id, engineChan)
 
 	logging.NoContext().Debug("Adding engine relay to pipeline",
-		zap.String(core.CUUIDKey, lastComponent.UUID().String()),
-		zap.String(core.PUUIDKey, pl.id.String()))
+		zap.String(logging.CUUIDKey, lastComponent.UUID().String()),
+		zap.String(logging.PUUIDKey, pl.id.String()))
 
 	return lastComponent.AddRelay(eir)
 }
@@ -86,13 +86,13 @@ func (pl *pipeline) RunPipeline(wg *sync.WaitGroup) error {
 
 			logging.NoContext().
 				Debug("Attempting to start component event loop",
-					zap.String(core.CUUIDKey, c.UUID().String()),
-					zap.String(core.PUUIDKey, pl.id.String()))
+					zap.String(logging.CUUIDKey, c.UUID().String()),
+					zap.String(logging.PUUIDKey, pl.id.String()))
 
 			if err := c.EventLoop(); err != nil {
 				logging.NoContext().Error("Obtained error from event loop", zap.Error(err),
-					zap.String(core.CUUIDKey, c.UUID().String()),
-					zap.String(core.PUUIDKey, pl.id.String()))
+					zap.String(logging.CUUIDKey, c.UUID().String()),
+					zap.String(logging.PUUIDKey, pl.id.String()))
 			}
 		}(comp, wg)
 	}
@@ -106,8 +106,8 @@ func (pl *pipeline) Close() error {
 		if comp.ActivityState() != component.Terminated {
 			logging.NoContext().
 				Debug("Shutting down pipeline component",
-					zap.String(core.CUUIDKey, comp.UUID().String()),
-					zap.String(core.PUUIDKey, pl.id.String()))
+					zap.String(logging.CUUIDKey, comp.UUID().String()),
+					zap.String(logging.PUUIDKey, pl.id.String()))
 
 			if err := comp.Close(); err != nil {
 				return err

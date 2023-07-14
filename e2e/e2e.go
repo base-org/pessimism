@@ -10,10 +10,12 @@ import (
 	"github.com/base-org/pessimism/internal/app"
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/config"
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/state"
 	"github.com/base-org/pessimism/internal/subsystem"
+
 	op_e2e "github.com/ethereum-optimism/optimism/op-e2e"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -77,7 +79,7 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 
 	go pess.ListenForShutdown(kill)
 
-	logging.NewLogger(appCfg.LoggerConfig, "development")
+	logging.New(core.Development)
 
 	return &L2TestSuite{
 		t:      t,
@@ -130,7 +132,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 
 	go pess.ListenForShutdown(kill)
 
-	logging.NewLogger(appCfg.LoggerConfig, "development")
+	logging.New(core.Development)
 
 	return &SysTestSuite{
 		t:   t,
@@ -154,7 +156,7 @@ func DefaultTestConfig() *config.Config {
 	l2PollInterval := 300
 
 	return &config.Config{
-		Environment:   config.Development,
+		Environment:   core.Development,
 		BootStrapPath: "",
 		SystemConfig: &subsystem.Config{
 			L2PollInterval: l2PollInterval,
@@ -168,9 +170,6 @@ func DefaultTestConfig() *config.Config {
 		ServerConfig: &server.Config{
 			Host: "localhost",
 			Port: port,
-		},
-		LoggerConfig: &logging.Config{
-			Level: -1,
 		},
 	}
 }

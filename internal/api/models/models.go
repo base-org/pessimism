@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/logging"
 )
 
 // NewInvAcceptedResp ...Returns an invariant response with status accepted
@@ -11,7 +12,7 @@ func NewInvAcceptedResp(id core.SUUID) *InvResponse {
 	return &InvResponse{
 		Status: OK,
 		Code:   http.StatusAccepted,
-		Result: InvResult{core.SUUIDKey: id.String()},
+		Result: InvResult{logging.SUUIDKey: id.String()},
 	}
 }
 

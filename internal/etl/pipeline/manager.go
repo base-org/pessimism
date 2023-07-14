@@ -89,7 +89,7 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, 
 	}
 
 	logger.Debug("constructing pipeline",
-		zap.String(core.PUUIDKey, pUUID.String()))
+		zap.String(logging.PUUIDKey, pUUID.String()))
 
 	pipeline, err := NewPipeline(cfg, pUUID, components)
 	if err != nil {
@@ -130,7 +130,7 @@ func (em *etlManager) RunPipeline(pUUID core.PUUID) error {
 	}
 
 	logging.WithContext(em.ctx).Info("Running pipeline",
-		zap.String(core.PUUIDKey, pUUID.String()))
+		zap.String(logging.PUUIDKey, pUUID.String()))
 
 	return pipeline.RunPipeline(&em.wg)
 }
@@ -153,11 +153,11 @@ func (em *etlManager) Shutdown() error {
 
 	for _, pl := range em.store.GetAllPipelines() {
 		logger.Info("Shutting down pipeline",
-			zap.String(core.PUUIDKey, pl.UUID().String()))
+			zap.String(logging.PUUIDKey, pl.UUID().String()))
 
 		if err := pl.Close(); err != nil {
 			logger.Error("Failed to close pipeline",
-				zap.String(core.PUUIDKey, pl.UUID().String()))
+				zap.String(logging.PUUIDKey, pl.UUID().String()))
 			return err
 		}
 		em.metrics.DecActivePipelines(pl.UUID().PipelineType(), pl.UUID().NetworkType())

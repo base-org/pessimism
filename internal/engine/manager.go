@@ -119,8 +119,8 @@ func (em *engineManager) updateSharedState(invParams *core.InvSessionParams,
 	}
 
 	logging.WithContext(em.ctx).Debug("Setting to state store",
-		zap.String(core.PUUIDKey, pUUID.String()),
-		zap.String(core.AddrKey, invParams.Address().String()))
+		zap.String(logging.PUUIDKey, pUUID.String()),
+		zap.String(logging.AddrKey, invParams.Address().String()))
 
 	return nil
 }
@@ -224,7 +224,7 @@ func (em *engineManager) executeAddressInvariants(ctx context.Context, data core
 	if err != nil {
 		logger.Error("Could not fetch invariants by address:pipeline",
 			zap.Error(err),
-			zap.String(core.PUUIDKey, data.PUUID.String()))
+			zap.String(logging.PUUIDKey, data.PUUID.String()))
 		return
 	}
 
@@ -233,7 +233,7 @@ func (em *engineManager) executeAddressInvariants(ctx context.Context, data core
 		if err != nil {
 			logger.Error("Could not session by invariant sUUID",
 				zap.Error(err),
-				zap.String(core.PUUIDKey, sUUID.String()))
+				zap.String(logging.PUUIDKey, sUUID.String()))
 			continue
 		}
 
@@ -250,7 +250,7 @@ func (em *engineManager) executeNonAddressInvariants(ctx context.Context, data c
 	if err != nil {
 		logger.Error("Could not fetch invariants for pipeline",
 			zap.Error(err),
-			zap.String(core.PUUIDKey, data.PUUID.String()))
+			zap.String(logging.PUUIDKey, data.PUUID.String()))
 	}
 
 	// Fetch all invariants for a slice of SUUIDs
@@ -258,7 +258,7 @@ func (em *engineManager) executeNonAddressInvariants(ctx context.Context, data c
 	if err != nil {
 		logger.Error("Could not fetch invariants for pipeline",
 			zap.Error(err),
-			zap.String(core.PUUIDKey, data.PUUID.String()))
+			zap.String(logging.PUUIDKey, data.PUUID.String()))
 	}
 
 	for _, inv := range invs { // Execute all invariants associated with the pipeline
@@ -288,7 +288,7 @@ func (em *engineManager) executeInvariant(ctx context.Context, data core.Invaria
 		}
 
 		logger.Warn("Invariant alert",
-			zap.String(core.SUUIDKey, inv.SUUID().String()),
+			zap.String(logging.SUUIDKey, inv.SUUID().String()),
 			zap.String("message", outcome.Message))
 
 		em.alertOutgress <- alert
