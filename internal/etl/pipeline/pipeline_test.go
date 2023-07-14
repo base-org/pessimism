@@ -3,6 +3,7 @@ package pipeline_test
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/base-org/pessimism/internal/core"
@@ -21,8 +22,8 @@ func Test_Pipeline(t *testing.T) {
 		testLogic         func(t *testing.T, pl pipeline.Pipeline)
 	}{
 		{
-			name:     "Successful Run",
-			function: "RunPipeline",
+			name:     "Successful Construction",
+			function: "NewPipeline",
 			constructionLogic: func() pipeline.Pipeline {
 				testPipe, _ := mocks.NewDummyPipe(
 					context.Background(),
@@ -52,7 +53,7 @@ func Test_Pipeline(t *testing.T) {
 		},
 		{
 			name:     "Successful Run",
-			function: "Add Engine Relay",
+			function: "AddEngineRelay",
 			constructionLogic: func() pipeline.Pipeline {
 
 				testO, _ := mocks.NewDummyOracle(
@@ -75,6 +76,35 @@ func Test_Pipeline(t *testing.T) {
 				relay := make(chan core.InvariantInput)
 				err := pl.AddEngineRelay(relay)
 				assert.NoError(t, err)
+			},
+		},
+		{
+			name:     "Successful Run",
+			function: "RunPipeline",
+			constructionLogic: func() pipeline.Pipeline {
+
+				testO, _ := mocks.NewDummyOracle(
+					context.Background(),
+					core.GethBlock)
+
+				pl, err := pipeline.NewPipeline(
+					nil,
+					core.NilPUUID(),
+					[]component.Component{testO})
+
+				if err != nil {
+					panic(err)
+				}
+
+				return pl
+			},
+			testLogic: func(t *testing.T, pl pipeline.Pipeline) {
+				assert.Equal(t, pl.State(), pipeline.INACTIVE, "Pipeline should be inactive")
+
+				wg := &sync.WaitGroup{}
+				pl.Run(wg)
+
+				assert.Equal(t, pl.State(), pipeline.ACTIVE, "Pipeline should be active")
 			},
 		},
 	}

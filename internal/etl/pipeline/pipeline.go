@@ -13,11 +13,12 @@ import (
 // Pipeline ... Pipeline interface
 type Pipeline interface {
 	Config() *core.PipelineConfig
-	UUID() core.PUUID
-	Close() error
 	Components() []component.Component
-	RunPipeline(wg *sync.WaitGroup) error
+	UUID() core.PUUID
+	State() ActivityState
 
+	Close() error
+	Run(wg *sync.WaitGroup)
 	AddEngineRelay(engineChan chan core.InvariantInput) error
 }
 
@@ -26,7 +27,7 @@ type pipeline struct {
 	id  core.PUUID
 	cfg *core.PipelineConfig
 
-	aState ActivityState
+	state ActivityState
 
 	components []component.Component
 }
@@ -41,10 +42,15 @@ func NewPipeline(cfg *core.PipelineConfig, pUUID core.PUUID, comps []component.C
 		cfg:        cfg,
 		id:         pUUID,
 		components: comps,
-		aState:     Booting,
+		state:      INACTIVE,
 	}
 
 	return pl, nil
+}
+
+// State ... Returns pipeline state
+func (pl *pipeline) State() ActivityState {
+	return pl.state
 }
 
 // Config ... Returns pipeline config
@@ -75,9 +81,9 @@ func (pl *pipeline) AddEngineRelay(engineChan chan core.InvariantInput) error {
 	return lastComponent.AddRelay(eir)
 }
 
-// RunPipeline  ... Spawns and manages component event loops
+// Run  ... Spawns and manages component event loops
 // for some pipeline
-func (pl *pipeline) RunPipeline(wg *sync.WaitGroup) error {
+func (pl *pipeline) Run(wg *sync.WaitGroup) {
 	for _, comp := range pl.components {
 		wg.Add(1)
 
@@ -90,14 +96,17 @@ func (pl *pipeline) RunPipeline(wg *sync.WaitGroup) error {
 					zap.String(logging.PUUIDKey, pl.id.String()))
 
 			if err := c.EventLoop(); err != nil {
+				// NOTE - Consider killing the entire pipeline if one component fails
+				// Otherwise dangling components will be left in a running state
 				logging.NoContext().Error("Obtained error from event loop", zap.Error(err),
 					zap.String(logging.CUUIDKey, c.UUID().String()),
 					zap.String(logging.PUUIDKey, pl.id.String()))
+				pl.state = CRASHED
 			}
 		}(comp, wg)
 	}
 
-	return nil
+	pl.state = ACTIVE
 }
 
 // Close ... Closes all components in the pipeline
@@ -114,5 +123,6 @@ func (pl *pipeline) Close() error {
 			}
 		}
 	}
+	pl.state = TERMINATED
 	return nil
 }

@@ -239,6 +239,27 @@ func Test_EtlStore(t *testing.T) {
 				assert.Equal(t, pipelines[0], expectedPline)
 			},
 		},
+		{
+			name:        "Successful Active Count Call",
+			function:    "ActiveCount",
+			description: "",
+
+			constructionLogic: func() pl.EtlStore {
+				store := pl.NewEtlStore()
+				return store
+			},
+			testLogic: func(t *testing.T, store pl.EtlStore) {
+				cID := core.MakeCUUID(0, 0, 0, 0)
+				pID := core.MakePUUID(0, cID, cID)
+
+				expectedPline := getTestPipeLine(context.Background())
+
+				store.AddPipeline(pID, expectedPline)
+
+				count := store.ActiveCount()
+				assert.Equal(t, count, 0)
+			},
+		},
 	}
 
 	for i, tc := range tests {

@@ -22,13 +22,13 @@ import (
 type AddressBalanceODef struct {
 	pUUID      core.PUUID
 	cfg        *core.ClientConfig
-	client     client.EthClientInterface
+	client     client.EthClient
 	currHeight *big.Int
 	sk         *core.StateKey
 }
 
 // NewAddressBalanceODef ... Initializer for address.balance oracle definition
-func NewAddressBalanceODef(cfg *core.ClientConfig, client client.EthClientInterface,
+func NewAddressBalanceODef(cfg *core.ClientConfig, client client.EthClient,
 	h *big.Int) *AddressBalanceODef {
 	return &AddressBalanceODef{
 		cfg:        cfg,
@@ -104,14 +104,6 @@ func (oracle *AddressBalanceODef) ReadRoutine(ctx context.Context, componentChan
 				// NOTE - There is a possibility of precision loss here
 				// TODO (#58) : Verify precision loss
 				ethBalance, _ := pess_common.WeiToEther(weiBalance).Float64()
-
-				logging.NoContext().Debug("Balance",
-					zap.String(logging.AddrKey, gethAddress.String()),
-					zap.Int64("wei balance ", weiBalance.Int64()))
-
-				logging.NoContext().Debug("Balance",
-					zap.String(logging.AddrKey, gethAddress.String()),
-					zap.Float64("balance", ethBalance))
 
 				// Send parsed float64 balance value to downstream component channel
 				componentChan <- core.NewTransitData(core.AccountBalance, ethBalance,

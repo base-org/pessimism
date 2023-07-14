@@ -65,7 +65,7 @@ type faultDetectorInv struct {
 	l2tol1MessagePasser  common.Address
 	l2OutputOracleFilter *bindings.L2OutputOracleFilterer
 
-	l2Client     client.EthClientInterface
+	l2Client     client.EthClient
 	l2GethClient client.GethClient
 	stats        metrics.Metricer
 

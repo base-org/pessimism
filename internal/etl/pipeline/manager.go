@@ -23,6 +23,7 @@ type Manager interface {
 	GetStateKey(rt core.RegisterType) (*core.StateKey, bool, error)
 	CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, bool, error)
 	RunPipeline(pID core.PUUID) error
+	ActiveCount() int
 
 	core.Subsystem
 }
@@ -37,7 +38,7 @@ type etlManager struct {
 	store    EtlStore
 	metrics  metrics.Metricer
 
-	engOutgress chan core.InvariantInput
+	egress chan core.InvariantInput
 
 	registry registry.Registry
 	wg       sync.WaitGroup
@@ -51,15 +52,15 @@ func NewManager(ctx context.Context, analyzer Analyzer, cRegistry registry.Regis
 	stats := metrics.WithContext(ctx)
 
 	m := &etlManager{
-		analyzer:    analyzer,
-		ctx:         ctx,
-		cancel:      cancel,
-		dag:         dag,
-		store:       store,
-		registry:    cRegistry,
-		engOutgress: eo,
-		metrics:     stats,
-		wg:          sync.WaitGroup{},
+		analyzer: analyzer,
+		ctx:      ctx,
+		cancel:   cancel,
+		dag:      dag,
+		store:    store,
+		registry: cRegistry,
+		egress:   eo,
+		metrics:  stats,
+		wg:       sync.WaitGroup{},
 	}
 
 	return m
@@ -71,6 +72,7 @@ func (em *etlManager) GetRegister(rt core.RegisterType) (*core.DataRegister, err
 }
 
 // CreateDataPipeline ... Creates an ETL data pipeline provided a pipeline configuration
+// Returns a pipeline UUID and a boolean indicating if the pipeline was reused
 func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, bool, error) {
 	// NOTE - If some of these early sub-system operations succeed but lower function
 	// code logic fails, then some rollback will need be triggered to undo prior applied state operations
@@ -88,7 +90,7 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, 
 		return core.NilPUUID(), false, err
 	}
 
-	logger.Debug("constructing pipeline",
+	logger.Debug("Constructing pipeline",
 		zap.String(logging.PUUIDKey, pUUID.String()))
 
 	pipeline, err := NewPipeline(cfg, pUUID, components)
@@ -101,38 +103,43 @@ func (em *etlManager) CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, 
 		return core.NilPUUID(), false, err
 	}
 
-	if mPUUID != core.NilPUUID() { // Pipeline is mergable
+	if mPUUID != core.NilPUUID() { // A pipeline can be reused
 		return mPUUID, true, nil
 	}
 
 	// Bind communication route between pipeline and risk engine
-	if err := pipeline.AddEngineRelay(em.engOutgress); err != nil {
+	if err := pipeline.AddEngineRelay(em.egress); err != nil {
 		return core.NilPUUID(), false, err
 	}
 
-	if err := em.dag.AddComponents(pipeline.Components()); err != nil {
-		return core.NilPUUID(), false, err
-	}
-
+	// Add pipeline object to the store
 	em.store.AddPipeline(pUUID, pipeline)
-
-	// Pipeline successfully created, increment for type and network
-	em.metrics.IncActivePipelines(pUUID.PipelineType(), pUUID.NetworkType())
 
 	return pUUID, false, nil
 }
 
 // RunPipeline ... Runs pipeline session for some provided pUUID
 func (em *etlManager) RunPipeline(pUUID core.PUUID) error {
+	// 1. Get pipeline from store
 	pipeline, err := em.store.GetPipelineFromPUUID(pUUID)
 	if err != nil {
+		return err
+	}
+
+	// 2. Add pipeline components to the component graph
+	if err := em.dag.AddComponents(pipeline.Components()); err != nil {
 		return err
 	}
 
 	logging.WithContext(em.ctx).Info("Running pipeline",
 		zap.String(logging.PUUIDKey, pUUID.String()))
 
-	return pipeline.RunPipeline(&em.wg)
+	// 3. Run pipeline
+	pipeline.Run(&em.wg)
+
+	// Pipeline successfully created, increment for type and network
+	em.metrics.IncActivePipelines(pUUID.PipelineType(), pUUID.NetworkType())
+	return nil
 }
 
 // EventLoop ... Driver ran as separate go routine
@@ -141,7 +148,7 @@ func (em *etlManager) EventLoop() error {
 
 	for {
 		<-em.ctx.Done()
-		logger.Info("Receieved shutdown request")
+		logger.Info("Received shutdown request")
 		return nil
 	}
 }
@@ -168,6 +175,11 @@ func (em *etlManager) Shutdown() error {
 	return nil
 }
 
+// ActiveCount ... Returns the number of active pipelines
+func (em *etlManager) ActiveCount() int {
+	return em.store.ActiveCount()
+}
+
 // getComponents ... Returns all components provided a slice of register definitions
 func (em *etlManager) getComponents(cfg *core.PipelineConfig, pUUID core.PUUID,
 	depPath core.RegisterDependencyPath) ([]component.Component, error) {
@@ -187,7 +199,7 @@ func (em *etlManager) getComponents(cfg *core.PipelineConfig, pUUID core.PUUID,
 	return components, nil
 }
 
-// getMergeUUID ... Returns a pipeline UUID if a mergable pipeline exists
+// getMergeUUID ... Returns a pipeline UUID if a merging opportunity exists
 func (em *etlManager) getMergeUUID(pUUID core.PUUID, pipeline Pipeline) (core.PUUID, error) {
 	pipelines := em.store.GetExistingPipelinesByPID(pUUID.PID)
 
@@ -211,8 +223,9 @@ func (em *etlManager) InferComponent(cc *core.ClientConfig, cUUID core.CUUID, pU
 	register *core.DataRegister) (component.Component, error) {
 	logging.WithContext(em.ctx).Debug("constructing component",
 		zap.String("type", register.ComponentType.String()),
-		zap.String("outdata_type", register.DataType.String()))
+		zap.String("register_type", register.DataType.String()))
 
+	// Embed options to avoid constructor boilerplate
 	opts := []component.Option{component.WithCUUID(cUUID), component.WithPUUID(pUUID)}
 
 	if register.Stateful() {

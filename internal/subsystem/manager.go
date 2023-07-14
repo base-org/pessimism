@@ -21,8 +21,9 @@ import (
 
 // Config ... Used to store necessary API service config values
 type Config struct {
-	L1PollInterval int
-	L2PollInterval int
+	MaxPipelineCount int
+	L1PollInterval   int
+	L2PollInterval   int
 }
 
 // GetPollInterval ... Returns config poll-interval for network type
@@ -35,7 +36,7 @@ func (cfg *Config) GetPollInterval(n core.Network) (time.Duration, error) {
 		return time.Duration(cfg.L2PollInterval), nil
 
 	default:
-		return 0, fmt.Errorf("could not find endpoint for network %s", n.String())
+		return 0, fmt.Errorf(networkNotFoundErr, n.String())
 	}
 }
 
@@ -56,7 +57,7 @@ type manager struct {
 
 	etl   pipeline.Manager
 	eng   engine.Manager
-	alrt  alert.Manager
+	alert alert.Manager
 	stats metrics.Metricer
 
 	*sync.WaitGroup
@@ -64,14 +65,14 @@ type manager struct {
 
 // NewManager ... Initializer for the subsystem manager
 func NewManager(ctx context.Context, cfg *Config, etl pipeline.Manager, eng engine.Manager,
-	alrt alert.Manager,
+	a alert.Manager,
 ) Manager {
 	return &manager{
 		cfg:       cfg,
 		ctx:       ctx,
 		etl:       etl,
 		eng:       eng,
-		alrt:      alrt,
+		alert:     a,
 		stats:     metrics.WithContext(ctx),
 		WaitGroup: &sync.WaitGroup{},
 	}
@@ -90,7 +91,7 @@ func (m *manager) Shutdown() error {
 	}
 
 	// 3. Shutdown Alert subsystem
-	return m.alrt.Shutdown()
+	return m.alert.Shutdown()
 }
 
 // StartEventRoutines ... Starts the event loop routines for the subsystems
@@ -110,7 +111,7 @@ func (m *manager) StartEventRoutines(ctx context.Context) {
 	go func() { // AlertManager driver thread
 		defer m.Done()
 
-		if err := m.alrt.EventLoop(); err != nil {
+		if err := m.alert.EventLoop(); err != nil {
 			logger.Error("alert manager event loop error", zap.Error(err))
 		}
 	}()
@@ -119,7 +120,7 @@ func (m *manager) StartEventRoutines(ctx context.Context) {
 	go func() { // ETL driver thread
 		defer m.Done()
 
-		if err := m.alrt.EventLoop(); err != nil {
+		if err := m.alert.EventLoop(); err != nil {
 			logger.Error("ETL manager event loop error", zap.Error(err))
 		}
 	}()
@@ -158,7 +159,13 @@ func (m *manager) BuildDeployCfg(pConfig *core.PipelineConfig,
 
 // RunInvSession ... Runs an invariant session
 func (m *manager) RunInvSession(cfg *invariant.DeployConfig) (core.SUUID, error) {
-	// 1. Deploy invariant session to risk engine
+	// 1. Verify that pipeline constraints are met
+	// NOTE - Consider introducing a config validation step or module
+	if !cfg.Reuse && m.etlLimitReached() {
+		return core.NilSUUID(), fmt.Errorf(maxPipelineErr, m.cfg.MaxPipelineCount)
+	}
+
+	// 2. Deploy invariant session to risk engine
 	sUUID, err := m.eng.DeployInvariantSession(cfg)
 	if err != nil {
 		return core.NilSUUID(), err
@@ -166,13 +173,13 @@ func (m *manager) RunInvSession(cfg *invariant.DeployConfig) (core.SUUID, error)
 	logging.WithContext(m.ctx).
 		Info("Deployed invariant session to risk engine", zap.String(logging.SUUIDKey, sUUID.String()))
 
-	// 2. Add session to alert manager
-	err = m.alrt.AddSession(sUUID, cfg.AlertDest)
+	// 3. Add session to alert manager
+	err = m.alert.AddSession(sUUID, cfg.AlertDest)
 	if err != nil {
 		return core.NilSUUID(), err
 	}
 
-	// 3. Run pipeline if not reused
+	// 4. Run pipeline if not reused
 	if cfg.Reuse {
 		return sUUID, nil
 	}
@@ -207,4 +214,9 @@ func (m *manager) BuildPipelineCfg(params *models.InvRequestParams) (*core.Pipel
 			EndHeight:    params.EndHeight,
 		},
 	}, nil
+}
+
+// etlLimitReached ... Returns true if the ETL pipeline count is at or above the max
+func (m *manager) etlLimitReached() bool {
+	return m.etl.ActiveCount() >= m.cfg.MaxPipelineCount
 }

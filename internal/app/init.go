@@ -23,7 +23,7 @@ import (
 
 // InitializeContext ... Performs dependency injection to build context struct
 func InitializeContext(ctx context.Context, ss state.Store,
-	l1Client, l2Client client.EthClientInterface, l2geth client.GethClient) context.Context {
+	l1Client, l2Client client.EthClient, l2geth client.GethClient) context.Context {
 	ctx = context.WithValue(
 		ctx, core.State, ss)
 

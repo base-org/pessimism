@@ -3,25 +3,25 @@ package pipeline
 type ActivityState uint8
 
 const (
-	Booting ActivityState = iota
-	Syncing
-	Active
-	Crashed
+	INACTIVE ActivityState = iota
+	ACTIVE
+	CRASHED
+	TERMINATED
 )
 
 func (as ActivityState) String() string {
 	switch as {
-	case Booting:
-		return "booting"
+	case INACTIVE:
+		return "inactive"
 
-	case Syncing:
-		return "syncing"
-
-	case Active:
+	case ACTIVE:
 		return "active"
 
-	case Crashed:
+	case CRASHED:
 		return "crashed"
+
+	case TERMINATED:
+		return "terminated"
 	}
 
 	return "unknown"

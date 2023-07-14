@@ -72,6 +72,7 @@ func (bi *BaseInvariant) SetSUUID(sUUID core.SUUID) {
 	bi.sUUID = sUUID
 }
 
+// ValidateInput ... Validates the input type for the invariant
 func (bi *BaseInvariant) ValidateInput(td core.TransitData) error {
 	if td.Type != bi.InputType() {
 		return fmt.Errorf(invalidInTypeErr, bi.InputType(), td.Type)

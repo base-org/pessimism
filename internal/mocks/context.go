@@ -9,8 +9,8 @@ import (
 
 // Context ... Creates a context with mocked clients
 func Context(ctx context.Context, ctrl *gomock.Controller) context.Context {
-	mockedL1Client := NewMockEthClientInterface(ctrl)
-	mockedL2Client := NewMockEthClientInterface(ctrl)
+	mockedL1Client := NewMockEthClient(ctrl)
+	mockedL2Client := NewMockEthClient(ctrl)
 
 	ctx = context.WithValue(ctx, core.L1Client, mockedL1Client)
 	ctx = context.WithValue(ctx, core.L2Client, mockedL2Client)

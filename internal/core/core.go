@@ -40,7 +40,7 @@ type TransitData struct {
 
 // NewTransitData ... Initializes transit data with supplied options
 // NOTE - transit data is used as a standard data representation
-// for commmunication between all ETL components and the risk engine
+// for communication between all ETL components and the risk engine
 func NewTransitData(rt RegisterType, val any, opts ...TransitOption) TransitData {
 	td := TransitData{
 		Timestamp: time.Now(),
@@ -61,7 +61,7 @@ func (td *TransitData) Addressed() bool {
 	return td.Address != common.Address{0}
 }
 
-// NewTransitChannel ... Builds new tranit channel
+// NewTransitChannel ... Builds new transit channel
 func NewTransitChannel() chan TransitData {
 	return make(chan TransitData)
 }
