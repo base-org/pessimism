@@ -58,7 +58,7 @@ docker-build:
 .PHONY: docker-run
 docker-run:
 	@echo "$(GREEN) Running docker image...$(COLOR_END)"
-	@docker run -p 8080:8080 -p 7300:7300 -e config.env $(APP_NAME)
+	@ docker run -p 8080:8080 -p 7300:7300 --env-file=config.env -it $(APP_NAME)
 
 .PHONY: metrics-docs
 metrics-docs: build-app
