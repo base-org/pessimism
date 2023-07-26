@@ -35,6 +35,24 @@ To use the template, run the following command(s):
     * Using Make: `make run-app`
     * Direct Call: `./bin/pessimism`
 
+
+## Docker
+1. Ensure [docker](https://docs.docker.com/engine/install/) is installed on your machine
+2. Pull the latest image from Github container registry (ghcr) via `docker pull ghcr.io/base-org/pessimism:latest`
+3. Make sure you have followed the above instructions to creat a local config file (config.env) using the config.env.template
+4. Run the following:
+```bash
+  docker run -p 8080:8080 -p 7300:7300 --env-file=config.env -it pessimism:latest  
+```
+
+**Note: To start running invariant sessions, update the config.env BOOTSTRAP_PATH value to the location of your genesis.json filepath, then run `make docker-build` + `make docker-run`**
+
+### Building and Running New Images
+- Run `make docker-build` at the root of the repository to build a new docker image.
+- Run `make docker-run` at the root of the repository to run the new docker image.
+
+
+
 ## Linting
 [golangci-lint](https://golangci-lint.run/) is used to perform code linting. Configurations are defined in [.golangci.yml](./.golangci.yml)
 It can be ran using the following project level command(s):

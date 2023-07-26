@@ -14,6 +14,8 @@ FROM alpine:3.16
 WORKDIR /app
 COPY --from=builder /app/bin/pessimism .
 
+# Copy example genesis, genesis.json if exists
+COPY genesis.example.json genesis.json* /app/
 # Run app and expose api and metrics ports
 
 # API
