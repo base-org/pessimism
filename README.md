@@ -38,20 +38,26 @@ To use the template, run the following command(s):
 
 ## Docker
 1. Ensure [docker](https://docs.docker.com/engine/install/) is installed on your machine
-2. Pull the latest image from Github container registry (ghcr) via `docker pull ghcr.io/base-org/pessimism:latest`
-3. Make sure you have followed the above instructions to creat a local config file (config.env) using the config.env.template
-4. Run the following:
-```bash
-  docker run -p 8080:8080 -p 7300:7300 --env-file=config.env -it ghcr.io/base-org/pessimism:latest  
-```
 
-Note: If you want to bootstrap the application and run specific invariants/pipelines upon start, update config.env `BOOTSTRAP_PATH` value to the location of your genesis.json file then run: 
-```bash
-  docker run -p 8080:8080 -p 7300:7300 --env-file=config.env -it -v ${PWD}/genesis.json:/app/genesis.json ghcr.io/base-org/pessimism:latest
-```
+2. Pull the latest image from Github container registry (ghcr) via `docker pull ghcr.io/base-org/pessimism:latest`
+
+3. Make sure you have followed the above instructions to creat a local config file (config.env) using the config.env.template
+
+4. Run the following:
+   * Without genesis.json: 
+   ```
+   bash docker run -p 8080:8080 -p 7300:7300 --env-file=config.env -it ghcr.io/base-org/pessimism:latest
+   ```
+   * With genesis.json: 
+   ```
+   docker run -p 8080:8080 -p 7300:7300 --env-file=config.env -it -v ${PWD}/genesis.json:/app/genesis.json ghcr.io/base-org/pessimism:latest
+   ```
+
+**Note**: If you want to bootstrap the application and run specific invariants/pipelines upon start, update config.env `BOOTSTRAP_PATH` value to the location of your genesis.json file then run
 
 ### Building and Running New Images
 - Run `make docker-build` at the root of the repository to build a new docker image.
+
 - Run `make docker-run` at the root of the repository to run the new docker image.
 
 
