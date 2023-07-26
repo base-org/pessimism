@@ -42,10 +42,13 @@ To use the template, run the following command(s):
 3. Make sure you have followed the above instructions to creat a local config file (config.env) using the config.env.template
 4. Run the following:
 ```bash
-  docker run -p 8080:8080 -p 7300:7300 --env-file=config.env -it pessimism:latest  
+  docker run -p 8080:8080 -p 7300:7300 --env-file=config.env -it ghcr.io/base-org/pessimism:latest  
 ```
 
-**Note: To start running invariant sessions, update the config.env BOOTSTRAP_PATH value to the location of your genesis.json filepath, then run `make docker-build` + `make docker-run`**
+Note: If you want to bootstrap the application and run specific invariants/pipelines upon start, update config.env `BOOTSTRAP_PATH` value to the location of your genesis.json file then run: 
+```bash
+  docker run -p 8080:8080 -p 7300:7300 --env-file=config.env -it -v ${PWD}/genesis.json:/app/genesis.json ghcr.io/base-org/pessimism:latest
+```
 
 ### Building and Running New Images
 - Run `make docker-build` at the root of the repository to build a new docker image.
