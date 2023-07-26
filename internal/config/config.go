@@ -7,8 +7,10 @@ import (
 
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/subsystem"
+	"go.uber.org/zap"
 
 	"github.com/joho/godotenv"
 )
@@ -35,7 +37,7 @@ type Config struct {
 // NewConfig ... Initializer
 func NewConfig(fileName core.FilePath) *Config {
 	if err := godotenv.Load(string(fileName)); err != nil {
-		log.Fatalf("config file not found for file: %s", fileName)
+		logging.NoContext().Warn("config file not found for file: %s", zap.Any("file", fileName))
 	}
 
 	config := &Config{
