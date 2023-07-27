@@ -40,13 +40,13 @@ func Test_Balance_Enforcement(t *testing.T) {
 	bob := ts.L2Cfg.Secrets.Addresses().Bob
 
 	// Deploy a balance enforcement heuristic session for Alice.
-	err := ts.App.BootStrap([]*models.InvRequestParams{{
-		Network:      core.Layer2.String(),
-		PType:        core.Live.String(),
-		InvType:      core.BalanceEnforcement.String(),
-		StartHeight:  nil,
-		EndHeight:    nil,
-		AlertingDest: core.Slack.String(),
+	err := ts.App.BootStrap([]*models.SessionRequestParams{{
+		Network:       core.Layer2.String(),
+		PType:         core.Live.String(),
+		HeuristicType: core.BalanceEnforcement.String(),
+		StartHeight:   nil,
+		EndHeight:     nil,
+		AlertingDest:  core.Slack.String(),
 		SessionParams: map[string]interface{}{
 			"address": alice.String(),
 			"lower":   3, // i.e. alert if balance is less than 3 ETH
@@ -142,13 +142,13 @@ func Test_Contract_Event(t *testing.T) {
 	updateSig := "ConfigUpdate(uint256,uint8,bytes)"
 
 	// Deploy a contract event heuristic session for the L1 system config address.
-	err := ts.App.BootStrap([]*models.InvRequestParams{{
-		Network:      core.Layer1.String(),
-		PType:        core.Live.String(),
-		InvType:      core.ContractEvent.String(),
-		StartHeight:  nil,
-		EndHeight:    nil,
-		AlertingDest: core.Slack.String(),
+	err := ts.App.BootStrap([]*models.SessionRequestParams{{
+		Network:       core.Layer1.String(),
+		PType:         core.Live.String(),
+		HeuristicType: core.ContractEvent.String(),
+		StartHeight:   nil,
+		EndHeight:     nil,
+		AlertingDest:  core.Slack.String(),
 		SessionParams: map[string]interface{}{
 			"address": predeploys.DevSystemConfigAddr.String(),
 			"args":    []interface{}{updateSig},
@@ -249,27 +249,27 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	// We use two heuristics here; one configured with a dummy L1 message passer
 	// and one configured with the real L2->L1 message passer contract. This allows us to
 	// ensure that an alert is only produced using faulty message passer.
-	err = ts.App.BootStrap([]*models.InvRequestParams{
+	err = ts.App.BootStrap([]*models.SessionRequestParams{
 		{
 			// This is the one that should produce an alert
-			Network:      core.Layer1.String(),
-			PType:        core.Live.String(),
-			InvType:      core.WithdrawalEnforcement.String(),
-			StartHeight:  nil,
-			EndHeight:    nil,
-			AlertingDest: core.Slack.String(),
+			Network:       core.Layer1.String(),
+			PType:         core.Live.String(),
+			HeuristicType: core.WithdrawalEnforcement.String(),
+			StartHeight:   nil,
+			EndHeight:     nil,
+			AlertingDest:  core.Slack.String(),
 			SessionParams: map[string]interface{}{
 				core.L1Portal:            predeploys.DevOptimismPortal,
 				core.L2ToL1MessagePasser: fakeAddr.String(),
 			},
 		},
 		{
-			Network:      core.Layer1.String(),
-			PType:        core.Live.String(),
-			InvType:      core.WithdrawalEnforcement.String(),
-			StartHeight:  nil,
-			EndHeight:    nil,
-			AlertingDest: core.Slack.String(),
+			Network:       core.Layer1.String(),
+			PType:         core.Live.String(),
+			HeuristicType: core.WithdrawalEnforcement.String(),
+			StartHeight:   nil,
+			EndHeight:     nil,
+			AlertingDest:  core.Slack.String(),
 			SessionParams: map[string]interface{}{
 				core.L1Portal:            predeploys.DevOptimismPortal,
 				core.L2ToL1MessagePasser: predeploys.L2ToL1MessagePasserAddr.String(),
@@ -377,13 +377,13 @@ func Test_Fault_Detector(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Deploys a fault detector heuristic session instance using the locally spun-up Op-Stack chain
-	err = ts.App.BootStrap([]*models.InvRequestParams{{
-		Network:      core.Layer1.String(),
-		PType:        core.Live.String(),
-		InvType:      core.FaultDetector.String(),
-		StartHeight:  big.NewInt(0),
-		EndHeight:    nil,
-		AlertingDest: core.Slack.String(),
+	err = ts.App.BootStrap([]*models.SessionRequestParams{{
+		Network:       core.Layer1.String(),
+		PType:         core.Live.String(),
+		HeuristicType: core.FaultDetector.String(),
+		StartHeight:   big.NewInt(0),
+		EndHeight:     nil,
+		AlertingDest:  core.Slack.String(),
 		SessionParams: map[string]interface{}{
 			core.L2OutputOracle:      predeploys.DevL2OutputOracle,
 			core.L2ToL1MessagePasser: predeploys.L2ToL1MessagePasser,

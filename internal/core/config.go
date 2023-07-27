@@ -20,7 +20,7 @@ type SessionConfig struct {
 	PT        PipelineType
 	AlertDest AlertDestination
 	Type      HeuristicType
-	Params    *InvSessionParams
+	Params    *SessionParams
 }
 
 // PipelineConfig ... Configuration passed through to a pipeline constructor

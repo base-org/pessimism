@@ -19,7 +19,7 @@ type EventInvConfig struct {
 }
 
 // Unmarshal ... Converts a general config to an event heuristic config
-func (eic *EventInvConfig) Unmarshal(isp *core.InvSessionParams) error {
+func (eic *EventInvConfig) Unmarshal(isp *core.SessionParams) error {
 	return json.Unmarshal(isp.Bytes(), &eic)
 }
 
@@ -57,9 +57,9 @@ func NewEventHeuristic(cfg *EventInvConfig) heuristic.Heuristic {
 	}
 }
 
-// Invalidate ... Checks if the balance is within the bounds
+// Assess ... Checks if the balance is within the bounds
 // specified in the config
-func (ei *EventHeuristic) Invalidate(td core.TransitData) (*core.Invalidation, bool, error) {
+func (ei *EventHeuristic) Assess(td core.TransitData) (*core.Activation, bool, error) {
 	// 1. Validate and extract the log event from the transit data
 	err := ei.ValidateInput(td)
 	if err != nil {
@@ -76,19 +76,19 @@ func (ei *EventHeuristic) Invalidate(td core.TransitData) (*core.Invalidation, b
 	}
 
 	// 2. Check if the log event signature is in the list of signatures
-	invalidated := false
+	activated := false
 	for _, sig := range ei.sigs {
 		if log.Topics[0] == sig {
-			invalidated = true
+			activated = true
 			break
 		}
 	}
 
-	if !invalidated {
+	if !activated {
 		return nil, false, nil
 	}
 
-	return &core.Invalidation{
+	return &core.Activation{
 		Message: fmt.Sprintf(eventReportMsg, ei.cfg.ContractName, log.Address, log.TxHash.Hex(), ei.cfg.Sigs[0]),
 	}, true, nil
 }

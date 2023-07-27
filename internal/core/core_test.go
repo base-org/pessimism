@@ -39,16 +39,16 @@ func Test_EngineRelay(t *testing.T) {
 		_ = eir.RelayTransitData(dummyTD)
 	}()
 
-	invInput := <-outChan
+	heurInput := <-outChan
 
-	assert.NotNil(t, invInput, "HeuristicInput should not be nil")
-	assert.Equal(t, invInput.PUUID, core.NilPUUID(), "HeuristicInput PUUID should be nil")
-	assert.Equal(t, invInput.Input, dummyTD, "HeuristicInput Input should be dummyTD")
+	assert.NotNil(t, heurInput, "HeuristicInput should not be nil")
+	assert.Equal(t, heurInput.PUUID, core.NilPUUID(), "HeuristicInput PUUID should be nil")
+	assert.Equal(t, heurInput.Input, dummyTD, "HeuristicInput Input should be dummyTD")
 }
 
-func Test_InvSessionParams(t *testing.T) {
+func Test_SessionParams(t *testing.T) {
 	isp := core.NewSessionParams()
-	assert.NotNil(t, isp, "InvSessionParams should not be nil")
+	assert.NotNil(t, isp, "SessionParams should not be nil")
 
 	isp.SetValue("tst", "tst")
 	val, err := isp.Value("tst")

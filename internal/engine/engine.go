@@ -24,7 +24,7 @@ const (
 type RiskEngine interface {
 	Type() Type
 	Execute(context.Context, core.TransitData,
-		heuristic.Heuristic) (*core.Invalidation, bool)
+		heuristic.Heuristic) (*core.Activation, bool)
 }
 
 // hardCodedEngine ... Hard coded execution engine
@@ -45,20 +45,20 @@ func (e *hardCodedEngine) Type() Type {
 
 // Execute ... Executes the heuristic
 func (e *hardCodedEngine) Execute(ctx context.Context, data core.TransitData,
-	inv heuristic.Heuristic) (*core.Invalidation, bool) {
+	h heuristic.Heuristic) (*core.Activation, bool) {
 	logger := logging.WithContext(ctx)
 
-	logger.Debug("Performing heuristic invalidation",
-		zap.String("suuid", inv.SUUID().String()))
-	outcome, invalid, err := inv.Invalidate(data)
+	logger.Debug("Performing heuristic activation",
+		zap.String("suuid", h.SUUID().String()))
+	outcome, activated, err := h.Assess(data)
 	if err != nil {
-		logger.Error("Failed to perform invalidation option for heuristic", zap.Error(err))
+		logger.Error("Failed to perform activation option for heuristic", zap.Error(err))
 
 		metrics.WithContext(ctx).
-			RecordInvExecutionError(inv)
+			RecordAssessmentError(h)
 
 		return nil, false
 	}
 
-	return outcome, invalid
+	return outcome, activated
 }

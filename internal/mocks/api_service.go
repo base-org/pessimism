@@ -64,7 +64,7 @@ func (mr *MockServiceMockRecorder) CheckHealth() *gomock.Call {
 }
 
 // ProcessHeuristicRequest mocks base method.
-func (m *MockService) ProcessHeuristicRequest(arg0 *models.InvRequestBody) (core.SUUID, error) {
+func (m *MockService) ProcessHeuristicRequest(arg0 *models.SessionRequestBody) (core.SUUID, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ProcessHeuristicRequest", arg0)
 	ret0, _ := ret[0].(core.SUUID)
@@ -79,7 +79,7 @@ func (mr *MockServiceMockRecorder) ProcessHeuristicRequest(arg0 interface{}) *go
 }
 
 // RunHeuristicSession mocks base method.
-func (m *MockService) RunHeuristicSession(arg0 *models.InvRequestParams) (core.SUUID, error) {
+func (m *MockService) RunHeuristicSession(arg0 *models.SessionRequestParams) (core.SUUID, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RunHeuristicSession", arg0)
 	ret0, _ := ret[0].(core.SUUID)

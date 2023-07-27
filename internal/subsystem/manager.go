@@ -43,8 +43,8 @@ func (cfg *Config) GetPollInterval(n core.Network) (time.Duration, error) {
 // Manager ... Subsystem manager interface
 type Manager interface {
 	BuildDeployCfg(pConfig *core.PipelineConfig, sConfig *core.SessionConfig) (*heuristic.DeployConfig, error)
-	BuildPipelineCfg(params *models.InvRequestParams) (*core.PipelineConfig, error)
-	RunInvSession(cfg *heuristic.DeployConfig) (core.SUUID, error)
+	BuildPipelineCfg(params *models.SessionRequestParams) (*core.PipelineConfig, error)
+	RunSession(cfg *heuristic.DeployConfig) (core.SUUID, error)
 	// Orchestration
 	StartEventRoutines(ctx context.Context)
 	Shutdown() error
@@ -146,19 +146,19 @@ func (m *manager) BuildDeployCfg(pConfig *core.PipelineConfig,
 
 	// 3. Create a deploy config
 	return &heuristic.DeployConfig{
-		PUUID:     pUUID,
-		Reuse:     reuse,
-		InvType:   sConfig.Type,
-		InvParams: sConfig.Params,
-		Network:   pConfig.Network,
-		Stateful:  stateful,
-		StateKey:  sk,
-		AlertDest: sConfig.AlertDest,
+		PUUID:         pUUID,
+		Reuse:         reuse,
+		HeuristicType: sConfig.Type,
+		Params:        sConfig.Params,
+		Network:       pConfig.Network,
+		Stateful:      stateful,
+		StateKey:      sk,
+		AlertDest:     sConfig.AlertDest,
 	}, nil
 }
 
-// RunInvSession ... Runs an heuristic session
-func (m *manager) RunInvSession(cfg *heuristic.DeployConfig) (core.SUUID, error) {
+// RunSession ... Runs an heuristic session
+func (m *manager) RunSession(cfg *heuristic.DeployConfig) (core.SUUID, error) {
 	// 1. Verify that pipeline constraints are met
 	// NOTE - Consider introducing a config validation step or module
 	if !cfg.Reuse && m.etlLimitReached() {
@@ -192,8 +192,8 @@ func (m *manager) RunInvSession(cfg *heuristic.DeployConfig) (core.SUUID, error)
 }
 
 // BuildPipelineCfg ... Builds a pipeline config provided a set of heuristic request params
-func (m *manager) BuildPipelineCfg(params *models.InvRequestParams) (*core.PipelineConfig, error) {
-	inType, err := m.eng.GetInputType(params.HeuristicType())
+func (m *manager) BuildPipelineCfg(params *models.SessionRequestParams) (*core.PipelineConfig, error) {
+	inType, err := m.eng.GetInputType(params.Heuristic())
 	if err != nil {
 		return nil, err
 	}

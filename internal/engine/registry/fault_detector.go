@@ -37,7 +37,7 @@ type FaultDetectorCfg struct {
 }
 
 // Unmarshal ... Converts a general config to a fault detector heuristic config
-func (fdc *FaultDetectorCfg) Unmarshal(isp *core.InvSessionParams) error {
+func (fdc *FaultDetectorCfg) Unmarshal(isp *core.SessionParams) error {
 	return json.Unmarshal(isp.Bytes(), &fdc)
 }
 
@@ -112,9 +112,9 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heu
 	}, nil
 }
 
-// Invalidate ... Performs the fault detection heuristic logic
-func (fd *faultDetectorInv) Invalidate(td core.TransitData) (*core.Invalidation, bool, error) {
-	logging.NoContext().Debug("Checking invalidation for fault detector heuristic",
+// Assess ... Performs the fault detection heuristic logic
+func (fd *faultDetectorInv) Assess(td core.TransitData) (*core.Activation, bool, error) {
+	logging.NoContext().Debug("Checking activation for fault detector heuristic",
 		zap.String("data", fmt.Sprintf("%v", td)))
 
 	// 1. Validate and extract data input
@@ -163,9 +163,9 @@ func (fd *faultDetectorInv) Invalidate(td core.TransitData) (*core.Invalidation,
 
 	actualStateRoot := output.OutputRoot
 
-	// 6. Compare the expected state root with the actual state root; if they are not equal, then invalidate
+	// 6. Compare the expected state root with the actual state root; if they are not equal, then activate
 	if expectedStateRoot != actualStateRoot {
-		return &core.Invalidation{
+		return &core.Activation{
 			TimeStamp: time.Now(),
 			Message:   fmt.Sprintf(faultDetectMsg, fd.cfg.L2OutputOracle, fd.cfg.L2ToL1Address, fd.SUUID(), log.TxHash),
 		}, true, nil

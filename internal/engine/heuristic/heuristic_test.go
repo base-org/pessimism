@@ -10,7 +10,7 @@ import (
 
 func Test_BaseHeuristic(t *testing.T) {
 	testSUUID := core.MakeSUUID(1, 1, 1)
-	bi := heuristic.NewBaseheuristic(core.RegisterType(0))
+	bi := heuristic.NewBaseHeuristic(core.RegisterType(0))
 
 	// Test SUUID
 	bi.SetSUUID(testSUUID)

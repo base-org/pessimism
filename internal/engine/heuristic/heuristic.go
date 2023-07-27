@@ -22,7 +22,7 @@ const (
 type Heuristic interface {
 	InputType() core.RegisterType
 	ValidateInput(core.TransitData) error
-	Invalidate(core.TransitData) (*core.Invalidation, bool, error)
+	Assess(core.TransitData) (*core.Activation, bool, error)
 	SUUID() core.SUUID
 	SetSUUID(core.SUUID)
 }
@@ -62,8 +62,8 @@ func (bi *BaseHeuristic) InputType() core.RegisterType {
 	return bi.inType
 }
 
-// Invalidate ... Invalidates the heuristic; defaults to no-op
-func (bi *BaseHeuristic) Invalidate(core.TransitData) (*core.Invalidation, bool, error) {
+// Assess ... Determines if a heuristic activation has occurred; defaults to no-op
+func (bi *BaseHeuristic) Assess(core.TransitData) (*core.Activation, bool, error) {
 	return nil, false, nil
 }
 

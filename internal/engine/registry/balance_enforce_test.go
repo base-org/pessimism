@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Balance_Invalidate(t *testing.T) {
+func Test_Balance_Assess(t *testing.T) {
 	upper := float64(5)
 	lower := float64(1)
 
@@ -21,33 +21,33 @@ func Test_Balance_Invalidate(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	// No invalidation
+	// No activation
 	testData1 := core.TransitData{
 		Type:  core.AccountBalance,
 		Value: float64(3),
 	}
 
-	_, inval, err := bi.Invalidate(testData1)
+	_, activated, err := bi.Assess(testData1)
 	assert.NoError(t, err)
-	assert.False(t, inval)
+	assert.False(t, activated)
 
-	// Upper bound invalidation
+	// Upper bound activation
 	testData2 := core.TransitData{
 		Type:  core.AccountBalance,
 		Value: float64(6),
 	}
 
-	_, inval, err = bi.Invalidate(testData2)
+	_, activated, err = bi.Assess(testData2)
 	assert.NoError(t, err)
-	assert.True(t, inval)
+	assert.True(t, activated)
 
-	// Lower bound invalidation
+	// Lower bound activation
 	testData3 := core.TransitData{
 		Type:  core.AccountBalance,
 		Value: float64(0.1),
 	}
 
-	_, inval, err = bi.Invalidate(testData3)
+	_, activated, err = bi.Assess(testData3)
 	assert.NoError(t, err)
-	assert.True(t, inval)
+	assert.True(t, activated)
 }

@@ -54,13 +54,13 @@ func Test_EventLoop(t *testing.T) {
 
 	// Deploy heuristic session
 	deployCfg := &heuristic.DeployConfig{
-		InvType:   core.BalanceEnforcement,
-		Network:   core.Layer1,
-		Stateful:  true,
-		StateKey:  &core.StateKey{},
-		AlertDest: core.Slack,
-		InvParams: isp,
-		PUUID:     testPUUID,
+		HeuristicType: core.BalanceEnforcement,
+		Network:       core.Layer1,
+		Stateful:      true,
+		StateKey:      &core.StateKey{},
+		AlertDest:     core.Slack,
+		Params:        isp,
+		PUUID:         testPUUID,
 	}
 
 	suuid, err := em.DeployHeuristicSession(deployCfg)
@@ -68,7 +68,7 @@ func Test_EventLoop(t *testing.T) {
 	assert.NotNil(t, suuid)
 
 	// Construct heuristic input
-	invInput := core.HeuristicInput{
+	hi := core.HeuristicInput{
 		PUUID: testPUUID,
 		Input: core.TransitData{
 			Type:    core.AccountBalance,
@@ -78,7 +78,7 @@ func Test_EventLoop(t *testing.T) {
 	}
 
 	// Send heuristic input to event loop
-	ingress <- invInput
+	ingress <- hi
 	ticker := time.NewTicker(1 * time.Second)
 
 	// Receive alert from event loop

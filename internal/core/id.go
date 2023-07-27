@@ -71,23 +71,23 @@ func (uuid PUUID) NetworkType() Network {
 	return Network(uuid.PID[1])
 }
 
-// InvSessionPID ... Heuristic session Primary ID
-type InvSessionPID [3]byte
+// SessionPID ... Heuristic session Primary ID
+type SessionPID [3]byte
 
 // Represents a non-deterministic ID that's assigned to
 // every uniquely constructed heuristic session
 type SUUID struct {
-	PID  InvSessionPID
+	PID  SessionPID
 	UUID UUID
 }
 
 // Network ... Returns network decoding from encoded pid byte
-func (pid InvSessionPID) Network() Network {
+func (pid SessionPID) Network() Network {
 	return Network(pid[0])
 }
 
-// InvType ... Returns heuristic type decoding from encoded pid byte
-func (pid InvSessionPID) InvType() HeuristicType {
+// HeuristicType ... Returns heuristic type decoding from encoded pid byte
+func (pid SessionPID) HeuristicType() HeuristicType {
 	return HeuristicType(pid[2])
 }
 
@@ -112,7 +112,7 @@ func NilPUUID() PUUID {
 // NilSUUID ... Returns a zero'd out or empty heuristic UUID
 func NilSUUID() SUUID {
 	return SUUID{
-		PID:  InvSessionPID{0},
+		PID:  SessionPID{0},
 		UUID: nilUUID(),
 	}
 }
@@ -155,11 +155,11 @@ func MakePUUID(pt PipelineType, firstCID, lastCID CUUID) PUUID {
 }
 
 // MakeSUUID ... Constructs an heuristic PID sequence & random UUID
-func MakeSUUID(n Network, pt PipelineType, invType HeuristicType) SUUID {
-	pID := InvSessionPID{
+func MakeSUUID(n Network, pt PipelineType, ht HeuristicType) SUUID {
+	pID := SessionPID{
 		byte(n),
 		byte(pt),
-		byte(invType),
+		byte(ht),
 	}
 
 	return SUUID{
@@ -208,7 +208,7 @@ func (uuid PUUID) String() string {
 }
 
 // String ... Returns string representation of an heuristic session PID
-func (pid InvSessionPID) String() string {
+func (pid SessionPID) String() string {
 	return fmt.Sprintf("%s:%s:%s",
 		Network(pid[0]).String(),
 		PipelineType(pid[1]).String(),

@@ -22,12 +22,12 @@ func Test_RunHeuristicSession(t *testing.T) {
 
 	testCfg := &heuristic.DeployConfig{}
 
-	defaultBody := &models.InvRequestBody{
+	defaultBody := &models.SessionRequestBody{
 		Method: "run",
-		Params: models.InvRequestParams{
+		Params: models.SessionRequestParams{
 			Network:       "layer1",
 			PType:         "live",
-			InvType:       "contract_event",
+			HeuristicType: "contract_event",
 			StartHeight:   nil,
 			EndHeight:     nil,
 			SessionParams: nil,
@@ -56,7 +56,7 @@ func Test_RunHeuristicSession(t *testing.T) {
 					Times(1)
 
 				ts.mockSub.EXPECT().
-					RunInvSession(testCfg).
+					RunSession(testCfg).
 					Return(testSUUID, nil).
 					Times(1)
 
@@ -133,7 +133,7 @@ func Test_RunHeuristicSession(t *testing.T) {
 					Times(1)
 
 				ts.mockSub.EXPECT().
-					RunInvSession(testCfg).
+					RunSession(testCfg).
 					Return(core.NilSUUID(), testErr()).
 					Times(1)
 

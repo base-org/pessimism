@@ -44,7 +44,7 @@ type WithdrawalEnforceInv struct {
 }
 
 // Unmarshal ... Converts a general config to a balance heuristic config
-func (cfg *WithdrawalEnforceCfg) Unmarshal(isp *core.InvSessionParams) error {
+func (cfg *WithdrawalEnforceCfg) Unmarshal(isp *core.SessionParams) error {
 	return json.Unmarshal(isp.Bytes(), &cfg)
 }
 
@@ -85,10 +85,10 @@ func NewWithdrawalEnforceInv(ctx context.Context, cfg *WithdrawalEnforceCfg) (he
 	}, nil
 }
 
-// Invalidate ... Verifies than an L1 WithdrawalProven has a correlating hash
+// Assess ... Verifies than an L1 WithdrawalProven has a correlating hash
 // to the withdrawal storage of the L2ToL1MessagePasser
-func (wi *WithdrawalEnforceInv) Invalidate(td core.TransitData) (*core.Invalidation, bool, error) {
-	logging.NoContext().Debug("Checking invalidation for withdrawal enforcement heuristic",
+func (wi *WithdrawalEnforceInv) Assess(td core.TransitData) (*core.Activation, bool, error) {
+	logging.NoContext().Debug("Checking activation for withdrawal enforcement heuristic",
 		zap.String("data", fmt.Sprintf("%v", td)))
 
 	// 1. Validate and extract data input
@@ -117,9 +117,9 @@ func (wi *WithdrawalEnforceInv) Invalidate(td core.TransitData) (*core.Invalidat
 		return nil, false, err
 	}
 
-	// 4. If the withdrawal does not exist, invalidate
+	// 4. If the withdrawal does not exist, activate
 	if !exists {
-		return &core.Invalidation{
+		return &core.Activation{
 			TimeStamp: time.Now(),
 			Message: fmt.Sprintf(withdrawalEnforceMsg,
 				wi.cfg.L1PortalAddress, wi.cfg.L2ToL1Address, wi.SUUID(), log.TxHash.Hex()),

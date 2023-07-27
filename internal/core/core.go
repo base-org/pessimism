@@ -90,12 +90,12 @@ func NewEngineRelay(pUUID PUUID, outChan chan HeuristicInput) *EngineInputRelay 
 
 // RelayTransitData ... Creates heuristic input from transit data to send to risk engine
 func (eir *EngineInputRelay) RelayTransitData(td TransitData) error {
-	invInput := HeuristicInput{
+	hi := HeuristicInput{
 		PUUID: eir.pUUID,
 		Input: td,
 	}
 
-	eir.outChan <- invInput
+	eir.outChan <- hi
 	return nil
 }
 
@@ -104,27 +104,27 @@ const (
 	NestedArgs = "args"
 )
 
-// InvSessionParams ... Parameters used to initialize an heuristic session
-type InvSessionParams struct {
+// SessionParams ... Parameters used to initialize an heuristic session
+type SessionParams struct {
 	params map[string]any
 }
 
 // Bytes ... Returns a marshalled byte array of the heuristic session params
-func (sp *InvSessionParams) Bytes() []byte {
+func (sp *SessionParams) Bytes() []byte {
 	bytes, _ := json.Marshal(sp.params)
 	return bytes
 }
 
 // NewSessionParams ... Initializes heuristic session params
-func NewSessionParams() *InvSessionParams {
-	isp := &InvSessionParams{
+func NewSessionParams() *SessionParams {
+	isp := &SessionParams{
 		params: make(map[string]any, 0),
 	}
 	isp.params[NestedArgs] = []any{}
 	return isp
 }
 
-func (sp *InvSessionParams) Value(key string) (any, error) {
+func (sp *SessionParams) Value(key string) (any, error) {
 	val, found := sp.params[key]
 	if !found {
 		return nil, fmt.Errorf("key %s not found", key)
@@ -134,7 +134,7 @@ func (sp *InvSessionParams) Value(key string) (any, error) {
 }
 
 // Address ... Returns the address from the heuristic session params
-func (sp *InvSessionParams) Address() common.Address {
+func (sp *SessionParams) Address() common.Address {
 	rawAddr, found := sp.params[AddressKey]
 	if !found {
 		return common.Address{0}
@@ -149,20 +149,20 @@ func (sp *InvSessionParams) Address() common.Address {
 }
 
 // SetValue ... Sets a value in the heuristic session params
-func (sp *InvSessionParams) SetValue(key string, val any) {
+func (sp *SessionParams) SetValue(key string, val any) {
 	sp.params[key] = val
 }
 
 // SetNestedArg ... Sets a nested argument in the heuristic session params
 // unique nested key/value space
-func (sp *InvSessionParams) SetNestedArg(arg interface{}) {
+func (sp *SessionParams) SetNestedArg(arg interface{}) {
 	args := sp.NestedArgs()
 	args = append(args, arg)
 	sp.params[NestedArgs] = args
 }
 
 // NestedArgs ... Returns the nested arguments from the heuristic session params
-func (sp *InvSessionParams) NestedArgs() []any {
+func (sp *SessionParams) NestedArgs() []any {
 	rawArgs, found := sp.params[NestedArgs]
 	if !found {
 		return []any{}
@@ -176,8 +176,8 @@ func (sp *InvSessionParams) NestedArgs() []any {
 	return args
 }
 
-// Invalidation ... Represents an invalidation event
-type Invalidation struct {
+// Activation ... Represents an activation event
+type Activation struct {
 	TimeStamp time.Time
 	Message   string
 }

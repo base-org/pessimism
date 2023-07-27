@@ -8,16 +8,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_InvRequestParams(t *testing.T) {
+func Test_SessionRequestParams(t *testing.T) {
 
-	// Use a single instance of InvRequestParams for tests
-	irp := &models.InvRequestParams{
+	// Use a single instance of SessionRequestParams for tests
+	irp := &models.SessionRequestParams{
 		SessionParams: map[string]interface{}{
 			"test": "test",
 		},
-		Network: core.Layer1.String(),
-		PType:   core.Live.String(),
-		InvType: core.BalanceEnforcement.String(),
+		Network:       core.Layer1.String(),
+		PType:         core.Live.String(),
+		HeuristicType: core.BalanceEnforcement.String(),
 	}
 
 	// Ensure that the heuristic request params are set correctly
@@ -35,7 +35,7 @@ func Test_InvRequestParams(t *testing.T) {
 	assert.Equal(t, pt, core.Live)
 
 	// Ensure that heuristic type is set correctly
-	it := irp.HeuristicType()
+	it := irp.Heuristic()
 	assert.Equal(t, it, core.BalanceEnforcement)
 
 	// Ensure that the pipeline config is set correctly
@@ -50,9 +50,9 @@ func Test_InvRequestParams(t *testing.T) {
 }
 
 func Test_HeuristicRequestBody(t *testing.T) {
-	irb := &models.InvRequestBody{
+	irb := &models.SessionRequestBody{
 		Method: "test",
-		Params: models.InvRequestParams{},
+		Params: models.SessionRequestParams{},
 	}
 
 	// Ensure clone works

@@ -19,7 +19,7 @@ import (
 
 // Manager ... Engine manager interface
 type Manager interface {
-	GetInputType(invType core.HeuristicType) (core.RegisterType, error)
+	GetInputType(ht core.HeuristicType) (core.RegisterType, error)
 	Transit() chan core.HeuristicInput
 
 	DeleteHeuristicSession(core.SUUID) (core.SUUID, error)
@@ -42,11 +42,11 @@ type engineManager struct {
 	etlIngress    chan core.HeuristicInput
 	alertOutgress chan core.Alert
 
-	metrics   metrics.Metricer
-	engine    RiskEngine
-	addresser AddressingMap
-	store     SessionStore
-	invTable  registry.HeuristicTable
+	metrics    metrics.Metricer
+	engine     RiskEngine
+	addresser  AddressingMap
+	store      SessionStore
+	heuristics registry.HeuristicTable
 }
 
 // NewManager ... Initializer
@@ -62,7 +62,7 @@ func NewManager(ctx context.Context, engine RiskEngine, addr AddressingMap,
 		engine:        engine,
 		addresser:     addr,
 		store:         store,
-		invTable:      it,
+		heuristics:    it,
 		metrics:       metrics.WithContext(ctx),
 	}
 
@@ -82,7 +82,7 @@ func (em *engineManager) DeleteHeuristicSession(_ core.SUUID) (core.SUUID, error
 // updateSharedState ... Updates the shared state store
 // with contextual information about the heuristic session
 // to the ETL (e.g. address, events)
-func (em *engineManager) updateSharedState(invParams *core.InvSessionParams,
+func (em *engineManager) updateSharedState(params *core.SessionParams,
 	sk *core.StateKey, pUUID core.PUUID) error {
 	err := sk.SetPUUID(pUUID)
 	// PUUID already exists in key but is different than the one we want
@@ -91,13 +91,13 @@ func (em *engineManager) updateSharedState(invParams *core.InvSessionParams,
 	}
 
 	// Use accessor method to insert entry into state store
-	err = state.InsertUnique(em.ctx, sk, invParams.Address().String())
+	err = state.InsertUnique(em.ctx, sk, params.Address().String())
 	if err != nil {
 		return err
 	}
 
 	if sk.IsNested() { // Nested addressing
-		for _, arg := range invParams.NestedArgs() {
+		for _, arg := range params.NestedArgs() {
 			argStr, success := arg.(string)
 			if !success {
 				return fmt.Errorf("invalid event string")
@@ -107,7 +107,7 @@ func (em *engineManager) updateSharedState(invParams *core.InvSessionParams,
 			innerKey := &core.StateKey{
 				Nesting: false,
 				Prefix:  sk.Prefix,
-				ID:      invParams.Address().String(),
+				ID:      params.Address().String(),
 				PUUID:   &pUUID,
 			}
 
@@ -120,54 +120,54 @@ func (em *engineManager) updateSharedState(invParams *core.InvSessionParams,
 
 	logging.WithContext(em.ctx).Debug("Setting to state store",
 		zap.String(logging.PUUIDKey, pUUID.String()),
-		zap.String(logging.AddrKey, invParams.Address().String()))
+		zap.String(logging.AddrKey, params.Address().String()))
 
 	return nil
 }
 
 // DeployHeuristicSession ... Deploys an heuristic session to be processed by the engine
 func (em *engineManager) DeployHeuristicSession(cfg *heuristic.DeployConfig) (core.SUUID, error) {
-	reg, exists := em.invTable[cfg.InvType]
+	reg, exists := em.heuristics[cfg.HeuristicType]
 	if !exists {
-		return core.NilSUUID(), fmt.Errorf("heuristic type %s not found", cfg.InvType)
+		return core.NilSUUID(), fmt.Errorf("heuristic type %s not found", cfg.HeuristicType)
 	}
 
 	if reg.PrepareValidate != nil { // Prepare & validate the heuristic params for stateful consumption
-		err := reg.PrepareValidate(cfg.InvParams)
+		err := reg.PrepareValidate(cfg.Params)
 		if err != nil {
 			return core.NilSUUID(), err
 		}
 	}
 
 	// Build heuristic instance using constructor function from register definition
-	inv, err := reg.Constructor(em.ctx, cfg.InvParams)
+	h, err := reg.Constructor(em.ctx, cfg.Params)
 	if err != nil {
 		return core.NilSUUID(), err
 	}
 
 	// Generate session UUID and set it to the heuristic
-	sUUID := core.MakeSUUID(cfg.Network, cfg.PUUID.PipelineType(), cfg.InvType)
-	inv.SetSUUID(sUUID)
+	sUUID := core.MakeSUUID(cfg.Network, cfg.PUUID.PipelineType(), cfg.HeuristicType)
+	h.SetSUUID(sUUID)
 
-	err = em.store.AddInvSession(sUUID, cfg.PUUID, inv)
+	err = em.store.AddSession(sUUID, cfg.PUUID, h)
 	if err != nil {
 		return core.NilSUUID(), err
 	}
 
 	// Shared subsystem state management
 	if cfg.Stateful {
-		err = em.addresser.Insert(cfg.InvParams.Address(), cfg.PUUID, sUUID)
+		err = em.addresser.Insert(cfg.Params.Address(), cfg.PUUID, sUUID)
 		if err != nil {
 			return core.NilSUUID(), err
 		}
 
-		err = em.updateSharedState(cfg.InvParams, cfg.StateKey, cfg.PUUID)
+		err = em.updateSharedState(cfg.Params, cfg.StateKey, cfg.PUUID)
 		if err != nil {
 			return core.NilSUUID(), err
 		}
 	}
 
-	em.metrics.IncActiveHeuristics(cfg.InvType, cfg.Network, cfg.PUUID.PipelineType())
+	em.metrics.IncActiveHeuristics(cfg.HeuristicType, cfg.Network, cfg.PUUID.PipelineType())
 
 	return sUUID, nil
 }
@@ -192,10 +192,10 @@ func (em *engineManager) EventLoop() error {
 }
 
 // GetInputType ... Returns the register input type for the heuristic type
-func (em *engineManager) GetInputType(invType core.HeuristicType) (core.RegisterType, error) {
-	val, exists := em.invTable[invType]
+func (em *engineManager) GetInputType(ht core.HeuristicType) (core.RegisterType, error) {
+	val, exists := em.heuristics[ht]
 	if !exists {
-		return 0, fmt.Errorf("heuristic type %s not found", invType)
+		return 0, fmt.Errorf("heuristic type %s not found", ht)
 	}
 
 	return val.InputType, nil
@@ -229,7 +229,7 @@ func (em *engineManager) executeAddressHeuristics(ctx context.Context, data core
 	}
 
 	for _, sUUID := range ids {
-		inv, err := em.store.GetInstanceByUUID(sUUID)
+		h, err := em.store.GetInstanceByUUID(sUUID)
 		if err != nil {
 			logger.Error("Could not session by heuristic sUUID",
 				zap.Error(err),
@@ -237,7 +237,7 @@ func (em *engineManager) executeAddressHeuristics(ctx context.Context, data core
 			continue
 		}
 
-		em.executeHeuristic(ctx, data, inv)
+		em.executeHeuristic(ctx, data, h)
 	}
 }
 
@@ -254,41 +254,41 @@ func (em *engineManager) executeNonAddressHeuristics(ctx context.Context, data c
 	}
 
 	// Fetch all heuristics for a slice of SUUIDs
-	invs, err := em.store.GetInstancesByUUIDs(sUUIDs)
+	heuristics, err := em.store.GetInstancesByUUIDs(sUUIDs)
 	if err != nil {
 		logger.Error("Could not fetch heuristics for pipeline",
 			zap.Error(err),
 			zap.String(logging.PUUIDKey, data.PUUID.String()))
 	}
 
-	for _, inv := range invs { // Execute all heuristics associated with the pipeline
-		em.executeHeuristic(ctx, data, inv)
+	for _, h := range heuristics { // Execute all heuristics associated with the pipeline
+		em.executeHeuristic(ctx, data, h)
 	}
 }
 
 // executeHeuristic ... Executes a single heuristic using the risk engine
-func (em *engineManager) executeHeuristic(ctx context.Context, data core.HeuristicInput, inv heuristic.Heuristic) {
+func (em *engineManager) executeHeuristic(ctx context.Context, data core.HeuristicInput, h heuristic.Heuristic) {
 	logger := logging.WithContext(ctx)
 
 	start := time.Now()
-	// Execute heuristic using risk engine and return alert if invalidation occurs
-	outcome, invalidated := em.engine.Execute(ctx, data.Input, inv)
+	// Execute heuristic using risk engine and return alert if activation occurs
+	outcome, activated := em.engine.Execute(ctx, data.Input, h)
 
-	em.metrics.RecordHeuristicRun(inv)
-	em.metrics.RecordInvExecutionTime(inv, float64(time.Since(start).Nanoseconds()))
+	em.metrics.RecordHeuristicRun(h)
+	em.metrics.RecordInvExecutionTime(h, float64(time.Since(start).Nanoseconds()))
 
-	if invalidated {
+	if activated {
 		// Generate & send alert
 		alert := core.Alert{
 			Timestamp: outcome.TimeStamp,
-			SUUID:     inv.SUUID(),
+			SUUID:     h.SUUID(),
 			Content:   outcome.Message,
 			PUUID:     data.PUUID,
 			Ptype:     data.PUUID.PipelineType(),
 		}
 
 		logger.Warn("Heuristic alert",
-			zap.String(logging.SUUIDKey, inv.SUUID().String()),
+			zap.String(logging.SUUIDKey, h.SUUID().String()),
 			zap.String("message", outcome.Message))
 
 		em.alertOutgress <- alert

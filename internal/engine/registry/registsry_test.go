@@ -57,12 +57,12 @@ func Test_WithdrawEnforcePreprocess(t *testing.T) {
 func Test_InvTable(t *testing.T) {
 	tabl := registry.NewHeuristicTable()
 
-	for key, inv := range tabl {
+	for key, h := range tabl {
 		t.Run(key.String(), func(t *testing.T) {
 
-			assert.NotNil(t, inv.Constructor)
-			assert.NotNil(t, inv.PrepareValidate)
-			assert.NotEqual(t, inv.InputType.String(), core.UnknownType)
+			assert.NotNil(t, h.Constructor)
+			assert.NotNil(t, h.PrepareValidate)
+			assert.NotEqual(t, h.InputType.String(), core.UnknownType)
 		})
 	}
 }

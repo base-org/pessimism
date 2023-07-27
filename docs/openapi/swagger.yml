@@ -92,14 +92,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/InvOperationParameters'
+              $ref: '#/components/schemas/HeuristicOperationParameters'
             examples:
               run:
-                $ref: '#/components/examples/run-inv-example'
+                $ref: '#/components/examples/run-heuristic-example'
               update:
-                $ref: '#/components/examples/update-inv-example'
+                $ref: '#/components/examples/update-heuristic-example'
               delete:
-                $ref: '#/components/examples/delete-inv-example'
+                $ref: '#/components/examples/delete-heuristic-example'
       responses:
         '200':
           description: 'Successful operation.'
@@ -109,7 +109,7 @@ paths:
                 $ref: '#/components/schemas/HeuristicResponse'
               examples:
                 default:
-                  $ref: '#/components/examples/get-inv-result-success'
+                  $ref: '#/components/examples/get-heuristic-response-success'
         '400':
           description: 'Unsuccessful request unmarshaling or validation.'
           content:
@@ -127,11 +127,11 @@ paths:
                 $ref: '#/components/schemas/HeuristicResponse'
               examples:
                 default:
-                  $ref: '#/components/examples/get-inv-result-failed-unmarshal'
+                  $ref: '#/components/examples/get-heuristic-result-failed-unmarshal'
 
 components:
   examples:
-    update-inv-example:
+    update-heuristic-example:
       value:
         method: update
         params:
@@ -141,13 +141,13 @@ components:
             upperBound: 666
             lowerBound: 222
 
-    delete-inv-example:
+    delete-heuristic-example:
       value:
         method: delete
         params:
           uuid: 0x420
 
-    run-inv-example:
+    run-heuristic-example:
       value:
         method: run
         params:
@@ -192,19 +192,19 @@ components:
     get-all-sessions-success:
       value: {"status": "OK", "result": [{"uuid": "0x420", "network": "layer1", "type": "live", "heuristic": "balance_enforcement", "alert_destination": "slack", "heuristic_params": {"address": "0x420", "upperBound": 100, "lowerBound": 0}, "status": "running", "created_at": "2021-09-01T00:00:00Z", "updated_at": "2021-09-01T00:00:00Z", "deleted_at": "2021-09-01T00:00:00Z", "deleted": false}]}
 
-    get-inv-result-success:
+    get-heuristic-response-success:
       value:
         data:
           status: OK
           result: {'heuristic_uuid': 0x420}
 
-    get-inv-result-failed-unmarshal:
+    get-heuristic-result-failed-unmarshal:
       value:
         data:
           status: NOTOK
           result: {'error': 'failed to decode heuristic request'}
           
-    get-inv-result-internal-error:
+    get-heuristic-result-internal-error:
       value:
         data:
           status: NOTOK
@@ -269,29 +269,29 @@ components:
           description: 'Response processing result'
           enum: [OK, NOTOK]
         result:
-          $ref: '#/components/schemas/InvOperationResult' 
+          $ref: '#/components/schemas/HeuristicOpResult' 
           
-    OkInvOperationResult:
+    OkHeuristicOpResult:
       type: object
       description: 'Response result object for successful requests'
       properties:
         uuid:
           type: string
         
-    NotOkInvOperationResult:
+    NotOkHeuristicOpResult:
       description: 'Response result object for failed requests'
       type: object
       properties:
         error:
           type: string
-    InvOperationResult:
+    HeuristicOpResult:
       type: object
       description: 'Response result object'
       oneOf:
-        - $ref: '#/components/schemas/OkInvOperationResult'
-        - $ref: '#/components/schemas/NotOkInvOperationResult'
+        - $ref: '#/components/schemas/OkHeuristicOpResult'
+        - $ref: '#/components/schemas/NotOkHeuristicOpResult'
 
-    BalanceInvConfig:
+    BalanceEnforceCfg:
       type: object
       description: 'Balance heuristic configuration parameters'
       properties:
@@ -309,13 +309,13 @@ components:
         - upperBound
         - lowerBound
 
-    InvConfig: 
+    HeuristicCfg: 
       type: object
       description: 'Heuristic configuration parameters'
       oneOf:
-        - $ref: '#/components/schemas/BalanceInvConfig'
+        - $ref: '#/components/schemas/BalanceEnforceCfg'
 
-    InvOperationParameters:
+    HeuristicOperationParameters:
       description: Standardized request object for performing heuristic operations.
       properties:
         method:
@@ -325,15 +325,15 @@ components:
         params:
           description: Heuristic method parameters.
           oneOf:
-            - $ref: '#/components/schemas/RunInvParameters'
-            - $ref: '#/components/schemas/UpdateInvParameters'
-            - $ref: '#/components/schemas/DeleteInvParameters'
+            - $ref: '#/components/schemas/RunHeuristicParams'
+            - $ref: '#/components/schemas/UpdateHeuristicParams'
+            - $ref: '#/components/schemas/DeleteHeuristicParams'
       required:
         - method
         - params
 
     ### method parameter object types 
-    RunInvParameters: # RUN
+    RunHeuristicParams: # RUN
       type: object
       description: Parameters necessary to run a new session.
       properties:
@@ -346,9 +346,9 @@ components:
         alert_destination:
           $ref: '#/components/schemas/AlertDestEnum'
         heuristic_params:
-          $ref: '#/components/schemas/InvConfig'
+          $ref: '#/components/schemas/HeuristicCfg'
 
-    UpdateInvParameters: #UPDATE
+    UpdateHeuristicParams: #UPDATE
       type: object
       description: Parameters necessary to update an existing session.
       properties:
@@ -357,12 +357,12 @@ components:
           type: string
         heuristic_params:
           description: 'Heuristic configuration parameters'
-          $ref: '#/components/schemas/InvConfig' 
+          $ref: '#/components/schemas/HeuristicCfg' 
       required:
       - uuid
       - heuristic_params
 
-    DeleteInvParameters: #DELETE
+    DeleteHeuristicParams: #DELETE
       type: object
       description: Parameters necessary to update an existing session.
       properties:
@@ -389,7 +389,7 @@ components:
         alert_destination:
           $ref: '#/components/schemas/AlertDestEnum'
         heuristic_params:
-          $ref: '#/components/schemas/InvConfig'
+          $ref: '#/components/schemas/HeuristicCfg'
         status:
           type: string
           description: 'Session status'

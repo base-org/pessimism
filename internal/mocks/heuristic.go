@@ -48,20 +48,20 @@ func (mr *MockHeuristicMockRecorder) InputType() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InputType", reflect.TypeOf((*MockHeuristic)(nil).InputType))
 }
 
-// Invalidate mocks base method.
-func (m *MockHeuristic) Invalidate(arg0 core.TransitData) (*core.Invalidation, bool, error) {
+// Assess mocks base method.
+func (m *MockHeuristic) Assess(arg0 core.TransitData) (*core.Activation, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Invalidate", arg0)
-	ret0, _ := ret[0].(*core.Invalidation)
+	ret := m.ctrl.Call(m, "Assess", arg0)
+	ret0, _ := ret[0].(*core.Activation)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
 }
 
-// Invalidate indicates an expected call of Invalidate.
-func (mr *MockHeuristicMockRecorder) Invalidate(arg0 interface{}) *gomock.Call {
+// Assess indicates an expected call of Assess.
+func (mr *MockHeuristicMockRecorder) Assess(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Invalidate", reflect.TypeOf((*MockHeuristic)(nil).Invalidate), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Assess", reflect.TypeOf((*MockHeuristic)(nil).Assess), arg0)
 }
 
 // SUUID mocks base method.

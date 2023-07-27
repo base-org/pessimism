@@ -19,7 +19,7 @@ type BalanceInvConfig struct {
 }
 
 // Unmarshal ... Converts a general config to a balance heuristic config
-func (bi *BalanceInvConfig) Unmarshal(isp *core.InvSessionParams) error {
+func (bi *BalanceInvConfig) Unmarshal(isp *core.SessionParams) error {
 	return json.Unmarshal(isp.Bytes(), &bi)
 }
 
@@ -48,10 +48,10 @@ func NewBalanceHeuristic(cfg *BalanceInvConfig) (heuristic.Heuristic, error) {
 	}, nil
 }
 
-// Invalidate ... Checks if the balance is within the bounds
+// Assess ... Checks if the balance is within the bounds
 // specified in the config
-func (bi *BalanceHeuristic) Invalidate(td core.TransitData) (*core.Invalidation, bool, error) {
-	logging.NoContext().Debug("Checking invalidation for balance heuristic", zap.String("data", fmt.Sprintf("%v", td)))
+func (bi *BalanceHeuristic) Assess(td core.TransitData) (*core.Activation, bool, error) {
+	logging.NoContext().Debug("Checking activation for balance heuristic", zap.String("data", fmt.Sprintf("%v", td)))
 
 	// 1. Validate and extract balance input
 	err := bi.ValidateInput(td)
@@ -64,22 +64,22 @@ func (bi *BalanceHeuristic) Invalidate(td core.TransitData) (*core.Invalidation,
 		return nil, false, fmt.Errorf(couldNotCastErr, "float64")
 	}
 
-	invalidated := false
+	activated := false
 
-	// 2. Invalidate if balance > upper bound
+	// 2. Assess if balance > upper bound
 	if bi.cfg.UpperBound != nil &&
 		*bi.cfg.UpperBound < balance {
-		invalidated = true
+		activated = true
 	}
 
-	// 3. Invalidate if balance < lower bound
+	// 3. Assess if balance < lower bound
 	if bi.cfg.LowerBound != nil &&
 		*bi.cfg.LowerBound > balance {
-		invalidated = true
+		activated = true
 	}
 
-	/// 4. Generate invalidation outcome if invalidated
-	if invalidated {
+	/// 4. Generate activation outcome if activated
+	if activated {
 		var upper, lower string
 
 		if bi.cfg.UpperBound != nil {
@@ -94,7 +94,7 @@ func (bi *BalanceHeuristic) Invalidate(td core.TransitData) (*core.Invalidation,
 			lower = "-∞"
 		}
 
-		return &core.Invalidation{
+		return &core.Activation{
 			TimeStamp: time.Now(),
 			Message: fmt.Sprintf(reportMsg, balance,
 				upper, lower,
@@ -102,6 +102,6 @@ func (bi *BalanceHeuristic) Invalidate(td core.TransitData) (*core.Invalidation,
 		}, true, nil
 	}
 
-	// No invalidation
+	// No activation
 	return nil, false, nil
 }

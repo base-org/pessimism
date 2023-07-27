@@ -7,27 +7,27 @@ import (
 	"github.com/base-org/pessimism/internal/logging"
 )
 
-// NewInvAcceptedResp ...Returns an heuristic response with status accepted
-func NewInvAcceptedResp(id core.SUUID) *InvResponse {
-	return &InvResponse{
+// NewSessionAcceptedResp ...Returns an heuristic response with status accepted
+func NewSessionAcceptedResp(id core.SUUID) *SessionResponse {
+	return &SessionResponse{
 		Status: OK,
 		Code:   http.StatusAccepted,
-		Result: InvResult{logging.SUUIDKey: id.String()},
+		Result: Result{logging.SUUIDKey: id.String()},
 	}
 }
 
-// NewInvUnmarshalErrResp ... New unmarshal error response construction
-func NewInvUnmarshalErrResp() *InvResponse {
-	return &InvResponse{
+// NewSessionUnmarshalErrResp ... New unmarshal error response construction
+func NewSessionUnmarshalErrResp() *SessionResponse {
+	return &SessionResponse{
 		Status: NotOK,
 		Code:   http.StatusBadRequest,
 		Error:  "could not unmarshal request body",
 	}
 }
 
-// NewInvNoProcessInvResp ... New internal processing response error
-func NewInvNoProcessInvResp() *InvResponse {
-	return &InvResponse{
+// NewSessionNoProcessResp ... New internal processing response error
+func NewSessionNoProcessResp() *SessionResponse {
+	return &SessionResponse{
 		Status: NotOK,
 		Code:   http.StatusInternalServerError,
 		Error:  "error processing heuristic request",

@@ -13,18 +13,18 @@ import (
 )
 
 type testSuite struct {
-	ctrl    *gomock.Controller
-	re      engine.RiskEngine
-	mockInv *mocks.MockHeuristic
+	ctrl          *gomock.Controller
+	re            engine.RiskEngine
+	mockHeuristic *mocks.MockHeuristic
 }
 
 func createTestSuite(t *testing.T) *testSuite {
 	ctrl := gomock.NewController(t)
 
 	return &testSuite{
-		ctrl:    ctrl,
-		re:      engine.NewHardCodedEngine(),
-		mockInv: mocks.NewMockHeuristic(ctrl),
+		ctrl:          ctrl,
+		re:            engine.NewHardCodedEngine(),
+		mockHeuristic: mocks.NewMockHeuristic(ctrl),
 	}
 }
 
@@ -38,39 +38,39 @@ func Test_HardCodedEngine(t *testing.T) {
 		test func(t *testing.T, ts *testSuite)
 	}{
 		{
-			name: "Invalidation Failure From Error",
+			name: "Activation Failure From Error",
 			test: func(t *testing.T, ts *testSuite) {
 				td := core.TransitData{}
 
-				ts.mockInv.EXPECT().Invalidate(td).
+				ts.mockHeuristic.EXPECT().Assess(td).
 					Return(nil, false, testErr()).Times(1)
 
-				ts.mockInv.EXPECT().SUUID().
+				ts.mockHeuristic.EXPECT().SUUID().
 					Return(core.NilSUUID()).Times(1)
 
-				outcome, invalid := ts.re.Execute(context.Background(), td, ts.mockInv)
+				outcome, activated := ts.re.Execute(context.Background(), td, ts.mockHeuristic)
 				assert.Nil(t, outcome)
-				assert.False(t, invalid)
+				assert.False(t, activated)
 
 			}},
 		{
-			name: "Successful Invalidation",
+			name: "Successful Activation",
 			test: func(t *testing.T, ts *testSuite) {
 				td := core.TransitData{}
 
-				expectedOut := &core.Invalidation{
+				expectedOut := &core.Activation{
 					Message: "20 inch blade on the Impala",
 				}
 
-				ts.mockInv.EXPECT().Invalidate(td).
+				ts.mockHeuristic.EXPECT().Assess(td).
 					Return(expectedOut, true, nil).Times(1)
 
-				ts.mockInv.EXPECT().SUUID().
+				ts.mockHeuristic.EXPECT().SUUID().
 					Return(core.NilSUUID()).Times(1)
 
-				outcome, invalid := ts.re.Execute(context.Background(), td, ts.mockInv)
+				outcome, activated := ts.re.Execute(context.Background(), td, ts.mockHeuristic)
 				assert.NotNil(t, outcome)
-				assert.True(t, invalid)
+				assert.True(t, activated)
 				assert.Equal(t, expectedOut, outcome)
 			}},
 	}

@@ -116,7 +116,7 @@ func Test_BuildDeployCfg(t *testing.T) {
 	}
 }
 
-func Test_RunInvSession(t *testing.T) {
+func Test_RunSession(t *testing.T) {
 	testSUUID := core.MakeSUUID(1, 1, 1)
 	testCfg := &heuristic.DeployConfig{
 		Stateful: false,
@@ -125,9 +125,9 @@ func Test_RunInvSession(t *testing.T) {
 		PUUID:    core.NilPUUID(),
 		Reuse:    false,
 
-		InvType:   core.BalanceEnforcement,
-		InvParams: nil,
-		AlertDest: core.Slack,
+		HeuristicType: core.BalanceEnforcement,
+		Params:        nil,
+		AlertDest:     core.Slack,
 	}
 
 	var tests = []struct {
@@ -150,7 +150,7 @@ func Test_RunInvSession(t *testing.T) {
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				actualSUUID, err := ts.subsys.RunInvSession(testCfg)
+				actualSUUID, err := ts.subsys.RunSession(testCfg)
 				assert.Error(t, err)
 				assert.Equal(t, core.NilSUUID(), actualSUUID)
 			},
@@ -174,7 +174,7 @@ func Test_RunInvSession(t *testing.T) {
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				actualSUUID, err := ts.subsys.RunInvSession(testCfg)
+				actualSUUID, err := ts.subsys.RunSession(testCfg)
 				assert.Error(t, err)
 				assert.Equal(t, core.NilSUUID(), actualSUUID)
 			},
@@ -203,7 +203,7 @@ func Test_RunInvSession(t *testing.T) {
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				actualSUUID, err := ts.subsys.RunInvSession(testCfg)
+				actualSUUID, err := ts.subsys.RunSession(testCfg)
 				assert.NoError(t, err)
 				assert.Equal(t, testSUUID, actualSUUID)
 			},
@@ -225,7 +225,7 @@ func Test_RunInvSession(t *testing.T) {
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testCfg.Reuse = true
-				actualSUUID, err := ts.subsys.RunInvSession(testCfg)
+				actualSUUID, err := ts.subsys.RunSession(testCfg)
 				assert.NoError(t, err)
 				assert.Equal(t, testSUUID, actualSUUID)
 			},
@@ -243,7 +243,7 @@ func Test_RunInvSession(t *testing.T) {
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testCfg.Reuse = false
-				actualSUUID, err := ts.subsys.RunInvSession(testCfg)
+				actualSUUID, err := ts.subsys.RunSession(testCfg)
 				assert.Error(t, err)
 				assert.Equal(t, core.NilSUUID(), actualSUUID)
 			},
@@ -276,10 +276,10 @@ func Test_BuildPipelineCfg(t *testing.T) {
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				testParams := &models.InvRequestParams{
-					Network: core.Layer1.String(),
-					PType:   core.Live.String(),
-					InvType: core.BalanceEnforcement.String(),
+				testParams := &models.SessionRequestParams{
+					Network:       core.Layer1.String(),
+					PType:         core.Live.String(),
+					HeuristicType: core.BalanceEnforcement.String(),
 				}
 
 				cfg, err := ts.subsys.BuildPipelineCfg(testParams)
@@ -298,10 +298,10 @@ func Test_BuildPipelineCfg(t *testing.T) {
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				testParams := &models.InvRequestParams{
-					Network: "layer0",
-					PType:   core.Live.String(),
-					InvType: core.BalanceEnforcement.String(),
+				testParams := &models.SessionRequestParams{
+					Network:       "layer0",
+					PType:         core.Live.String(),
+					HeuristicType: core.BalanceEnforcement.String(),
 				}
 
 				cfg, err := ts.subsys.BuildPipelineCfg(testParams)
@@ -320,10 +320,10 @@ func Test_BuildPipelineCfg(t *testing.T) {
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				testParams := &models.InvRequestParams{
-					Network: core.Layer1.String(),
-					PType:   core.Live.String(),
-					InvType: core.BalanceEnforcement.String(),
+				testParams := &models.SessionRequestParams{
+					Network:       core.Layer1.String(),
+					PType:         core.Live.String(),
+					HeuristicType: core.BalanceEnforcement.String(),
 				}
 
 				cfg, err := ts.subsys.BuildPipelineCfg(testParams)

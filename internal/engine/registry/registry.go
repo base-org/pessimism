@@ -15,10 +15,10 @@ type HeuristicTable map[core.HeuristicType]*InvRegister
 
 // InvRegister ... Heuristic register struct
 type InvRegister struct {
-	PrepareValidate func(*core.InvSessionParams) error
+	PrepareValidate func(*core.SessionParams) error
 	Policy          core.ChainSubscription
 	InputType       core.RegisterType
-	Constructor     func(ctx context.Context, isp *core.InvSessionParams) (heuristic.Heuristic, error)
+	Constructor     func(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error)
 }
 
 // NewHeuristicTable ... Initializer
@@ -54,7 +54,7 @@ func NewHeuristicTable() HeuristicTable {
 }
 
 // constructEventInv ... Constructs an event heuristic instance
-func constructEventInv(_ context.Context, isp *core.InvSessionParams) (heuristic.Heuristic, error) {
+func constructEventInv(_ context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
 	cfg := &EventInvConfig{}
 
 	err := cfg.Unmarshal(isp)
@@ -66,7 +66,7 @@ func constructEventInv(_ context.Context, isp *core.InvSessionParams) (heuristic
 }
 
 // constructBalanceEnforcement ... Constructs a balance heuristic instance
-func constructBalanceEnforcement(_ context.Context, isp *core.InvSessionParams) (heuristic.Heuristic, error) {
+func constructBalanceEnforcement(_ context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
 	cfg := &BalanceInvConfig{}
 
 	err := cfg.Unmarshal(isp)
@@ -78,7 +78,7 @@ func constructBalanceEnforcement(_ context.Context, isp *core.InvSessionParams) 
 }
 
 // constructFaultDetector ... Constructs a fault detector heuristic instance
-func constructFaultDetector(ctx context.Context, isp *core.InvSessionParams) (heuristic.Heuristic, error) {
+func constructFaultDetector(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
 	cfg := &FaultDetectorCfg{}
 	err := cfg.Unmarshal(isp)
 
@@ -90,7 +90,7 @@ func constructFaultDetector(ctx context.Context, isp *core.InvSessionParams) (he
 }
 
 // constructWithdrawalEnforce ... Constructs a withdrawal enforcement heuristic instance
-func constructWithdrawalEnforce(ctx context.Context, isp *core.InvSessionParams) (heuristic.Heuristic, error) {
+func constructWithdrawalEnforce(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
 	cfg := &WithdrawalEnforceCfg{}
 	err := cfg.Unmarshal(isp)
 
@@ -102,7 +102,7 @@ func constructWithdrawalEnforce(ctx context.Context, isp *core.InvSessionParams)
 }
 
 // ValidateEventTracking ... Ensures that an address and nested args exist in the session params
-func ValidateEventTracking(cfg *core.InvSessionParams) error {
+func ValidateEventTracking(cfg *core.SessionParams) error {
 	err := ValidateAddressing(cfg)
 	if err != nil {
 		return err
@@ -112,7 +112,7 @@ func ValidateEventTracking(cfg *core.InvSessionParams) error {
 }
 
 // ValidateAddressing ... Ensures that an address exists in the session params
-func ValidateAddressing(cfg *core.InvSessionParams) error {
+func ValidateAddressing(cfg *core.SessionParams) error {
 	nilAddr := common.Address{0}
 	if cfg.Address() == nilAddr {
 		return fmt.Errorf(zeroAddressErr)
@@ -122,7 +122,7 @@ func ValidateAddressing(cfg *core.InvSessionParams) error {
 }
 
 // ValidateTopicsExist ... Ensures that some nested args exist in the session params
-func ValidateTopicsExist(cfg *core.InvSessionParams) error {
+func ValidateTopicsExist(cfg *core.SessionParams) error {
 	if len(cfg.NestedArgs()) == 0 {
 		return fmt.Errorf(noNestedArgsErr)
 	}
@@ -130,7 +130,7 @@ func ValidateTopicsExist(cfg *core.InvSessionParams) error {
 }
 
 // ValidateNoTopicsExist ... Ensures that no nested args exist in the session params
-func ValidateNoTopicsExist(cfg *core.InvSessionParams) error {
+func ValidateNoTopicsExist(cfg *core.SessionParams) error {
 	if len(cfg.NestedArgs()) != 0 {
 		return fmt.Errorf(noNestedArgsErr)
 	}
@@ -141,7 +141,7 @@ func ValidateNoTopicsExist(cfg *core.InvSessionParams) error {
 // and performs a "hack" operation to set the address key as the l2tol1MessagePasser
 // address for upstream ETL components (ie. event log) to know which L1 address to
 // query for events
-func WithdrawEnforcePrepare(cfg *core.InvSessionParams) error {
+func WithdrawEnforcePrepare(cfg *core.SessionParams) error {
 	l1Portal, err := cfg.Value(core.L1Portal)
 	if err != nil {
 		return err
@@ -167,7 +167,7 @@ func WithdrawEnforcePrepare(cfg *core.InvSessionParams) error {
 
 // FaultDetectionPrepare ... Configures the session params with the appropriate
 // address key and nested args for the ETL to subscribe to L2OutputOracle events
-func FaultDetectionPrepare(cfg *core.InvSessionParams) error {
+func FaultDetectionPrepare(cfg *core.SessionParams) error {
 	l2OutputOracle, err := cfg.Value(core.L2OutputOracle)
 	if err != nil {
 		return err

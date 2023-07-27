@@ -31,19 +31,19 @@ func StringToHeuristicMethod(s string) HeuristicMethod {
 	}
 }
 
-// InvResponseStatus ... Represents the heuristic operation response status
-type InvResponseStatus string
+// SessionResponseStatus ... Represents the heuristic operation response status
+type SessionResponseStatus string
 
 const (
-	OK    InvResponseStatus = "OK"
-	NotOK InvResponseStatus = "NOTOK"
+	OK    SessionResponseStatus = "OK"
+	NotOK SessionResponseStatus = "NOTOK"
 )
 
-// InvRequestParams ... Request params for heuristic operation
-type InvRequestParams struct {
-	Network string `json:"network"`
-	PType   string `json:"pipeline_type"`
-	InvType string `json:"type"`
+// SessionRequestParams ... Request params for heuristic operation
+type SessionRequestParams struct {
+	Network       string `json:"network"`
+	PType         string `json:"pipeline_type"`
+	HeuristicType string `json:"type"`
 
 	StartHeight *big.Int `json:"start_height"`
 	EndHeight   *big.Int `json:"end_height"`
@@ -54,10 +54,10 @@ type InvRequestParams struct {
 }
 
 // Params ... Returns the heuristic session params
-func (irp *InvRequestParams) Params() *core.InvSessionParams {
+func (hrp *SessionRequestParams) Params() *core.SessionParams {
 	isp := core.NewSessionParams()
 
-	for k, v := range irp.SessionParams {
+	for k, v := range hrp.SessionParams {
 		isp.SetValue(k, v)
 	}
 
@@ -65,77 +65,77 @@ func (irp *InvRequestParams) Params() *core.InvSessionParams {
 }
 
 // AlertingDestType ... Returns the alerting destination type
-func (irp *InvRequestParams) AlertingDestType() core.AlertDestination {
-	return core.StringToAlertingDestType(irp.AlertingDest)
+func (hrp *SessionRequestParams) AlertingDestType() core.AlertDestination {
+	return core.StringToAlertingDestType(hrp.AlertingDest)
 }
 
 // NetworkType ... Returns the network type
-func (irp *InvRequestParams) NetworkType() core.Network {
-	return core.StringToNetwork(irp.Network)
+func (hrp *SessionRequestParams) NetworkType() core.Network {
+	return core.StringToNetwork(hrp.Network)
 }
 
 // PipelineType ... Returns the pipeline type
-func (irp *InvRequestParams) PipelineType() core.PipelineType {
-	return core.StringToPipelineType(irp.PType)
+func (hrp *SessionRequestParams) PipelineType() core.PipelineType {
+	return core.StringToPipelineType(hrp.PType)
 }
 
-// HeuristicType ... Returns the heuristic type
-func (irp *InvRequestParams) HeuristicType() core.HeuristicType {
-	return core.StringToHeuristicType(irp.InvType)
+// Heuristic ... Returns the heuristic type
+func (hrp *SessionRequestParams) Heuristic() core.HeuristicType {
+	return core.StringToHeuristicType(hrp.HeuristicType)
 }
 
 // GeneratePipelineConfig ... Generates a pipeline config using the request params
-func (irp *InvRequestParams) GeneratePipelineConfig(pollInterval time.Duration,
+func (hrp *SessionRequestParams) GeneratePipelineConfig(pollInterval time.Duration,
 	regType core.RegisterType) *core.PipelineConfig {
 	return &core.PipelineConfig{
-		Network:      irp.NetworkType(),
+		Network:      hrp.NetworkType(),
 		DataType:     regType,
-		PipelineType: irp.PipelineType(),
+		PipelineType: hrp.PipelineType(),
 		ClientConfig: &core.ClientConfig{
-			Network:      irp.NetworkType(),
+			Network:      hrp.NetworkType(),
 			PollInterval: pollInterval,
-			StartHeight:  irp.StartHeight,
-			EndHeight:    irp.EndHeight,
+			StartHeight:  hrp.StartHeight,
+			EndHeight:    hrp.EndHeight,
 		},
 	}
 }
 
 // SessionConfig ... Generates a session config using the request params
-func (irp *InvRequestParams) SessionConfig() *core.SessionConfig {
+func (hrp *SessionRequestParams) SessionConfig() *core.SessionConfig {
 	return &core.SessionConfig{
-		AlertDest: irp.AlertingDestType(),
-		Type:      irp.HeuristicType(),
-		Params:    irp.Params(),
-		PT:        irp.PipelineType(),
+		AlertDest: hrp.AlertingDestType(),
+		Type:      hrp.Heuristic(),
+		Params:    hrp.Params(),
+		PT:        hrp.PipelineType(),
 	}
 }
 
-// InvRequestBody ... Request body for heuristic operation request
-type InvRequestBody struct {
-	Method string           `json:"method"`
-	Params InvRequestParams `json:"params"`
+// SessionRequestBody ... Request body for heuristic operation request
+type SessionRequestBody struct {
+	Method string               `json:"method"`
+	Params SessionRequestParams `json:"params"`
 }
 
-func (irb *InvRequestBody) Clone() *InvRequestBody {
-	return &InvRequestBody{
+func (irb *SessionRequestBody) Clone() *SessionRequestBody {
+	return &SessionRequestBody{
 		Method: irb.Method,
 		Params: irb.Params,
 	}
 }
 
 // MethodType ... Returns the heuristic method type
-func (irb *InvRequestBody) MethodType() HeuristicMethod {
+func (irb *SessionRequestBody) MethodType() HeuristicMethod {
 	return StringToHeuristicMethod(irb.Method)
 }
 
-// InvResult ... Result of heuristic operation
-type InvResult = map[string]string
+// Result ... Result of heuristic operation
+type Result = map[string]string
 
-// InvResponse ... Response for heuristic operation request
-type InvResponse struct {
-	Code   int               `json:"status_code"`
-	Status InvResponseStatus `json:"status"`
+// SessionResponse ... Response for heuristic operation request
+type SessionResponse struct {
+	Code   int                   `json:"status_code"`
+	Status SessionResponseStatus `json:"status"`
 
-	Result InvResult `json:"result"`
-	Error  string    `json:"error"`
+	Result Result `json:"result"`
+	Error  string `json:"error"`
 }

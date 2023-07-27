@@ -9,7 +9,7 @@ import (
 
 // SessionStore ...
 type SessionStore interface {
-	AddInvSession(sUUID core.SUUID, pID core.PUUID, inv heuristic.Heuristic) error
+	AddSession(sUUID core.SUUID, pID core.PUUID, h heuristic.Heuristic) error
 	GetInstanceByUUID(sUUID core.SUUID) (heuristic.Heuristic, error)
 	GetInstancesByUUIDs(sUUIDs []core.SUUID) ([]heuristic.Heuristic, error)
 	GetSUUIDsByPUUID(pUUID core.PUUID) ([]core.SUUID, error)
@@ -50,7 +50,7 @@ func (ss *sessionStore) GetInstanceByUUID(sUUID core.SUUID) (heuristic.Heuristic
 	if entry, found := ss.instanceMap[sUUID]; found {
 		return entry, nil
 	}
-	return nil, fmt.Errorf("heuristic UUID doesn't exists in store inv mapping")
+	return nil, fmt.Errorf("heuristic UUID doesn't exists in store heuristic mapping")
 }
 
 // GetSUUIDsByPUUID ... Returns all heuristic session ids associated with pipeline
@@ -58,12 +58,12 @@ func (ss *sessionStore) GetSUUIDsByPUUID(pUUID core.PUUID) ([]core.SUUID, error)
 	if sessionIDs, found := ss.idMap[pUUID]; found {
 		return sessionIDs, nil
 	}
-	return nil, fmt.Errorf("pipeline UUID doesn't exists in store inv mapping")
+	return nil, fmt.Errorf("pipeline UUID doesn't exists in store heuristic mapping")
 }
 
-// AddInvSession ... Adds an heuristic session to the store
-func (ss *sessionStore) AddInvSession(sUUID core.SUUID,
-	pUUID core.PUUID, inv heuristic.Heuristic) error {
+// AddSession ... Adds an heuristic session to the store
+func (ss *sessionStore) AddSession(sUUID core.SUUID,
+	pUUID core.PUUID, h heuristic.Heuristic) error {
 	if _, found := ss.instanceMap[sUUID]; found {
 		return fmt.Errorf("heuristic UUID already exists in store pid mapping")
 	}
@@ -72,7 +72,7 @@ func (ss *sessionStore) AddInvSession(sUUID core.SUUID,
 		ss.idMap[pUUID] = make([]core.SUUID, 0)
 	}
 
-	ss.instanceMap[sUUID] = inv
+	ss.instanceMap[sUUID] = h
 	ss.idMap[pUUID] = append(ss.idMap[pUUID], sUUID)
 	return nil
 }

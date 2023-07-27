@@ -50,11 +50,11 @@ func Test_ProcessHeuristicRequest(t *testing.T) {
 					t.Errorf("Error: %v", err)
 				}
 
-				actualResp := &models.InvResponse{}
+				actualResp := &models.SessionResponse{}
 				err = json.Unmarshal(data, actualResp)
 
 				assert.NoError(t, err)
-				assert.Equal(t, models.NewInvUnmarshalErrResp(), actualResp)
+				assert.Equal(t, models.NewSessionUnmarshalErrResp(), actualResp)
 			},
 		},
 		{
@@ -76,7 +76,7 @@ func Test_ProcessHeuristicRequest(t *testing.T) {
 			testLogic: func(t *testing.T, ts testSuite) {
 				w := httptest.NewRecorder()
 
-				testBody, _ := json.Marshal(models.InvRequestBody{Method: "run"})
+				testBody, _ := json.Marshal(models.SessionRequestBody{Method: "run"})
 
 				testBytes := bytes.NewBuffer(testBody)
 				r := httptest.NewRequest(http.MethodGet, testAddress, testBytes)
@@ -89,11 +89,11 @@ func Test_ProcessHeuristicRequest(t *testing.T) {
 					t.Errorf("Error: %v", err)
 				}
 
-				actualResp := &models.InvResponse{}
+				actualResp := &models.SessionResponse{}
 				err = json.Unmarshal(data, actualResp)
 
 				assert.NoError(t, err)
-				assert.Equal(t, models.NewInvNoProcessInvResp(), actualResp)
+				assert.Equal(t, models.NewSessionNoProcessResp(), actualResp)
 			},
 		},
 		{
@@ -115,7 +115,7 @@ func Test_ProcessHeuristicRequest(t *testing.T) {
 			testLogic: func(t *testing.T, ts testSuite) {
 				w := httptest.NewRecorder()
 
-				testBody, _ := json.Marshal(models.InvRequestBody{Method: "run"})
+				testBody, _ := json.Marshal(models.SessionRequestBody{Method: "run"})
 
 				testBytes := bytes.NewBuffer(testBody)
 				r := httptest.NewRequest(http.MethodGet, testAddress, testBytes)
@@ -128,7 +128,7 @@ func Test_ProcessHeuristicRequest(t *testing.T) {
 					t.Errorf("Error: %v", err)
 				}
 
-				actualResp := &models.InvResponse{}
+				actualResp := &models.SessionResponse{}
 				err = json.Unmarshal(data, actualResp)
 
 				assert.NoError(t, err)
