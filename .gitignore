@@ -1,0 +1,5 @@
+/bin/
+config.env
+/.vscode/
+/.idea
+genesis.json

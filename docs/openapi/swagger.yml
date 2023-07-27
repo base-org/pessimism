@@ -1,0 +1,408 @@
+openapi: 3.0.3
+info:
+  title: Pessimism JSON-RPC API
+  description: >-
+    This document specifies the JSON-RPC API for the Pessimism application software. <br><br>
+    **NOTE - This spec is still WIP and will be updated/changed as the application evolves.
+    It's also worth noting that this spec is not a complete representation of the application's current functionality.**
+  license:
+    name: MIT License
+    url: https://github.com/base-org/pessimism/blob/master/LICENSE
+  version: 0.0.1
+externalDocs:
+  description: Find out more about Pessimism's architecture
+  url: 'https://github.com/base-org/pessimism/blob/master/docs/architecture.md'
+tags:
+  - name: heuristic
+    description: 'Heuristic endpoints'
+  - name: system
+    description: 'System operations'
+
+paths:
+  /health:
+    get:
+      tags:
+        - system
+      summary: Returns the health of the application.
+      description: >-
+        Returns the health of the application. As of now this always returns true. This information might be useful for load-balancing or uptime monitoring.
+      responses:
+        '200':
+          description: 'Successful operation: indicates that the application is healthy.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /v0/heuristic:
+    get:
+      tags:
+        - heuristic
+      summary: Returns an heuristic session.
+      description: >-
+        Returns heuristic session metadata for some specified session uuid. If no uuid is specified, then all sessions are returned. **NOTE - This is currently unimplemented.**
+      parameters:
+        - name: uuid
+          in: query
+          description: 'Heuristic session uuid'
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'Successful operation.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionGetResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/get-session-success'
+                allsessions:
+                  $ref: '#/components/examples/get-all-sessions-success'
+        '400':
+          description: 'Unsuccessful request unmarshaling or validation.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionGetResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/get-session-dne'
+        '500':
+          description: 'Unsuccessful request processing thats resulted in an internal server.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionGetResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/get-session-internal-err'  
+
+    post:
+      tags:
+        - heuristic
+      summary: Performs some heuristic based system option (ie. starting heuristic session, removing session and deleting session)
+      description: >-
+        Returns operation status. Currently only supports running a new heuristic session. Updating and deleting are still
+        unimplemented.
+      requestBody:
+        description: Heuristic input
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvOperationParameters'
+            examples:
+              run:
+                $ref: '#/components/examples/run-inv-example'
+              update:
+                $ref: '#/components/examples/update-inv-example'
+              delete:
+                $ref: '#/components/examples/delete-inv-example'
+      responses:
+        '200':
+          description: 'Successful operation.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeuristicResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/get-inv-result-success'
+        '400':
+          description: 'Unsuccessful request unmarshaling or validation.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeuristicResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/get-session-dne'
+        '500':
+          description: 'Unsuccessful request processing thats resulted in an internal server.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeuristicResponse'
+              examples:
+                default:
+                  $ref: '#/components/examples/get-inv-result-failed-unmarshal'
+
+components:
+  examples:
+    update-inv-example:
+      value:
+        method: update
+        params:
+          uuid: 0x420
+          heuristic_params:
+            address: 0x420
+            upperBound: 666
+            lowerBound: 222
+
+    delete-inv-example:
+      value:
+        method: delete
+        params:
+          uuid: 0x420
+
+    run-inv-example:
+      value:
+        method: run
+        params:
+          network: layer1
+          type: live
+          heuristic: balance_enforcement
+          alert_destination: slack
+          heuristic_params:
+            address: 0x420
+            upperBound: 100
+            lowerBound: 0
+
+    get-session-internal-err:
+      value:
+        status: NOTOK
+        result: {'error': 'internal server error occured while processing request'}
+
+    get-session-dne:
+      value:
+        status: NOTOK
+        result: {'error': 'session does not exist'}
+
+    get-session-success:
+      value:
+        status: OK
+        result:
+          uuid: 0x420
+          network: layer1
+          type: live
+          heuristic: balance_enforcement
+          alert_destination: slack
+          heuristic_params:
+            address: 0x420
+            upperBound: 100
+            lowerBound: 0
+          status: running
+          created_at: 2021-09-01T00:00:00Z
+          updated_at: 2021-09-01T00:00:00Z
+          deleted_at: 2021-09-01T00:00:00Z
+          deleted: false
+
+    get-all-sessions-success:
+      value: {"status": "OK", "result": [{"uuid": "0x420", "network": "layer1", "type": "live", "heuristic": "balance_enforcement", "alert_destination": "slack", "heuristic_params": {"address": "0x420", "upperBound": 100, "lowerBound": 0}, "status": "running", "created_at": "2021-09-01T00:00:00Z", "updated_at": "2021-09-01T00:00:00Z", "deleted_at": "2021-09-01T00:00:00Z", "deleted": false}]}
+
+    get-inv-result-success:
+      value:
+        data:
+          status: OK
+          result: {'heuristic_uuid': 0x420}
+
+    get-inv-result-failed-unmarshal:
+      value:
+        data:
+          status: NOTOK
+          result: {'error': 'failed to decode heuristic request'}
+          
+    get-inv-result-internal-error:
+      value:
+        data:
+          status: NOTOK
+          result: {'error': 'internal server error occured while processing request'}
+    
+  schemas:
+
+    ## Enums
+    AlertDestEnum:
+      type: string
+      description: >-
+        The alert destination type (slack or log).
+      enum:
+        - slack
+        - log
+
+    NetworkEnum:
+      type: string
+      description: >-
+        The network type (layer1 or layer2).
+      enum:
+        - layer1
+        - layer2
+
+    SessionTypeEnum:
+      type: string
+      description: >-
+        The session type (live or backtest).
+      enum:
+        - live
+        - backtest
+
+    HeuristicTypeEnum:
+      type: string
+      description: >-
+        The heuristic type (balance_enforcement).
+      enum:
+        - balance_enforcement
+    
+    ## Objects
+    ### /v0/health GET
+    HealthResponse:
+      type: object
+      properties:
+        Timestamp:
+          type: string
+          description: 'Timestamp of the health check'
+        Healthy:
+          type: boolean
+          description: 'Indicates whether the application is healthy or not'
+
+      required:
+        - Timestamp
+        - Healthy
+
+    ### /v0/heuristic POST
+    HeuristicResponse:
+      description: Standardized response object for heuristic operations. 
+      properties:
+        status:
+          type: string
+          description: 'Response processing result'
+          enum: [OK, NOTOK]
+        result:
+          $ref: '#/components/schemas/InvOperationResult' 
+          
+    OkInvOperationResult:
+      type: object
+      description: 'Response result object for successful requests'
+      properties:
+        uuid:
+          type: string
+        
+    NotOkInvOperationResult:
+      description: 'Response result object for failed requests'
+      type: object
+      properties:
+        error:
+          type: string
+    InvOperationResult:
+      type: object
+      description: 'Response result object'
+      oneOf:
+        - $ref: '#/components/schemas/OkInvOperationResult'
+        - $ref: '#/components/schemas/NotOkInvOperationResult'
+
+    BalanceInvConfig:
+      type: object
+      description: 'Balance heuristic configuration parameters'
+      properties:
+        address: 
+          description: 'Address to monitor'
+          type: string
+        upperBound:
+          description: 'Upper bound threshold for account balance'
+          type: number
+        lowerBound:
+          description: 'Lower bound threshold for account balance'
+          type: number  
+      required:
+        - address
+        - upperBound
+        - lowerBound
+
+    InvConfig: 
+      type: object
+      description: 'Heuristic configuration parameters'
+      oneOf:
+        - $ref: '#/components/schemas/BalanceInvConfig'
+
+    InvOperationParameters:
+      description: Standardized request object for performing heuristic operations.
+      properties:
+        method:
+          type: string
+          enum: ['run', 'update', 'delete']
+          description: Heuristic method operation that's being invoked.
+        params:
+          description: Heuristic method parameters.
+          oneOf:
+            - $ref: '#/components/schemas/RunInvParameters'
+            - $ref: '#/components/schemas/UpdateInvParameters'
+            - $ref: '#/components/schemas/DeleteInvParameters'
+      required:
+        - method
+        - params
+
+    ### method parameter object types 
+    RunInvParameters: # RUN
+      type: object
+      description: Parameters necessary to run a new session.
+      properties:
+        network: 
+          $ref: '#/components/schemas/NetworkEnum'
+        type: 
+          $ref: '#/components/schemas/SessionTypeEnum'
+        heuristic:
+          $ref: '#/components/schemas/HeuristicTypeEnum'
+        alert_destination:
+          $ref: '#/components/schemas/AlertDestEnum'
+        heuristic_params:
+          $ref: '#/components/schemas/InvConfig'
+
+    UpdateInvParameters: #UPDATE
+      type: object
+      description: Parameters necessary to update an existing session.
+      properties:
+        uuid:
+          description: 'Heuristic session uuid'
+          type: string
+        heuristic_params:
+          description: 'Heuristic configuration parameters'
+          $ref: '#/components/schemas/InvConfig' 
+      required:
+      - uuid
+      - heuristic_params
+
+    DeleteInvParameters: #DELETE
+      type: object
+      description: Parameters necessary to update an existing session.
+      properties:
+        uuid:
+          description: 'Heuristic session uuid'
+          type: string
+      required:
+        - uuid
+
+    ### /v0/heuristic GET
+    SessionGetResponse:
+      type: object
+      description: Metadata for some specified heuristic session.
+      properties:
+        uuid:
+          type: string
+          description: 'Heuristic session uuid'
+        network:
+          $ref: '#/components/schemas/NetworkEnum'
+        type:
+          $ref: '#/components/schemas/SessionTypeEnum'
+        heuristic:
+          $ref: '#/components/schemas/HeuristicTypeEnum'
+        alert_destination:
+          $ref: '#/components/schemas/AlertDestEnum'
+        heuristic_params:
+          $ref: '#/components/schemas/InvConfig'
+        status:
+          type: string
+          description: 'Session status'
+          enum: ['running', 'stopped']
+        created_at:
+          type: string
+          description: 'Session creation timestamp'
+        updated_at:
+          type: string
+          description: 'Session update timestamp'
+        deleted_at:
+          type: string
+          description: 'Session deletion timestamp'
+        deleted:
+          type: boolean
+          description: 'Indicates whether the session is deleted or not'
