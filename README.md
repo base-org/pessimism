@@ -45,11 +45,11 @@ To use the template, run the following command(s):
 
 4. Run the following:
    * Without genesis.json: 
-   ```
-   bash docker run -p 8080:8080 -p 7300:7300 --env-file=config.env -it ghcr.io/base-org/pessimism:latest
+   ```bash
+   docker run -p 8080:8080 -p 7300:7300 --env-file=config.env -it ghcr.io/base-org/pessimism:latest
    ```
    * With genesis.json: 
-   ```
+   ```bash
    docker run -p 8080:8080 -p 7300:7300 --env-file=config.env -it -v ${PWD}/genesis.json:/app/genesis.json ghcr.io/base-org/pessimism:latest
    ```
 
