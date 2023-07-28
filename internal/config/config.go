@@ -27,7 +27,8 @@ type Config struct {
 	L2RpcEndpoint string
 
 	// TODO - Consider moving this URL to a more appropriate location
-	SlackURL string
+	SlackURL     string
+	SlackChannel string
 
 	SystemConfig  *subsystem.Config
 	ServerConfig  *server.Config
@@ -47,6 +48,7 @@ func NewConfig(fileName core.FilePath) *Config {
 		BootStrapPath: getEnvStrWithDefault("BOOTSTRAP_PATH", ""),
 		Environment:   core.Env(getEnvStr("ENV")),
 		SlackURL:      getEnvStrWithDefault("SLACK_URL", ""),
+		SlackChannel:  getEnvStrWithDefault("SLACK_CHANNEL", ""),
 
 		SystemConfig: &subsystem.Config{
 			MaxPipelineCount: getEnvInt("MAX_PIPELINE_COUNT"),
