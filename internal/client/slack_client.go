@@ -23,12 +23,13 @@ type SlackClient interface {
 
 // slackClient ... Slack client
 type slackClient struct {
-	url    string
-	client *http.Client
+	url     string
+	channel string
+	client  *http.Client
 }
 
 // NewSlackClient ... Initializer
-func NewSlackClient(url string) SlackClient {
+func NewSlackClient(url string, channel string) SlackClient {
 	if url == "" {
 		logging.NoContext().Warn("No Slack webhook URL not provided")
 	}
@@ -37,18 +38,20 @@ func NewSlackClient(url string) SlackClient {
 		url: url,
 		// NOTE - This is a default client, we can add more configuration to it
 		// when necessary
-		client: &http.Client{},
+		channel: channel,
+		client:  &http.Client{},
 	}
 }
 
 // slackPayload represents the structure of a slack alert
 type SlackPayload struct {
-	Text interface{} `json:"text"`
+	Text    interface{} `json:"text"`
+	Channel string      `json:"channel"`
 }
 
 // newSlackPayload ... initializes a new slack payload
-func newSlackPayload(text interface{}) *SlackPayload {
-	return &SlackPayload{Text: text}
+func newSlackPayload(text interface{}, channel string) *SlackPayload {
+	return &SlackPayload{Text: text, Channel: channel}
 }
 
 // marshal ... marshals the slack payload
@@ -70,7 +73,7 @@ type SlackAPIResponse struct {
 // PostAlert ... handles posting data to slack
 func (sc slackClient) PostData(ctx context.Context, str string) (*SlackAPIResponse, error) {
 	// 1. make & marshal payload into request object body
-	payload, err := newSlackPayload(str).marshal()
+	payload, err := newSlackPayload(str, sc.channel).marshal()
 	if err != nil {
 		return nil, err
 	}
