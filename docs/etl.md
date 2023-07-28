@@ -1,5 +1,5 @@
 # ETL
-The Pessimism ETL is a generalized abstraction for a DAG-based component system that continuously transforms chain data into inputs for consumption by a Risk Engine in the form of intertwined data “pipelines”. This DAG based representation of ETL operations is done to ensure that the application can optimally scale to support many active invariants. This design allows for the reuse of modularized ETL components and de-duplication of conflicting pipelines under certain key logical circumstances. 
+The Pessimism ETL is a generalized abstraction for a DAG-based component system that continuously transforms chain data into inputs for consumption by a Risk Engine in the form of intertwined data “pipelines”. This DAG based representation of ETL operations is done to ensure that the application can optimally scale to support many active invariants. This design allows for the reuse of modularized ETL components and de-duplication of conflicting pipelines under certain key logical circumstances.
 
 ## Component
 A component refers to a graph node within the ETL system. Every component performs some operation for transforming data from any data source into a consumable input for the Risk Engine to ingest. 
@@ -11,10 +11,40 @@ Currently, there are three total component types:
 ### Inter-Connectivity 
 The diagram below showcases how interactivity between components occurs:
 
-```mermaid
-graph LR;
+<head>
+	 <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/8.0.0/mermaid.min.js"></script>
+</head>
+
+<script>
+    var config = {
+        startOnLoad:true,
+        theme: 'forest',
+        flowchart:{
+                useMaxWidth:false,
+                htmlLabels:true
+            }
+    };
+    mermaid.initialize(config);
+    window.mermaid.init(undefined, document.querySelectorAll('.language-mermaid'));
+</script>
+
+<pre>
+    <code class="language-mermaid">graph LR;
+        A((Component0)) -->|dataX| C[Ingress];
+        subgraph B["Component1"]
+            C -->  D[ingressHandler];
+            D --> |dataX| E(eventLoop);
+            E --> |dataY| F[egressHandler];
+            F --> |dataY| G[egress0];
+            F --> |dataY| H[egress1];
+        end
+        G --> K((Component2));
+        H --> J((Component3));
+    </code>
+</pre>
+
+<div class="mermaid">graph LR;
     A((Component0)) -->|dataX| C[Ingress];
-    
     subgraph B["Component1"]
         C -->  D[ingressHandler];
         D --> |dataX| E(eventLoop);
@@ -22,10 +52,9 @@ graph LR;
         F --> |dataY| G[egress0];
         F --> |dataY| H[egress1];
     end
-
     G --> K((Component2));
     H --> J((Component3));
-```
+</div>
 
 #### Egress Handler
 All component types use an `egressHandler` struct for routing transit data to actively subscribed downstream ETL components.
