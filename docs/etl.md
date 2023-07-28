@@ -11,25 +11,25 @@ Currently, there are three total component types:
 ### Inter-Connectivity 
 The diagram below showcases how interactivity between components occurs:
 
-<head>
-	 <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/8.0.0/mermaid.min.js"></script>
-</head>
+<html lang="en">
+    <head>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/8.0.0/mermaid.min.js"></script>
+    </head>
+<body>
+    <pre><code class="language-mermaid">graph LR;
+            A((Component0)) -->|dataX| C[Ingress];
+            subgraph B["Component1"]
+                C -->  D[ingressHandler];
+                D --> |dataX| E(eventLoop);
+                E --> |dataY| F[egressHandler];
+                F --> |dataY| G[egress0];
+                F --> |dataY| H[egress1];
+            end
+            G --> K((Component2));
+            H --> J((Component3));
+    </code></pre>
 
-<script>
-    var config = {
-        startOnLoad:true,
-        theme: 'forest',
-        flowchart:{
-                useMaxWidth:false,
-                htmlLabels:true
-            }
-    };
-    mermaid.initialize(config);
-    window.mermaid.init(undefined, document.querySelectorAll('.language-mermaid'));
-</script>
-
-<pre>
-    <code class="language-mermaid">graph LR;
+    <div class="mermaid">graph LR;
         A((Component0)) -->|dataX| C[Ingress];
         subgraph B["Component1"]
             C -->  D[ingressHandler];
@@ -40,21 +40,24 @@ The diagram below showcases how interactivity between components occurs:
         end
         G --> K((Component2));
         H --> J((Component3));
-    </code>
-</pre>
+    </div>
 
-<div class="mermaid">graph LR;
-    A((Component0)) -->|dataX| C[Ingress];
-    subgraph B["Component1"]
-        C -->  D[ingressHandler];
-        D --> |dataX| E(eventLoop);
-        E --> |dataY| F[egressHandler];
-        F --> |dataY| G[egress0];
-        F --> |dataY| H[egress1];
-    end
-    G --> K((Component2));
-    H --> J((Component3));
-</div>
+</body>
+<script>
+var config = {
+    startOnLoad:true,
+    theme: 'forest',
+    flowchart:{
+            useMaxWidth:false,
+            htmlLabels:true
+        }
+};
+mermaid.initialize(config);
+window.mermaid.init(undefined, document.querySelectorAll('.language-mermaid'));
+</script>
+</html>
+
+
 
 #### Egress Handler
 All component types use an `egressHandler` struct for routing transit data to actively subscribed downstream ETL components.
