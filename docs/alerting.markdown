@@ -1,10 +1,14 @@
-# Alerting
+---
+layout: page
+title: Alerting
+permalink: /architecture/alerting
+---
 
 ## Overview
 The alerting subsystem will receive alerts from the `EngineManager` and publish them to the appropriate alerting destinations. The alerting subsystem will also be responsible for managing the lifecycle of alerts. This includes creating, updating, and removing alerting entries for invariant sessions.
 
 ## Diagram
-```mermaid
+```mermaid!
 graph LR
 
 subgraph EM["Engine Manager"]
