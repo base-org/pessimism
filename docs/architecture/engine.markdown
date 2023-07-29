@@ -1,4 +1,8 @@
-# Risk Engine
+---
+layout: page
+title: Risk Engine
+permalink: /architecture/risk-engine
+---
 
 ## Overview
 The Risk Engine is responsible for handling and executing active invariants. It is the primary downstream consumer of ETL output. The Risk Engine will receive data from the ETL and execute the invariants associated with the data. If an invalidation occurs, the Risk Engine will return an `InvalidationOutcome` to the `EngineManager`. The `EngineManager` will then create an `Alert` using the `InvalidationOutcome` and publish it to the Alerting system.
@@ -6,7 +10,7 @@ The Risk Engine is responsible for handling and executing active invariants. It 
 The Risk Engine will execute the invariants associated with some ingested input data and return an `InvalidationOutcome` to the `EngineManager`. The `EngineManager` will then create an `Alert` using the `InvalidationOutcome` and publish it to the Alerting system.
 
 The following diagram further exemplifies this key interaction:
-```mermaid
+```mermaid!
 graph LR;
     subgraph A["Engine Manager"]
         C(eventLoop) -.->  C;

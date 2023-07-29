@@ -1,4 +1,8 @@
-## Pessimism Telemetry
+---
+layout: page
+title: Telemetry
+permalink: /telemetry
+---
 
 Pessimism uses [Prometheus](https://prometheus.io/docs/introduction/overview/) for telemetry. The application spins up a metrics server on a specified port (default 7300) and exposes the `/metrics` endpoint. 
 
@@ -13,6 +17,7 @@ To generate documentation for metrics, run `make docs` from the root of the repo
 which can be pasted directly below to keep current system metric documentation up to date.
 
 ## Current Metrics
+
 |                  METRIC                   |                      DESCRIPTION                       |                 LABELS                 |  TYPE   |
 |-------------------------------------------|--------------------------------------------------------|----------------------------------------|---------|
 | pessimism_up                              | 1 if the service is up                                 |                                        | gauge   |
