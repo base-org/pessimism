@@ -4,13 +4,20 @@ title: Risk Engine
 permalink: /architecture/risk-engine
 ---
 
+{% raw %}
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.3.0/dist/mermaid.min.js"></script>
+{% endraw %}
+
+
 ## Overview
 The Risk Engine is responsible for handling and executing active invariants. It is the primary downstream consumer of ETL output. The Risk Engine will receive data from the ETL and execute the invariants associated with the data. If an invalidation occurs, the Risk Engine will return an `InvalidationOutcome` to the `EngineManager`. The `EngineManager` will then create an `Alert` using the `InvalidationOutcome` and publish it to the Alerting system.
 
 The Risk Engine will execute the invariants associated with some ingested input data and return an `InvalidationOutcome` to the `EngineManager`. The `EngineManager` will then create an `Alert` using the `InvalidationOutcome` and publish it to the Alerting system.
 
 The following diagram further exemplifies this key interaction:
-```mermaid!
+
+{% raw %}
+<div class="mermaid">
 graph LR;
     subgraph A["Engine Manager"]
         C(eventLoop) -.->  C;
@@ -29,7 +36,8 @@ graph LR;
     subgraph AAA["Alerting Manager"]
         G --> FF("eventLoop()")
     end
-```
+</div>
+{% endraw %}
 
 ## Inter-Connectivity
 The ETL publishes `Invariant Input` to the Risk Engine using a relay channel. The Risk Engine will subscribe to this channel to receive and process updates as they are published by the ETL. The Risk Engine will also publish events to the Alerting system using a separate downstream relay channel. The Alerting system will subscribe to this channel to receive and process updates as they are published by the Risk Engine.

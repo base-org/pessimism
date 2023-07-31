@@ -4,11 +4,17 @@ title: Alerting
 permalink: /architecture/alerting
 ---
 
+{% raw %}
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.3.0/dist/mermaid.min.js"></script>
+{% endraw %}
+
 ## Overview
 The alerting subsystem will receive alerts from the `EngineManager` and publish them to the appropriate alerting destinations. The alerting subsystem will also be responsible for managing the lifecycle of alerts. This includes creating, updating, and removing alerting entries for invariant sessions.
 
 ## Diagram
-```mermaid!
+
+{% raw %}
+<div class="mermaid">
 graph LR
 
 subgraph EM["Engine Manager"]
@@ -26,8 +32,8 @@ subgraph AM["Alerting Manager"]
 end
 CPH --> |"HTTP POST"|TPH["Third Party API"]
 SH --> |"HTTP POST"|SlackAPI("Slack Webhook API")
-
-```
+</div>
+{% endraw %}
 
 ### Alert
 An `Alert` type stores all necessary metadata for external consumption by a downstream entity. 
