@@ -16,7 +16,7 @@ Currently, there are three total component types:
 ### Inter-Connectivity 
 The diagram below showcases how interactivity between components occurs:
 
-```mermaid!
+{% mermaid %}
 graph LR;
     A((Component0)) -->|dataX| C[Ingress];
     
@@ -30,15 +30,18 @@ graph LR;
 
     G --> K((Component2));
     H --> J((Component3));
-```
+{% endmermaid %}
+
 
 #### Egress Handler
 All component types use an `egressHandler` struct for routing transit data to actively subscribed downstream ETL components.
-```mermaid!
+
+{% mermaid %}
 flowchart TD;
     Component-->|Transit_Data|A[Egress0];
     Component-->|Transit_Data|B[Egress1];
-```
+{% endmermaid %}
+
 
 #### Ingress Handler
 All component types also use an `ingressHandler` struct for ingesting active transit data from upstream ETL components.
@@ -84,15 +87,15 @@ The following key interface functions are supported/enforced:
 
 Unlike other components, `Oracles` actually employ _2 go routines_ to safely operate. This is because the definition routines are run as a separate go routine with a communication channel to the actual `Oracle` event loop. This is visualized below:
 
-```mermaid!
+{% mermaid %}
 graph LR;
     subgraph A[Oracle]
         B[eventLoop]-->|channel|ODefRoutine;
          B[eventLoop]-->|context|ODefRoutine;
         B-->B;
     end
+{% endmermaid %}
 
-```
 
 #### Attributes
 * A communication channel with the pipeline manager
@@ -156,9 +159,9 @@ A registry submodule is used to store all ETL data register definitions that pro
 Some component's require knowledge of a specific address to properly function. For example, an oracle that polls a geth node for native ETH balance amounts would need knowledge of the address to poll. To support this, the ETL leverages a shared state store between the ETL and Risk Engine subsystems.
 
 Shown below is how the ETL and Risk Engine interact with the shared state store using a `BalanceOracle` component as an example:
-```mermaid!
-graph LR;
 
+{% mermaid %}
+graph LR;
     subgraph SB["State Store"]
         state
     end
@@ -182,7 +185,8 @@ graph LR;
 
         state --> |"{2} []address"|BO
     end
-```
+{% endmermaid %}
+
 
 
 ### Geth Block Oracle Register
@@ -199,7 +203,7 @@ The ETL uses a `ComponentGraph` construct to represent and store critical compon
 
 A graph edge is represented as a binded communication path between two arbitrary component nodes (`c1`, `c2`). Adding an edge from some component (`c1`) to some downstream component (`c2`) results in `c1` having a path to the ingress of `c2` in its [egress handler](#egress-handler). This would look something like:
 
-```mermaid!
+{% mermaid %}
 graph TB;
 
     subgraph "\nEdge"
@@ -216,7 +220,7 @@ graph TB;
 
     classDef orange fill:#f96,stroke:#333,stroke-width:4px
     class A,D orange
-```
+{% endmermaid %}
 
 **NOTE:** The component graph used in the ETL is represented as a _DAG_ (Directed Acyclic Graph), meaning that no bipartite edge relationships should exist between two components (`c1`, `c2`) where `c1-->c2` && `c2-->c1`. While there are no explicit checks for this in the code software, it should be impossible given that all components declare entrypoint register dependencies within their metadata, meaning that a component could only be susceptible to bipartite connectivity in the circumstance where a component registry definition declares inversal input->output of an existing component. 
 

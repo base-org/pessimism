@@ -28,7 +28,10 @@ url: "base-org.github.io" # the base hostname & protocol for your site, e.g. htt
 theme: minima
 plugins:
   - jekyll-feed
-  - jekyll-spaceship
+  - jekyll-mermaid
+
+mermaid:
+  src: 'https://cdn.jsdelivr.net/npm/mermaid@10.3.0/dist/mermaid.min.js'
 
 # Exclude from processing.
 # The following items will not be processed, by default.
