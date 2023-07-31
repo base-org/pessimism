@@ -4,6 +4,11 @@ title: ETL
 permalink: /architecture/etl
 ---
 
+{% raw %}
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.3.0/dist/mermaid.min.js"></script>
+{% endraw %}
+
+
 The Pessimism ETL is a generalized abstraction for a DAG-based component system that continuously transforms chain data into inputs for consumption by a Risk Engine in the form of intertwined data “pipelines”. This DAG based representation of ETL operations is done to ensure that the application can optimally scale to support many active invariants. This design allows for the reuse of modularized ETL components and de-duplication of conflicting pipelines under certain key logical circumstances. 
 
 ## Component
@@ -16,7 +21,8 @@ Currently, there are three total component types:
 ### Inter-Connectivity 
 The diagram below showcases how interactivity between components occurs:
 
-{% mermaid %}
+{% raw %}
+<div class="mermaid">
 graph LR;
     A((Component0)) -->|dataX| C[Ingress];
     
@@ -30,17 +36,20 @@ graph LR;
 
     G --> K((Component2));
     H --> J((Component3));
-{% endmermaid %}
+</div>
+{% endraw %}
 
 
 #### Egress Handler
 All component types use an `egressHandler` struct for routing transit data to actively subscribed downstream ETL components.
 
-{% mermaid %}
+{% raw %}
+<div class="mermaid">
 flowchart TD;
     Component-->|Transit_Data|A[Egress0];
     Component-->|Transit_Data|B[Egress1];
-{% endmermaid %}
+</div>
+{% endraw %}
 
 
 #### Ingress Handler
@@ -87,14 +96,16 @@ The following key interface functions are supported/enforced:
 
 Unlike other components, `Oracles` actually employ _2 go routines_ to safely operate. This is because the definition routines are run as a separate go routine with a communication channel to the actual `Oracle` event loop. This is visualized below:
 
-{% mermaid %}
+{% raw %}
+<div class="mermaid">
 graph LR;
     subgraph A[Oracle]
         B[eventLoop]-->|channel|ODefRoutine;
          B[eventLoop]-->|context|ODefRoutine;
         B-->B;
     end
-{% endmermaid %}
+</div>
+{% endraw %}
 
 
 #### Attributes
@@ -160,7 +171,8 @@ Some component's require knowledge of a specific address to properly function. F
 
 Shown below is how the ETL and Risk Engine interact with the shared state store using a `BalanceOracle` component as an example:
 
-{% mermaid %}
+{% raw %}
+<div class="mermaid">
 graph LR;
     subgraph SB["State Store"]
         state
@@ -185,7 +197,8 @@ graph LR;
 
         state --> |"{2} []address"|BO
     end
-{% endmermaid %}
+</div>
+{% endraw %}
 
 
 
@@ -203,7 +216,8 @@ The ETL uses a `ComponentGraph` construct to represent and store critical compon
 
 A graph edge is represented as a binded communication path between two arbitrary component nodes (`c1`, `c2`). Adding an edge from some component (`c1`) to some downstream component (`c2`) results in `c1` having a path to the ingress of `c2` in its [egress handler](#egress-handler). This would look something like:
 
-{% mermaid %}
+{% raw %}
+<div class="mermaid">
 graph TB;
 
     subgraph "\nEdge"
@@ -220,7 +234,8 @@ graph TB;
 
     classDef orange fill:#f96,stroke:#333,stroke-width:4px
     class A,D orange
-{% endmermaid %}
+</div>
+{% endraw %}
 
 **NOTE:** The component graph used in the ETL is represented as a _DAG_ (Directed Acyclic Graph), meaning that no bipartite edge relationships should exist between two components (`c1`, `c2`) where `c1-->c2` && `c2-->c1`. While there are no explicit checks for this in the code software, it should be impossible given that all components declare entrypoint register dependencies within their metadata, meaning that a component could only be susceptible to bipartite connectivity in the circumstance where a component registry definition declares inversal input->output of an existing component. 
 
