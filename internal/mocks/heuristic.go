@@ -34,20 +34,6 @@ func (m *MockHeuristic) EXPECT() *MockHeuristicMockRecorder {
 	return m.recorder
 }
 
-// InputType mocks base method.
-func (m *MockHeuristic) InputType() core.RegisterType {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InputType")
-	ret0, _ := ret[0].(core.RegisterType)
-	return ret0
-}
-
-// InputType indicates an expected call of InputType.
-func (mr *MockHeuristicMockRecorder) InputType() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InputType", reflect.TypeOf((*MockHeuristic)(nil).InputType))
-}
-
 // Assess mocks base method.
 func (m *MockHeuristic) Assess(arg0 core.TransitData) (*core.Activation, bool, error) {
 	m.ctrl.T.Helper()
@@ -62,6 +48,20 @@ func (m *MockHeuristic) Assess(arg0 core.TransitData) (*core.Activation, bool, e
 func (mr *MockHeuristicMockRecorder) Assess(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Assess", reflect.TypeOf((*MockHeuristic)(nil).Assess), arg0)
+}
+
+// InputType mocks base method.
+func (m *MockHeuristic) InputType() core.RegisterType {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InputType")
+	ret0, _ := ret[0].(core.RegisterType)
+	return ret0
+}
+
+// InputType indicates an expected call of InputType.
+func (mr *MockHeuristicMockRecorder) InputType() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InputType", reflect.TypeOf((*MockHeuristic)(nil).InputType))
 }
 
 // SUUID mocks base method.
