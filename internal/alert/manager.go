@@ -55,11 +55,7 @@ func NewManager(ctx context.Context, sc client.SlackClient) Manager {
 	return am
 }
 
-<<<<<<< HEAD
-// AddSession ... Adds an invariant session to the alert manager store
-=======
 // AddSession ... Adds an heuristic session to the alert manager store
->>>>>>> 662e452aa6f3474b9b188b574156d623b3c75408
 func (am *alertManager) AddSession(sUUID core.SUUID, alertDestination core.AlertDestination) error {
 	return am.store.AddAlertDestination(sUUID, alertDestination)
 }

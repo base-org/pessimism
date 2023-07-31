@@ -11,8 +11,8 @@ type DeployConfig struct {
 	PUUID   core.PUUID
 	Reuse   bool
 
-	InvType   core.InvariantType
-	InvParams *core.InvSessionParams
+	InvType   core.HeuristicType
+	InvParams *core.SessionParams
 
 	AlertDest core.AlertDestination
 }
