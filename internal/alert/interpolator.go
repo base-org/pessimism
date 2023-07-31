@@ -12,7 +12,7 @@ const (
 
 	// slackMsgFmt ... Slack message format
 	SlackMsgFmt = `
-	⚠️🚨 Pessimism Alert: %s Heuristic Activation 🚨⚠️
+	⚠️🚨 Pessimism Alert: %s 🚨⚠️
 
 	_Heuristic activation conditions met_
 
