@@ -6,10 +6,13 @@ Detect real-time threats on Op-stack compatible chains
 
 ## Contents
 - [Architecture](../pessimism/architecture)
-- [JSON-RPC API](../pessimism/api)
-- [ETL Subsystem](../pessimism/etl)
-- [Engine Subsystem](../pessimism/risk-engine)
-- [Alerting Subsystem](../pessimism/alerting)
+  - [JSON-RPC API](../pessimism/api)
+  - [ETL Subsystem](../pessimism/architecture/etl)
+  - [Engine Subsystem](../pessimism/architecture/risk-engine)
+  - [Alerting Subsystem](../pessimism/architecture/alerting)
+- [API Swaggerdoc](swaggerdoc.html)
+- [Invariant Documentation](../pessimism/invariants)
+- [Telemetry Documentation](../pessimism/telemetry)
 
 ## Github Pages
 The Pessimism documentation is hosted on Github Pages. To view the documentation, please visit [https://base-org.github.io/pessimism/architecture](https://base-org.github.io/pessimism/architecture).

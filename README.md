@@ -119,4 +119,4 @@ A bootstrap config file is used to define the initial state of the pessimism ser
 
 
 ## Spawning an invariant session
-To learn about the currently supported invariants and how to spawn them, please advise the [invariants' documentation](./docs/invariants.md).
+To learn about the currently supported invariants and how to spawn them, please advise the [invariants' documentation](./docs/invariants.markdown).

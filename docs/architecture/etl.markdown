@@ -16,7 +16,7 @@ Currently, there are three total component types:
 ### Inter-Connectivity 
 The diagram below showcases how interactivity between components occurs:
 
-```mermaid
+```mermaid!
 graph LR;
     A((Component0)) -->|dataX| C[Ingress];
     
@@ -34,7 +34,7 @@ graph LR;
 
 #### Egress Handler
 All component types use an `egressHandler` struct for routing transit data to actively subscribed downstream ETL components.
-```mermaid
+```mermaid!
 flowchart TD;
     Component-->|Transit_Data|A[Egress0];
     Component-->|Transit_Data|B[Egress1];
@@ -84,7 +84,7 @@ The following key interface functions are supported/enforced:
 
 Unlike other components, `Oracles` actually employ _2 go routines_ to safely operate. This is because the definition routines are run as a separate go routine with a communication channel to the actual `Oracle` event loop. This is visualized below:
 
-```mermaid
+```mermaid!
 graph LR;
     subgraph A[Oracle]
         B[eventLoop]-->|channel|ODefRoutine;
@@ -156,7 +156,7 @@ A registry submodule is used to store all ETL data register definitions that pro
 Some component's require knowledge of a specific address to properly function. For example, an oracle that polls a geth node for native ETH balance amounts would need knowledge of the address to poll. To support this, the ETL leverages a shared state store between the ETL and Risk Engine subsystems.
 
 Shown below is how the ETL and Risk Engine interact with the shared state store using a `BalanceOracle` component as an example:
-```mermaid
+```mermaid!
 graph LR;
 
     subgraph SB["State Store"]
@@ -199,7 +199,7 @@ The ETL uses a `ComponentGraph` construct to represent and store critical compon
 
 A graph edge is represented as a binded communication path between two arbitrary component nodes (`c1`, `c2`). Adding an edge from some component (`c1`) to some downstream component (`c2`) results in `c1` having a path to the ingress of `c2` in its [egress handler](#egress-handler). This would look something like:
 
-```mermaid
+```mermaid!
 graph TB;
 
     subgraph "\nEdge"
