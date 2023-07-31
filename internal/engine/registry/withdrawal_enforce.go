@@ -8,7 +8,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/engine/invariant"
+	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
 	"github.com/ethereum/go-ethereum/common"
@@ -27,29 +27,29 @@ const withdrawalEnforceMsg = `
 	Transaction Hash: %s
 `
 
-// WithdrawalEnforceCfg  ... Configuration for the balance invariant
+// WithdrawalEnforceCfg  ... Configuration for the balance heuristic
 type WithdrawalEnforceCfg struct {
 	L1PortalAddress string `json:"l1_portal_address"`
 	L2ToL1Address   string `json:"l2_to_l1_address"`
 }
 
-// WithdrawalEnforceInv ... WithdrawalEnforceInvariant implementation
+// WithdrawalEnforceInv ... WithdrawalEnforceHeuristic implementation
 type WithdrawalEnforceInv struct {
 	eventHash           common.Hash
 	cfg                 *WithdrawalEnforceCfg
 	l2tol1MessagePasser *bindings.L2ToL1MessagePasserCaller
 	l1PortalFilter      *bindings.OptimismPortalFilterer
 
-	invariant.Invariant
+	heuristic.Heuristic
 }
 
-// Unmarshal ... Converts a general config to a balance invariant config
-func (cfg *WithdrawalEnforceCfg) Unmarshal(isp *core.InvSessionParams) error {
+// Unmarshal ... Converts a general config to a balance heuristic config
+func (cfg *WithdrawalEnforceCfg) Unmarshal(isp *core.SessionParams) error {
 	return json.Unmarshal(isp.Bytes(), &cfg)
 }
 
 // NewWithdrawalEnforceInv ... Initializer
-func NewWithdrawalEnforceInv(ctx context.Context, cfg *WithdrawalEnforceCfg) (invariant.Invariant, error) {
+func NewWithdrawalEnforceInv(ctx context.Context, cfg *WithdrawalEnforceCfg) (heuristic.Heuristic, error) {
 	l2Client, err := client.FromContext(ctx, core.Layer2)
 	if err != nil {
 		return nil, err
@@ -81,14 +81,14 @@ func NewWithdrawalEnforceInv(ctx context.Context, cfg *WithdrawalEnforceCfg) (in
 		l1PortalFilter:      filter,
 		l2tol1MessagePasser: l2MessagePasser,
 
-		Invariant: invariant.NewBaseInvariant(core.EventLog),
+		Heuristic: heuristic.NewBaseHeuristic(core.EventLog),
 	}, nil
 }
 
-// Invalidate ... Verifies than an L1 WithdrawalProven has a correlating hash
+// Assess ... Verifies than an L1 WithdrawalProven has a correlating hash
 // to the withdrawal storage of the L2ToL1MessagePasser
-func (wi *WithdrawalEnforceInv) Invalidate(td core.TransitData) (*core.Invalidation, bool, error) {
-	logging.NoContext().Debug("Checking invalidation for withdrawal enforcement invariant",
+func (wi *WithdrawalEnforceInv) Assess(td core.TransitData) (*core.Activation, bool, error) {
+	logging.NoContext().Debug("Checking activation for withdrawal enforcement heuristic",
 		zap.String("data", fmt.Sprintf("%v", td)))
 
 	// 1. Validate and extract data input
@@ -117,9 +117,9 @@ func (wi *WithdrawalEnforceInv) Invalidate(td core.TransitData) (*core.Invalidat
 		return nil, false, err
 	}
 
-	// 4. If the withdrawal does not exist, invalidate
+	// 4. If the withdrawal does not exist, activate
 	if !exists {
-		return &core.Invalidation{
+		return &core.Activation{
 			TimeStamp: time.Now(),
 			Message: fmt.Sprintf(withdrawalEnforceMsg,
 				wi.cfg.L1PortalAddress, wi.cfg.L2ToL1Address, wi.SUUID(), log.TxHash.Hex()),

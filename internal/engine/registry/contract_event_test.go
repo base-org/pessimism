@@ -11,15 +11,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Event_Log_Invariant(t *testing.T) {
+func Test_Event_Log_Heuristic(t *testing.T) {
 	var tests = []struct {
 		name     string
 		function func(t *testing.T, cfg *registry.EventInvConfig)
 	}{
 		{
-			name: "Successful Invalidation",
+			name: "Successful Activation",
 			function: func(t *testing.T, cfg *registry.EventInvConfig) {
-				ei := registry.NewEventInvariant(
+				ei := registry.NewEventHeuristic(
 					&registry.EventInvConfig{
 						Address:      "0x0000000000000000000000000000000000000420",
 						ContractName: "0x69",
@@ -36,17 +36,17 @@ func Test_Event_Log_Invariant(t *testing.T) {
 					},
 				}
 
-				outcome, invalid, err := ei.Invalidate(td)
+				outcome, activated, err := ei.Assess(td)
 
 				assert.NoError(t, err)
-				assert.True(t, invalid)
+				assert.True(t, activated)
 				assert.NotNil(t, outcome)
 			},
 		},
 		{
-			name: "Error Invalidation Due to Mismatched Addresses",
+			name: "Error Activation Due to Mismatched Addresses",
 			function: func(t *testing.T, cfg *registry.EventInvConfig) {
-				ei := registry.NewEventInvariant(
+				ei := registry.NewEventHeuristic(
 					&registry.EventInvConfig{
 						Address:      "0x0000000000000000000000000000000000000420",
 						ContractName: "0x69",
@@ -63,17 +63,17 @@ func Test_Event_Log_Invariant(t *testing.T) {
 					},
 				}
 
-				outcome, invalid, err := ei.Invalidate(td)
+				outcome, activated, err := ei.Assess(td)
 
 				assert.Error(t, err)
-				assert.False(t, invalid)
+				assert.False(t, activated)
 				assert.Nil(t, outcome)
 			},
 		},
 		{
-			name: "No Invalidation Due to Missing Signature",
+			name: "No Activation Due to Missing Signature",
 			function: func(t *testing.T, cfg *registry.EventInvConfig) {
-				ei := registry.NewEventInvariant(
+				ei := registry.NewEventHeuristic(
 					&registry.EventInvConfig{
 						Address:      "0x0000000000000000000000000000000000000420",
 						ContractName: "0x69",
@@ -90,10 +90,10 @@ func Test_Event_Log_Invariant(t *testing.T) {
 					},
 				}
 
-				outcome, invalid, err := ei.Invalidate(td)
+				outcome, activated, err := ei.Assess(td)
 
 				assert.NoError(t, err)
-				assert.False(t, invalid)
+				assert.False(t, activated)
 				assert.Nil(t, outcome)
 			},
 		},

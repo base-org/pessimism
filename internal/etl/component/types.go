@@ -67,8 +67,8 @@ type (
 type OracleType = string
 
 const (
-	// BackTestOracle ... Represents an oracle used for backtesting some invariant
+	// BackTestOracle ... Represents an oracle used for backtesting some heuristic
 	BacktestOracle OracleType = "backtest"
-	// LiveOracle ... Represents an oracle used for powering some live invariant
+	// LiveOracle ... Represents an oracle used for powering some live heuristic
 	LiveOracle OracleType = "live"
 )

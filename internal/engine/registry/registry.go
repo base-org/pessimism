@@ -5,25 +5,25 @@ import (
 	"fmt"
 
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/engine/invariant"
+	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// InvariantTable ... Invariant table
-type InvariantTable map[core.InvariantType]*InvRegister
+// HeuristicTable ... Heuristic table
+type HeuristicTable map[core.HeuristicType]*InvRegister
 
-// InvRegister ... Invariant register struct
+// InvRegister ... Heuristic register struct
 type InvRegister struct {
-	PrepareValidate func(*core.InvSessionParams) error
+	PrepareValidate func(*core.SessionParams) error
 	Policy          core.ChainSubscription
 	InputType       core.RegisterType
-	Constructor     func(ctx context.Context, isp *core.InvSessionParams) (invariant.Invariant, error)
+	Constructor     func(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error)
 }
 
-// NewInvariantTable ... Initializer
-func NewInvariantTable() InvariantTable {
-	tbl := map[core.InvariantType]*InvRegister{
+// NewHeuristicTable ... Initializer
+func NewHeuristicTable() HeuristicTable {
+	tbl := map[core.HeuristicType]*InvRegister{
 		core.BalanceEnforcement: {
 			PrepareValidate: ValidateAddressing,
 			Policy:          core.BothNetworks,
@@ -53,8 +53,8 @@ func NewInvariantTable() InvariantTable {
 	return tbl
 }
 
-// constructEventInv ... Constructs an event invariant instance
-func constructEventInv(_ context.Context, isp *core.InvSessionParams) (invariant.Invariant, error) {
+// constructEventInv ... Constructs an event heuristic instance
+func constructEventInv(_ context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
 	cfg := &EventInvConfig{}
 
 	err := cfg.Unmarshal(isp)
@@ -62,11 +62,11 @@ func constructEventInv(_ context.Context, isp *core.InvSessionParams) (invariant
 		return nil, err
 	}
 
-	return NewEventInvariant(cfg), nil
+	return NewEventHeuristic(cfg), nil
 }
 
-// constructBalanceEnforcement ... Constructs a balance invariant instance
-func constructBalanceEnforcement(_ context.Context, isp *core.InvSessionParams) (invariant.Invariant, error) {
+// constructBalanceEnforcement ... Constructs a balance heuristic instance
+func constructBalanceEnforcement(_ context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
 	cfg := &BalanceInvConfig{}
 
 	err := cfg.Unmarshal(isp)
@@ -74,11 +74,11 @@ func constructBalanceEnforcement(_ context.Context, isp *core.InvSessionParams) 
 		return nil, err
 	}
 
-	return NewBalanceInvariant(cfg)
+	return NewBalanceHeuristic(cfg)
 }
 
-// constructFaultDetector ... Constructs a fault detector invariant instance
-func constructFaultDetector(ctx context.Context, isp *core.InvSessionParams) (invariant.Invariant, error) {
+// constructFaultDetector ... Constructs a fault detector heuristic instance
+func constructFaultDetector(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
 	cfg := &FaultDetectorCfg{}
 	err := cfg.Unmarshal(isp)
 
@@ -89,8 +89,8 @@ func constructFaultDetector(ctx context.Context, isp *core.InvSessionParams) (in
 	return NewFaultDetector(ctx, cfg)
 }
 
-// constructWithdrawalEnforce ... Constructs a withdrawal enforcement invariant instance
-func constructWithdrawalEnforce(ctx context.Context, isp *core.InvSessionParams) (invariant.Invariant, error) {
+// constructWithdrawalEnforce ... Constructs a withdrawal enforcement heuristic instance
+func constructWithdrawalEnforce(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
 	cfg := &WithdrawalEnforceCfg{}
 	err := cfg.Unmarshal(isp)
 
@@ -102,7 +102,7 @@ func constructWithdrawalEnforce(ctx context.Context, isp *core.InvSessionParams)
 }
 
 // ValidateEventTracking ... Ensures that an address and nested args exist in the session params
-func ValidateEventTracking(cfg *core.InvSessionParams) error {
+func ValidateEventTracking(cfg *core.SessionParams) error {
 	err := ValidateAddressing(cfg)
 	if err != nil {
 		return err
@@ -112,7 +112,7 @@ func ValidateEventTracking(cfg *core.InvSessionParams) error {
 }
 
 // ValidateAddressing ... Ensures that an address exists in the session params
-func ValidateAddressing(cfg *core.InvSessionParams) error {
+func ValidateAddressing(cfg *core.SessionParams) error {
 	nilAddr := common.Address{0}
 	if cfg.Address() == nilAddr {
 		return fmt.Errorf(zeroAddressErr)
@@ -122,7 +122,7 @@ func ValidateAddressing(cfg *core.InvSessionParams) error {
 }
 
 // ValidateTopicsExist ... Ensures that some nested args exist in the session params
-func ValidateTopicsExist(cfg *core.InvSessionParams) error {
+func ValidateTopicsExist(cfg *core.SessionParams) error {
 	if len(cfg.NestedArgs()) == 0 {
 		return fmt.Errorf(noNestedArgsErr)
 	}
@@ -130,7 +130,7 @@ func ValidateTopicsExist(cfg *core.InvSessionParams) error {
 }
 
 // ValidateNoTopicsExist ... Ensures that no nested args exist in the session params
-func ValidateNoTopicsExist(cfg *core.InvSessionParams) error {
+func ValidateNoTopicsExist(cfg *core.SessionParams) error {
 	if len(cfg.NestedArgs()) != 0 {
 		return fmt.Errorf(noNestedArgsErr)
 	}
@@ -141,7 +141,7 @@ func ValidateNoTopicsExist(cfg *core.InvSessionParams) error {
 // and performs a "hack" operation to set the address key as the l2tol1MessagePasser
 // address for upstream ETL components (ie. event log) to know which L1 address to
 // query for events
-func WithdrawEnforcePrepare(cfg *core.InvSessionParams) error {
+func WithdrawEnforcePrepare(cfg *core.SessionParams) error {
 	l1Portal, err := cfg.Value(core.L1Portal)
 	if err != nil {
 		return err
@@ -167,7 +167,7 @@ func WithdrawEnforcePrepare(cfg *core.InvSessionParams) error {
 
 // FaultDetectionPrepare ... Configures the session params with the appropriate
 // address key and nested args for the ETL to subscribe to L2OutputOracle events
-func FaultDetectionPrepare(cfg *core.InvSessionParams) error {
+func FaultDetectionPrepare(cfg *core.SessionParams) error {
 	l2OutputOracle, err := cfg.Value(core.L2OutputOracle)
 	if err != nil {
 		return err

@@ -1,0 +1,49 @@
+<!-- https://dev.to/tgotwig/host-your-swagger-files-with-github-pages-swagger-ui-13h8 -->
+
+<html>
+  <head>
+    <script src="https://unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@3/swagger-ui-standalone-preset.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@3/swagger-ui.css" />
+    <title>Pessimism API</title>
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script defer>
+      window.onload = function () {
+        const ui = SwaggerUIBundle({
+          urls: [
+            {
+              name: "Pessimism Open API Spec",
+              url: "openapi/swagger.yml",
+            },
+          ],
+          dom_id: "#swagger-ui",
+          deepLinking: true,
+          presets: [SwaggerUIBundle.presets.apis, SwaggerUIStandalonePreset],
+          plugins: [SwaggerUIBundle.plugins.DownloadUrl],
+          layout: "StandaloneLayout",
+        });
+        window.ui = ui;
+      };
+    </script>
+    <style>
+      .swagger-ui .topbar .download-url-wrapper input[type="text"] {
+        border: 2px solid #77889a;
+      }
+      .swagger-ui .topbar .download-url-wrapper .download-url-button {
+        background: #77889a;
+      }
+      .swagger-ui img {
+        display: none;
+      }
+      .swagger-ui .topbar {
+        background-color: #ededed;
+        border-bottom: 2px solid #c1c1c1;
+      }
+      .swagger-ui .topbar .download-url-wrapper .select-label {
+        color: #3b4151;
+      }
+    </style>
+  </body>
+</html>

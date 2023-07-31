@@ -34,8 +34,8 @@ func Test_Pipeline_ID(t *testing.T) {
 	assert.Equal(t, expectedStr, actualStr)
 }
 
-func Test_InvSession_ID(t *testing.T) {
-	expectedID := core.InvSessionPID([3]byte{1, 2, 1})
+func Test_HeuristicSession_ID(t *testing.T) {
+	expectedID := core.SessionPID([3]byte{1, 2, 1})
 	actualID := core.MakeSUUID(1, 2, 1)
 
 	assert.Equal(t, expectedID, actualID.PID)

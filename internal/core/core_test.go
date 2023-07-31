@@ -28,7 +28,7 @@ func Test_TransitData(t *testing.T) {
 }
 
 func Test_EngineRelay(t *testing.T) {
-	outChan := make(chan core.InvariantInput)
+	outChan := make(chan core.HeuristicInput)
 
 	eir := core.NewEngineRelay(core.NilPUUID(), outChan)
 	dummyTD := core.NewTransitData(core.AccountBalance, nil)
@@ -39,16 +39,16 @@ func Test_EngineRelay(t *testing.T) {
 		_ = eir.RelayTransitData(dummyTD)
 	}()
 
-	invInput := <-outChan
+	heurInput := <-outChan
 
-	assert.NotNil(t, invInput, "InvariantInput should not be nil")
-	assert.Equal(t, invInput.PUUID, core.NilPUUID(), "InvariantInput PUUID should be nil")
-	assert.Equal(t, invInput.Input, dummyTD, "InvariantInput Input should be dummyTD")
+	assert.NotNil(t, heurInput, "HeuristicInput should not be nil")
+	assert.Equal(t, heurInput.PUUID, core.NilPUUID(), "HeuristicInput PUUID should be nil")
+	assert.Equal(t, heurInput.Input, dummyTD, "HeuristicInput Input should be dummyTD")
 }
 
-func Test_InvSessionParams(t *testing.T) {
+func Test_SessionParams(t *testing.T) {
 	isp := core.NewSessionParams()
-	assert.NotNil(t, isp, "InvSessionParams should not be nil")
+	assert.NotNil(t, isp, "SessionParams should not be nil")
 
 	isp.SetValue("tst", "tst")
 	val, err := isp.Value("tst")

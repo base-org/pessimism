@@ -2,7 +2,7 @@ package core
 
 import "time"
 
-// AlertingPolicy ... The alerting policy for an invariant session
+// AlertingPolicy ... The alerting policy for a heuristic session
 // NOTE - This could be extended to support additional
 // policy metadata like criticality, etc.
 type AlertingPolicy struct {

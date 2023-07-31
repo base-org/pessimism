@@ -19,7 +19,7 @@ type Pipeline interface {
 
 	Close() error
 	Run(wg *sync.WaitGroup)
-	AddEngineRelay(engineChan chan core.InvariantInput) error
+	AddEngineRelay(engineChan chan core.HeuristicInput) error
 }
 
 // pipeline ... Pipeline implementation
@@ -68,9 +68,9 @@ func (pl *pipeline) UUID() core.PUUID {
 	return pl.id
 }
 
-// AddEngineRelay ... Adds a relay to the pipeline that forces it to send transformed invariant input
+// AddEngineRelay ... Adds a relay to the pipeline that forces it to send transformed heuristic input
 // to a risk engine
-func (pl *pipeline) AddEngineRelay(engineChan chan core.InvariantInput) error {
+func (pl *pipeline) AddEngineRelay(engineChan chan core.HeuristicInput) error {
 	lastComponent := pl.components[0]
 	eir := core.NewEngineRelay(pl.id, engineChan)
 

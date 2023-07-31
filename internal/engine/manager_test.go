@@ -8,7 +8,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine"
-	"github.com/base-org/pessimism/internal/engine/invariant"
+	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/engine/registry"
 	"github.com/base-org/pessimism/internal/state"
 	"github.com/ethereum/go-ethereum/common"
@@ -29,7 +29,7 @@ func Test_EventLoop(t *testing.T) {
 		engine.NewHardCodedEngine(),
 		engine.NewAddressingMap(),
 		engine.NewSessionStore(),
-		registry.NewInvariantTable(),
+		registry.NewHeuristicTable(),
 		alertChan,
 	)
 
@@ -52,23 +52,23 @@ func Test_EventLoop(t *testing.T) {
 	isp.SetValue("address", common.HexToAddress("0x69").String())
 	isp.SetValue("upper", 420)
 
-	// Deploy invariant session
-	deployCfg := &invariant.DeployConfig{
-		InvType:   core.BalanceEnforcement,
-		Network:   core.Layer1,
-		Stateful:  true,
-		StateKey:  &core.StateKey{},
-		AlertDest: core.Slack,
-		InvParams: isp,
-		PUUID:     testPUUID,
+	// Deploy heuristic session
+	deployCfg := &heuristic.DeployConfig{
+		HeuristicType: core.BalanceEnforcement,
+		Network:       core.Layer1,
+		Stateful:      true,
+		StateKey:      &core.StateKey{},
+		AlertDest:     core.Slack,
+		Params:        isp,
+		PUUID:         testPUUID,
 	}
 
-	suuid, err := em.DeployInvariantSession(deployCfg)
+	suuid, err := em.DeployHeuristicSession(deployCfg)
 	assert.NoError(t, err)
 	assert.NotNil(t, suuid)
 
-	// Construct invariant input
-	invInput := core.InvariantInput{
+	// Construct heuristic input
+	hi := core.HeuristicInput{
 		PUUID: testPUUID,
 		Input: core.TransitData{
 			Type:    core.AccountBalance,
@@ -77,8 +77,8 @@ func Test_EventLoop(t *testing.T) {
 		},
 	}
 
-	// Send invariant input to event loop
-	ingress <- invInput
+	// Send heuristic input to event loop
+	ingress <- hi
 	ticker := time.NewTicker(1 * time.Second)
 
 	// Receive alert from event loop

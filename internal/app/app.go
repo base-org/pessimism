@@ -15,8 +15,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// BootSession ... Application wrapper for InvRequestParams
-type BootSession = models.InvRequestParams
+// BootSession ... Application wrapper for SessionRequestParams
+type BootSession = models.SessionRequestParams
 
 // Application ... Pessimism app struct
 type Application struct {
@@ -89,12 +89,12 @@ func (a *Application) BootStrap(sessions []*BootSession) error {
 			return err
 		}
 
-		sUUID, err := a.sub.RunInvSession(deployCfg)
+		sUUID, err := a.sub.RunSession(deployCfg)
 		if err != nil {
 			return err
 		}
 
-		logger.Info("invariant session started",
+		logger.Info("heuristic session started",
 			zap.String(logging.SUUIDKey, sUUID.String()))
 	}
 	return nil

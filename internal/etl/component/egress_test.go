@@ -125,7 +125,7 @@ func Test_Add_Remove_Egress(t *testing.T) {
 			constructionLogic: newEgressHandler,
 
 			testLogic: func(t *testing.T, eh *egressHandler) {
-				relayChan := make(chan core.InvariantInput)
+				relayChan := make(chan core.HeuristicInput)
 
 				pUUID := core.NilPUUID()
 
@@ -137,7 +137,7 @@ func Test_Add_Remove_Egress(t *testing.T) {
 				assert.NoError(t, err)
 
 				testData := core.TransitData{Network: 2, Value: "goodbye closed-source blocksec monitoring"}
-				expectedInput := core.InvariantInput{
+				expectedInput := core.HeuristicInput{
 					PUUID: pUUID,
 					Input: testData,
 				}
@@ -157,7 +157,7 @@ func Test_Add_Remove_Egress(t *testing.T) {
 			description: "When relay already exists and AddRelay function is called, an error should be returned",
 
 			constructionLogic: func() *egressHandler {
-				relayChan := make(chan core.InvariantInput)
+				relayChan := make(chan core.HeuristicInput)
 
 				pUUID := core.NilPUUID()
 
@@ -173,7 +173,7 @@ func Test_Add_Remove_Egress(t *testing.T) {
 			},
 
 			testLogic: func(t *testing.T, eh *egressHandler) {
-				relayChan := make(chan core.InvariantInput)
+				relayChan := make(chan core.HeuristicInput)
 
 				pUUID := core.NilPUUID()
 

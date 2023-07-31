@@ -1,7 +1,7 @@
 # pessimism
 __Because you can't always be optimistic__
 
-_Pessimism_ is a public good monitoring service that allows for [Op-Stack](https://stack.optimism.io/) and EVM compatible blockchains to be continuously assessed for real-time threats using custom defined user invariant rule sets. To learn about Pessimism's architecture, please advise the documentation. 
+_Pessimism_ is a public good monitoring service that allows for [OP Stack](https://stack.optimism.io/) and EVM compatible blockchains to be continuously assessed for real-time threats using custom defined user invariant rule sets. To learn about Pessimism's architecture, please advise the documentation. 
 
 <!-- Badge row 1 - status -->
 
@@ -96,7 +96,7 @@ A bootstrap config file is used to define the initial state of the pessimism ser
           "type": "contract_event", 
           "start_height": null,
           "alert_destination": "slack",
-          "invariant_params": {
+          "heuristic_params": {
               "address": "0xfC0157aA4F5DB7177830ACddB3D5a9BB5BE9cc5e",
               "args": ["Transfer(address, address, uint256)"]
         }
@@ -107,7 +107,7 @@ A bootstrap config file is used to define the initial state of the pessimism ser
         "type": "balance_enforcement", 
         "start_height": null,
         "alert_destination": "slack",
-        "invariant_params": {
+        "heuristic_params": {
             "address": "0xfC0157aA4F5DB7177830ACddB3D5a9BB5BE9cc5e",
             "lower": 1,
             "upper": 2
@@ -117,6 +117,5 @@ A bootstrap config file is used to define the initial state of the pessimism ser
 ```
 
 
-
-## Spawning an invariant session
-To learn about the currently supported invariants and how to spawn them, please advise the [invariants' documentation](./docs/invariants.md).
+## Spawning an heuristic session
+To learn about the currently supported heuristics and how to spawn them, please advise the [heuristics' documentation](./docs/heuristics.md).

@@ -5,30 +5,30 @@ import (
 	"fmt"
 
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/engine/invariant"
+	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-// EventInvConfig  ... Configuration for the event invariant
+// EventInvConfig  ... Configuration for the event heuristic
 type EventInvConfig struct {
 	ContractName string   `json:"contract_name"`
 	Address      string   `json:"address"`
 	Sigs         []string `json:"args"`
 }
 
-// Unmarshal ... Converts a general config to an event invariant config
-func (eic *EventInvConfig) Unmarshal(isp *core.InvSessionParams) error {
+// Unmarshal ... Converts a general config to an event heuristic config
+func (eic *EventInvConfig) Unmarshal(isp *core.SessionParams) error {
 	return json.Unmarshal(isp.Bytes(), &eic)
 }
 
-// EventInvariant ...
-type EventInvariant struct {
+// EventHeuristic ...
+type EventHeuristic struct {
 	cfg  *EventInvConfig
 	sigs []common.Hash
 
-	invariant.Invariant
+	heuristic.Heuristic
 }
 
 // eventReportMsg ... Message to be sent to the alerting system
@@ -41,25 +41,25 @@ const eventReportMsg = `
 	Event: %s
 `
 
-// NewEventInvariant ... Initializer
-func NewEventInvariant(cfg *EventInvConfig) invariant.Invariant {
+// NewEventHeuristic ... Initializer
+func NewEventHeuristic(cfg *EventInvConfig) heuristic.Heuristic {
 	var sigs []common.Hash
 
 	for _, sig := range cfg.Sigs {
 		sigs = append(sigs, crypto.Keccak256Hash([]byte(sig)))
 	}
 
-	return &EventInvariant{
+	return &EventHeuristic{
 		cfg:  cfg,
 		sigs: sigs,
 
-		Invariant: invariant.NewBaseInvariant(core.EventLog),
+		Heuristic: heuristic.NewBaseHeuristic(core.EventLog),
 	}
 }
 
-// Invalidate ... Checks if the balance is within the bounds
+// Assess ... Checks if the balance is within the bounds
 // specified in the config
-func (ei *EventInvariant) Invalidate(td core.TransitData) (*core.Invalidation, bool, error) {
+func (ei *EventHeuristic) Assess(td core.TransitData) (*core.Activation, bool, error) {
 	// 1. Validate and extract the log event from the transit data
 	err := ei.ValidateInput(td)
 	if err != nil {
@@ -76,19 +76,19 @@ func (ei *EventInvariant) Invalidate(td core.TransitData) (*core.Invalidation, b
 	}
 
 	// 2. Check if the log event signature is in the list of signatures
-	invalidated := false
+	activated := false
 	for _, sig := range ei.sigs {
 		if log.Topics[0] == sig {
-			invalidated = true
+			activated = true
 			break
 		}
 	}
 
-	if !invalidated {
+	if !activated {
 		return nil, false, nil
 	}
 
-	return &core.Invalidation{
+	return &core.Activation{
 		Message: fmt.Sprintf(eventReportMsg, ei.cfg.ContractName, log.Address, log.TxHash.Hex(), ei.cfg.Sigs[0]),
 	}, true, nil
 }
