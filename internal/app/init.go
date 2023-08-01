@@ -73,8 +73,9 @@ func InitializeServer(ctx context.Context, cfg *config.Config, m subsystem.Manag
 
 // InitializeAlerting ... Performs dependency injection to build alerting struct
 func InitializeAlerting(ctx context.Context, cfg *config.Config) alert.Manager {
-	sc := client.NewSlackClient(cfg.SlackURL, cfg.SlackChannel)
-	return alert.NewManager(ctx, sc)
+	sc := client.NewSlackClient(cfg.SlackClientConfig)
+	pdc := client.NewPagerdutyClient(cfg.PagerdutyClientConfig)
+	return alert.NewManager(ctx, sc, pdc)
 }
 
 // InitializeETL ... Performs dependency injection to build etl struct

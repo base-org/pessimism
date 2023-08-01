@@ -27,6 +27,7 @@ type alertManager struct {
 	cancel context.CancelFunc
 
 	sc           client.SlackClient
+	pdc          client.PagerdutyClient
 	store        Store
 	interpolator Interpolator
 
@@ -35,7 +36,7 @@ type alertManager struct {
 }
 
 // NewManager ... Instantiates a new alert manager
-func NewManager(ctx context.Context, sc client.SlackClient) Manager {
+func NewManager(ctx context.Context, sc client.SlackClient, pdc client.PagerdutyClient) Manager {
 	// NOTE - Consider constructing dependencies in higher level
 	// abstraction and passing them in
 
@@ -46,6 +47,7 @@ func NewManager(ctx context.Context, sc client.SlackClient) Manager {
 		cancel: cancel,
 
 		sc:           sc,
+		pdc:          pdc,
 		interpolator: NewInterpolator(),
 		store:        NewStore(),
 		alertTransit: make(chan core.Alert),
@@ -79,6 +81,12 @@ func (am *alertManager) handleSlackPost(alert core.Alert) error {
 		return fmt.Errorf(resp.Err)
 	}
 
+	return nil
+}
+
+// TODO
+// handlePagerdutyPost ... Handles Posting an alert to pagerduty
+func (am *alertManager) handlePagerdutyPost(alert core.Alert) error {
 	return nil
 }
 

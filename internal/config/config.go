@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/base-org/pessimism/internal/client"
 	"log"
 	"os"
 	"strconv"
@@ -26,13 +27,11 @@ type Config struct {
 	L1RpcEndpoint string
 	L2RpcEndpoint string
 
-	// TODO - Consider moving this URL to a more appropriate location
-	SlackURL     string
-	SlackChannel string
-
-	SystemConfig  *subsystem.Config
-	ServerConfig  *server.Config
-	MetricsConfig *metrics.Config
+	SystemConfig          *subsystem.Config
+	ServerConfig          *server.Config
+	MetricsConfig         *metrics.Config
+	SlackClientConfig     *client.SlackConfig
+	PagerdutyClientConfig *client.PagerdutyConfig
 }
 
 // NewConfig ... Initializer
@@ -47,8 +46,17 @@ func NewConfig(fileName core.FilePath) *Config {
 
 		BootStrapPath: getEnvStrWithDefault("BOOTSTRAP_PATH", ""),
 		Environment:   core.Env(getEnvStr("ENV")),
-		SlackURL:      getEnvStrWithDefault("SLACK_URL", ""),
-		SlackChannel:  getEnvStrWithDefault("SLACK_CHANNEL", ""),
+
+		SlackClientConfig: &client.SlackConfig{
+			Channel: getEnvStrWithDefault("SLACK_CHANNEL", ""),
+			URL:     getEnvStrWithDefault("SLACK_URL", ""),
+		},
+
+		PagerdutyClientConfig: &client.PagerdutyConfig{
+			AlertEventsURL:  getEnvStrWithDefault("PAGERDUTY_ALERT_EVENTS_URL", ""),
+			ChangeEventsURL: getEnvStrWithDefault("PAGERDUTY_CHANGE_EVENTS_URL", ""),
+			IntegrationKey:  getEnvStrWithDefault("PAGERDUTY_INTEGRATION_KEY", ""),
+		},
 
 		SystemConfig: &subsystem.Config{
 			MaxPipelineCount: getEnvInt("MAX_PIPELINE_COUNT"),
