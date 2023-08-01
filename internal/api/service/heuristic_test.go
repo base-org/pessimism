@@ -6,7 +6,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/engine/invariant"
+	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,19 +15,19 @@ func testErr() error {
 	return fmt.Errorf("test error")
 }
 
-func Test_RunInvariantSession(t *testing.T) {
+func Test_RunHeuristicSession(t *testing.T) {
 	testSUUID := core.MakeSUUID(1, 1, 1)
 
 	ctrl := gomock.NewController(t)
 
-	testCfg := &invariant.DeployConfig{}
+	testCfg := &heuristic.DeployConfig{}
 
-	defaultBody := &models.InvRequestBody{
+	defaultBody := &models.SessionRequestBody{
 		Method: "run",
-		Params: models.InvRequestParams{
+		Params: models.SessionRequestParams{
 			Network:       "layer1",
 			PType:         "live",
-			InvType:       "contract_event",
+			HeuristicType: "contract_event",
 			StartHeight:   nil,
 			EndHeight:     nil,
 			SessionParams: nil,
@@ -41,7 +41,7 @@ func Test_RunInvariantSession(t *testing.T) {
 		testLogic         func(*testing.T, *testSuite)
 	}{
 		{
-			name: "Successful invariant session deployment",
+			name: "Successful heuristic session deployment",
 			constructionLogic: func() *testSuite {
 				ts := createTestSuite(ctrl)
 
@@ -56,7 +56,7 @@ func Test_RunInvariantSession(t *testing.T) {
 					Times(1)
 
 				ts.mockSub.EXPECT().
-					RunInvSession(testCfg).
+					RunSession(testCfg).
 					Return(testSUUID, nil).
 					Times(1)
 
@@ -65,7 +65,7 @@ func Test_RunInvariantSession(t *testing.T) {
 
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testParams := defaultBody.Clone()
-				actualSUUID, err := ts.apiSvc.ProcessInvariantRequest(testParams)
+				actualSUUID, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
 
 				assert.NoError(t, err)
 				assert.Equal(t, testSUUID, actualSUUID)
@@ -85,7 +85,7 @@ func Test_RunInvariantSession(t *testing.T) {
 
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testParams := defaultBody.Clone()
-				actualSUUID, err := ts.apiSvc.ProcessInvariantRequest(testParams)
+				actualSUUID, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
 
 				assert.Error(t, err)
 				assert.Equal(t, core.NilSUUID(), actualSUUID)
@@ -111,14 +111,14 @@ func Test_RunInvariantSession(t *testing.T) {
 
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testParams := defaultBody.Clone()
-				actualSUUID, err := ts.apiSvc.ProcessInvariantRequest(testParams)
+				actualSUUID, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
 
 				assert.Error(t, err)
 				assert.Equal(t, core.NilSUUID(), actualSUUID)
 			},
 		},
 		{
-			name: "Failure when running invariant session",
+			name: "Failure when running heuristic session",
 			constructionLogic: func() *testSuite {
 				ts := createTestSuite(ctrl)
 
@@ -133,7 +133,7 @@ func Test_RunInvariantSession(t *testing.T) {
 					Times(1)
 
 				ts.mockSub.EXPECT().
-					RunInvSession(testCfg).
+					RunSession(testCfg).
 					Return(core.NilSUUID(), testErr()).
 					Times(1)
 
@@ -142,7 +142,7 @@ func Test_RunInvariantSession(t *testing.T) {
 
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testParams := defaultBody.Clone()
-				actualSUUID, err := ts.apiSvc.ProcessInvariantRequest(testParams)
+				actualSUUID, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
 
 				assert.Error(t, err)
 				assert.Equal(t, core.NilSUUID(), actualSUUID)

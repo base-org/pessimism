@@ -6,13 +6,13 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine"
-	"github.com/base-org/pessimism/internal/engine/invariant"
+	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSessionStore(t *testing.T) {
-	sUUID1 := core.MakeSUUID(core.Layer1, core.Live, core.InvariantType(0))
-	sUUID2 := core.MakeSUUID(core.Layer2, core.Live, core.InvariantType(0))
+	sUUID1 := core.MakeSUUID(core.Layer1, core.Live, core.HeuristicType(0))
+	sUUID2 := core.MakeSUUID(core.Layer2, core.Live, core.HeuristicType(0))
 	pUUID1 := core.NilPUUID()
 
 	var tests = []struct {
@@ -26,18 +26,18 @@ func TestSessionStore(t *testing.T) {
 			constructor: func() engine.SessionStore {
 				ss := engine.NewSessionStore()
 
-				inv := invariant.NewBaseInvariant(core.RegisterType(0))
-				inv.SetSUUID(sUUID1)
+				h := heuristic.NewBaseHeuristic(core.RegisterType(0))
+				h.SetSUUID(sUUID1)
 
-				_ = ss.AddInvSession(sUUID1, pUUID1, inv)
+				_ = ss.AddSession(sUUID1, pUUID1, h)
 
 				return ss
 			},
 			testFunc: func(t *testing.T, ss engine.SessionStore) {
-				// Ensure that the invariant is retrievable
-				inv, err := ss.GetInstanceByUUID(sUUID1)
+				// Ensure that the heuristic is retrievable
+				h, err := ss.GetInstanceByUUID(sUUID1)
 				assert.NoError(t, err)
-				assert.Equal(t, inv.SUUID(), sUUID1)
+				assert.Equal(t, h.SUUID(), sUUID1)
 
 				// Ensure that pipeline UUIDs are retrievable
 				sUUIDs, err := ss.GetSUUIDsByPUUID(pUUID1)
@@ -46,42 +46,42 @@ func TestSessionStore(t *testing.T) {
 			},
 		},
 		{
-			name: "Successful Retrieval with Multiple Invariants",
+			name: "Successful Retrieval with Multiple Heuristics",
 			constructor: func() engine.SessionStore {
 				ss := engine.NewSessionStore()
 
-				inv := invariant.NewBaseInvariant(core.RegisterType(0))
-				inv.SetSUUID(sUUID1)
+				h := heuristic.NewBaseHeuristic(core.RegisterType(0))
+				h.SetSUUID(sUUID1)
 
-				_ = ss.AddInvSession(sUUID1, pUUID1, inv)
+				_ = ss.AddSession(sUUID1, pUUID1, h)
 
-				inv2 := invariant.NewBaseInvariant(core.RegisterType(0))
-				inv2.SetSUUID(sUUID2)
+				h2 := heuristic.NewBaseHeuristic(core.RegisterType(0))
+				h2.SetSUUID(sUUID2)
 
-				_ = ss.AddInvSession(sUUID2, pUUID1, inv2)
+				_ = ss.AddSession(sUUID2, pUUID1, h2)
 
 				return ss
 			},
 			testFunc: func(t *testing.T, ss engine.SessionStore) {
-				// Ensure that the first inserted invariant is retrievable
-				inv, err := ss.GetInstanceByUUID(sUUID1)
+				// Ensure that the first inserted heuristic is retrievable
+				h, err := ss.GetInstanceByUUID(sUUID1)
 				assert.NoError(t, err)
-				assert.Equal(t, inv.SUUID(), sUUID1)
+				assert.Equal(t, h.SUUID(), sUUID1)
 
-				// Ensure that the second inserted invariant is retrievable
-				inv2, err := ss.GetInstanceByUUID(sUUID2)
+				// Ensure that the second inserted heuristic is retrievable
+				h2, err := ss.GetInstanceByUUID(sUUID2)
 				assert.NoError(t, err)
-				assert.Equal(t, inv2.SUUID(), sUUID2)
+				assert.Equal(t, h2.SUUID(), sUUID2)
 
 				// Ensure that pipeline UUIDs are retrievable
 				sUUIDs, err := ss.GetSUUIDsByPUUID(pUUID1)
 				assert.NoError(t, err)
 				assert.Equal(t, sUUIDs, []core.SUUID{sUUID1, sUUID2})
 
-				// Ensure that both invariants are retrievable at once
-				invs, err := ss.GetInstancesByUUIDs([]core.SUUID{sUUID1, sUUID2})
+				// Ensure that both heuristics are retrievable at once
+				hs, err := ss.GetInstancesByUUIDs([]core.SUUID{sUUID1, sUUID2})
 				assert.NoError(t, err)
-				assert.Equal(t, invs, []invariant.Invariant{inv, inv2})
+				assert.Equal(t, hs, []heuristic.Heuristic{h, h2})
 			},
 		},
 		{
@@ -89,17 +89,17 @@ func TestSessionStore(t *testing.T) {
 			constructor: func() engine.SessionStore {
 				ss := engine.NewSessionStore()
 
-				inv := invariant.NewBaseInvariant(core.RegisterType(0))
-				inv.SetSUUID(sUUID1)
+				h := heuristic.NewBaseHeuristic(core.RegisterType(0))
+				h.SetSUUID(sUUID1)
 
-				_ = ss.AddInvSession(sUUID1, pUUID1, inv)
+				_ = ss.AddSession(sUUID1, pUUID1, h)
 				return ss
 			},
 			testFunc: func(t *testing.T, ss engine.SessionStore) {
-				// Ensure that the invariant is retrievable
-				inv, err := ss.GetInstanceByUUID(sUUID1)
+				// Ensure that the heuristic is retrievable
+				h, err := ss.GetInstanceByUUID(sUUID1)
 				assert.NoError(t, err)
-				assert.Equal(t, inv.SUUID(), sUUID1)
+				assert.Equal(t, h.SUUID(), sUUID1)
 
 				// Ensure that pipeline UUIDs are retrievable
 				sUUIDs, err := ss.GetSUUIDsByPUUID(pUUID1)
@@ -112,14 +112,14 @@ func TestSessionStore(t *testing.T) {
 			constructor: func() engine.SessionStore {
 				ss := engine.NewSessionStore()
 
-				inv := invariant.NewBaseInvariant(core.RegisterType(0))
-				_ = ss.AddInvSession(sUUID1, pUUID1, inv)
+				h := heuristic.NewBaseHeuristic(core.RegisterType(0))
+				_ = ss.AddSession(sUUID1, pUUID1, h)
 
 				return ss
 			},
 			testFunc: func(t *testing.T, ss engine.SessionStore) {
-				inv, err := ss.GetInstanceByUUID(sUUID2)
-				assert.Nil(t, inv)
+				h, err := ss.GetInstanceByUUID(sUUID2)
+				assert.Nil(t, h)
 				assert.Error(t, err)
 			},
 		},
@@ -128,14 +128,14 @@ func TestSessionStore(t *testing.T) {
 			constructor: func() engine.SessionStore {
 				ss := engine.NewSessionStore()
 
-				inv := invariant.NewBaseInvariant(core.RegisterType(0))
-				_ = ss.AddInvSession(sUUID1, pUUID1, inv)
+				h := heuristic.NewBaseHeuristic(core.RegisterType(0))
+				_ = ss.AddSession(sUUID1, pUUID1, h)
 
 				return ss
 			},
 			testFunc: func(t *testing.T, ss engine.SessionStore) {
 				// Ensure that only one suuid can exist in the store
-				err := ss.AddInvSession(sUUID1, pUUID1, invariant.NewBaseInvariant(core.RegisterType(0)))
+				err := ss.AddSession(sUUID1, pUUID1, heuristic.NewBaseHeuristic(core.RegisterType(0)))
 				assert.Error(t, err)
 			},
 		},

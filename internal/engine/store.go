@@ -4,34 +4,34 @@ import (
 	"fmt"
 
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/engine/invariant"
+	"github.com/base-org/pessimism/internal/engine/heuristic"
 )
 
 // SessionStore ...
 type SessionStore interface {
-	AddInvSession(sUUID core.SUUID, pID core.PUUID, inv invariant.Invariant) error
-	GetInstanceByUUID(sUUID core.SUUID) (invariant.Invariant, error)
-	GetInstancesByUUIDs(sUUIDs []core.SUUID) ([]invariant.Invariant, error)
+	AddSession(sUUID core.SUUID, pID core.PUUID, h heuristic.Heuristic) error
+	GetInstanceByUUID(sUUID core.SUUID) (heuristic.Heuristic, error)
+	GetInstancesByUUIDs(sUUIDs []core.SUUID) ([]heuristic.Heuristic, error)
 	GetSUUIDsByPUUID(pUUID core.PUUID) ([]core.SUUID, error)
 }
 
 // sessionStore ...
 type sessionStore struct {
 	idMap       map[core.PUUID][]core.SUUID
-	instanceMap map[core.SUUID]invariant.Invariant // no duplicates
+	instanceMap map[core.SUUID]heuristic.Heuristic // no duplicates
 }
 
 // NewSessionStore ... Initializer
 func NewSessionStore() SessionStore {
 	return &sessionStore{
-		instanceMap: make(map[core.SUUID]invariant.Invariant),
+		instanceMap: make(map[core.SUUID]heuristic.Heuristic),
 		idMap:       make(map[core.PUUID][]core.SUUID),
 	}
 }
 
-// GetInstancesByUUIDs ... Fetches in-order all invariants associated with a set of session UUIDs
-func (ss *sessionStore) GetInstancesByUUIDs(sUUIDs []core.SUUID) ([]invariant.Invariant, error) {
-	invariants := make([]invariant.Invariant, len(sUUIDs))
+// GetInstancesByUUIDs ... Fetches in-order all heuristics associated with a set of session UUIDs
+func (ss *sessionStore) GetInstancesByUUIDs(sUUIDs []core.SUUID) ([]heuristic.Heuristic, error) {
+	heuristics := make([]heuristic.Heuristic, len(sUUIDs))
 
 	for i, uuid := range sUUIDs {
 		session, err := ss.GetInstanceByUUID(uuid)
@@ -39,46 +39,46 @@ func (ss *sessionStore) GetInstancesByUUIDs(sUUIDs []core.SUUID) ([]invariant.In
 			return nil, err
 		}
 
-		invariants[i] = session
+		heuristics[i] = session
 	}
 
-	return invariants, nil
+	return heuristics, nil
 }
 
-// GetInstanceByUUID .... Fetches invariant session by SUUID
-func (ss *sessionStore) GetInstanceByUUID(sUUID core.SUUID) (invariant.Invariant, error) {
+// GetInstanceByUUID .... Fetches heuristic session by SUUID
+func (ss *sessionStore) GetInstanceByUUID(sUUID core.SUUID) (heuristic.Heuristic, error) {
 	if entry, found := ss.instanceMap[sUUID]; found {
 		return entry, nil
 	}
-	return nil, fmt.Errorf("invariant UUID doesn't exists in store inv mapping")
+	return nil, fmt.Errorf("heuristic UUID doesn't exists in store heuristic mapping")
 }
 
-// GetSUUIDsByPUUID ... Returns all invariant session ids associated with pipeline
+// GetSUUIDsByPUUID ... Returns all heuristic session ids associated with pipeline
 func (ss *sessionStore) GetSUUIDsByPUUID(pUUID core.PUUID) ([]core.SUUID, error) {
 	if sessionIDs, found := ss.idMap[pUUID]; found {
 		return sessionIDs, nil
 	}
-	return nil, fmt.Errorf("pipeline UUID doesn't exists in store inv mapping")
+	return nil, fmt.Errorf("pipeline UUID doesn't exists in store heuristic mapping")
 }
 
-// AddInvSession ... Adds an invariant session to the store
-func (ss *sessionStore) AddInvSession(sUUID core.SUUID,
-	pUUID core.PUUID, inv invariant.Invariant) error {
+// AddSession ... Adds an heuristic session to the store
+func (ss *sessionStore) AddSession(sUUID core.SUUID,
+	pUUID core.PUUID, h heuristic.Heuristic) error {
 	if _, found := ss.instanceMap[sUUID]; found {
-		return fmt.Errorf("invariant UUID already exists in store pid mapping")
+		return fmt.Errorf("heuristic UUID already exists in store pid mapping")
 	}
 
 	if _, found := ss.idMap[pUUID]; !found {
 		ss.idMap[pUUID] = make([]core.SUUID, 0)
 	}
 
-	ss.instanceMap[sUUID] = inv
+	ss.instanceMap[sUUID] = h
 	ss.idMap[pUUID] = append(ss.idMap[pUUID], sUUID)
 	return nil
 }
 
-// RemoveInvSession ... Removes an existing invariant session from the store
+// RemoveInvSession ... Removes an existing heuristic session from the store
 func (ss *sessionStore) RemoveInvSession(_ core.SUUID,
-	_ core.PUUID, _ invariant.Invariant) error {
+	_ core.PUUID, _ heuristic.Heuristic) error {
 	return nil
 }

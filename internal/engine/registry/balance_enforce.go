@@ -6,28 +6,28 @@ import (
 	"time"
 
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/engine/invariant"
+	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/logging"
 	"go.uber.org/zap"
 )
 
-// BalanceInvConfig ... Configuration for the balance invariant
+// BalanceInvConfig ... Configuration for the balance heuristic
 type BalanceInvConfig struct {
 	Address    string   `json:"address"`
 	UpperBound *float64 `json:"upper"`
 	LowerBound *float64 `json:"lower"`
 }
 
-// Unmarshal ... Converts a general config to a balance invariant config
-func (bi *BalanceInvConfig) Unmarshal(isp *core.InvSessionParams) error {
+// Unmarshal ... Converts a general config to a balance heuristic config
+func (bi *BalanceInvConfig) Unmarshal(isp *core.SessionParams) error {
 	return json.Unmarshal(isp.Bytes(), &bi)
 }
 
-// BalanceInvariant ...
-type BalanceInvariant struct {
+// BalanceHeuristic ...
+type BalanceHeuristic struct {
 	cfg *BalanceInvConfig
 
-	invariant.Invariant
+	heuristic.Heuristic
 }
 
 // reportMsg ... Message to be sent to the alerting subsystem
@@ -40,18 +40,18 @@ const reportMsg = `
 	Session Address: %s 
 `
 
-// NewBalanceInvariant ... Initializer
-func NewBalanceInvariant(cfg *BalanceInvConfig) (invariant.Invariant, error) {
-	return &BalanceInvariant{
+// NewBalanceHeuristic ... Initializer
+func NewBalanceHeuristic(cfg *BalanceInvConfig) (heuristic.Heuristic, error) {
+	return &BalanceHeuristic{
 		cfg:       cfg,
-		Invariant: invariant.NewBaseInvariant(core.AccountBalance),
+		Heuristic: heuristic.NewBaseHeuristic(core.AccountBalance),
 	}, nil
 }
 
-// Invalidate ... Checks if the balance is within the bounds
+// Assess ... Checks if the balance is within the bounds
 // specified in the config
-func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.Invalidation, bool, error) {
-	logging.NoContext().Debug("Checking invalidation for balance invariant", zap.String("data", fmt.Sprintf("%v", td)))
+func (bi *BalanceHeuristic) Assess(td core.TransitData) (*core.Activation, bool, error) {
+	logging.NoContext().Debug("Checking activation for balance heuristic", zap.String("data", fmt.Sprintf("%v", td)))
 
 	// 1. Validate and extract balance input
 	err := bi.ValidateInput(td)
@@ -64,22 +64,22 @@ func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.Invalidation,
 		return nil, false, fmt.Errorf(couldNotCastErr, "float64")
 	}
 
-	invalidated := false
+	activated := false
 
-	// 2. Invalidate if balance > upper bound
+	// 2. Assess if balance > upper bound
 	if bi.cfg.UpperBound != nil &&
 		*bi.cfg.UpperBound < balance {
-		invalidated = true
+		activated = true
 	}
 
-	// 3. Invalidate if balance < lower bound
+	// 3. Assess if balance < lower bound
 	if bi.cfg.LowerBound != nil &&
 		*bi.cfg.LowerBound > balance {
-		invalidated = true
+		activated = true
 	}
 
-	/// 4. Generate invalidation outcome if invalidated
-	if invalidated {
+	/// 4. Generate activation outcome if activated
+	if activated {
 		var upper, lower string
 
 		if bi.cfg.UpperBound != nil {
@@ -94,7 +94,7 @@ func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.Invalidation,
 			lower = "-∞"
 		}
 
-		return &core.Invalidation{
+		return &core.Activation{
 			TimeStamp: time.Now(),
 			Message: fmt.Sprintf(reportMsg, balance,
 				upper, lower,
@@ -102,6 +102,6 @@ func (bi *BalanceInvariant) Invalidate(td core.TransitData) (*core.Invalidation,
 		}, true, nil
 	}
 
-	// No invalidation
+	// No activation
 	return nil, false, nil
 }

@@ -83,18 +83,18 @@ const (
 	EthClientTimeout Timeouts = 20 // in seconds
 )
 
-// InvariantType ... Represents the type of invariant
-type InvariantType uint8
+// HeuristicType ... Represents the type of heuristic
+type HeuristicType uint8
 
 const (
-	BalanceEnforcement InvariantType = iota + 1
+	BalanceEnforcement HeuristicType = iota + 1
 	ContractEvent
 	WithdrawalEnforcement
 	FaultDetector
 )
 
-// String ... Converts an invariant type to a string
-func (it InvariantType) String() string {
+// String ... Converts an heuristic type to a string
+func (it HeuristicType) String() string {
 	switch it {
 	case BalanceEnforcement:
 		return "balance_enforcement"
@@ -113,8 +113,8 @@ func (it InvariantType) String() string {
 	}
 }
 
-// StringToInvariantType ... Converts a string to an invariant type
-func StringToInvariantType(stringType string) InvariantType {
+// StringToHeuristicType ... Converts a string to an heuristic type
+func StringToHeuristicType(stringType string) HeuristicType {
 	switch stringType {
 	case "balance_enforcement":
 		return BalanceEnforcement
@@ -129,7 +129,7 @@ func StringToInvariantType(stringType string) InvariantType {
 		return FaultDetector
 
 	default:
-		return InvariantType(0)
+		return HeuristicType(0)
 	}
 }
 

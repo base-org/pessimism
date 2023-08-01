@@ -10,7 +10,7 @@ import (
 
 	models "github.com/base-org/pessimism/internal/api/models"
 	core "github.com/base-org/pessimism/internal/core"
-	invariant "github.com/base-org/pessimism/internal/engine/invariant"
+	heuristic "github.com/base-org/pessimism/internal/engine/heuristic"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -38,10 +38,10 @@ func (m *SubManager) EXPECT() *SubManagerMockRecorder {
 }
 
 // BuildDeployCfg mocks base method.
-func (m *SubManager) BuildDeployCfg(arg0 *core.PipelineConfig, arg1 *core.SessionConfig) (*invariant.DeployConfig, error) {
+func (m *SubManager) BuildDeployCfg(arg0 *core.PipelineConfig, arg1 *core.SessionConfig) (*heuristic.DeployConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BuildDeployCfg", arg0, arg1)
-	ret0, _ := ret[0].(*invariant.DeployConfig)
+	ret0, _ := ret[0].(*heuristic.DeployConfig)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -53,7 +53,7 @@ func (mr *SubManagerMockRecorder) BuildDeployCfg(arg0, arg1 interface{}) *gomock
 }
 
 // BuildPipelineCfg mocks base method.
-func (m *SubManager) BuildPipelineCfg(arg0 *models.InvRequestParams) (*core.PipelineConfig, error) {
+func (m *SubManager) BuildPipelineCfg(arg0 *models.SessionRequestParams) (*core.PipelineConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BuildPipelineCfg", arg0)
 	ret0, _ := ret[0].(*core.PipelineConfig)
@@ -67,19 +67,19 @@ func (mr *SubManagerMockRecorder) BuildPipelineCfg(arg0 interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildPipelineCfg", reflect.TypeOf((*SubManager)(nil).BuildPipelineCfg), arg0)
 }
 
-// RunInvSession mocks base method.
-func (m *SubManager) RunInvSession(arg0 *invariant.DeployConfig) (core.SUUID, error) {
+// RunSession mocks base method.
+func (m *SubManager) RunSession(arg0 *heuristic.DeployConfig) (core.SUUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RunInvSession", arg0)
+	ret := m.ctrl.Call(m, "RunSession", arg0)
 	ret0, _ := ret[0].(core.SUUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// RunInvSession indicates an expected call of RunInvSession.
-func (mr *SubManagerMockRecorder) RunInvSession(arg0 interface{}) *gomock.Call {
+// RunSession indicates an expected call of RunSession.
+func (mr *SubManagerMockRecorder) RunSession(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunInvSession", reflect.TypeOf((*SubManager)(nil).RunInvSession), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunSession", reflect.TypeOf((*SubManager)(nil).RunSession), arg0)
 }
 
 // Shutdown mocks base method.

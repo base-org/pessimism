@@ -23,7 +23,7 @@ func InsertUnique(ctx context.Context, sk *core.StateKey, value string) error {
 	}
 
 	if err != nil {
-		logging.WithContext(ctx).Warn("Invariant session already exists in state store")
+		logging.WithContext(ctx).Warn("Heuristic session already exists in state store")
 	}
 	return nil
 }

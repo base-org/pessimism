@@ -8,19 +8,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_InvRequestParams(t *testing.T) {
+func Test_SessionRequestParams(t *testing.T) {
 
-	// Use a single instance of InvRequestParams for tests
-	irp := &models.InvRequestParams{
+	// Use a single instance of SessionRequestParams for tests
+	irp := &models.SessionRequestParams{
 		SessionParams: map[string]interface{}{
 			"test": "test",
 		},
-		Network: core.Layer1.String(),
-		PType:   core.Live.String(),
-		InvType: core.BalanceEnforcement.String(),
+		Network:       core.Layer1.String(),
+		PType:         core.Live.String(),
+		HeuristicType: core.BalanceEnforcement.String(),
 	}
 
-	// Ensure that the invariant request params are set correctly
+	// Ensure that the heuristic request params are set correctly
 	params := irp.Params()
 	v, err := params.Value("test")
 	assert.NoError(t, err)
@@ -34,8 +34,8 @@ func Test_InvRequestParams(t *testing.T) {
 	pt := irp.PipelineType()
 	assert.Equal(t, pt, core.Live)
 
-	// Ensure that invariant type is set correctly
-	it := irp.InvariantType()
+	// Ensure that heuristic type is set correctly
+	it := irp.Heuristic()
 	assert.Equal(t, it, core.BalanceEnforcement)
 
 	// Ensure that the pipeline config is set correctly
@@ -49,10 +49,10 @@ func Test_InvRequestParams(t *testing.T) {
 	assert.Equal(t, sConfig.Params, params)
 }
 
-func Test_InvariantRequestBody(t *testing.T) {
-	irb := &models.InvRequestBody{
+func Test_HeuristicRequestBody(t *testing.T) {
+	irb := &models.SessionRequestBody{
 		Method: "test",
-		Params: models.InvRequestParams{},
+		Params: models.SessionRequestParams{},
 	}
 
 	// Ensure clone works
@@ -61,5 +61,5 @@ func Test_InvariantRequestBody(t *testing.T) {
 	assert.Equal(t, clone.Params, irb.Params)
 
 	// Ensure that method type works
-	assert.Equal(t, irb.MethodType(), models.InvariantMethod(0))
+	assert.Equal(t, irb.MethodType(), models.HeuristicMethod(0))
 }

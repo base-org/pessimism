@@ -19,8 +19,8 @@ type SessionConfig struct {
 	Network   Network
 	PT        PipelineType
 	AlertDest AlertDestination
-	Type      InvariantType
-	Params    *InvSessionParams
+	Type      HeuristicType
+	Params    *SessionParams
 }
 
 // PipelineConfig ... Configuration passed through to a pipeline constructor

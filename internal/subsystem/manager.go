@@ -12,7 +12,7 @@ import (
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine"
-	"github.com/base-org/pessimism/internal/engine/invariant"
+	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/etl/pipeline"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
@@ -42,9 +42,9 @@ func (cfg *Config) GetPollInterval(n core.Network) (time.Duration, error) {
 
 // Manager ... Subsystem manager interface
 type Manager interface {
-	BuildDeployCfg(pConfig *core.PipelineConfig, sConfig *core.SessionConfig) (*invariant.DeployConfig, error)
-	BuildPipelineCfg(params *models.InvRequestParams) (*core.PipelineConfig, error)
-	RunInvSession(cfg *invariant.DeployConfig) (core.SUUID, error)
+	BuildDeployCfg(pConfig *core.PipelineConfig, sConfig *core.SessionConfig) (*heuristic.DeployConfig, error)
+	BuildPipelineCfg(params *models.SessionRequestParams) (*core.PipelineConfig, error)
+	RunSession(cfg *heuristic.DeployConfig) (core.SUUID, error)
 	// Orchestration
 	StartEventRoutines(ctx context.Context)
 	Shutdown() error
@@ -128,7 +128,7 @@ func (m *manager) StartEventRoutines(ctx context.Context) {
 
 // BuildDeployCfg ... Builds a deploy config provided a pipeline & session config
 func (m *manager) BuildDeployCfg(pConfig *core.PipelineConfig,
-	sConfig *core.SessionConfig) (*invariant.DeployConfig, error) {
+	sConfig *core.SessionConfig) (*heuristic.DeployConfig, error) {
 	// 1. Fetch state key using risk engine input register type
 	sk, stateful, err := m.etl.GetStateKey(pConfig.DataType)
 	if err != nil {
@@ -145,33 +145,33 @@ func (m *manager) BuildDeployCfg(pConfig *core.PipelineConfig,
 		Info("Created etl pipeline", zap.String(logging.PUUIDKey, pUUID.String()))
 
 	// 3. Create a deploy config
-	return &invariant.DeployConfig{
-		PUUID:     pUUID,
-		Reuse:     reuse,
-		InvType:   sConfig.Type,
-		InvParams: sConfig.Params,
-		Network:   pConfig.Network,
-		Stateful:  stateful,
-		StateKey:  sk,
-		AlertDest: sConfig.AlertDest,
+	return &heuristic.DeployConfig{
+		PUUID:         pUUID,
+		Reuse:         reuse,
+		HeuristicType: sConfig.Type,
+		Params:        sConfig.Params,
+		Network:       pConfig.Network,
+		Stateful:      stateful,
+		StateKey:      sk,
+		AlertDest:     sConfig.AlertDest,
 	}, nil
 }
 
-// RunInvSession ... Runs an invariant session
-func (m *manager) RunInvSession(cfg *invariant.DeployConfig) (core.SUUID, error) {
+// RunSession ... Runs an heuristic session
+func (m *manager) RunSession(cfg *heuristic.DeployConfig) (core.SUUID, error) {
 	// 1. Verify that pipeline constraints are met
 	// NOTE - Consider introducing a config validation step or module
 	if !cfg.Reuse && m.etlLimitReached() {
 		return core.NilSUUID(), fmt.Errorf(maxPipelineErr, m.cfg.MaxPipelineCount)
 	}
 
-	// 2. Deploy invariant session to risk engine
-	sUUID, err := m.eng.DeployInvariantSession(cfg)
+	// 2. Deploy heuristic session to risk engine
+	sUUID, err := m.eng.DeployHeuristicSession(cfg)
 	if err != nil {
 		return core.NilSUUID(), err
 	}
 	logging.WithContext(m.ctx).
-		Info("Deployed invariant session to risk engine", zap.String(logging.SUUIDKey, sUUID.String()))
+		Info("Deployed heuristic session to risk engine", zap.String(logging.SUUIDKey, sUUID.String()))
 
 	// 3. Add session to alert manager
 	err = m.alert.AddSession(sUUID, cfg.AlertDest)
@@ -191,9 +191,9 @@ func (m *manager) RunInvSession(cfg *invariant.DeployConfig) (core.SUUID, error)
 	return sUUID, nil
 }
 
-// BuildPipelineCfg ... Builds a pipeline config provided a set of invariant request params
-func (m *manager) BuildPipelineCfg(params *models.InvRequestParams) (*core.PipelineConfig, error) {
-	inType, err := m.eng.GetInputType(params.InvariantType())
+// BuildPipelineCfg ... Builds a pipeline config provided a set of heuristic request params
+func (m *manager) BuildPipelineCfg(params *models.SessionRequestParams) (*core.PipelineConfig, error) {
+	inType, err := m.eng.GetInputType(params.Heuristic())
 	if err != nil {
 		return nil, err
 	}

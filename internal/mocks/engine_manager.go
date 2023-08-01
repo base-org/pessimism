@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	core "github.com/base-org/pessimism/internal/core"
-	invariant "github.com/base-org/pessimism/internal/engine/invariant"
+	heuristic "github.com/base-org/pessimism/internal/engine/heuristic"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -35,34 +35,34 @@ func (m *EngineManager) EXPECT() *EngineManagerMockRecorder {
 	return m.recorder
 }
 
-// DeleteInvariantSession mocks base method.
-func (m *EngineManager) DeleteInvariantSession(arg0 core.SUUID) (core.SUUID, error) {
+// DeleteHeuristicSession mocks base method.
+func (m *EngineManager) DeleteHeuristicSession(arg0 core.SUUID) (core.SUUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteInvariantSession", arg0)
+	ret := m.ctrl.Call(m, "DeleteHeuristicSession", arg0)
 	ret0, _ := ret[0].(core.SUUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// DeleteInvariantSession indicates an expected call of DeleteInvariantSession.
-func (mr *EngineManagerMockRecorder) DeleteInvariantSession(arg0 interface{}) *gomock.Call {
+// DeleteHeuristicSession indicates an expected call of DeleteHeuristicSession.
+func (mr *EngineManagerMockRecorder) DeleteHeuristicSession(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteInvariantSession", reflect.TypeOf((*EngineManager)(nil).DeleteInvariantSession), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteHeuristicSession", reflect.TypeOf((*EngineManager)(nil).DeleteHeuristicSession), arg0)
 }
 
-// DeployInvariantSession mocks base method.
-func (m *EngineManager) DeployInvariantSession(arg0 *invariant.DeployConfig) (core.SUUID, error) {
+// DeployHeuristicSession mocks base method.
+func (m *EngineManager) DeployHeuristicSession(arg0 *heuristic.DeployConfig) (core.SUUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeployInvariantSession", arg0)
+	ret := m.ctrl.Call(m, "DeployHeuristicSession", arg0)
 	ret0, _ := ret[0].(core.SUUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// DeployInvariantSession indicates an expected call of DeployInvariantSession.
-func (mr *EngineManagerMockRecorder) DeployInvariantSession(arg0 interface{}) *gomock.Call {
+// DeployHeuristicSession indicates an expected call of DeployHeuristicSession.
+func (mr *EngineManagerMockRecorder) DeployHeuristicSession(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployInvariantSession", reflect.TypeOf((*EngineManager)(nil).DeployInvariantSession), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployHeuristicSession", reflect.TypeOf((*EngineManager)(nil).DeployHeuristicSession), arg0)
 }
 
 // EventLoop mocks base method.
@@ -80,7 +80,7 @@ func (mr *EngineManagerMockRecorder) EventLoop() *gomock.Call {
 }
 
 // GetInputType mocks base method.
-func (m *EngineManager) GetInputType(arg0 core.InvariantType) (core.RegisterType, error) {
+func (m *EngineManager) GetInputType(arg0 core.HeuristicType) (core.RegisterType, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetInputType", arg0)
 	ret0, _ := ret[0].(core.RegisterType)
@@ -109,10 +109,10 @@ func (mr *EngineManagerMockRecorder) Shutdown() *gomock.Call {
 }
 
 // Transit mocks base method.
-func (m *EngineManager) Transit() chan core.InvariantInput {
+func (m *EngineManager) Transit() chan core.HeuristicInput {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Transit")
-	ret0, _ := ret[0].(chan core.InvariantInput)
+	ret0, _ := ret[0].(chan core.HeuristicInput)
 	return ret0
 }
 

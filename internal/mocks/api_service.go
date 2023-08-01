@@ -63,32 +63,32 @@ func (mr *MockServiceMockRecorder) CheckHealth() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckHealth", reflect.TypeOf((*MockService)(nil).CheckHealth))
 }
 
-// ProcessInvariantRequest mocks base method.
-func (m *MockService) ProcessInvariantRequest(arg0 *models.InvRequestBody) (core.SUUID, error) {
+// ProcessHeuristicRequest mocks base method.
+func (m *MockService) ProcessHeuristicRequest(arg0 *models.SessionRequestBody) (core.SUUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ProcessInvariantRequest", arg0)
+	ret := m.ctrl.Call(m, "ProcessHeuristicRequest", arg0)
 	ret0, _ := ret[0].(core.SUUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ProcessInvariantRequest indicates an expected call of ProcessInvariantRequest.
-func (mr *MockServiceMockRecorder) ProcessInvariantRequest(arg0 interface{}) *gomock.Call {
+// ProcessHeuristicRequest indicates an expected call of ProcessHeuristicRequest.
+func (mr *MockServiceMockRecorder) ProcessHeuristicRequest(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessInvariantRequest", reflect.TypeOf((*MockService)(nil).ProcessInvariantRequest), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessHeuristicRequest", reflect.TypeOf((*MockService)(nil).ProcessHeuristicRequest), arg0)
 }
 
-// RunInvariantSession mocks base method.
-func (m *MockService) RunInvariantSession(arg0 *models.InvRequestParams) (core.SUUID, error) {
+// RunHeuristicSession mocks base method.
+func (m *MockService) RunHeuristicSession(arg0 *models.SessionRequestParams) (core.SUUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RunInvariantSession", arg0)
+	ret := m.ctrl.Call(m, "RunHeuristicSession", arg0)
 	ret0, _ := ret[0].(core.SUUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// RunInvariantSession indicates an expected call of RunInvariantSession.
-func (mr *MockServiceMockRecorder) RunInvariantSession(arg0 interface{}) *gomock.Call {
+// RunHeuristicSession indicates an expected call of RunHeuristicSession.
+func (mr *MockServiceMockRecorder) RunHeuristicSession(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunInvariantSession", reflect.TypeOf((*MockService)(nil).RunInvariantSession), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunHeuristicSession", reflect.TypeOf((*MockService)(nil).RunHeuristicSession), arg0)
 }

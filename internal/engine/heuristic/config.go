@@ -1,8 +1,8 @@
-package invariant
+package heuristic
 
 import "github.com/base-org/pessimism/internal/core"
 
-// DeployConfig ... Configuration for deploying an invariant session
+// DeployConfig ... Configuration for deploying an heuristic session
 type DeployConfig struct {
 	Stateful bool
 	StateKey *core.StateKey
@@ -11,8 +11,8 @@ type DeployConfig struct {
 	PUUID   core.PUUID
 	Reuse   bool
 
-	InvType   core.InvariantType
-	InvParams *core.InvSessionParams
+	HeuristicType core.HeuristicType
+	Params        *core.SessionParams
 
 	AlertDest core.AlertDestination
 }

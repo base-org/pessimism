@@ -22,7 +22,7 @@ func Test_GetHealth(t *testing.T) {
 		{
 			name:        "Get Health Success",
 			description: "",
-			function:    "ProcessInvariantRequest",
+			function:    "ProcessHeuristicRequest",
 
 			constructionLogic: func() *testSuite {
 				ts := createTestSuite(ctrl)
@@ -47,7 +47,7 @@ func Test_GetHealth(t *testing.T) {
 		{
 			name:        "Get Unhealthy Response",
 			description: "Emulates unhealthy rpc endpoints",
-			function:    "ProcessInvariantRequest",
+			function:    "ProcessHeuristicRequest",
 
 			constructionLogic: func() *testSuite {
 				ts := createTestSuite(ctrl)
