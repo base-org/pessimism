@@ -1,7 +1,7 @@
 # pessimism
 __Because you can't always be optimistic__
 
-_Pessimism_ is a public good monitoring service that allows for [OP Stack](https://stack.optimism.io/) and EVM compatible blockchains to be continuously assessed for real-time threats using custom defined user invariant rule sets. To learn about Pessimism's architecture, please advise the documentation. 
+_Pessimism_ is a public good monitoring service that allows for [OP Stack](https://stack.optimism.io/) and EVM compatible blockchains to be continuously assessed for real-time threats using custom defined user heuristic rule sets. To learn about Pessimism's architecture, please advise the documentation. 
 
 <!-- Badge row 1 - status -->
 
@@ -53,7 +53,7 @@ To use the template, run the following command(s):
    docker run -p 8080:8080 -p 7300:7300 --env-file=config.env -it -v ${PWD}/genesis.json:/app/genesis.json ghcr.io/base-org/pessimism:latest
    ```
 
-**Note**: If you want to bootstrap the application and run specific invariants/pipelines upon start, update config.env `BOOTSTRAP_PATH` value to the location of your genesis.json file then run
+**Note**: If you want to bootstrap the application and run specific heuristics/pipelines upon start, update config.env `BOOTSTRAP_PATH` value to the location of your genesis.json file then run
 
 ### Building and Running New Images
 - Run `make docker-build` at the root of the repository to build a new docker image.

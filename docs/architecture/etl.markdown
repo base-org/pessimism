@@ -9,7 +9,7 @@ permalink: /architecture/etl
 {% endraw %}
 
 
-The Pessimism ETL is a generalized abstraction for a DAG-based component system that continuously transforms chain data into inputs for consumption by a Risk Engine in the form of intertwined data “pipelines”. This DAG based representation of ETL operations is done to ensure that the application can optimally scale to support many active invariants. This design allows for the reuse of modularized ETL components and de-duplication of conflicting pipelines under certain key logical circumstances. 
+The Pessimism ETL is a generalized abstraction for a DAG-based component system that continuously transforms chain data into inputs for consumption by a Risk Engine in the form of intertwined data “pipelines”. This DAG based representation of ETL operations is done to ensure that the application can optimally scale to support many active heuristics. This design allows for the reuse of modularized ETL components and de-duplication of conflicting pipelines under certain key logical circumstances. 
 
 ## Component
 A component refers to a graph node within the ETL system. Every component performs some operation for transforming data from any data source into a consumable input for the Risk Engine to ingest. 
@@ -81,7 +81,7 @@ Once input data processing has been completed, the output data is then submitted
 * An `ActivityState` channel with a pipeline manager
 * Ingress handler that other components can write to
 * `TransformFunc` - A processing function that performs some data translation/transformation on respective inputs
-* An `egressHandler` that stores dependencies to write to (i.e. Other pipeline components, invariant engine)
+* An `egressHandler` that stores dependencies to write to (i.e. Other pipeline components, heuristic engine)
 * A specified output data type
 
 #### Example Use Case(s)
@@ -111,7 +111,7 @@ graph LR;
 #### Attributes
 * A communication channel with the pipeline manager
 * Poller/subscription logic that performs real-time data reads on some third-party source
-* An `egressHandler` that stores dependencies to write to (i.e. Other pipeline components, invariant engine)
+* An `egressHandler` that stores dependencies to write to (i.e. Other pipeline components, heuristic engine)
 * A specified output data type
 
 * _(Optional)_ Interface with some storage (postgres, mongo, etc.) to persist lively extracted data
@@ -125,7 +125,7 @@ graph LR;
 
 ### (TBD) Aggregator
 **NOTE - This component type is still in-development**
-Aggregators are used to solve the problem where a pipe or an invariant input will require multiple sources of data to perform an execution sequence. Since aggregators are subscribing to more than one data stream with different output frequencies, they must employ a synchronization policy for collecting and propagating multi-data inputs within a highly asynchronous environment.
+Aggregators are used to solve the problem where a pipe or an heuristic input will require multiple sources of data to perform an execution sequence. Since aggregators are subscribing to more than one data stream with different output frequencies, they must employ a synchronization policy for collecting and propagating multi-data inputs within a highly asynchronous environment.
 
 #### Attributes
 * Able to read heterogenous transit data from an arbitrary number of component ingresses
@@ -137,9 +137,9 @@ _Only send output at the update of a single ingress stream_
 
 Single Value Subscription refers to a synchronization policy where a bucketed multi-data tuple is submitted every time there’s an update to a single input data queue.
 
-For example we can have an invariant that subscribes to blocks from two heterogenous chains (layer1, layer2) or `{ChainA, ChainB}`, let's assume `BLOCK_TIME(ChainA) > BLOCK_TIME(ChainB)`.
+For example we can have an heuristic that subscribes to blocks from two heterogenous chains (layer1, layer2) or `{ChainA, ChainB}`, let's assume `BLOCK_TIME(ChainA) > BLOCK_TIME(ChainB)`.
 
-We can either specify that the invariant will run every time there's an update or a new block from `ChainA`:
+We can either specify that the heuristic will run every time there's an update or a new block from `ChainA`:
 ```
 {
    "A:latest_blocks": [xi] where cardinality = 1,
@@ -207,7 +207,7 @@ A `GethBlock` register refers to a block output extracted from a go-ethereum nod
 
 ### Geth Account Balance Oracle Register
 An `AccountBalance` register refers to a native ETH balance output extracted from a go-ethereum node. This register is used for creating `Oracle` components that poll and extract native ETH balance data for some state persisted addresses from a go-ethereum node in real-time.
-Unlike, the `GethBlock` register, this register requires knowledge of an address set that's shared with the risk engine to properly function and is therefore addressable. Because of this, any invariant that uses this register must also be addressable.
+Unlike, the `GethBlock` register, this register requires knowledge of an address set that's shared with the risk engine to properly function and is therefore addressable. Because of this, any heuristic that uses this register must also be addressable.
 
 ## Managed ETL
 
@@ -241,7 +241,7 @@ graph TB;
 
 
 ### Pipeline
-Pipelines are used to represent some full component path in a DAG based `ComponentGraph`. A pipeline is a sequence of components that are connected together in a way to express meaningful ETL operations for extracting some invariant input for consumption by the Risk Engine.
+Pipelines are used to represent some full component path in a DAG based `ComponentGraph`. A pipeline is a sequence of components that are connected together in a way to express meaningful ETL operations for extracting some heuristic input for consumption by the Risk Engine.
 
 ### Pipeline States
 - `Backfill` - Backfill denotes that the pipeline is currently performing a backfill operation. This means the pipeline is sequentially reading data from some starting height to the most recent block height. This is useful for building state dependent pipelines that require some knowledge of prior history to make live assessments. For example, detecting imbalances between the native ETH deposit supply on the L1 portal contract and the TVL unlocked on the L2 chain would require indexing the prior history of L1 deposits to construct correct supply values. 
@@ -258,12 +258,12 @@ A live pipeline is a pipeline that is actively running and performing ETL operat
 
 
 **Backtest**
-A backtest pipeline is a pipeline that is used to sequentially backtest some component sequence from some starting to ending block height. For example, a backtest pipeline could be used to backtest a _balance_enforcement_ invariant between L1 block heights `0` to `1000`. 
+A backtest pipeline is a pipeline that is used to sequentially backtest some component sequence from some starting to ending block height. For example, a backtest pipeline could be used to backtest a _balance_enforcement_ heuristic between L1 block heights `0` to `1000`. 
 
 
 ### Pipeline UUID (PUUID)
 All pipelines have a PUUID that stores critical identification data. Pipeline UUIDs are used by higher order abstractions to:
-* Route invariant inputs between the ETL and Risk Engine
+* Route heuristic inputs between the ETL and Risk Engine
 * Understand when pipeline collisions between `PIDs` occur
 
 Pipeline UUID's constitute of both a randomly generated `UUID` and a deterministic `PID`. This is done to ensure uniqueness of each component instance while also ensuring collision based properties so that overlapping components can be deduplicated when viable. 

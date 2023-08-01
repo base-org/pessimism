@@ -6,12 +6,12 @@ Detect real-time threats on Op-stack compatible chains
 
 ## Contents
 - [Architecture](../pessimism/architecture)
-  - [JSON-RPC API](../pessimism/api)
+  - [REST API](../pessimism/api)
   - [ETL Subsystem](../pessimism/architecture/etl)
   - [Engine Subsystem](../pessimism/architecture/risk-engine)
   - [Alerting Subsystem](../pessimism/architecture/alerting)
 - [API Swaggerdoc](swaggerdoc.html)
-- [Invariant Documentation](../pessimism/invariants)
+- [Heuristic Documentation](../pessimism/heuristics)
 - [Telemetry Documentation](../pessimism/telemetry)
 
 ## Github Pages
