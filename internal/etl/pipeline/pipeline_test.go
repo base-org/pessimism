@@ -73,7 +73,7 @@ func Test_Pipeline(t *testing.T) {
 			},
 			testLogic: func(t *testing.T, pl pipeline.Pipeline) {
 
-				relay := make(chan core.InvariantInput)
+				relay := make(chan core.HeuristicInput)
 				err := pl.AddEngineRelay(relay)
 				assert.NoError(t, err)
 			},

@@ -79,7 +79,7 @@ func InitializeAlerting(ctx context.Context, cfg *config.Config) alert.Manager {
 }
 
 // InitializeETL ... Performs dependency injection to build etl struct
-func InitializeETL(ctx context.Context, transit chan core.InvariantInput) pipeline.Manager {
+func InitializeETL(ctx context.Context, transit chan core.HeuristicInput) pipeline.Manager {
 	compRegistry := registry.NewRegistry()
 	analyzer := pipeline.NewAnalyzer(compRegistry)
 	store := pipeline.NewEtlStore()
@@ -93,7 +93,7 @@ func InitializeEngine(ctx context.Context, transit chan core.Alert) engine.Manag
 	store := engine.NewSessionStore()
 	am := engine.NewAddressingMap()
 	re := engine.NewHardCodedEngine()
-	it := e_registry.NewInvariantTable()
+	it := e_registry.NewHeuristicTable()
 
 	return engine.NewManager(ctx, re, am, store, it, transit)
 }

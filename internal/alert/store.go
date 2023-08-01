@@ -6,7 +6,7 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
-// TODO(#81): No Support for Multiple Alerting Destinations for an Invariant Session
+// TODO(#81): No Support for Multiple Alerting Destinations for an Heuristic Session
 
 // Store ... Interface for alert store
 // NOTE - This is a simple in-memory store, using this interface
@@ -28,23 +28,23 @@ func NewStore() Store {
 	}
 }
 
-// AddAlertDestination ... Adds an alert destination for the given invariant session UUID
-// NOTE - There can only be one alert destination per invariant session UUID
+// AddAlertDestination ... Adds an alert destination for the given heuristic session UUID
+// NOTE - There can only be one alert destination per heuristic session UUID
 func (am *store) AddAlertDestination(sUUID core.SUUID,
 	alertDestination core.AlertDestination) error {
 	if _, exists := am.alertMap[sUUID]; exists {
-		return fmt.Errorf("alert destination already exists for invariant session %s", sUUID.String())
+		return fmt.Errorf("alert destination already exists for heuristic session %s", sUUID.String())
 	}
 
 	am.alertMap[sUUID] = alertDestination
 	return nil
 }
 
-// GetAlertDestination ... Returns the alert destination for the given invariant session UUID
+// GetAlertDestination ... Returns the alert destination for the given heuristic session UUID
 func (am *store) GetAlertDestination(sUUID core.SUUID) (core.AlertDestination, error) {
 	dest, exists := am.alertMap[sUUID]
 	if !exists {
-		return 0, fmt.Errorf("alert destination does not exist for invariant session %s", sUUID.String())
+		return 0, fmt.Errorf("alert destination does not exist for heuristic session %s", sUUID.String())
 	}
 
 	return dest, nil

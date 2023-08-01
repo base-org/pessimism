@@ -1,16 +1,16 @@
-package invariant_test
+package heuristic_test
 
 import (
 	"testing"
 
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/engine/invariant"
+	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_BaseInvariant(t *testing.T) {
+func Test_BaseHeuristic(t *testing.T) {
 	testSUUID := core.MakeSUUID(1, 1, 1)
-	bi := invariant.NewBaseInvariant(core.RegisterType(0))
+	bi := heuristic.NewBaseHeuristic(core.RegisterType(0))
 
 	// Test SUUID
 	bi.SetSUUID(testSUUID)

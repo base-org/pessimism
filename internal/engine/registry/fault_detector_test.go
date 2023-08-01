@@ -7,7 +7,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/app"
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/engine/invariant"
+	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/engine/registry"
 	"github.com/base-org/pessimism/internal/mocks"
 	"github.com/ethereum/go-ethereum/common"
@@ -28,7 +28,7 @@ type fdTestSuite struct {
 	mockEthClient  *mocks.MockEthClient
 	mockGethClient *mocks.MockGethClient
 
-	fd invariant.Invariant
+	fd heuristic.Heuristic
 }
 
 func createFdTestSuite(t *testing.T) *fdTestSuite {
@@ -86,7 +86,7 @@ func Test_FaultDetector(t *testing.T) {
 					Value: testLog,
 				}
 
-				outcome, pass, err := ts.fd.Invalidate(td)
+				outcome, pass, err := ts.fd.Assess(td)
 				assert.Nil(t, outcome)
 				assert.False(t, pass)
 				assert.Error(t, err)
@@ -113,7 +113,7 @@ func Test_FaultDetector(t *testing.T) {
 					Value: testLog,
 				}
 
-				outcome, pass, err := ts.fd.Invalidate(td)
+				outcome, pass, err := ts.fd.Assess(td)
 				assert.Nil(t, outcome)
 				assert.False(t, pass)
 				assert.Error(t, err)
@@ -121,7 +121,7 @@ func Test_FaultDetector(t *testing.T) {
 			},
 		},
 		{
-			name:        "Invalidation occurs when provided an invalid proof response",
+			name:        "Activation occurs when provided an invalid proof response",
 			constructor: createFdTestSuite,
 			testFunc: func(t *testing.T, ts *fdTestSuite) {
 
@@ -149,7 +149,7 @@ func Test_FaultDetector(t *testing.T) {
 					Value: testLog,
 				}
 
-				outcome, pass, err := ts.fd.Invalidate(td)
+				outcome, pass, err := ts.fd.Assess(td)
 				assert.NotNil(t, outcome)
 				assert.True(t, pass)
 				assert.NoError(t, err)

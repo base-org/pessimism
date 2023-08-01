@@ -9,7 +9,7 @@ permalink: /architecture/alerting
 {% endraw %}
 
 ## Overview
-The alerting subsystem will receive alerts from the `EngineManager` and publish them to the appropriate alerting destinations. The alerting subsystem will also be responsible for managing the lifecycle of alerts. This includes creating, updating, and removing alerting entries for invariant sessions.
+The alerting subsystem will receive alerts from the `EngineManager` and publish them to the appropriate alerting destinations. The alerting subsystem will also be responsible for managing the lifecycle of alerts. This includes creating, updating, and removing alerting entries for heuristic sessions.
 
 ## Diagram
 
@@ -53,4 +53,4 @@ The Slack alert destination is a configurable destination that allows alerts to 
 
 ### Cooldown
 **NOTE: This is currently unimplemented**
-To ensure that alerts aren't spammed to destinations once invoked, a time based cooldown value should exist that specifies how long an invariantSession must wait before it can propagate a trigged alert again. This value should be configurable by the user via a JSON-RPC request.
+To ensure that alerts aren't spammed to destinations once invoked, a time based cooldown value should exist that specifies how long an heuristicSession must wait before it can propagate a trigged alert again. This value should be configurable by the user via a JSON-RPC request.

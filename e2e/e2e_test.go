@@ -30,7 +30,7 @@ import (
 )
 
 // Test_Balance_Enforcement ... Tests the E2E flow of a single
-// balance enforcement invariant session on L2 network.
+// balance enforcement heuristic session on L2 network.
 func Test_Balance_Enforcement(t *testing.T) {
 
 	ts := e2e.CreateL2TestSuite(t)
@@ -39,21 +39,21 @@ func Test_Balance_Enforcement(t *testing.T) {
 	alice := ts.L2Cfg.Secrets.Addresses().Alice
 	bob := ts.L2Cfg.Secrets.Addresses().Bob
 
-	// Deploy a balance enforcement invariant session for Alice.
-	err := ts.App.BootStrap([]*models.InvRequestParams{{
-		Network:      core.Layer2.String(),
-		PType:        core.Live.String(),
-		InvType:      core.BalanceEnforcement.String(),
-		StartHeight:  nil,
-		EndHeight:    nil,
-		AlertingDest: core.Slack.String(),
+	// Deploy a balance enforcement heuristic session for Alice.
+	err := ts.App.BootStrap([]*models.SessionRequestParams{{
+		Network:       core.Layer2.String(),
+		PType:         core.Live.String(),
+		HeuristicType: core.BalanceEnforcement.String(),
+		StartHeight:   nil,
+		EndHeight:     nil,
+		AlertingDest:  core.Slack.String(),
 		SessionParams: map[string]interface{}{
 			"address": alice.String(),
 			"lower":   3, // i.e. alert if balance is less than 3 ETH
 		},
 	}})
 
-	assert.NoError(t, err, "Failed to bootstrap balance enforcement invariant session")
+	assert.NoError(t, err, "Failed to bootstrap balance enforcement heuristic session")
 
 	// Get Alice's balance.
 	aliceAmt, err := ts.L2Geth.L2Client.BalanceAt(context.Background(), alice, nil)
@@ -130,7 +130,7 @@ func Test_Balance_Enforcement(t *testing.T) {
 }
 
 // Test_Contract_Event ... Tests the E2E flow of a single
-// contract event invariant session on L1 network.
+// contract event heuristic session on L1 network.
 func Test_Contract_Event(t *testing.T) {
 
 	ts := e2e.CreateSysTestSuite(t)
@@ -141,20 +141,20 @@ func Test_Contract_Event(t *testing.T) {
 	// The string declaration of the event we want to listen for.
 	updateSig := "ConfigUpdate(uint256,uint8,bytes)"
 
-	// Deploy a contract event invariant session for the L1 system config address.
-	err := ts.App.BootStrap([]*models.InvRequestParams{{
-		Network:      core.Layer1.String(),
-		PType:        core.Live.String(),
-		InvType:      core.ContractEvent.String(),
-		StartHeight:  nil,
-		EndHeight:    nil,
-		AlertingDest: core.Slack.String(),
+	// Deploy a contract event heuristic session for the L1 system config address.
+	err := ts.App.BootStrap([]*models.SessionRequestParams{{
+		Network:       core.Layer1.String(),
+		PType:         core.Live.String(),
+		HeuristicType: core.ContractEvent.String(),
+		StartHeight:   nil,
+		EndHeight:     nil,
+		AlertingDest:  core.Slack.String(),
 		SessionParams: map[string]interface{}{
 			"address": predeploys.DevSystemConfigAddr.String(),
 			"args":    []interface{}{updateSig},
 		},
 	}})
-	assert.NoError(t, err, "Error bootstrapping invariant session")
+	assert.NoError(t, err, "Error bootstrapping heuristic session")
 
 	// Get bindings for the L1 system config contract.
 	sysCfg, err := bindings.NewSystemConfig(predeploys.DevSystemConfigAddr, l1Client)
@@ -196,8 +196,8 @@ type TestAccount struct {
 }
 
 // Test_Withdrawal_Enforcement ... Tests the E2E flow of a withdrawal
-// / enforce invariant session. This test uses two L2ToL1 message passer contracts;
-// one that is configured to be "faulty" and one that is not. The invariant session
+// / enforce heuristic session. This test uses two L2ToL1 message passer contracts;
+// one that is configured to be "faulty" and one that is not. The heuristic session
 // should only produce an alert when the faulty L2ToL1 message passer is used given
 // that it's state is empty.
 func Test_Withdrawal_Enforcement(t *testing.T) {
@@ -246,37 +246,37 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	fromAddr := crypto.PubkeyToAddress(transactor.Key.PublicKey)
 
 	// Setup Pessimism to listen for fraudulent withdrawals
-	// We use two invariants here; one configured with a dummy L1 message passer
+	// We use two heuristics here; one configured with a dummy L1 message passer
 	// and one configured with the real L2->L1 message passer contract. This allows us to
 	// ensure that an alert is only produced using faulty message passer.
-	err = ts.App.BootStrap([]*models.InvRequestParams{
+	err = ts.App.BootStrap([]*models.SessionRequestParams{
 		{
 			// This is the one that should produce an alert
-			Network:      core.Layer1.String(),
-			PType:        core.Live.String(),
-			InvType:      core.WithdrawalEnforcement.String(),
-			StartHeight:  nil,
-			EndHeight:    nil,
-			AlertingDest: core.Slack.String(),
+			Network:       core.Layer1.String(),
+			PType:         core.Live.String(),
+			HeuristicType: core.WithdrawalEnforcement.String(),
+			StartHeight:   nil,
+			EndHeight:     nil,
+			AlertingDest:  core.Slack.String(),
 			SessionParams: map[string]interface{}{
 				core.L1Portal:            predeploys.DevOptimismPortal,
 				core.L2ToL1MessagePasser: fakeAddr.String(),
 			},
 		},
 		{
-			Network:      core.Layer1.String(),
-			PType:        core.Live.String(),
-			InvType:      core.WithdrawalEnforcement.String(),
-			StartHeight:  nil,
-			EndHeight:    nil,
-			AlertingDest: core.Slack.String(),
+			Network:       core.Layer1.String(),
+			PType:         core.Live.String(),
+			HeuristicType: core.WithdrawalEnforcement.String(),
+			StartHeight:   nil,
+			EndHeight:     nil,
+			AlertingDest:  core.Slack.String(),
 			SessionParams: map[string]interface{}{
 				core.L1Portal:            predeploys.DevOptimismPortal,
 				core.L2ToL1MessagePasser: predeploys.L2ToL1MessagePasserAddr.String(),
 			},
 		},
 	})
-	assert.NoError(t, err, "Error bootstrapping invariant session")
+	assert.NoError(t, err, "Error bootstrapping heuristic session")
 
 	// Initiate Withdrawal.
 	withdrawAmount := big.NewInt(500_000_000_000)
@@ -376,14 +376,14 @@ func Test_Fault_Detector(t *testing.T) {
 	reader, err := bindings.NewL2OutputOracleCaller(predeploys.DevL2OutputOracleAddr, l1Client)
 	assert.Nil(t, err)
 
-	// Deploys a fault detector invariant session instance using the locally spun-up Op-Stack chain
-	err = ts.App.BootStrap([]*models.InvRequestParams{{
-		Network:      core.Layer1.String(),
-		PType:        core.Live.String(),
-		InvType:      core.FaultDetector.String(),
-		StartHeight:  big.NewInt(0),
-		EndHeight:    nil,
-		AlertingDest: core.Slack.String(),
+	// Deploys a fault detector heuristic session instance using the locally spun-up Op-Stack chain
+	err = ts.App.BootStrap([]*models.SessionRequestParams{{
+		Network:       core.Layer1.String(),
+		PType:         core.Live.String(),
+		HeuristicType: core.FaultDetector.String(),
+		StartHeight:   big.NewInt(0),
+		EndHeight:     nil,
+		AlertingDest:  core.Slack.String(),
 		SessionParams: map[string]interface{}{
 			core.L2OutputOracle:      predeploys.DevL2OutputOracle,
 			core.L2ToL1MessagePasser: predeploys.L2ToL1MessagePasser,

@@ -13,7 +13,7 @@ import (
 
 type Handlers interface {
 	HealthCheck(w http.ResponseWriter, r *http.Request)
-	RunInvariant(w http.ResponseWriter, r *http.Request)
+	RunHeuristic(w http.ResponseWriter, r *http.Request)
 
 	ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
@@ -29,7 +29,7 @@ type Route = string
 
 const (
 	healthRoute    = "/health"
-	invariantRoute = "/v0/invariant"
+	heuristicRoute = "/v0/heuristic"
 )
 
 // New ... Initializer
@@ -42,7 +42,7 @@ func New(ctx context.Context, service service.Service) (Handlers, error) {
 	router.Use(pess_middleware.InjectedLogging(logging.NoContext()))
 
 	registerEndpoint(healthRoute, router.Get, handlers.HealthCheck)
-	registerEndpoint(invariantRoute, router.Post, handlers.RunInvariant)
+	registerEndpoint(heuristicRoute, router.Post, handlers.RunHeuristic)
 
 	handlers.router = router
 

@@ -57,7 +57,7 @@ func NewManager(ctx context.Context, sc client.SlackClient, pdc client.Pagerduty
 	return am
 }
 
-// AddSession ... Adds an invariant session to the alert manager store
+// AddSession ... Adds an heuristic session to the alert manager store
 func (am *alertManager) AddSession(sUUID core.SUUID, alertDestination core.AlertDestination) error {
 	return am.store.AddAlertDestination(sUUID, alertDestination)
 }

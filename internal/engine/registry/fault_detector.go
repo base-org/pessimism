@@ -8,7 +8,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/engine/invariant"
+	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
@@ -30,14 +30,14 @@ const faultDetectMsg = `
 	Transaction Hash: %s
 `
 
-// FaultDetectorCfg  ... Configuration for the fault detector invariant
+// FaultDetectorCfg  ... Configuration for the fault detector heuristic
 type FaultDetectorCfg struct {
 	L2OutputOracle string `json:"l2_output_address"`
 	L2ToL1Address  string `json:"l2_to_l1_address"`
 }
 
-// Unmarshal ... Converts a general config to a fault detector invariant config
-func (fdc *FaultDetectorCfg) Unmarshal(isp *core.InvSessionParams) error {
+// Unmarshal ... Converts a general config to a fault detector heuristic config
+func (fdc *FaultDetectorCfg) Unmarshal(isp *core.SessionParams) error {
 	return json.Unmarshal(isp.Bytes(), &fdc)
 }
 
@@ -69,11 +69,11 @@ type faultDetectorInv struct {
 	l2GethClient client.GethClient
 	stats        metrics.Metricer
 
-	invariant.Invariant
+	heuristic.Heuristic
 }
 
 // NewFaultDetector ... Initializer
-func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (invariant.Invariant, error) {
+func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heuristic, error) {
 	l2Client, err := client.FromContext(ctx, core.Layer2)
 	if err != nil {
 		return nil, err
@@ -108,13 +108,13 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (invariant.Inv
 		l2Client:     l2Client,
 		l2GethClient: l2Geth,
 
-		Invariant: invariant.NewBaseInvariant(core.EventLog),
+		Heuristic: heuristic.NewBaseHeuristic(core.EventLog),
 	}, nil
 }
 
-// Invalidate ... Performs the fault detection invariant logic
-func (fd *faultDetectorInv) Invalidate(td core.TransitData) (*core.Invalidation, bool, error) {
-	logging.NoContext().Debug("Checking invalidation for fault detector invariant",
+// Assess ... Performs the fault detection heuristic logic
+func (fd *faultDetectorInv) Assess(td core.TransitData) (*core.Activation, bool, error) {
+	logging.NoContext().Debug("Checking activation for fault detector heuristic",
 		zap.String("data", fmt.Sprintf("%v", td)))
 
 	// 1. Validate and extract data input
@@ -163,9 +163,9 @@ func (fd *faultDetectorInv) Invalidate(td core.TransitData) (*core.Invalidation,
 
 	actualStateRoot := output.OutputRoot
 
-	// 6. Compare the expected state root with the actual state root; if they are not equal, then invalidate
+	// 6. Compare the expected state root with the actual state root; if they are not equal, then activate
 	if expectedStateRoot != actualStateRoot {
-		return &core.Invalidation{
+		return &core.Activation{
 			TimeStamp: time.Now(),
 			Message:   fmt.Sprintf(faultDetectMsg, fd.cfg.L2OutputOracle, fd.cfg.L2ToL1Address, fd.SUUID(), log.TxHash),
 		}, true, nil

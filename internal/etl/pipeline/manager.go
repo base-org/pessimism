@@ -38,7 +38,7 @@ type etlManager struct {
 	store    EtlStore
 	metrics  metrics.Metricer
 
-	egress chan core.InvariantInput
+	egress chan core.HeuristicInput
 
 	registry registry.Registry
 	wg       sync.WaitGroup
@@ -47,7 +47,7 @@ type etlManager struct {
 // NewManager ... Initializer
 func NewManager(ctx context.Context, analyzer Analyzer, cRegistry registry.Registry,
 	store EtlStore, dag ComponentGraph,
-	eo chan core.InvariantInput) Manager {
+	eo chan core.HeuristicInput) Manager {
 	ctx, cancel := context.WithCancel(ctx)
 	stats := metrics.WithContext(ctx)
 
@@ -209,7 +209,7 @@ func (em *etlManager) getMergeUUID(pUUID core.PUUID, pipeline Pipeline) (core.PU
 			return core.NilPUUID(), err
 		}
 
-		if em.analyzer.Mergable(pipeline, p) { // Deploy invariants to existing pipelines instead
+		if em.analyzer.Mergable(pipeline, p) { // Deploy heuristics to existing pipelines instead
 			// This is a bit hacky since we aren't actually merging the pipelines
 			return p.UUID(), nil
 		}

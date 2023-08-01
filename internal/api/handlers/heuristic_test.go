@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_ProcessInvariantRequest(t *testing.T) {
+func Test_ProcessHeuristicRequest(t *testing.T) {
 
 	var tests = []struct {
 		name        string
@@ -27,9 +27,9 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 		testLogic         func(*testing.T, testSuite)
 	}{
 		{
-			name:        "Get Invariant Failure",
+			name:        "Get Heuristic Failure",
 			description: "When provided a malformed request body, a failed decoding response should be returned",
-			function:    "RunInvariant",
+			function:    "RunHeuristic",
 
 			constructionLogic: func() testSuite {
 				ts := createTestSuite(t)
@@ -42,7 +42,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 				testBody := bytes.NewBuffer([]byte{0x42})
 				r := httptest.NewRequest(http.MethodGet, testAddress, testBody)
 
-				ts.testHandler.RunInvariant(w, r)
+				ts.testHandler.RunHeuristic(w, r)
 				res := w.Result()
 
 				data, err := io.ReadAll(res.Body)
@@ -50,23 +50,23 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 					t.Errorf("Error: %v", err)
 				}
 
-				actualResp := &models.InvResponse{}
+				actualResp := &models.SessionResponse{}
 				err = json.Unmarshal(data, actualResp)
 
 				assert.NoError(t, err)
-				assert.Equal(t, models.NewInvUnmarshalErrResp(), actualResp)
+				assert.Equal(t, models.NewSessionUnmarshalErrResp(), actualResp)
 			},
 		},
 		{
-			name:        "Process Invariant Failure",
+			name:        "Process Heuristic Failure",
 			description: "When provided an internal error occurs, a failed processing response should be returned",
-			function:    "RunInvariant",
+			function:    "RunHeuristic",
 
 			constructionLogic: func() testSuite {
 				ts := createTestSuite(t)
 
 				ts.mockSvc.EXPECT().
-					ProcessInvariantRequest(gomock.Any()).
+					ProcessHeuristicRequest(gomock.Any()).
 					Return(core.NilSUUID(), testError1()).
 					Times(1)
 
@@ -76,12 +76,12 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			testLogic: func(t *testing.T, ts testSuite) {
 				w := httptest.NewRecorder()
 
-				testBody, _ := json.Marshal(models.InvRequestBody{Method: "run"})
+				testBody, _ := json.Marshal(models.SessionRequestBody{Method: "run"})
 
 				testBytes := bytes.NewBuffer(testBody)
 				r := httptest.NewRequest(http.MethodGet, testAddress, testBytes)
 
-				ts.testHandler.RunInvariant(w, r)
+				ts.testHandler.RunHeuristic(w, r)
 				res := w.Result()
 
 				data, err := io.ReadAll(res.Body)
@@ -89,23 +89,23 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 					t.Errorf("Error: %v", err)
 				}
 
-				actualResp := &models.InvResponse{}
+				actualResp := &models.SessionResponse{}
 				err = json.Unmarshal(data, actualResp)
 
 				assert.NoError(t, err)
-				assert.Equal(t, models.NewInvNoProcessInvResp(), actualResp)
+				assert.Equal(t, models.NewSessionNoProcessResp(), actualResp)
 			},
 		},
 		{
-			name:        "Process Invariant Success",
-			description: "When an invariant is successfully processed, a suuid should be rendered",
-			function:    "RunInvariant",
+			name:        "Process Heuristic Success",
+			description: "When an heuristic is successfully processed, a suuid should be rendered",
+			function:    "RunHeuristic",
 
 			constructionLogic: func() testSuite {
 				ts := createTestSuite(t)
 
 				ts.mockSvc.EXPECT().
-					ProcessInvariantRequest(gomock.Any()).
+					ProcessHeuristicRequest(gomock.Any()).
 					Return(testSUUID1(), nil).
 					Times(1)
 
@@ -115,12 +115,12 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 			testLogic: func(t *testing.T, ts testSuite) {
 				w := httptest.NewRecorder()
 
-				testBody, _ := json.Marshal(models.InvRequestBody{Method: "run"})
+				testBody, _ := json.Marshal(models.SessionRequestBody{Method: "run"})
 
 				testBytes := bytes.NewBuffer(testBody)
 				r := httptest.NewRequest(http.MethodGet, testAddress, testBytes)
 
-				ts.testHandler.RunInvariant(w, r)
+				ts.testHandler.RunHeuristic(w, r)
 				res := w.Result()
 
 				data, err := io.ReadAll(res.Body)
@@ -128,7 +128,7 @@ func Test_ProcessInvariantRequest(t *testing.T) {
 					t.Errorf("Error: %v", err)
 				}
 
-				actualResp := &models.InvResponse{}
+				actualResp := &models.SessionResponse{}
 				err = json.Unmarshal(data, actualResp)
 
 				assert.NoError(t, err)

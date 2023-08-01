@@ -7,7 +7,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/engine/invariant"
+	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/mocks"
 	"github.com/base-org/pessimism/internal/subsystem"
 	"github.com/golang/mock/gomock"
@@ -116,18 +116,18 @@ func Test_BuildDeployCfg(t *testing.T) {
 	}
 }
 
-func Test_RunInvSession(t *testing.T) {
+func Test_RunSession(t *testing.T) {
 	testSUUID := core.MakeSUUID(1, 1, 1)
-	testCfg := &invariant.DeployConfig{
+	testCfg := &heuristic.DeployConfig{
 		Stateful: false,
 		StateKey: nil,
 		Network:  core.Layer1,
 		PUUID:    core.NilPUUID(),
 		Reuse:    false,
 
-		InvType:   core.BalanceEnforcement,
-		InvParams: nil,
-		AlertDest: core.Slack,
+		HeuristicType: core.BalanceEnforcement,
+		Params:        nil,
+		AlertDest:     core.Slack,
 	}
 
 	var tests = []struct {
@@ -136,34 +136,34 @@ func Test_RunInvSession(t *testing.T) {
 		testLogic   func(t *testing.T, ts *testSuite)
 	}{
 		{
-			name: "Failure when deploying invariant session",
+			name: "Failure when deploying heuristic session",
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
 				ts.mockEtl.EXPECT().
 					ActiveCount().Return(1).
 					Times(1)
 
-				ts.mockEng.EXPECT().DeployInvariantSession(testCfg).
+				ts.mockEng.EXPECT().DeployHeuristicSession(testCfg).
 					Return(core.NilSUUID(), testErr()).
 					Times(1)
 
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				actualSUUID, err := ts.subsys.RunInvSession(testCfg)
+				actualSUUID, err := ts.subsys.RunSession(testCfg)
 				assert.Error(t, err)
 				assert.Equal(t, core.NilSUUID(), actualSUUID)
 			},
 		},
 		{
-			name: "Failure when adding invariant session to alerting system",
+			name: "Failure when adding heuristic session to alerting system",
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
 				ts.mockEtl.EXPECT().
 					ActiveCount().Return(1).
 					Times(1)
 
-				ts.mockEng.EXPECT().DeployInvariantSession(testCfg).
+				ts.mockEng.EXPECT().DeployHeuristicSession(testCfg).
 					Return(testSUUID, nil).
 					Times(1)
 
@@ -174,7 +174,7 @@ func Test_RunInvSession(t *testing.T) {
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				actualSUUID, err := ts.subsys.RunInvSession(testCfg)
+				actualSUUID, err := ts.subsys.RunSession(testCfg)
 				assert.Error(t, err)
 				assert.Equal(t, core.NilSUUID(), actualSUUID)
 			},
@@ -188,7 +188,7 @@ func Test_RunInvSession(t *testing.T) {
 					ActiveCount().Return(1).
 					Times(1)
 
-				ts.mockEng.EXPECT().DeployInvariantSession(testCfg).
+				ts.mockEng.EXPECT().DeployHeuristicSession(testCfg).
 					Return(testSUUID, nil).
 					Times(1)
 
@@ -203,7 +203,7 @@ func Test_RunInvSession(t *testing.T) {
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				actualSUUID, err := ts.subsys.RunInvSession(testCfg)
+				actualSUUID, err := ts.subsys.RunSession(testCfg)
 				assert.NoError(t, err)
 				assert.Equal(t, testSUUID, actualSUUID)
 			},
@@ -213,7 +213,7 @@ func Test_RunInvSession(t *testing.T) {
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
 
-				ts.mockEng.EXPECT().DeployInvariantSession(testCfg).
+				ts.mockEng.EXPECT().DeployHeuristicSession(testCfg).
 					Return(testSUUID, nil).
 					Times(1)
 
@@ -225,7 +225,7 @@ func Test_RunInvSession(t *testing.T) {
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testCfg.Reuse = true
-				actualSUUID, err := ts.subsys.RunInvSession(testCfg)
+				actualSUUID, err := ts.subsys.RunSession(testCfg)
 				assert.NoError(t, err)
 				assert.Equal(t, testSUUID, actualSUUID)
 			},
@@ -243,7 +243,7 @@ func Test_RunInvSession(t *testing.T) {
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testCfg.Reuse = false
-				actualSUUID, err := ts.subsys.RunInvSession(testCfg)
+				actualSUUID, err := ts.subsys.RunSession(testCfg)
 				assert.Error(t, err)
 				assert.Equal(t, core.NilSUUID(), actualSUUID)
 			},
@@ -276,10 +276,10 @@ func Test_BuildPipelineCfg(t *testing.T) {
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				testParams := &models.InvRequestParams{
-					Network: core.Layer1.String(),
-					PType:   core.Live.String(),
-					InvType: core.BalanceEnforcement.String(),
+				testParams := &models.SessionRequestParams{
+					Network:       core.Layer1.String(),
+					PType:         core.Live.String(),
+					HeuristicType: core.BalanceEnforcement.String(),
 				}
 
 				cfg, err := ts.subsys.BuildPipelineCfg(testParams)
@@ -298,10 +298,10 @@ func Test_BuildPipelineCfg(t *testing.T) {
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				testParams := &models.InvRequestParams{
-					Network: "layer0",
-					PType:   core.Live.String(),
-					InvType: core.BalanceEnforcement.String(),
+				testParams := &models.SessionRequestParams{
+					Network:       "layer0",
+					PType:         core.Live.String(),
+					HeuristicType: core.BalanceEnforcement.String(),
 				}
 
 				cfg, err := ts.subsys.BuildPipelineCfg(testParams)
@@ -320,10 +320,10 @@ func Test_BuildPipelineCfg(t *testing.T) {
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				testParams := &models.InvRequestParams{
-					Network: core.Layer1.String(),
-					PType:   core.Live.String(),
-					InvType: core.BalanceEnforcement.String(),
+				testParams := &models.SessionRequestParams{
+					Network:       core.Layer1.String(),
+					PType:         core.Live.String(),
+					HeuristicType: core.BalanceEnforcement.String(),
 				}
 
 				cfg, err := ts.subsys.BuildPipelineCfg(testParams)
