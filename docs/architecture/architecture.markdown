@@ -6,9 +6,9 @@ permalink: /architecture
 
 ## Overview
 There are *three subsystems* that drive Pessimism’s architecture:
-1. [ETL](etl.markdown) - Modularized data extraction system for retrieving and processing external chain data in the form of a DAG known as the Pipeline DAG
-2. [Risk Engine](engine.markdown) - Logical execution platform that runs a set of heuristics on the data funneled from the Pipeline DAG
-3. [Alerting](alerting.markdown) - Alerting system that is used to notify users of heuristic failures
+1. [ETL](./etl.md) - Modularized data extraction system for retrieving and processing external chain data in the form of a DAG known as the Pipeline DAG
+2. [Risk Engine](./engine.md) - Logical execution platform that runs a set of heuristics on the data funneled from the Pipeline DAG
+3. [Alerting](./alerting.md) - Alerting system that is used to notify users of heuristic failures
 
 These systems will be accessible by a client through the use of a JSON-RPC API that has unilateral access to all three primary subsystems.
 

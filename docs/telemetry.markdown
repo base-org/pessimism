@@ -17,6 +17,7 @@ To generate documentation for metrics, run `make docs` from the root of the repo
 which can be pasted directly below to keep current system metric documentation up to date.
 
 ## Current Metrics
+
 |                  METRIC                   |                      DESCRIPTION                       |                 LABELS                 |  TYPE   |
 |-------------------------------------------|--------------------------------------------------------|----------------------------------------|---------|
 | pessimism_up                              | 1 if the service is up                                 |                                        | gauge   |

@@ -11,6 +11,7 @@ permalink: /heuristics
 The hardcoded `balance_enforcement` heuristic checks the native ETH balance of some address every `n` milliseconds and alerts to slack if the account's balance is ever less than `lower` or greater than `upper` value. This heuristic is useful for monitoring hot wallets and other accounts that should always have a balance above a certain threshold.
 
 ### Parameters
+
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | address | string | The address to check the balance of |
@@ -42,10 +43,12 @@ curl --location --request POST 'http://localhost:8080/v0/heuristic' \
 The hardcoded `contract_event` heuristic scans newly produced blocks for a specific contract event and alerts to slack if the event is found. This heuristic is useful for monitoring for specific contract events that should never occur.
 
 ### Parameters
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| address | string | The address of the contract to scan for the events |
-| args | []string | The event signatures to scan for |
+
+| Name    | Type     | Description                                        |
+|---------|----------|----------------------------------------------------|
+| address | string   | The address of the contract to scan for the events |
+| args    | []string | The event signatures to scan for                   |
+
 
 **NOTE:** The `args` field is an array of string event declarations (eg. `Transfer(address,address,uint256)`). Currently Pessimism makes no use of contract ABIs so the manually specified event declarations are not validated for correctness. If the event declaration is incorrect, the heuristic session will never alert but will continue to scan. 
 
@@ -76,10 +79,11 @@ curl --location --request POST 'http://localhost:8080/v0/heuristic' \
 The hardcoded `withdrawal_enforcement` heuristic scans for active `WithdrawalProven` events on an L1Portal contract. Once an event is detected, the heuristic proceeds to scan for the corresponding `withdrawlHash` event on the L2ToL1MesagePasser contract's internal state. If the `withdrawlHash` is not found, the heuristic alerts to slack.
 
 ### Parameters
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| l1_portal_address | string | The address of the L1Portal contract |
-| l2_to_l1_address | string | The address of the L2ToL1MessagePasser contract |
+
+| Name              | Type   | Description                                     |
+|-------------------|--------|-------------------------------------------------|
+| l1_portal_address | string | The address of the L1Portal contract            |
+| l2_to_l1_address  | string | The address of the L2ToL1MessagePasser contract |
 
 
 ### Example Deploy Request
@@ -108,10 +112,11 @@ The hardcoded `fault_detector` heuristic scans for active `OutputProposed` event
 
 
 ### Parameters
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| l2_output_address | string | The address of the L1 output oracle |
-| l2_to_l1_address | string | The address of the L2ToL1MessagePasser contract |
+
+| Name              | Type   | Description                                     |
+|-------------------|--------|-------------------------------------------------|
+| l2_output_address | string | The address of the L1 output oracle             |
+| l2_to_l1_address  | string | The address of the L2ToL1MessagePasser contract |
 
 
 ### Example Deploy Request
