@@ -1,19 +1,19 @@
 package config
 
 import (
-	"github.com/base-org/pessimism/internal/client"
 	"log"
 	"os"
 	"strconv"
 
 	"github.com/base-org/pessimism/internal/api/server"
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/subsystem"
-	"go.uber.org/zap"
 
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 )
 
 // TrueEnvVal ... Represents the encoded string value for true (ie. 1)
@@ -116,7 +116,7 @@ func getEnvStr(key string) string {
 }
 
 // getEnvStrWithDefault ... Reads env var from process environment, returns default if not found
-func getEnvStrWithDefault(key string, defaultValue string) string {
+func getEnvStrWithDefault(key string, defaultValue string) string { //nolint: unparam // empty str default ok
 	envVar, ok := os.LookupEnv(key)
 
 	// Not found

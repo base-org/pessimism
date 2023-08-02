@@ -84,9 +84,23 @@ func (am *alertManager) handleSlackPost(alert core.Alert) error {
 	return nil
 }
 
-// TODO
-// handlePagerdutyPost ... Handles Posting an alert to pagerduty
+// handlePagerdutyPost ... Handles posting an alert to pagerduty
 func (am *alertManager) handlePagerdutyPost(alert core.Alert) error {
+	pdMsg := am.interpolator.InterpolatePagerdutyMessage(alert.SUUID, alert.Content)
+	resp, err := am.pdc.PostEvent(am.ctx, &client.PagerdutyEventTrigger{
+		Message:  pdMsg,
+		Action:   client.Trigger,
+		Severity: client.Critical,
+		DedupKey: alert.SUUID.String(),
+	})
+	if err != nil {
+		return err
+	}
+
+	if resp.Status != string(client.SuccessStatus) {
+		return fmt.Errorf("could not post to pagerduty: %s", resp.Status)
+	}
+
 	return nil
 }
 
@@ -119,6 +133,13 @@ func (am *alertManager) EventLoop() error {
 				err := am.handleSlackPost(alert)
 				if err != nil {
 					logger.Error("Could not post alert to slack", zap.Error(err))
+				}
+
+			case core.Pagerduty:
+				logger.Debug("Attempting to post alert to pagerduty")
+				err := am.handlePagerdutyPost(alert)
+				if err != nil {
+					logger.Error("Could not post alert to pagerduty", zap.Error(err))
 				}
 
 			case core.ThirdParty:

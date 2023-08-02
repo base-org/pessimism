@@ -67,7 +67,7 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 	appCfg := DefaultTestConfig()
 
 	slackServer := NewTestServer()
-	appCfg.SlackURL = slackServer.Server.URL
+	appCfg.SlackClientConfig.URL = slackServer.Server.URL
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
@@ -120,7 +120,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	appCfg := DefaultTestConfig()
 
 	slackServer := NewTestServer()
-	appCfg.SlackURL = slackServer.Server.URL
+	appCfg.SlackClientConfig.URL = slackServer.Server.URL
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
@@ -173,6 +173,11 @@ func DefaultTestConfig() *config.Config {
 			Host: "localhost",
 			Port: port,
 		},
+		SlackClientConfig: &client.SlackConfig{
+			URL:     "",
+			Channel: "test",
+		},
+		PagerdutyClientConfig: &client.PagerdutyConfig{},
 	}
 }
 

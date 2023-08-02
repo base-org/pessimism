@@ -7,6 +7,7 @@ import (
 )
 
 // TODO: add timestamp to the message
+// Slack Formatting
 const (
 	CodeBlockFmt = "```%s```"
 
@@ -24,9 +25,19 @@ const (
 	`
 )
 
+const (
+	PagerdutyMsgFmt = `
+	Heuristic Triggered: %s
+	Network: %s
+	Assessment: 
+	%s
+	`
+)
+
 // Interpolator ... Interface for interpolating messages
 type Interpolator interface {
 	InterpolateSlackMessage(sUUID core.SUUID, message string) string
+	InterpolatePagerdutyMessage(sUUID core.SUUID, message string) string
 }
 
 // interpolator ... Interpolator implementation
@@ -44,4 +55,12 @@ func (*interpolator) InterpolateSlackMessage(sUUID core.SUUID, message string) s
 		sUUID.PID.Network(),
 		sUUID.String(),
 		fmt.Sprintf(CodeBlockFmt, message))
+}
+
+// InterpolatePagerdutyMessage ... Interpolates a pagerduty message with the given heuristic session UUID and message
+func (*interpolator) InterpolatePagerdutyMessage(sUUID core.SUUID, message string) string {
+	return fmt.Sprintf(PagerdutyMsgFmt,
+		sUUID.PID.HeuristicType().String(),
+		sUUID.PID.Network(),
+		message)
 }
