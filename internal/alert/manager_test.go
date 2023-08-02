@@ -36,8 +36,8 @@ func Test_EventLoop(t *testing.T) {
 
 	err := am.AddSession(core.NilSUUID(),
 		&core.AlertPolicy{
-			Dest:    core.Slack.String(),
-			Message: "test",
+			Dest: core.Slack.String(),
+			Msg:  "test",
 		})
 	assert.Nil(t, err)
 

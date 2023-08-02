@@ -39,6 +39,7 @@ func Test_Balance_Enforcement(t *testing.T) {
 	alice := ts.L2Cfg.Secrets.Addresses().Alice
 	bob := ts.L2Cfg.Secrets.Addresses().Bob
 
+	alertMsg := "one baby to another says:"
 	// Deploy a balance enforcement heuristic session for Alice.
 	err := ts.App.BootStrap([]*models.SessionRequestParams{{
 		Network:       core.Layer2.String(),
@@ -48,6 +49,7 @@ func Test_Balance_Enforcement(t *testing.T) {
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
 			Dest: core.Slack.String(),
+			Msg:  alertMsg,
 		},
 		SessionParams: map[string]interface{}{
 			"address": alice.String(),
@@ -97,6 +99,7 @@ func Test_Balance_Enforcement(t *testing.T) {
 
 	assert.Greater(t, len(posts), 0, "No balance enforcement alert was sent")
 	assert.Contains(t, posts[0].Text, "balance_enforcement", "Balance enforcement alert was not sent")
+	assert.Contains(t, posts[0].Text, alertMsg)
 
 	// Get Bobs's balance.
 	bobAmt, err := ts.L2Geth.L2Client.BalanceAt(context.Background(), bob, nil)
@@ -114,7 +117,7 @@ func Test_Balance_Enforcement(t *testing.T) {
 		Data:      nil,
 	})
 
-	// Send the transaction to redisperse the ETH from Bob back to Alice.
+	// Send the transaction to re-disperse the ETH from Bob back to Alice.
 	_, err = ts.L2Geth.AddL2Block(context.Background(), drainBobTx)
 	assert.NoError(t, err, "Failed to create L2 block with transaction")
 
@@ -151,8 +154,8 @@ func Test_Contract_Event(t *testing.T) {
 		StartHeight:   nil,
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
-			Message: "System config gas config updated",
-			Dest:    core.Slack.String(),
+			Msg:  "System config gas config updated",
+			Dest: core.Slack.String(),
 		},
 		SessionParams: map[string]interface{}{
 			"address": predeploys.DevSystemConfigAddr.String(),

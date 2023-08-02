@@ -135,10 +135,16 @@ func StringToHeuristicType(stringType string) HeuristicType {
 
 // AlertPolicy ... The alerting policy for a heuristic session
 type AlertPolicy struct {
-	Dest    string `json:"destination"`
-	Message string `json:"message"`
+	Dest string `json:"destination"`
+	Msg  string `json:"message"`
 }
 
+// Message ... Returns the message for an alert
+func (ap *AlertPolicy) Message() string {
+	return ap.Msg
+}
+
+// Destination ... Returns the destination for an alert
 func (ap *AlertPolicy) Destination() AlertDestination {
 	return StringToAlertingDestType(ap.Dest)
 }

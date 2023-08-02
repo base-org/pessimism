@@ -42,9 +42,8 @@ func NewManager(ctx context.Context, sc client.SlackClient) Manager {
 	ctx, cancel := context.WithCancel(ctx)
 
 	am := &alertManager{
-		ctx:    ctx,
-		cancel: cancel,
-
+		ctx:          ctx,
+		cancel:       cancel,
 		sc:           sc,
 		interpolator: NewInterpolator(),
 		store:        NewStore(),
@@ -68,7 +67,7 @@ func (am *alertManager) Transit() chan core.Alert {
 
 // handleSlackPost ... Handles posting an alert to slack channel
 func (am *alertManager) handleSlackPost(alert core.Alert) error {
-	slackMsg := am.interpolator.InterpolateSlackMessage(alert.SUUID, alert.Content)
+	slackMsg := am.interpolator.InterpolateSlackMessage(alert.SUUID, alert.Content, alert.Message)
 
 	resp, err := am.sc.PostData(am.ctx, slackMsg)
 	if err != nil {
@@ -102,6 +101,8 @@ func (am *alertManager) EventLoop() error {
 			}
 
 			alert.Dest = policy.Destination()
+			alert.Content = policy.Message()
+
 			am.metrics.RecordAlertGenerated(alert)
 
 			switch alert.Dest {

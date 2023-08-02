@@ -23,8 +23,8 @@ func Test_Store(t *testing.T) {
 
 				sUUID := core.MakeSUUID(core.Layer1, core.Live, core.BalanceEnforcement)
 				policy := &core.AlertPolicy{
-					Message: "test message",
-					Dest:    core.Slack.String(),
+					Msg:  "test message",
+					Dest: core.Slack.String(),
 				}
 
 				err := am.AddAlertPolicy(sUUID, policy)
