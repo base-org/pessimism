@@ -15,7 +15,7 @@ import (
 
 // Manager ... Interface for alert manager
 type Manager interface {
-	AddSession(core.SUUID, core.AlertDestination) error
+	AddSession(core.SUUID, *core.AlertPolicy) error
 	Transit() chan core.Alert
 
 	core.Subsystem
@@ -42,9 +42,8 @@ func NewManager(ctx context.Context, sc client.SlackClient) Manager {
 	ctx, cancel := context.WithCancel(ctx)
 
 	am := &alertManager{
-		ctx:    ctx,
-		cancel: cancel,
-
+		ctx:          ctx,
+		cancel:       cancel,
 		sc:           sc,
 		interpolator: NewInterpolator(),
 		store:        NewStore(),
@@ -56,8 +55,8 @@ func NewManager(ctx context.Context, sc client.SlackClient) Manager {
 }
 
 // AddSession ... Adds an heuristic session to the alert manager store
-func (am *alertManager) AddSession(sUUID core.SUUID, alertDestination core.AlertDestination) error {
-	return am.store.AddAlertDestination(sUUID, alertDestination)
+func (am *alertManager) AddSession(sUUID core.SUUID, policy *core.AlertPolicy) error {
+	return am.store.AddAlertPolicy(sUUID, policy)
 }
 
 // TODO - Rename this to ingress()
@@ -67,8 +66,8 @@ func (am *alertManager) Transit() chan core.Alert {
 }
 
 // handleSlackPost ... Handles posting an alert to slack channel
-func (am *alertManager) handleSlackPost(alert core.Alert) error {
-	slackMsg := am.interpolator.InterpolateSlackMessage(alert.SUUID, alert.Content)
+func (am *alertManager) handleSlackPost(sUUID core.SUUID, content string, msg string) error {
+	slackMsg := am.interpolator.InterpolateSlackMessage(sUUID, content, msg)
 
 	resp, err := am.sc.PostData(am.ctx, slackMsg)
 	if err != nil {
@@ -95,20 +94,19 @@ func (am *alertManager) EventLoop() error {
 			logger.Info("received alert",
 				zap.String(logging.SUUIDKey, alert.SUUID.String()))
 
-			alertDest, err := am.store.GetAlertDestination(alert.SUUID)
+			policy, err := am.store.GetAlertPolicy(alert.SUUID)
 			if err != nil {
 				logger.Error("Could not determine alerting destination", zap.Error(err))
 				continue
 			}
 
-			alert.Dest = alertDest
 			am.metrics.RecordAlertGenerated(alert)
 
-			switch alertDest {
+			switch policy.Destination() {
 			case core.Slack: // TODO: add more alert destinations
 				logger.Debug("Attempting to post alert to slack")
 
-				err := am.handleSlackPost(alert)
+				err := am.handleSlackPost(alert.SUUID, alert.Content, policy.Message())
 				if err != nil {
 					logger.Error("Could not post alert to slack", zap.Error(err))
 				}
@@ -118,7 +116,7 @@ func (am *alertManager) EventLoop() error {
 
 			default:
 				logger.Error("Attempting to post alert to unknown destination",
-					zap.String("destination", alertDest.String()))
+					zap.String("destination", policy.Destination().String()))
 			}
 		}
 	}
