@@ -66,8 +66,8 @@ func (am *alertManager) Transit() chan core.Alert {
 }
 
 // handleSlackPost ... Handles posting an alert to slack channel
-func (am *alertManager) handleSlackPost(alert core.Alert) error {
-	slackMsg := am.interpolator.InterpolateSlackMessage(alert.SUUID, alert.Content, alert.Message)
+func (am *alertManager) handleSlackPost(sUUID core.SUUID, content string, msg string) error {
+	slackMsg := am.interpolator.InterpolateSlackMessage(sUUID, content, msg)
 
 	resp, err := am.sc.PostData(am.ctx, slackMsg)
 	if err != nil {
@@ -100,16 +100,13 @@ func (am *alertManager) EventLoop() error {
 				continue
 			}
 
-			alert.Dest = policy.Destination()
-			alert.Content = policy.Message()
-
 			am.metrics.RecordAlertGenerated(alert)
 
-			switch alert.Dest {
+			switch policy.Destination() {
 			case core.Slack: // TODO: add more alert destinations
 				logger.Debug("Attempting to post alert to slack")
 
-				err := am.handleSlackPost(alert)
+				err := am.handleSlackPost(alert.SUUID, alert.Content, policy.Message())
 				if err != nil {
 					logger.Error("Could not post alert to slack", zap.Error(err))
 				}

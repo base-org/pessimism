@@ -145,6 +145,7 @@ func Test_Contract_Event(t *testing.T) {
 
 	// The string declaration of the event we want to listen for.
 	updateSig := "ConfigUpdate(uint256,uint8,bytes)"
+	alertMsg := "System config gas config updated"
 
 	// Deploy a contract event heuristic session for the L1 system config address.
 	err := ts.App.BootStrap([]*models.SessionRequestParams{{
@@ -154,7 +155,7 @@ func Test_Contract_Event(t *testing.T) {
 		StartHeight:   nil,
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
-			Msg:  "System config gas config updated",
+			Msg:  alertMsg,
 			Dest: core.Slack.String(),
 		},
 		SessionParams: map[string]interface{}{
@@ -193,7 +194,7 @@ func Test_Contract_Event(t *testing.T) {
 
 	assert.Equal(t, len(posts), 1, "No system contract event alert was sent")
 	assert.Contains(t, posts[0].Text, "contract_event", "System contract event alert was not sent")
-	assert.Contains(t, posts[0].Text, "System config gas config updated", "System contract event message was not propagated")
+	assert.Contains(t, posts[0].Text, alertMsg, "System contract event message was not propagated")
 }
 
 // TestAccount defines an account for testing.

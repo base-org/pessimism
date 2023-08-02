@@ -11,5 +11,4 @@ type Alert struct {
 	Ptype     PipelineType
 
 	Content string
-	Message string
 }
