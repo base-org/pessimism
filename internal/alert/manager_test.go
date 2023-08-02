@@ -34,7 +34,11 @@ func Test_EventLoop(t *testing.T) {
 		SUUID: core.NilSUUID(),
 	}
 
-	err := am.AddSession(core.NilSUUID(), core.Slack)
+	err := am.AddSession(core.NilSUUID(),
+		&core.AlertPolicy{
+			Dest:    core.Slack.String(),
+			Message: "test",
+		})
 	assert.Nil(t, err)
 
 	sc.EXPECT().PostData(gomock.Any(), gomock.Any()).

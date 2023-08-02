@@ -127,8 +127,9 @@ func Test_RunSession(t *testing.T) {
 
 		HeuristicType: core.BalanceEnforcement,
 		Params:        nil,
-		AlertDest:     core.Slack,
-	}
+		AlertingPolicy: &core.AlertPolicy{
+			Dest: core.Slack.String(),
+		}}
 
 	var tests = []struct {
 		name        string
@@ -167,7 +168,7 @@ func Test_RunSession(t *testing.T) {
 					Return(testSUUID, nil).
 					Times(1)
 
-				ts.mockAlrt.EXPECT().AddSession(testSUUID, testCfg.AlertDest).
+				ts.mockAlrt.EXPECT().AddSession(testSUUID, testCfg.AlertingPolicy).
 					Return(testErr()).
 					Times(1)
 
@@ -192,7 +193,7 @@ func Test_RunSession(t *testing.T) {
 					Return(testSUUID, nil).
 					Times(1)
 
-				ts.mockAlrt.EXPECT().AddSession(testSUUID, testCfg.AlertDest).
+				ts.mockAlrt.EXPECT().AddSession(testSUUID, testCfg.AlertingPolicy).
 					Return(nil).
 					Times(1)
 
@@ -217,7 +218,7 @@ func Test_RunSession(t *testing.T) {
 					Return(testSUUID, nil).
 					Times(1)
 
-				ts.mockAlrt.EXPECT().AddSession(testSUUID, testCfg.AlertDest).
+				ts.mockAlrt.EXPECT().AddSession(testSUUID, testCfg.AlertingPolicy).
 					Return(nil).
 					Times(1)
 

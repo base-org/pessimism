@@ -15,7 +15,7 @@ import (
 
 // Manager ... Interface for alert manager
 type Manager interface {
-	AddSession(core.SUUID, core.AlertDestination) error
+	AddSession(core.SUUID, *core.AlertPolicy) error
 	Transit() chan core.Alert
 
 	core.Subsystem
@@ -56,8 +56,8 @@ func NewManager(ctx context.Context, sc client.SlackClient) Manager {
 }
 
 // AddSession ... Adds an heuristic session to the alert manager store
-func (am *alertManager) AddSession(sUUID core.SUUID, alertDestination core.AlertDestination) error {
-	return am.store.AddAlertDestination(sUUID, alertDestination)
+func (am *alertManager) AddSession(sUUID core.SUUID, policy *core.AlertPolicy) error {
+	return am.store.AddAlertPolicy(sUUID, policy)
 }
 
 // TODO - Rename this to ingress()
@@ -95,16 +95,16 @@ func (am *alertManager) EventLoop() error {
 			logger.Info("received alert",
 				zap.String(logging.SUUIDKey, alert.SUUID.String()))
 
-			alertDest, err := am.store.GetAlertDestination(alert.SUUID)
+			policy, err := am.store.GetAlertPolicy(alert.SUUID)
 			if err != nil {
 				logger.Error("Could not determine alerting destination", zap.Error(err))
 				continue
 			}
 
-			alert.Dest = alertDest
+			alert.Dest = policy.Destination()
 			am.metrics.RecordAlertGenerated(alert)
 
-			switch alertDest {
+			switch alert.Dest {
 			case core.Slack: // TODO: add more alert destinations
 				logger.Debug("Attempting to post alert to slack")
 
@@ -118,7 +118,7 @@ func (am *alertManager) EventLoop() error {
 
 			default:
 				logger.Error("Attempting to post alert to unknown destination",
-					zap.String("destination", alertDest.String()))
+					zap.String("destination", policy.Destination().String()))
 			}
 		}
 	}

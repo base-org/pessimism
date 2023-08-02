@@ -35,7 +35,7 @@ func (m *AlertManager) EXPECT() *AlertManagerMockRecorder {
 }
 
 // AddSession mocks base method.
-func (m *AlertManager) AddSession(arg0 core.SUUID, arg1 core.AlertDestination) error {
+func (m *AlertManager) AddSession(arg0 core.SUUID, arg1 *core.AlertPolicy) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddSession", arg0, arg1)
 	ret0, _ := ret[0].(error)

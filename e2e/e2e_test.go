@@ -46,7 +46,9 @@ func Test_Balance_Enforcement(t *testing.T) {
 		HeuristicType: core.BalanceEnforcement.String(),
 		StartHeight:   nil,
 		EndHeight:     nil,
-		AlertingDest:  core.Slack.String(),
+		AlertingParams: &core.AlertPolicy{
+			Dest: core.Slack.String(),
+		},
 		SessionParams: map[string]interface{}{
 			"address": alice.String(),
 			"lower":   3, // i.e. alert if balance is less than 3 ETH
@@ -148,7 +150,10 @@ func Test_Contract_Event(t *testing.T) {
 		HeuristicType: core.ContractEvent.String(),
 		StartHeight:   nil,
 		EndHeight:     nil,
-		AlertingDest:  core.Slack.String(),
+		AlertingParams: &core.AlertPolicy{
+			Message: "System config gas config updated",
+			Dest:    core.Slack.String(),
+		},
 		SessionParams: map[string]interface{}{
 			"address": predeploys.DevSystemConfigAddr.String(),
 			"args":    []interface{}{updateSig},
@@ -185,6 +190,7 @@ func Test_Contract_Event(t *testing.T) {
 
 	assert.Equal(t, len(posts), 1, "No system contract event alert was sent")
 	assert.Contains(t, posts[0].Text, "contract_event", "System contract event alert was not sent")
+	assert.Contains(t, posts[0].Text, "System config gas config updated", "System contract event message was not propagated")
 }
 
 // TestAccount defines an account for testing.
@@ -257,7 +263,9 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 			HeuristicType: core.WithdrawalEnforcement.String(),
 			StartHeight:   nil,
 			EndHeight:     nil,
-			AlertingDest:  core.Slack.String(),
+			AlertingParams: &core.AlertPolicy{
+				Dest: core.Slack.String(),
+			},
 			SessionParams: map[string]interface{}{
 				core.L1Portal:            predeploys.DevOptimismPortal,
 				core.L2ToL1MessagePasser: fakeAddr.String(),
@@ -269,7 +277,9 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 			HeuristicType: core.WithdrawalEnforcement.String(),
 			StartHeight:   nil,
 			EndHeight:     nil,
-			AlertingDest:  core.Slack.String(),
+			AlertingParams: &core.AlertPolicy{
+				Dest: core.Slack.String(),
+			},
 			SessionParams: map[string]interface{}{
 				core.L1Portal:            predeploys.DevOptimismPortal,
 				core.L2ToL1MessagePasser: predeploys.L2ToL1MessagePasserAddr.String(),
@@ -383,7 +393,9 @@ func Test_Fault_Detector(t *testing.T) {
 		HeuristicType: core.FaultDetector.String(),
 		StartHeight:   big.NewInt(0),
 		EndHeight:     nil,
-		AlertingDest:  core.Slack.String(),
+		AlertingParams: &core.AlertPolicy{
+			Dest: core.Slack.String(),
+		},
 		SessionParams: map[string]interface{}{
 			core.L2OutputOracle:      predeploys.DevL2OutputOracle,
 			core.L2ToL1MessagePasser: predeploys.L2ToL1MessagePasser,

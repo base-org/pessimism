@@ -146,14 +146,14 @@ func (m *manager) BuildDeployCfg(pConfig *core.PipelineConfig,
 
 	// 3. Create a deploy config
 	return &heuristic.DeployConfig{
-		PUUID:         pUUID,
-		Reuse:         reuse,
-		HeuristicType: sConfig.Type,
-		Params:        sConfig.Params,
-		Network:       pConfig.Network,
-		Stateful:      stateful,
-		StateKey:      sk,
-		AlertDest:     sConfig.AlertDest,
+		PUUID:          pUUID,
+		Reuse:          reuse,
+		HeuristicType:  sConfig.Type,
+		Params:         sConfig.Params,
+		Network:        pConfig.Network,
+		Stateful:       stateful,
+		StateKey:       sk,
+		AlertingPolicy: sConfig.AlertPolicy,
 	}, nil
 }
 
@@ -174,7 +174,7 @@ func (m *manager) RunSession(cfg *heuristic.DeployConfig) (core.SUUID, error) {
 		Info("Deployed heuristic session to risk engine", zap.String(logging.SUUIDKey, sUUID.String()))
 
 	// 3. Add session to alert manager
-	err = m.alert.AddSession(sUUID, cfg.AlertDest)
+	err = m.alert.AddSession(sUUID, cfg.AlertingPolicy)
 	if err != nil {
 		return core.NilSUUID(), err
 	}

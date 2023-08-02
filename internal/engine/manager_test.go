@@ -58,9 +58,11 @@ func Test_EventLoop(t *testing.T) {
 		Network:       core.Layer1,
 		Stateful:      true,
 		StateKey:      &core.StateKey{},
-		AlertDest:     core.Slack,
-		Params:        isp,
-		PUUID:         testPUUID,
+		AlertingPolicy: &core.AlertPolicy{
+			Dest: core.Slack.String(),
+		},
+		Params: isp,
+		PUUID:  testPUUID,
 	}
 
 	suuid, err := em.DeployHeuristicSession(deployCfg)
