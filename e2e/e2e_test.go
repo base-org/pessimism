@@ -255,6 +255,9 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	// Determine the address our request will come from.
 	fromAddr := crypto.PubkeyToAddress(transactor.Key.PublicKey)
 
+	// Setup alert message.
+	alertMsg := "disrupting centralized finance"
+
 	// Setup Pessimism to listen for fraudulent withdrawals
 	// We use two heuristics here; one configured with a dummy L1 message passer
 	// and one configured with the real L2->L1 message passer contract. This allows us to
@@ -269,6 +272,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 			EndHeight:     nil,
 			AlertingParams: &core.AlertPolicy{
 				Dest: core.Slack.String(),
+				Msg:  alertMsg,
 			},
 			SessionParams: map[string]interface{}{
 				core.L1Portal:            predeploys.DevOptimismPortal,
@@ -362,6 +366,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	assert.Equal(t, 1, len(alerts), "expected 1 alert")
 	assert.Contains(t, alerts[0].Text, "withdrawal_enforcement", "expected alert to be for withdrawal_enforcement")
 	assert.Contains(t, alerts[0].Text, fakeAddr.String(), "expected alert to be for dummy L2ToL1MessagePasser")
+	assert.Contains(t, alerts[0].Text, alertMsg, "expected alert to have alert message")
 }
 
 // Test_Fault_Detector ... Ensures that an alert is produced in the presence of a faulty L2Output root
@@ -390,6 +395,9 @@ func Test_Fault_Detector(t *testing.T) {
 	reader, err := bindings.NewL2OutputOracleCaller(predeploys.DevL2OutputOracleAddr, l1Client)
 	assert.Nil(t, err)
 
+	// Assign alert message
+
+	alertMsg := "the fault, dear Brutus, is not in our stars, but in ourselves"
 	// Deploys a fault detector heuristic session instance using the locally spun-up Op-Stack chain
 	err = ts.App.BootStrap([]*models.SessionRequestParams{{
 		Network:       core.Layer1.String(),
@@ -399,6 +407,7 @@ func Test_Fault_Detector(t *testing.T) {
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
 			Dest: core.Slack.String(),
+			Msg:  alertMsg,
 		},
 		SessionParams: map[string]interface{}{
 			core.L2OutputOracle:      predeploys.DevL2OutputOracle,
@@ -435,4 +444,5 @@ func Test_Fault_Detector(t *testing.T) {
 	alerts := ts.TestSvr.SlackAlerts()
 	assert.Equal(t, 1, len(alerts), "expected 1 alert")
 	assert.Contains(t, alerts[0].Text, "fault_detector", "expected alert to be for fault_detector")
+	assert.Contains(t, alerts[0].Text, alertMsg, "expected alert to have alert message")
 }
