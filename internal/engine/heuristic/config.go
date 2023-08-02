@@ -14,5 +14,5 @@ type DeployConfig struct {
 	HeuristicType core.HeuristicType
 	Params        *core.SessionParams
 
-	AlertDest core.AlertDestination
+	AlertingPolicy *core.AlertPolicy
 }

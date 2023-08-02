@@ -50,7 +50,7 @@ type SessionRequestParams struct {
 
 	SessionParams map[string]interface{} `json:"heuristic_params"`
 	// TODO(#81): No Support for Multiple Alerting Destinations for an Heuristic Session
-	AlertingDest string `json:"alert_destination"`
+	AlertingParams *core.AlertPolicy `json:"alerting_params"`
 }
 
 // Params ... Returns the heuristic session params
@@ -66,7 +66,7 @@ func (hrp *SessionRequestParams) Params() *core.SessionParams {
 
 // AlertingDestType ... Returns the alerting destination type
 func (hrp *SessionRequestParams) AlertingDestType() core.AlertDestination {
-	return core.StringToAlertingDestType(hrp.AlertingDest)
+	return hrp.AlertingParams.Destination()
 }
 
 // NetworkType ... Returns the network type
@@ -82,6 +82,10 @@ func (hrp *SessionRequestParams) PipelineType() core.PipelineType {
 // Heuristic ... Returns the heuristic type
 func (hrp *SessionRequestParams) Heuristic() core.HeuristicType {
 	return core.StringToHeuristicType(hrp.HeuristicType)
+}
+
+func (hrp *SessionRequestParams) AlertPolicy() *core.AlertPolicy {
+	return hrp.AlertingParams
 }
 
 // GeneratePipelineConfig ... Generates a pipeline config using the request params
@@ -103,10 +107,10 @@ func (hrp *SessionRequestParams) GeneratePipelineConfig(pollInterval time.Durati
 // SessionConfig ... Generates a session config using the request params
 func (hrp *SessionRequestParams) SessionConfig() *core.SessionConfig {
 	return &core.SessionConfig{
-		AlertDest: hrp.AlertingDestType(),
-		Type:      hrp.Heuristic(),
-		Params:    hrp.Params(),
-		PT:        hrp.PipelineType(),
+		AlertPolicy: hrp.AlertPolicy(),
+		Type:        hrp.Heuristic(),
+		Params:      hrp.Params(),
+		PT:          hrp.PipelineType(),
 	}
 }
 

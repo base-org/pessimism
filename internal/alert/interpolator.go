@@ -22,6 +22,10 @@ const (
 
 	*Assessment Content:* 
 	%s	
+
+	*Message:*
+	%s
+
 	`
 )
 
@@ -36,7 +40,7 @@ const (
 
 // Interpolator ... Interface for interpolating messages
 type Interpolator interface {
-	InterpolateSlackMessage(sUUID core.SUUID, message string) string
+	InterpolateSlackMessage(sUUID core.SUUID, content string, msg string) string
 	InterpolatePagerdutyMessage(sUUID core.SUUID, message string) string
 }
 
@@ -49,12 +53,13 @@ func NewInterpolator() Interpolator {
 }
 
 // InterpolateSlackMessage ... Interpolates a slack message with the given heuristic session UUID and message
-func (*interpolator) InterpolateSlackMessage(sUUID core.SUUID, message string) string {
+func (*interpolator) InterpolateSlackMessage(sUUID core.SUUID, content string, msg string) string {
 	return fmt.Sprintf(SlackMsgFmt,
 		sUUID.PID.HeuristicType().String(),
 		sUUID.PID.Network(),
 		sUUID.String(),
-		fmt.Sprintf(CodeBlockFmt, message))
+		fmt.Sprintf(CodeBlockFmt, content),
+		msg)
 }
 
 // InterpolatePagerdutyMessage ... Interpolates a pagerduty message with the given heuristic session UUID and message

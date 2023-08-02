@@ -39,6 +39,7 @@ func Test_Balance_Enforcement(t *testing.T) {
 	alice := ts.L2Cfg.Secrets.Addresses().Alice
 	bob := ts.L2Cfg.Secrets.Addresses().Bob
 
+	alertMsg := "one baby to another says:"
 	// Deploy a balance enforcement heuristic session for Alice.
 	err := ts.App.BootStrap([]*models.SessionRequestParams{{
 		Network:       core.Layer2.String(),
@@ -46,7 +47,10 @@ func Test_Balance_Enforcement(t *testing.T) {
 		HeuristicType: core.BalanceEnforcement.String(),
 		StartHeight:   nil,
 		EndHeight:     nil,
-		AlertingDest:  core.Slack.String(),
+		AlertingParams: &core.AlertPolicy{
+			Dest: core.Slack.String(),
+			Msg:  alertMsg,
+		},
 		SessionParams: map[string]interface{}{
 			"address": alice.String(),
 			"lower":   3, // i.e. alert if balance is less than 3 ETH
@@ -95,6 +99,7 @@ func Test_Balance_Enforcement(t *testing.T) {
 
 	assert.Greater(t, len(posts), 0, "No balance enforcement alert was sent")
 	assert.Contains(t, posts[0].Text, "balance_enforcement", "Balance enforcement alert was not sent")
+	assert.Contains(t, posts[0].Text, alertMsg)
 
 	// Get Bobs's balance.
 	bobAmt, err := ts.L2Geth.L2Client.BalanceAt(context.Background(), bob, nil)
@@ -112,7 +117,7 @@ func Test_Balance_Enforcement(t *testing.T) {
 		Data:      nil,
 	})
 
-	// Send the transaction to redisperse the ETH from Bob back to Alice.
+	// Send the transaction to re-disperse the ETH from Bob back to Alice.
 	_, err = ts.L2Geth.AddL2Block(context.Background(), drainBobTx)
 	assert.NoError(t, err, "Failed to create L2 block with transaction")
 
@@ -140,6 +145,7 @@ func Test_Contract_Event(t *testing.T) {
 
 	// The string declaration of the event we want to listen for.
 	updateSig := "ConfigUpdate(uint256,uint8,bytes)"
+	alertMsg := "System config gas config updated"
 
 	// Deploy a contract event heuristic session for the L1 system config address.
 	err := ts.App.BootStrap([]*models.SessionRequestParams{{
@@ -148,7 +154,10 @@ func Test_Contract_Event(t *testing.T) {
 		HeuristicType: core.ContractEvent.String(),
 		StartHeight:   nil,
 		EndHeight:     nil,
-		AlertingDest:  core.Slack.String(),
+		AlertingParams: &core.AlertPolicy{
+			Msg:  alertMsg,
+			Dest: core.Slack.String(),
+		},
 		SessionParams: map[string]interface{}{
 			"address": predeploys.DevSystemConfigAddr.String(),
 			"args":    []interface{}{updateSig},
@@ -185,6 +194,7 @@ func Test_Contract_Event(t *testing.T) {
 
 	assert.Equal(t, len(posts), 1, "No system contract event alert was sent")
 	assert.Contains(t, posts[0].Text, "contract_event", "System contract event alert was not sent")
+	assert.Contains(t, posts[0].Text, alertMsg, "System contract event message was not propagated")
 }
 
 // TestAccount defines an account for testing.
@@ -245,6 +255,9 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	// Determine the address our request will come from.
 	fromAddr := crypto.PubkeyToAddress(transactor.Key.PublicKey)
 
+	// Setup alert message.
+	alertMsg := "disrupting centralized finance"
+
 	// Setup Pessimism to listen for fraudulent withdrawals
 	// We use two heuristics here; one configured with a dummy L1 message passer
 	// and one configured with the real L2->L1 message passer contract. This allows us to
@@ -257,7 +270,10 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 			HeuristicType: core.WithdrawalEnforcement.String(),
 			StartHeight:   nil,
 			EndHeight:     nil,
-			AlertingDest:  core.Slack.String(),
+			AlertingParams: &core.AlertPolicy{
+				Dest: core.Slack.String(),
+				Msg:  alertMsg,
+			},
 			SessionParams: map[string]interface{}{
 				core.L1Portal:            predeploys.DevOptimismPortal,
 				core.L2ToL1MessagePasser: fakeAddr.String(),
@@ -269,7 +285,9 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 			HeuristicType: core.WithdrawalEnforcement.String(),
 			StartHeight:   nil,
 			EndHeight:     nil,
-			AlertingDest:  core.Slack.String(),
+			AlertingParams: &core.AlertPolicy{
+				Dest: core.Slack.String(),
+			},
 			SessionParams: map[string]interface{}{
 				core.L1Portal:            predeploys.DevOptimismPortal,
 				core.L2ToL1MessagePasser: predeploys.L2ToL1MessagePasserAddr.String(),
@@ -348,6 +366,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	assert.Equal(t, 1, len(alerts), "expected 1 alert")
 	assert.Contains(t, alerts[0].Text, "withdrawal_enforcement", "expected alert to be for withdrawal_enforcement")
 	assert.Contains(t, alerts[0].Text, fakeAddr.String(), "expected alert to be for dummy L2ToL1MessagePasser")
+	assert.Contains(t, alerts[0].Text, alertMsg, "expected alert to have alert message")
 }
 
 // Test_Fault_Detector ... Ensures that an alert is produced in the presence of a faulty L2Output root
@@ -376,6 +395,9 @@ func Test_Fault_Detector(t *testing.T) {
 	reader, err := bindings.NewL2OutputOracleCaller(predeploys.DevL2OutputOracleAddr, l1Client)
 	assert.Nil(t, err)
 
+	// Assign alert message
+
+	alertMsg := "the fault, dear Brutus, is not in our stars, but in ourselves"
 	// Deploys a fault detector heuristic session instance using the locally spun-up Op-Stack chain
 	err = ts.App.BootStrap([]*models.SessionRequestParams{{
 		Network:       core.Layer1.String(),
@@ -383,7 +405,10 @@ func Test_Fault_Detector(t *testing.T) {
 		HeuristicType: core.FaultDetector.String(),
 		StartHeight:   big.NewInt(0),
 		EndHeight:     nil,
-		AlertingDest:  core.Slack.String(),
+		AlertingParams: &core.AlertPolicy{
+			Dest: core.Slack.String(),
+			Msg:  alertMsg,
+		},
 		SessionParams: map[string]interface{}{
 			core.L2OutputOracle:      predeploys.DevL2OutputOracle,
 			core.L2ToL1MessagePasser: predeploys.L2ToL1MessagePasser,
@@ -419,4 +444,5 @@ func Test_Fault_Detector(t *testing.T) {
 	alerts := ts.TestSvr.SlackAlerts()
 	assert.Equal(t, 1, len(alerts), "expected 1 alert")
 	assert.Contains(t, alerts[0].Text, "fault_detector", "expected alert to be for fault_detector")
+	assert.Contains(t, alerts[0].Text, alertMsg, "expected alert to have alert message")
 }

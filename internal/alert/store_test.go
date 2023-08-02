@@ -16,37 +16,42 @@ func Test_Store(t *testing.T) {
 		testLogic   func(t *testing.T)
 	}{
 		{
-			name:        "Test Get Alert Destintation Success",
-			description: "Test GetAlertDestination",
+			name:        "Test Get Alert Policy Success",
+			description: "Test GetAlertPolicy",
 			testLogic: func(t *testing.T) {
 				am := alert.NewStore()
 
 				sUUID := core.MakeSUUID(core.Layer1, core.Live, core.BalanceEnforcement)
-				alertDestination := core.Slack
+				policy := &core.AlertPolicy{
+					Msg:  "test message",
+					Dest: core.Slack.String(),
+				}
 
-				err := am.AddAlertDestination(sUUID, alertDestination)
-				assert.NoError(t, err, "failed to add alert destination")
+				err := am.AddAlertPolicy(sUUID, policy)
+				assert.NoError(t, err, "failed to add Alert Policy")
 
-				actualAlertDest, err := am.GetAlertDestination(sUUID)
-				assert.NoError(t, err, "failed to get alert destination")
-				assert.Equal(t, alertDestination, actualAlertDest, "alert destination mismatch")
+				actualPolicy, err := am.GetAlertPolicy(sUUID)
+				assert.NoError(t, err, "failed to get Alert Policy")
+				assert.Equal(t, policy, actualPolicy, "Alert Policy mismatch")
 			},
 		},
 		{
-			name:        "Test Add Alert Destination Success",
-			description: "Test adding of arbitrary alert destinations",
+			name:        "Test Add Alert Policy Success",
+			description: "Test adding of arbitrary Alert Policies",
 			testLogic: func(t *testing.T) {
 				am := alert.NewStore()
 
 				sUUID := core.MakeSUUID(core.Layer1, core.Live, core.BalanceEnforcement)
-				alertDestination := core.Slack
+				policy := &core.AlertPolicy{
+					Dest: core.Slack.String(),
+				}
 
-				err := am.AddAlertDestination(sUUID, alertDestination)
-				assert.NoError(t, err, "failed to add alert destination")
+				err := am.AddAlertPolicy(sUUID, policy)
+				assert.NoError(t, err, "failed to add Alert Policy")
 
 				// add again
-				err = am.AddAlertDestination(sUUID, alertDestination)
-				assert.Error(t, err, "failed to add alert destination")
+				err = am.AddAlertPolicy(sUUID, policy)
+				assert.Error(t, err, "failed to add Alert Policy")
 			},
 		},
 		{

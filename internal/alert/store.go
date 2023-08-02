@@ -8,43 +8,43 @@ import (
 
 // TODO(#81): No Support for Multiple Alerting Destinations for an Heuristic Session
 
-// Store ... Interface for alert store
+// Store ... Interface for alert policy store
 // NOTE - This is a simple in-memory store, using this interface
 // we can easily swap it out for a persistent store
 type Store interface {
-	AddAlertDestination(core.SUUID, core.AlertDestination) error
-	GetAlertDestination(sUUID core.SUUID) (core.AlertDestination, error)
+	AddAlertPolicy(core.SUUID, *core.AlertPolicy) error
+	GetAlertPolicy(sUUID core.SUUID) (*core.AlertPolicy, error)
 }
 
 // store ... Alert store implementation
+// Used to store critical alerting metadata (ie. alert destination, message, etc.)
 type store struct {
-	alertMap map[core.SUUID]core.AlertDestination
+	defMap map[core.SUUID]*core.AlertPolicy
 }
 
 // NewStore ... Initializer
 func NewStore() Store {
 	return &store{
-		alertMap: make(map[core.SUUID]core.AlertDestination),
+		defMap: make(map[core.SUUID]*core.AlertPolicy),
 	}
 }
 
-// AddAlertDestination ... Adds an alert destination for the given heuristic session UUID
+// AddAlertPolicy ... Adds an alert policy for the given heuristic session UUID
 // NOTE - There can only be one alert destination per heuristic session UUID
-func (am *store) AddAlertDestination(sUUID core.SUUID,
-	alertDestination core.AlertDestination) error {
-	if _, exists := am.alertMap[sUUID]; exists {
+func (am *store) AddAlertPolicy(sUUID core.SUUID, policy *core.AlertPolicy) error {
+	if _, exists := am.defMap[sUUID]; exists {
 		return fmt.Errorf("alert destination already exists for heuristic session %s", sUUID.String())
 	}
 
-	am.alertMap[sUUID] = alertDestination
+	am.defMap[sUUID] = policy
 	return nil
 }
 
-// GetAlertDestination ... Returns the alert destination for the given heuristic session UUID
-func (am *store) GetAlertDestination(sUUID core.SUUID) (core.AlertDestination, error) {
-	dest, exists := am.alertMap[sUUID]
+// GetAlertPolicy ... Returns the alert destination for the given heuristic session UUID
+func (am *store) GetAlertPolicy(sUUID core.SUUID) (*core.AlertPolicy, error) {
+	dest, exists := am.defMap[sUUID]
 	if !exists {
-		return 0, fmt.Errorf("alert destination does not exist for heuristic session %s", sUUID.String())
+		return nil, fmt.Errorf("alert destination does not exist for heuristic session %s", sUUID.String())
 	}
 
 	return dest, nil

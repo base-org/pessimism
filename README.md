@@ -91,14 +91,17 @@ A bootstrap config file is used to define the initial state of the pessimism ser
 ```
 [
     {
-          "network": "layer1",
-          "pipeline_type": "live",
-          "type": "contract_event", 
-          "start_height": null,
-          "alert_destination": "slack",
-          "heuristic_params": {
-              "address": "0xfC0157aA4F5DB7177830ACddB3D5a9BB5BE9cc5e",
-              "args": ["Transfer(address, address, uint256)"]
+        "network": "layer1",
+        "pipeline_type": "live",
+        "type": "contract_event", 
+        "start_height": null,
+        "alerting_params": {
+            "message": "",
+            "destination": "slack"
+        },
+        "heuristic_params": {
+            "address": "0xfC0157aA4F5DB7177830ACddB3D5a9BB5BE9cc5e",
+            "args": ["Transfer(address, address, uint256)"]
         }
     },
     {
@@ -106,7 +109,10 @@ A bootstrap config file is used to define the initial state of the pessimism ser
         "pipeline_type": "live",
         "type": "balance_enforcement", 
         "start_height": null,
-        "alert_destination": "slack",
+        "alerting_params": {
+            "message": "",
+            "destination": "slack"
+        },
         "heuristic_params": {
             "address": "0xfC0157aA4F5DB7177830ACddB3D5a9BB5BE9cc5e",
             "lower": 1,

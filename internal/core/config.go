@@ -16,11 +16,11 @@ type ClientConfig struct {
 
 // SessionConfig ... Configuration passed through to a session constructor
 type SessionConfig struct {
-	Network   Network
-	PT        PipelineType
-	AlertDest AlertDestination
-	Type      HeuristicType
-	Params    *SessionParams
+	Network     Network
+	PT          PipelineType
+	AlertPolicy *AlertPolicy
+	Type        HeuristicType
+	Params      *SessionParams
 }
 
 // PipelineConfig ... Configuration passed through to a pipeline constructor
