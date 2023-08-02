@@ -30,7 +30,7 @@ const (
 
 // Interpolator ... Interface for interpolating messages
 type Interpolator interface {
-	InterpolateSlackMessage(sUUID core.SUUID, assess string, msg string) string
+	InterpolateSlackMessage(sUUID core.SUUID, content string, msg string) string
 }
 
 // interpolator ... Interpolator implementation
