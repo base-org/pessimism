@@ -15,6 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// PagerdutyAction represents the type of actions that can be triggered by an event
 type PagerdutyAction string
 
 const (
@@ -23,6 +24,7 @@ const (
 	PagerdutyResolveAction PagerdutyAction = "resolve"
 )
 
+// PagerdutySeverity represents the severity of an event
 type PagerdutySeverity string
 
 const (
@@ -32,6 +34,7 @@ const (
 	Info     PagerdutySeverity = "info"
 )
 
+// PagerdutyResponseStatus is the response status of a Pagerduty API call
 type PagerdutyResponseStatus string
 
 const (
@@ -55,6 +58,7 @@ type pagerdutyClient struct {
 	client          *http.Client
 }
 
+// NewPagerdutyClient ... Initializer for Pagerduty client
 func NewPagerdutyClient(cfg *PagerdutyConfig) PagerdutyClient {
 	if cfg.IntegrationKey == "" {
 		logging.NoContext().Warn("No Pagerduty integration key provided")
