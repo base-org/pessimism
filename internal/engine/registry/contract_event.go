@@ -77,9 +77,11 @@ func (ei *EventHeuristic) Assess(td core.TransitData) (*core.Activation, bool, e
 
 	// 2. Check if the log event signature is in the list of signatures
 	activated := false
+	var sigHit common.Hash
 	for _, sig := range ei.sigs {
 		if log.Topics[0] == sig {
 			activated = true
+			sigHit = sig
 			break
 		}
 	}
@@ -89,6 +91,6 @@ func (ei *EventHeuristic) Assess(td core.TransitData) (*core.Activation, bool, e
 	}
 
 	return &core.Activation{
-		Message: fmt.Sprintf(eventReportMsg, ei.cfg.ContractName, log.Address, log.TxHash.Hex(), ei.cfg.Sigs[0]),
+		Message: fmt.Sprintf(eventReportMsg, ei.cfg.ContractName, log.Address, log.TxHash.Hex(), sigHit),
 	}, true, nil
 }
