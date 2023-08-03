@@ -73,7 +73,7 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 	appCfg.AlertConfig.SlackConfig.URL = slackServer.Server.URL
 
 	pagerdutyServer := NewTestPagerdutyServer()
-	appCfg.AlertConfig.PagerdutyConfig.AlertEventsURL = pagerdutyServer.Server.URL
+	appCfg.AlertConfig.MediumPagerDutyCfg.AlertEventsURL = pagerdutyServer.Server.URL
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
@@ -130,7 +130,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	appCfg.AlertConfig.SlackConfig.URL = slackServer.Server.URL
 
 	pagerdutyServer := NewTestPagerdutyServer()
-	appCfg.AlertConfig.PagerdutyConfig.AlertEventsURL = pagerdutyServer.Server.URL
+	appCfg.AlertConfig.MediumPagerDutyCfg.AlertEventsURL = pagerdutyServer.Server.URL
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
@@ -189,7 +189,10 @@ func DefaultTestConfig() *config.Config {
 				URL:     "",
 				Channel: "test",
 			},
-			PagerdutyConfig: &client.PagerdutyConfig{
+			MediumPagerDutyCfg: &client.PagerdutyConfig{
+				AlertEventsURL: "",
+			},
+			HighPagerDutyCfg: &client.PagerdutyConfig{
 				AlertEventsURL: "",
 			},
 		},

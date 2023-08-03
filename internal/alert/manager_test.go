@@ -19,7 +19,7 @@ func Test_EventLoop(t *testing.T) {
 
 	ctx := context.Background()
 
-	am := alert.NewManager(ctx, sc, pdc)
+	am := alert.NewManager(ctx, sc, pdc, pdc)
 
 	go func() {
 		_ = am.EventLoop()

@@ -48,8 +48,8 @@ func Test_Balance_Enforcement(t *testing.T) {
 		StartHeight:   nil,
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
-			Dest: core.Pagerduty.String(),
-			Msg:  alertMsg,
+			Sev: "high",
+			Msg: alertMsg,
 		},
 		SessionParams: map[string]interface{}{
 			"address": alice.String(),
@@ -153,8 +153,8 @@ func Test_Contract_Event(t *testing.T) {
 		StartHeight:   nil,
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
-			Msg:  alertMsg,
-			Dest: core.Slack.String(),
+			Msg: alertMsg,
+			Sev: "low",
 		},
 		SessionParams: map[string]interface{}{
 			"address": predeploys.DevSystemConfigAddr.String(),
@@ -269,8 +269,8 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 			StartHeight:   nil,
 			EndHeight:     nil,
 			AlertingParams: &core.AlertPolicy{
-				Dest: core.Slack.String(),
-				Msg:  alertMsg,
+				Sev: "low",
+				Msg: alertMsg,
 			},
 			SessionParams: map[string]interface{}{
 				core.L1Portal:            predeploys.DevOptimismPortal,
@@ -284,7 +284,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 			StartHeight:   nil,
 			EndHeight:     nil,
 			AlertingParams: &core.AlertPolicy{
-				Dest: core.Slack.String(),
+				Sev: "low",
 			},
 			SessionParams: map[string]interface{}{
 				core.L1Portal:            predeploys.DevOptimismPortal,
@@ -404,8 +404,8 @@ func Test_Fault_Detector(t *testing.T) {
 		StartHeight:   big.NewInt(0),
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
-			Dest: core.Slack.String(),
-			Msg:  alertMsg,
+			Sev: "low",
+			Msg: alertMsg,
 		},
 		SessionParams: map[string]interface{}{
 			core.L2OutputOracle:      predeploys.DevL2OutputOracle,
