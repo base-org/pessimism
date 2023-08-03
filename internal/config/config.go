@@ -5,14 +5,16 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/server"
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/subsystem"
-	"go.uber.org/zap"
 
 	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 )
 
 // TrueEnvVal ... Represents the encoded string value for true (ie. 1)
@@ -26,13 +28,10 @@ type Config struct {
 	L1RpcEndpoint string
 	L2RpcEndpoint string
 
-	// TODO - Consider moving this URL to a more appropriate location
-	SlackURL     string
-	SlackChannel string
-
 	SystemConfig  *subsystem.Config
 	ServerConfig  *server.Config
 	MetricsConfig *metrics.Config
+	AlertConfig   *alert.Config
 }
 
 // NewConfig ... Initializer
@@ -47,8 +46,24 @@ func NewConfig(fileName core.FilePath) *Config {
 
 		BootStrapPath: getEnvStrWithDefault("BOOTSTRAP_PATH", ""),
 		Environment:   core.Env(getEnvStr("ENV")),
-		SlackURL:      getEnvStrWithDefault("SLACK_URL", ""),
-		SlackChannel:  getEnvStrWithDefault("SLACK_CHANNEL", ""),
+
+		AlertConfig: &alert.Config{
+			SlackConfig: &client.SlackConfig{
+				Channel: getEnvStrWithDefault("SLACK_CHANNEL", ""),
+				URL:     getEnvStrWithDefault("SLACK_URL", ""),
+			},
+
+			HighPagerDutyCfg: &client.PagerdutyConfig{
+				AlertEventsURL:  getEnvStrWithDefault("P0_PAGERDUTY_ALERT_EVENTS_URL", ""),
+				ChangeEventsURL: getEnvStrWithDefault("P0_PAGERDUTY_CHANGE_EVENTS_URL", ""),
+				IntegrationKey:  getEnvStrWithDefault("P0_PAGERDUTY_INTEGRATION_KEY", ""),
+			},
+			MediumPagerDutyCfg: &client.PagerdutyConfig{
+				AlertEventsURL:  getEnvStrWithDefault("P1_PAGERDUTY_ALERT_EVENTS_URL", ""),
+				ChangeEventsURL: getEnvStrWithDefault("P1_PAGERDUTY_CHANGE_EVENTS_URL", ""),
+				IntegrationKey:  getEnvStrWithDefault("P1_PAGERDUTY_INTEGRATION_KEY", ""),
+			},
+		},
 
 		SystemConfig: &subsystem.Config{
 			MaxPipelineCount: getEnvInt("MAX_PIPELINE_COUNT"),
@@ -108,7 +123,7 @@ func getEnvStr(key string) string {
 }
 
 // getEnvStrWithDefault ... Reads env var from process environment, returns default if not found
-func getEnvStrWithDefault(key string, defaultValue string) string {
+func getEnvStrWithDefault(key string, defaultValue string) string { //nolint: unparam // empty str default ok
 	envVar, ok := os.LookupEnv(key)
 
 	// Not found

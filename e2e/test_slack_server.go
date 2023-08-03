@@ -9,15 +9,15 @@ import (
 	"github.com/base-org/pessimism/internal/client"
 )
 
-// TestServer ... Mock server for testing slack alerts
-type TestServer struct {
+// TestSlackServer ... Mock server for testing slack alerts
+type TestSlackServer struct {
 	Server   *httptest.Server
 	Payloads []*client.SlackPayload
 }
 
-// NewTestServer ... Creates a new mock slack server
-func NewTestServer() *TestServer {
-	ts := &TestServer{
+// NewTestSlackServer ... Creates a new mock slack server
+func NewTestSlackServer() *TestSlackServer {
+	ts := &TestSlackServer{
 		Payloads: []*client.SlackPayload{},
 	}
 
@@ -34,12 +34,12 @@ func NewTestServer() *TestServer {
 }
 
 // Close ... Closes the server
-func (svr *TestServer) Close() {
+func (svr *TestSlackServer) Close() {
 	svr.Server.Close()
 }
 
 // mockSlackPost ... Mocks a slack post request
-func (svr *TestServer) mockSlackPost(w http.ResponseWriter, r *http.Request) {
+func (svr *TestSlackServer) mockSlackPost(w http.ResponseWriter, r *http.Request) {
 	var alert *client.SlackPayload
 
 	if err := json.NewDecoder(r.Body).Decode(&alert); err != nil {
@@ -55,11 +55,11 @@ func (svr *TestServer) mockSlackPost(w http.ResponseWriter, r *http.Request) {
 }
 
 // SlackAlerts ... Returns the slack alerts
-func (svr *TestServer) SlackAlerts() []*client.SlackPayload {
+func (svr *TestSlackServer) SlackAlerts() []*client.SlackPayload {
 	return svr.Payloads
 }
 
 // ClearAlerts ... Clears the alerts
-func (svr *TestServer) ClearAlerts() {
+func (svr *TestSlackServer) ClearAlerts() {
 	svr.Payloads = []*client.SlackPayload{}
 }

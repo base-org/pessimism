@@ -4,11 +4,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/app"
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/mocks"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,6 +28,11 @@ func Test_AppFlow(t *testing.T) {
 
 		MetricsConfig: &metrics.Config{
 			Enabled: false,
+		},
+		AlertConfig: &alert.Config{
+			SlackConfig:        &client.SlackConfig{},
+			MediumPagerDutyCfg: &client.PagerdutyConfig{},
+			HighPagerDutyCfg:   &client.PagerdutyConfig{},
 		},
 	}
 
