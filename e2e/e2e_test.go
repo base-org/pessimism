@@ -197,7 +197,7 @@ func Test_Balance_Enforce_With_Cooldown(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// Check that the balance enforcement was triggered using the mocked server cache.
-	posts := ts.TestSvr.SlackAlerts()
+	posts := ts.TestSlackSvr.SlackAlerts()
 
 	assert.Equal(t, len(posts), 1, "No balance enforcement alert was sent")
 	assert.Contains(t, posts[0].Text, "balance_enforcement", "Balance enforcement alert was not sent")
@@ -205,7 +205,7 @@ func Test_Balance_Enforce_With_Cooldown(t *testing.T) {
 
 	// Ensure that no new alerts are sent for provided cooldown period.
 	time.Sleep(1 * time.Second)
-	posts = ts.TestSvr.SlackAlerts()
+	posts = ts.TestSlackSvr.SlackAlerts()
 	assert.Equal(t, 1, len(posts), "No alerts should be sent after the transaction is sent")
 }
 
