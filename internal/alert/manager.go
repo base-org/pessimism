@@ -22,22 +22,28 @@ type Manager interface {
 	core.Subsystem
 }
 
+type Config struct {
+	SlackConfig     *client.SlackConfig
+	PagerdutyConfig *client.PagerdutyConfig
+}
+
 // alertManager ... Alert manager implementation
 type alertManager struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	sc           client.SlackClient
 	store        Store
 	interpolator Interpolator
 	cdHandler    CoolDownHandler
 
 	metrics      metrics.Metricer
 	alertTransit chan core.Alert
+	pdc          client.PagerdutyClient
+	sc           client.SlackClient
 }
 
 // NewManager ... Instantiates a new alert manager
-func NewManager(ctx context.Context, sc client.SlackClient) Manager {
+func NewManager(ctx context.Context, sc client.SlackClient, pdc client.PagerdutyClient) Manager {
 	// NOTE - Consider constructing dependencies in higher level
 	// abstraction and passing them in
 
@@ -45,9 +51,10 @@ func NewManager(ctx context.Context, sc client.SlackClient) Manager {
 
 	am := &alertManager{
 		ctx:          ctx,
-		cancel:       cancel,
 		sc:           sc,
 		cdHandler:    NewCoolDownHandler(),
+		pdc:          pdc,
+		cancel:       cancel,
 		interpolator: NewInterpolator(),
 		store:        NewStore(),
 		alertTransit: make(chan core.Alert),
@@ -57,7 +64,7 @@ func NewManager(ctx context.Context, sc client.SlackClient) Manager {
 	return am
 }
 
-// AddSession ... Adds an heuristic session to the alert manager store
+// AddSession ... Adds a heuristic session to the alert manager store
 func (am *alertManager) AddSession(sUUID core.SUUID, policy *core.AlertPolicy) error {
 	return am.store.AddAlertPolicy(sUUID, policy)
 }
@@ -79,6 +86,26 @@ func (am *alertManager) handleSlackPost(sUUID core.SUUID, content string, msg st
 
 	if !resp.Ok && resp.Err != "" {
 		return fmt.Errorf(resp.Err)
+	}
+
+	return nil
+}
+
+// handlePagerdutyPost ... Handles posting an alert to pagerduty
+func (am *alertManager) handlePagerdutyPost(alert core.Alert) error {
+	pdMsg := am.interpolator.InterpolatePagerdutyMessage(alert.SUUID, alert.Content)
+	resp, err := am.pdc.PostEvent(am.ctx, &client.PagerdutyEventTrigger{
+		Message:  pdMsg,
+		Action:   client.Trigger,
+		Severity: client.Critical,
+		DedupKey: alert.SUUID.String(),
+	})
+	if err != nil {
+		return err
+	}
+
+	if resp.Status != string(client.SuccessStatus) {
+		return fmt.Errorf("could not post to pagerduty: %s", resp.Status)
 	}
 
 	return nil
@@ -131,10 +158,16 @@ func (am *alertManager) HandleAlert(alert core.Alert, policy *core.AlertPolicy) 
 	switch policy.Destination() {
 	case core.Slack: // TODO: add more alert destinations
 		logger.Debug("Attempting to post alert to slack")
-
 		err := am.handleSlackPost(alert.SUUID, alert.Content, policy.Message())
 		if err != nil {
 			logger.Error("Could not post alert to slack", zap.Error(err))
+		}
+
+	case core.Pagerduty:
+		logger.Debug("Attempting to post alert to pagerduty")
+		err := am.handlePagerdutyPost(alert)
+		if err != nil {
+			logger.Error("Could not post alert to pagerduty", zap.Error(err))
 		}
 
 	case core.ThirdParty:

@@ -16,6 +16,11 @@ import (
 	"go.uber.org/zap"
 )
 
+type SlackConfig struct {
+	Channel string
+	URL     string
+}
+
 // SlackClient ... Interface for slack client
 type SlackClient interface {
 	PostData(context.Context, string) (*SlackAPIResponse, error)
@@ -29,16 +34,16 @@ type slackClient struct {
 }
 
 // NewSlackClient ... Initializer
-func NewSlackClient(url string, channel string) SlackClient {
-	if url == "" {
+func NewSlackClient(cfg *SlackConfig) SlackClient {
+	if cfg.URL == "" {
 		logging.NoContext().Warn("No Slack webhook URL not provided")
 	}
 
-	return slackClient{
-		url: url,
+	return &slackClient{
+		url: cfg.URL,
 		// NOTE - This is a default client, we can add more configuration to it
 		// when necessary
-		channel: channel,
+		channel: cfg.Channel,
 		client:  &http.Client{},
 	}
 }

@@ -166,8 +166,9 @@ func (ap *AlertPolicy) Destination() AlertDestination {
 type AlertDestination uint8
 
 const (
-	Slack      AlertDestination = iota + 1
-	ThirdParty                  // 2
+	Slack AlertDestination = iota + 1
+	Pagerduty
+	ThirdParty
 )
 
 // String ... Converts an alerting destination type to a string
@@ -175,6 +176,8 @@ func (ad AlertDestination) String() string {
 	switch ad {
 	case Slack:
 		return "slack"
+	case Pagerduty:
+		return "pagerduty"
 	case ThirdParty:
 		return "third_party"
 	default:
@@ -187,7 +190,8 @@ func StringToAlertingDestType(stringType string) AlertDestination {
 	switch stringType {
 	case "slack":
 		return Slack
-
+	case "pagerduty":
+		return Pagerduty
 	case "third_party":
 		return ThirdParty
 	}
