@@ -134,6 +134,83 @@ func Test_Balance_Enforcement(t *testing.T) {
 	assert.Equal(t, len(ts.TestSvr.Payloads), 0, "No alerts should be sent after the transaction is sent")
 }
 
+// Test_Balance_Enforce_With_Cooldown ... Tests the E2E flow of a single
+// balance enforcement heuristic session on L2 network with a cooldown.
+func Test_Balance_Enforce_With_Cooldown(t *testing.T) {
+
+	ts := e2e.CreateL2TestSuite(t)
+	defer ts.Close()
+
+	alice := ts.L2Cfg.Secrets.Addresses().Alice
+	bob := ts.L2Cfg.Secrets.Addresses().Bob
+
+	alertMsg := "one baby to another says:"
+	// Deploy a balance enforcement heuristic session for Alice using a cooldown.
+	err := ts.App.BootStrap([]*models.SessionRequestParams{{
+		Network:       core.Layer2.String(),
+		PType:         core.Live.String(),
+		HeuristicType: core.BalanceEnforcement.String(),
+		StartHeight:   nil,
+		EndHeight:     nil,
+		AlertingParams: &core.AlertPolicy{
+			CoolDown: 10000000,
+			Dest:     core.Slack.String(),
+			Msg:      alertMsg,
+		},
+		SessionParams: map[string]interface{}{
+			"address": alice.String(),
+			"lower":   3, // i.e. alert if balance is less than 3 ETH
+		},
+	}})
+
+	assert.NoError(t, err, "Failed to bootstrap balance enforcement heuristic session")
+
+	// Get Alice's balance.
+	aliceAmt, err := ts.L2Geth.L2Client.BalanceAt(context.Background(), alice, nil)
+	assert.NoError(t, err, "Failed to get Alice's balance")
+
+	// Determine the gas cost of the transaction.
+	gasAmt := 1_000_001
+	bigAmt := big.NewInt(1_000_001)
+	gasPrice := big.NewInt(int64(ts.L2Cfg.DeployConfig.L2GenesisBlockGasLimit))
+
+	gasCost := gasPrice.Mul(gasPrice, bigAmt)
+
+	signer := types.LatestSigner(ts.L2Geth.L2ChainConfig)
+
+	// Create a transaction from Alice to Bob that will drain almost all of Alice's ETH.
+	drainAliceTx := types.MustSignNewTx(ts.L2Cfg.Secrets.Alice, signer, &types.DynamicFeeTx{
+		ChainID:   big.NewInt(int64(ts.L2Cfg.DeployConfig.L2ChainID)),
+		Nonce:     0,
+		GasTipCap: big.NewInt(100),
+		GasFeeCap: big.NewInt(100000),
+		Gas:       uint64(gasAmt),
+		To:        &bob,
+		// Subtract the gas cost from the amount sent to Bob.
+		Value: aliceAmt.Sub(aliceAmt, gasCost),
+		Data:  nil,
+	})
+
+	// Send the transaction to drain Alice's account of almost all ETH.
+	_, err = ts.L2Geth.AddL2Block(context.Background(), drainAliceTx)
+	assert.NoError(t, err, "Failed to create L2 block with transaction")
+
+	// Wait for Pessimism to process the balance change and send a notification to the mocked Slack server.
+	time.Sleep(2 * time.Second)
+
+	// Check that the balance enforcement was triggered using the mocked server cache.
+	posts := ts.TestSvr.SlackAlerts()
+
+	assert.Equal(t, len(posts), 1, "No balance enforcement alert was sent")
+	assert.Contains(t, posts[0].Text, "balance_enforcement", "Balance enforcement alert was not sent")
+	assert.Contains(t, posts[0].Text, alertMsg)
+
+	// Ensure that no new alerts are sent for provided cooldown period.
+	time.Sleep(1 * time.Second)
+	posts = ts.TestSvr.SlackAlerts()
+	assert.Equal(t, 1, len(posts), "No alerts should be sent after the transaction is sent")
+}
+
 // Test_Contract_Event ... Tests the E2E flow of a single
 // contract event heuristic session on L1 network.
 func Test_Contract_Event(t *testing.T) {

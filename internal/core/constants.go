@@ -1,5 +1,7 @@
 package core
 
+import "time"
+
 type FilePath string
 
 type Env string
@@ -135,8 +137,19 @@ func StringToHeuristicType(stringType string) HeuristicType {
 
 // AlertPolicy ... The alerting policy for a heuristic session
 type AlertPolicy struct {
-	Dest string `json:"destination"`
-	Msg  string `json:"message"`
+	Dest     string `json:"destination"`
+	Msg      string `json:"message"`
+	CoolDown int    `json:"cooldown_time"`
+}
+
+// HasCoolDown ... Checks if the alert policy has a cool down
+func (ap *AlertPolicy) HasCoolDown() bool {
+	return ap.CoolDown > 0
+}
+
+// CoolDownTime ... Returns the cool down time for an alert
+func (ap *AlertPolicy) CoolDownTime() time.Time {
+	return time.Now().Add(time.Duration(ap.CoolDown) * time.Second)
 }
 
 // Message ... Returns the message for an alert

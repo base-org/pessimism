@@ -52,5 +52,24 @@ The Slack alert destination is a configurable destination that allows alerts to 
 **NOTE: As of now Pessimism can only post alerts to a single slack channel**
 
 ### Cooldown
-**NOTE: This is currently unimplemented**
-To ensure that alerts aren't spammed to destinations once invoked, a time based cooldown value should exist that specifies how long an heuristicSession must wait before it can propagate a trigged alert again. This value should be configurable by the user via a JSON-RPC request.
+To ensure that alerts aren't spammed to destinations once invoked, a time based cooldown value (`cooldown_time`) can be defined within the  `alert_params` of a heuristic session config. This time value determines how long a heuristic session must wait before being allowed to alert again. 
+
+An example of this is shown below:
+```json
+    {
+      "network": "layer1",
+      "pipeline_type": "live",
+      "type": "balance_enforcement",
+      "start_height": null,
+      "alerting_params": {
+        "cooldown_time": 10,
+        "message": "",
+        "destination": "slack"
+      },
+      "heuristic_params": {
+        "address": "0xfC0157aA4F5DB7177830ACddB3D5a9BB5BE9cc5e",
+        "lower": 1,
+        "upper": 2
+      }
+    }
+```

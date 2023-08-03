@@ -5,6 +5,7 @@ package alert
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
@@ -29,6 +30,7 @@ type alertManager struct {
 	sc           client.SlackClient
 	store        Store
 	interpolator Interpolator
+	cdHandler    CoolDownHandler
 
 	metrics      metrics.Metricer
 	alertTransit chan core.Alert
@@ -45,6 +47,7 @@ func NewManager(ctx context.Context, sc client.SlackClient) Manager {
 		ctx:          ctx,
 		cancel:       cancel,
 		sc:           sc,
+		cdHandler:    NewCoolDownHandler(),
 		interpolator: NewInterpolator(),
 		store:        NewStore(),
 		alertTransit: make(chan core.Alert),
@@ -84,15 +87,18 @@ func (am *alertManager) handleSlackPost(sUUID core.SUUID, content string, msg st
 // EventLoop ... Event loop for alert manager subsystem
 func (am *alertManager) EventLoop() error {
 	logger := logging.WithContext(am.ctx)
+	ticker := time.NewTicker(time.Second * 1)
 
 	for {
 		select {
 		case <-am.ctx.Done():
+			ticker.Stop()
 			return nil
 
+		case <-ticker.C:
+			am.cdHandler.Update()
+
 		case alert := <-am.alertTransit:
-			logger.Info("received alert",
-				zap.String(logging.SUUIDKey, alert.SUUID.String()))
 
 			policy, err := am.store.GetAlertPolicy(alert.SUUID)
 			if err != nil {
@@ -100,25 +106,43 @@ func (am *alertManager) EventLoop() error {
 				continue
 			}
 
+			if policy.HasCoolDown() && am.cdHandler.IsCoolDown(alert.SUUID) {
+				logger.Debug("Alert is in cool down",
+					zap.String(logging.SUUIDKey, alert.SUUID.String()))
+				continue
+			}
+
+			logger.Info("received alert",
+				zap.String(logging.SUUIDKey, alert.SUUID.String()))
+
+			am.HandleAlert(alert, policy)
 			am.metrics.RecordAlertGenerated(alert)
 
-			switch policy.Destination() {
-			case core.Slack: // TODO: add more alert destinations
-				logger.Debug("Attempting to post alert to slack")
-
-				err := am.handleSlackPost(alert.SUUID, alert.Content, policy.Message())
-				if err != nil {
-					logger.Error("Could not post alert to slack", zap.Error(err))
-				}
-
-			case core.ThirdParty:
-				logger.Error("Attempting to post alert to third_party which is not yet supported")
-
-			default:
-				logger.Error("Attempting to post alert to unknown destination",
-					zap.String("destination", policy.Destination().String()))
+			if policy.HasCoolDown() {
+				am.cdHandler.Add(alert.SUUID, time.Duration(policy.CoolDown)*time.Second)
 			}
 		}
+	}
+}
+
+func (am *alertManager) HandleAlert(alert core.Alert, policy *core.AlertPolicy) {
+	logger := logging.WithContext(am.ctx)
+
+	switch policy.Destination() {
+	case core.Slack: // TODO: add more alert destinations
+		logger.Debug("Attempting to post alert to slack")
+
+		err := am.handleSlackPost(alert.SUUID, alert.Content, policy.Message())
+		if err != nil {
+			logger.Error("Could not post alert to slack", zap.Error(err))
+		}
+
+	case core.ThirdParty:
+		logger.Error("Attempting to post alert to third_party which is not yet supported")
+
+	default:
+		logger.Error("Attempting to post alert to unknown destination",
+			zap.String("destination", policy.Destination().String()))
 	}
 }
 
