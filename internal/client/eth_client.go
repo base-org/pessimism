@@ -11,6 +11,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"github.com/ethereum/go-ethereum/rpc"
 	"math/big"
 
 	"github.com/base-org/pessimism/internal/core"
@@ -52,7 +53,17 @@ func FromContext(ctx context.Context, layer core.Network) (EthClient, error) {
 	return nil, fmt.Errorf("could not load eth client object from context")
 }
 
+func GetRawL2Client(ctx context.Context) *rpc.Client {
+	return ctx.Value(core.L2RawGeth).(*rpc.Client)
+}
+
 // NewEthClient ... Initializer
 func NewEthClient(ctx context.Context, rawURL string) (EthClient, error) {
 	return ethclient.DialContext(ctx, rawURL)
+}
+
+// RawL2EthClient ... Initializer
+func RawL2EthClient(ctx context.Context, rawURL string) (*rpc.Client, error) {
+	return rpc.DialContext(ctx, rawURL)
+
 }

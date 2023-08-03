@@ -3,6 +3,9 @@ package oracle
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/rpc"
 	"math/big"
 	"time"
 
@@ -26,17 +29,19 @@ type GethBlockODef struct {
 	pUUID      core.PUUID
 	cfg        *core.ClientConfig
 	client     client.EthClient
+	rpcClient  *rpc.Client
 	currHeight *big.Int
 
 	stats metrics.Metricer
 }
 
 // NewGethBlockODef ... Initializer for geth.block oracle definition
-func NewGethBlockODef(cfg *core.ClientConfig, client client.EthClient,
+func NewGethBlockODef(cfg *core.ClientConfig, client client.EthClient, rawClient *rpc.Client,
 	h *big.Int, stats metrics.Metricer) *GethBlockODef {
 	return &GethBlockODef{
 		cfg:        cfg,
 		client:     client,
+		rpcClient:  rawClient,
 		currHeight: h,
 		stats:      stats,
 	}
@@ -45,12 +50,14 @@ func NewGethBlockODef(cfg *core.ClientConfig, client client.EthClient,
 // NewGethBlockOracle ... Initializer for geth.block oracle component
 func NewGethBlockOracle(ctx context.Context, cfg *core.ClientConfig,
 	opts ...component.Option) (component.Component, error) {
-	client, err := client.FromContext(ctx, cfg.Network)
+	ethClient, err := client.FromContext(ctx, cfg.Network)
 	if err != nil {
 		return nil, err
 	}
 
-	od := NewGethBlockODef(cfg, client, nil, metrics.WithContext(ctx))
+	rawClient := client.GetRawL2Client(ctx)
+
+	od := NewGethBlockODef(cfg, ethClient, rawClient, nil, metrics.WithContext(ctx))
 
 	oracle, err := component.NewOracle(ctx, core.GethBlock, od, opts...)
 	if err != nil {
@@ -75,6 +82,64 @@ func (oracle *GethBlockODef) getCurrentHeightFromNetwork(ctx context.Context) *t
 	}
 }
 
+// BlockByRange non-inclusive.
+func (oracle *GethBlockODef) BlockByRange(ctx context.Context, startHeight, endHeight *big.Int) ([]*types.Block, error) {
+	count := new(big.Int).Sub(endHeight, startHeight).Uint64()
+	batchElems := make([]rpc.BatchElem, count)
+	for i := uint64(0); i < count; i++ {
+		height := new(big.Int).Add(startHeight, new(big.Int).SetUint64(i))
+		batchElems[i] = rpc.BatchElem{
+			Method: "eth_getBlockByNumber",
+			Args:   []interface{}{toBlockNumArg(height), false},
+			Result: new(types.Block),
+			Error:  nil,
+		}
+	}
+
+	err := oracle.rpcClient.BatchCallContext(ctx, batchElems)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse the headers.
+	//  - Ensure integrity that they build on top of each other
+	//  - Truncate out headers that do not exist (endHeight > "latest")
+	size := 0
+	blocks := make([]*types.Block, count)
+	for i, batchElem := range batchElems {
+		if batchElem.Error != nil {
+			return nil, batchElem.Error
+		} else if batchElem.Result == nil {
+			break
+		}
+
+		block := batchElem.Result.(*types.Block)
+
+		blocks[i] = block
+		size = size + 1
+	}
+	blocks = blocks[:size]
+
+	return blocks, nil
+}
+
+func toBlockNumArg(number *big.Int) string {
+	if number == nil {
+		return "latest"
+	} else if number.Sign() >= 0 {
+		return hexutil.EncodeBig(number)
+	}
+
+	// It's negative.
+	if number.IsInt64() {
+		tag, _ := rpc.BlockNumber(number.Int64()).MarshalText()
+		return string(tag)
+	}
+
+	// It's negative and large, which is invalid.
+	return fmt.Sprintf("<invalid %d>", number)
+}
+
 // BackTestRoutine ...
 func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan chan core.TransitData,
 	startHeight *big.Int, endHeight *big.Int) error {
@@ -90,6 +155,68 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 
 	ticker := time.NewTicker(oracle.cfg.PollInterval * time.Millisecond) //nolint:durationcheck // inapplicable
 	height := startHeight
+
+	totalBlocks := new(big.Int).Sub(endHeight, startHeight).Uint64() + 1
+
+	if totalBlocks > 1000 {
+		numOfBatches := totalBlocks / 1000 // already floor division
+		processingStartHeight := startHeight
+		for i := uint64(0); i < numOfBatches; i++ {
+
+			processingEndHeight := new(big.Int).Add(processingStartHeight, big.NewInt(1000))
+			blocks, err := oracle.BlockByRange(ctx, processingStartHeight, processingEndHeight)
+
+			if err != nil {
+				logging.WithContext(ctx).Error("problem fetching batch of blocks", zap.NamedError("batchBlockFetch", err))
+				oracle.stats.RecordNodeError(oracle.cfg.Network)
+				i-- // added this so that it can retry.
+			}
+
+			for _, eachBlock := range blocks {
+				componentChan <- core.TransitData{
+					OriginTS:  time.Now(),
+					Timestamp: time.Now(),
+					Type:      core.GethBlock,
+					Value:     *eachBlock,
+				}
+			}
+			processingStartHeight = processingEndHeight
+		}
+
+		remainingBlocks := new(big.Int).SetUint64(1 + totalBlocks - (numOfBatches * 1000))
+		blocks, err := oracle.BlockByRange(ctx,
+			new(big.Int).Mul(new(big.Int).SetUint64(numOfBatches), big.NewInt(1000)), remainingBlocks)
+		if err != nil {
+			logging.WithContext(ctx).Error("problem fetching batch of blocks", zap.NamedError("batchBlockFetch", err))
+			oracle.stats.RecordNodeError(oracle.cfg.Network)
+		}
+
+		for _, eachBlock := range blocks {
+			componentChan <- core.TransitData{
+				OriginTS:  time.Now(),
+				Timestamp: time.Now(),
+				Type:      core.GethBlock,
+				Value:     *eachBlock,
+			}
+		}
+
+	} else {
+
+		blocks, err := oracle.BlockByRange(ctx, startHeight, new(big.Int).Add(endHeight, big.NewInt(1)))
+		if err != nil {
+			logging.WithContext(ctx).Error("problem fetching batch of blocks", zap.NamedError("batchBlockFetch", err))
+			oracle.stats.RecordNodeError(oracle.cfg.Network)
+		}
+
+		for _, eachBlock := range blocks {
+			componentChan <- core.TransitData{
+				OriginTS:  time.Now(),
+				Timestamp: time.Now(),
+				Type:      core.GethBlock,
+				Value:     *eachBlock,
+			}
+		}
+	}
 
 	for {
 		select {

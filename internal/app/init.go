@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/handlers"
@@ -23,7 +24,7 @@ import (
 
 // InitializeContext ... Performs dependency injection to build context struct
 func InitializeContext(ctx context.Context, ss state.Store,
-	l1Client, l2Client client.EthClient, l2geth client.GethClient) context.Context {
+	l1Client, l2Client client.EthClient, l2geth client.GethClient, rawL2EthClient *rpc.Client) context.Context {
 	ctx = context.WithValue(
 		ctx, core.State, ss)
 
@@ -33,8 +34,11 @@ func InitializeContext(ctx context.Context, ss state.Store,
 	ctx = context.WithValue(
 		ctx, core.L2Client, l2Client)
 
-	return context.WithValue(
+	ctx = context.WithValue(
 		ctx, core.L2Geth, l2geth)
+
+	return context.WithValue(
+		ctx, core.L2RawGeth, rawL2EthClient)
 }
 
 // InitializeMetrics ... Performs dependency injection to build metrics struct
