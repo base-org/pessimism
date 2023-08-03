@@ -27,6 +27,7 @@ func StringToSev(stringType string) Severity {
 	}
 }
 
+// String ... Converts a severity to a string
 func (s Severity) String() string {
 	switch s {
 	case LOW:
@@ -35,8 +36,12 @@ func (s Severity) String() string {
 		return "medium"
 	case HIGH:
 		return "high"
+
+	case UNKNOWN:
+		return UnknownType
+
 	default:
-		return "unknown"
+		return UnknownType
 	}
 }
 

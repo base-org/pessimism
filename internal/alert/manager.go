@@ -18,9 +18,10 @@ import (
 // their own independent alerting policies
 func getSevMap() map[core.Severity][]core.AlertDestination {
 	return map[core.Severity][]core.AlertDestination{
-		core.LOW:    {core.Slack},
-		core.MEDIUM: {core.Pagerduty, core.Slack},
-		core.HIGH:   {core.Pagerduty, core.Slack},
+		core.UNKNOWN: {core.AlertDestination(0)},
+		core.LOW:     {core.Slack},
+		core.MEDIUM:  {core.Pagerduty, core.Slack},
+		core.HIGH:    {core.Pagerduty, core.Slack},
 	}
 }
 
