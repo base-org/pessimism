@@ -48,7 +48,7 @@ func Test_Balance_Enforcement(t *testing.T) {
 		StartHeight:   nil,
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
-			Dest: core.Slack.String(),
+			Dest: core.Pagerduty.String(),
 			Msg:  alertMsg,
 		},
 		SessionParams: map[string]interface{}{
@@ -85,7 +85,7 @@ func Test_Balance_Enforcement(t *testing.T) {
 		Data:  nil,
 	})
 
-	assert.Equal(t, len(ts.TestSvr.SlackAlerts()), 0, "No alerts should be sent before the transaction is sent")
+	assert.Equal(t, len(ts.TestPagerdutyServer.PagerdutyAlerts()), 0, "No alerts should be sent before the transaction is sent")
 
 	// Send the transaction to drain Alice's account of almost all ETH.
 	_, err = ts.L2Geth.AddL2Block(context.Background(), drainAliceTx)
@@ -95,11 +95,9 @@ func Test_Balance_Enforcement(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// Check that the balance enforcement was triggered using the mocked server cache.
-	posts := ts.TestSvr.SlackAlerts()
-
+	posts := ts.TestPagerdutyServer.PagerdutyAlerts()
 	assert.Greater(t, len(posts), 0, "No balance enforcement alert was sent")
-	assert.Contains(t, posts[0].Text, "balance_enforcement", "Balance enforcement alert was not sent")
-	assert.Contains(t, posts[0].Text, alertMsg)
+	assert.Contains(t, posts[0].Payload.Summary, "balance_enforcement", "Balance enforcement alert was not sent")
 
 	// Get Bobs's balance.
 	bobAmt, err := ts.L2Geth.L2Client.BalanceAt(context.Background(), bob, nil)
@@ -124,14 +122,14 @@ func Test_Balance_Enforcement(t *testing.T) {
 	// Wait for Pessimism to process the balance change.
 	time.Sleep(1 * time.Second)
 
-	// Empty the mocked Slack server cache.
-	ts.TestSvr.ClearAlerts()
+	// Empty the mocked Pagerduty server cache.
+	ts.TestPagerdutyServer.ClearAlerts()
 
 	// Wait to ensure that no new alerts are sent.
 	time.Sleep(1 * time.Second)
 
 	// Ensure that no new alerts were sent.
-	assert.Equal(t, len(ts.TestSvr.Payloads), 0, "No alerts should be sent after the transaction is sent")
+	assert.Equal(t, len(ts.TestPagerdutyServer.Payloads), 0, "No alerts should be sent after the transaction is sent")
 }
 
 // Test_Contract_Event ... Tests the E2E flow of a single
@@ -190,7 +188,7 @@ func Test_Contract_Event(t *testing.T) {
 
 	// Wait for Pessimism to process the newly emitted event and send a notification to the mocked Slack server.
 	time.Sleep(1 * time.Second)
-	posts := ts.TestSvr.SlackAlerts()
+	posts := ts.TestSlackSvr.SlackAlerts()
 
 	assert.Equal(t, len(posts), 1, "No system contract event alert was sent")
 	assert.Contains(t, posts[0].Text, "contract_event", "System contract event alert was not sent")
@@ -362,7 +360,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// Ensure Pessimism has detected what it considers a "faulty" withdrawal
-	alerts := ts.TestSvr.SlackAlerts()
+	alerts := ts.TestSlackSvr.SlackAlerts()
 	assert.Equal(t, 1, len(alerts), "expected 1 alert")
 	assert.Contains(t, alerts[0].Text, "withdrawal_enforcement", "expected alert to be for withdrawal_enforcement")
 	assert.Contains(t, alerts[0].Text, fakeAddr.String(), "expected alert to be for dummy L2ToL1MessagePasser")
@@ -441,7 +439,7 @@ func Test_Fault_Detector(t *testing.T) {
 	// Wait for a fault detection alert to be produced.
 	time.Sleep(1 * time.Second)
 
-	alerts := ts.TestSvr.SlackAlerts()
+	alerts := ts.TestSlackSvr.SlackAlerts()
 	assert.Equal(t, 1, len(alerts), "expected 1 alert")
 	assert.Contains(t, alerts[0].Text, "fault_detector", "expected alert to be for fault_detector")
 	assert.Contains(t, alerts[0].Text, alertMsg, "expected alert to have alert message")

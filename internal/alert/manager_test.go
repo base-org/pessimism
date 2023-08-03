@@ -15,9 +15,11 @@ import (
 
 func Test_EventLoop(t *testing.T) {
 	sc := mocks.NewMockSlackClient(gomock.NewController(t))
+	pdc := mocks.NewMockPagerdutyClient(gomock.NewController(t))
+
 	ctx := context.Background()
 
-	am := alert.NewManager(ctx, sc)
+	am := alert.NewManager(ctx, sc, pdc)
 
 	go func() {
 		_ = am.EventLoop()
