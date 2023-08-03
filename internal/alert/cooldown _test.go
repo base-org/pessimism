@@ -20,12 +20,14 @@ func Test_CoolDown(t *testing.T) {
 			name:         "Test_CoolDownHandler",
 			construction: alert.NewCoolDownHandler,
 			testFunc: func(t *testing.T, cdh alert.CoolDownHandler) {
-				cdh.Add(core.NilSUUID(), time.Duration(1))
+				// Add a cooldown for one second
+				cdh.Add(core.NilSUUID(), time.Duration(1_000_000_000))
 
 				cooled := cdh.IsCoolDown(core.NilSUUID())
 				assert.True(t, cooled)
 
-				time.Sleep(time.Second * 1)
+				// Sleep for one second
+				time.Sleep(1_000_000_000)
 				cdh.Update()
 				cooled = cdh.IsCoolDown(core.NilSUUID())
 				assert.False(t, cooled)
