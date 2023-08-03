@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"github.com/base-org/pessimism/internal/alert"
 	"testing"
 
 	"github.com/base-org/pessimism/internal/api/server"
@@ -28,8 +29,10 @@ func Test_AppFlow(t *testing.T) {
 		MetricsConfig: &metrics.Config{
 			Enabled: false,
 		},
-		SlackClientConfig:     &client.SlackConfig{},
-		PagerdutyClientConfig: &client.PagerdutyConfig{},
+		AlertConfig: &alert.Config{
+			SlackConfig:     &client.SlackConfig{},
+			PagerdutyConfig: &client.PagerdutyConfig{},
+		},
 	}
 
 	app, shutDown, err := app.NewPessimismApp(ctx, cfg)

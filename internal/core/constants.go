@@ -155,7 +155,7 @@ type AlertDestination uint8
 const (
 	Slack AlertDestination = iota + 1
 	Pagerduty
-	ThirdParty // 2
+	ThirdParty
 )
 
 // String ... Converts an alerting destination type to a string

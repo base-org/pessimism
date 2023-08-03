@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/base-org/pessimism/internal/alert"
 	"log"
 	"os"
 	"strconv"
@@ -27,11 +28,10 @@ type Config struct {
 	L1RpcEndpoint string
 	L2RpcEndpoint string
 
-	SystemConfig          *subsystem.Config
-	ServerConfig          *server.Config
-	MetricsConfig         *metrics.Config
-	SlackClientConfig     *client.SlackConfig
-	PagerdutyClientConfig *client.PagerdutyConfig
+	SystemConfig  *subsystem.Config
+	ServerConfig  *server.Config
+	MetricsConfig *metrics.Config
+	AlertConfig   *alert.Config
 }
 
 // NewConfig ... Initializer
@@ -47,15 +47,17 @@ func NewConfig(fileName core.FilePath) *Config {
 		BootStrapPath: getEnvStrWithDefault("BOOTSTRAP_PATH", ""),
 		Environment:   core.Env(getEnvStr("ENV")),
 
-		SlackClientConfig: &client.SlackConfig{
-			Channel: getEnvStrWithDefault("SLACK_CHANNEL", ""),
-			URL:     getEnvStrWithDefault("SLACK_URL", ""),
-		},
+		AlertConfig: &alert.Config{
+			SlackConfig: &client.SlackConfig{
+				Channel: getEnvStrWithDefault("SLACK_CHANNEL", ""),
+				URL:     getEnvStrWithDefault("SLACK_URL", ""),
+			},
 
-		PagerdutyClientConfig: &client.PagerdutyConfig{
-			AlertEventsURL:  getEnvStrWithDefault("PAGERDUTY_ALERT_EVENTS_URL", ""),
-			ChangeEventsURL: getEnvStrWithDefault("PAGERDUTY_CHANGE_EVENTS_URL", ""),
-			IntegrationKey:  getEnvStrWithDefault("PAGERDUTY_INTEGRATION_KEY", ""),
+			PagerdutyConfig: &client.PagerdutyConfig{
+				AlertEventsURL:  getEnvStrWithDefault("PAGERDUTY_ALERT_EVENTS_URL", ""),
+				ChangeEventsURL: getEnvStrWithDefault("PAGERDUTY_CHANGE_EVENTS_URL", ""),
+				IntegrationKey:  getEnvStrWithDefault("PAGERDUTY_INTEGRATION_KEY", ""),
+			},
 		},
 
 		SystemConfig: &subsystem.Config{

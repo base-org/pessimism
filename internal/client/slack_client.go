@@ -39,7 +39,7 @@ func NewSlackClient(cfg *SlackConfig) SlackClient {
 		logging.NoContext().Warn("No Slack webhook URL not provided")
 	}
 
-	return slackClient{
+	return &slackClient{
 		url: cfg.URL,
 		// NOTE - This is a default client, we can add more configuration to it
 		// when necessary

@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"errors"
+	"github.com/base-org/pessimism/internal/alert"
 	"testing"
 	"time"
 
@@ -34,7 +35,8 @@ type SysTestSuite struct {
 	AppCfg *config.Config
 	Close  func()
 
-	TestSvr *TestServer
+	TestSlackSvr        *TestSlackServer
+	TestPagerdutyServer *TestPagerdutyServer
 }
 
 // L2TestSuite ... Stores all the information needed to run an e2e L2Geth test
@@ -48,7 +50,8 @@ type L2TestSuite struct {
 	AppCfg *config.Config
 	Close  func()
 
-	TestSvr *TestServer
+	TestSlackSvr        *TestSlackServer
+	TestPagerdutyServer *TestPagerdutyServer
 }
 
 // CreateSysTestSuite ... Creates a new L2Geth test suite
@@ -66,8 +69,11 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 
 	appCfg := DefaultTestConfig()
 
-	slackServer := NewTestServer()
-	appCfg.SlackClientConfig.URL = slackServer.Server.URL
+	slackServer := NewTestSlackServer()
+	appCfg.AlertConfig.SlackConfig.URL = slackServer.Server.URL
+
+	pagerdutyServer := NewTestPagerdutyServer()
+	appCfg.AlertConfig.PagerdutyConfig.AlertEventsURL = pagerdutyServer.Server.URL
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
@@ -90,8 +96,9 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 			kill()
 			node.Close()
 		},
-		AppCfg:  appCfg,
-		TestSvr: slackServer,
+		AppCfg:              appCfg,
+		TestSlackSvr:        slackServer,
+		TestPagerdutyServer: pagerdutyServer,
 	}
 }
 
@@ -119,8 +126,11 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 
 	appCfg := DefaultTestConfig()
 
-	slackServer := NewTestServer()
-	appCfg.SlackClientConfig.URL = slackServer.Server.URL
+	slackServer := NewTestSlackServer()
+	appCfg.AlertConfig.SlackConfig.URL = slackServer.Server.URL
+
+	pagerdutyServer := NewTestPagerdutyServer()
+	appCfg.AlertConfig.PagerdutyConfig.AlertEventsURL = pagerdutyServer.Server.URL
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
@@ -143,8 +153,9 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 			kill()
 			sys.Close()
 		},
-		AppCfg:  appCfg,
-		TestSvr: slackServer,
+		AppCfg:              appCfg,
+		TestSlackSvr:        slackServer,
+		TestPagerdutyServer: pagerdutyServer,
 	}
 }
 
@@ -173,11 +184,15 @@ func DefaultTestConfig() *config.Config {
 			Host: "localhost",
 			Port: port,
 		},
-		SlackClientConfig: &client.SlackConfig{
-			URL:     "",
-			Channel: "test",
+		AlertConfig: &alert.Config{
+			SlackConfig: &client.SlackConfig{
+				URL:     "",
+				Channel: "test",
+			},
+			PagerdutyConfig: &client.PagerdutyConfig{
+				AlertEventsURL: "",
+			},
 		},
-		PagerdutyClientConfig: &client.PagerdutyConfig{},
 	}
 }
 

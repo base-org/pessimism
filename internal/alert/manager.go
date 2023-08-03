@@ -21,18 +21,24 @@ type Manager interface {
 	core.Subsystem
 }
 
+type Config struct {
+	SlackConfig     *client.SlackConfig
+	PagerdutyConfig *client.PagerdutyConfig
+}
+
 // alertManager ... Alert manager implementation
 type alertManager struct {
+	cfg    *Config
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	sc           client.SlackClient
-	pdc          client.PagerdutyClient
 	store        Store
 	interpolator Interpolator
 
 	metrics      metrics.Metricer
 	alertTransit chan core.Alert
+	pdc          client.PagerdutyClient
+	sc           client.SlackClient
 }
 
 // NewManager ... Instantiates a new alert manager
@@ -44,9 +50,9 @@ func NewManager(ctx context.Context, sc client.SlackClient, pdc client.Pagerduty
 
 	am := &alertManager{
 		ctx:          ctx,
-		cancel:       cancel,
 		sc:           sc,
 		pdc:          pdc,
+		cancel:       cancel,
 		interpolator: NewInterpolator(),
 		store:        NewStore(),
 		alertTransit: make(chan core.Alert),
@@ -56,7 +62,7 @@ func NewManager(ctx context.Context, sc client.SlackClient, pdc client.Pagerduty
 	return am
 }
 
-// AddSession ... Adds an heuristic session to the alert manager store
+// AddSession ... Adds a heuristic session to the alert manager store
 func (am *alertManager) AddSession(sUUID core.SUUID, policy *core.AlertPolicy) error {
 	return am.store.AddAlertPolicy(sUUID, policy)
 }

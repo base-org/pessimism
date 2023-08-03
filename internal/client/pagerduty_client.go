@@ -41,16 +41,19 @@ const (
 	SuccessStatus PagerdutyResponseStatus = "success"
 )
 
+// PagerdutyConfig ... Represents the configuration vars for a Pagerduty client
 type PagerdutyConfig struct {
 	IntegrationKey  string
 	ChangeEventsURL string
 	AlertEventsURL  string
 }
 
+// PagerdutyClient ... Interface for Pagerduty client
 type PagerdutyClient interface {
 	PostEvent(ctx context.Context, event *PagerdutyEventTrigger) (*PagerdutyAPIResponse, error)
 }
 
+// pagerdutyClient ... Pagerduty client for making requests
 type pagerdutyClient struct {
 	integrationKey  string
 	changeEventsURL string
@@ -64,7 +67,7 @@ func NewPagerdutyClient(cfg *PagerdutyConfig) PagerdutyClient {
 		logging.NoContext().Warn("No Pagerduty integration key provided")
 	}
 
-	return pagerdutyClient{
+	return &pagerdutyClient{
 		integrationKey:  cfg.IntegrationKey,
 		changeEventsURL: cfg.ChangeEventsURL,
 		alertEventsURL:  cfg.AlertEventsURL,
@@ -112,8 +115,8 @@ func newPagerdutyPayload(integrationKey string, event *PagerdutyEventTrigger) *P
 }
 
 // marshal ... Marshals the Pagerduty payload
-func (pdp *PagerdutyRequest) marshal() ([]byte, error) {
-	bytes, err := json.Marshal(pdp)
+func (req *PagerdutyRequest) marshal() ([]byte, error) {
+	bytes, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
 	}
