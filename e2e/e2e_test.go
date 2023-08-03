@@ -48,8 +48,8 @@ func Test_Balance_Enforcement(t *testing.T) {
 		StartHeight:   nil,
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
-			Dest: core.Pagerduty.String(),
-			Msg:  alertMsg,
+			Sev: core.HIGH.String(),
+			Msg: alertMsg,
 		},
 		SessionParams: map[string]interface{}{
 			"address": alice.String(),
@@ -96,6 +96,8 @@ func Test_Balance_Enforcement(t *testing.T) {
 
 	// Check that the balance enforcement was triggered using the mocked server cache.
 	posts := ts.TestPagerdutyServer.PagerdutyAlerts()
+	slackPosts := ts.TestSlackSvr.SlackAlerts()
+	assert.Greater(t, len(slackPosts), 0, "No balance enforcement alert was sent")
 	assert.Greater(t, len(posts), 0, "No balance enforcement alert was sent")
 	assert.Contains(t, posts[0].Payload.Summary, "balance_enforcement", "Balance enforcement alert was not sent")
 
@@ -153,8 +155,8 @@ func Test_Contract_Event(t *testing.T) {
 		StartHeight:   nil,
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
-			Msg:  alertMsg,
-			Dest: core.Slack.String(),
+			Msg: alertMsg,
+			Sev: core.LOW.String(),
 		},
 		SessionParams: map[string]interface{}{
 			"address": predeploys.DevSystemConfigAddr.String(),
@@ -269,8 +271,8 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 			StartHeight:   nil,
 			EndHeight:     nil,
 			AlertingParams: &core.AlertPolicy{
-				Dest: core.Slack.String(),
-				Msg:  alertMsg,
+				Sev: core.LOW.String(),
+				Msg: alertMsg,
 			},
 			SessionParams: map[string]interface{}{
 				core.L1Portal:            predeploys.DevOptimismPortal,
@@ -284,7 +286,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 			StartHeight:   nil,
 			EndHeight:     nil,
 			AlertingParams: &core.AlertPolicy{
-				Dest: core.Slack.String(),
+				Sev: core.LOW.String(),
 			},
 			SessionParams: map[string]interface{}{
 				core.L1Portal:            predeploys.DevOptimismPortal,
@@ -404,8 +406,8 @@ func Test_Fault_Detector(t *testing.T) {
 		StartHeight:   big.NewInt(0),
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
-			Dest: core.Slack.String(),
-			Msg:  alertMsg,
+			Sev: core.LOW.String(),
+			Msg: alertMsg,
 		},
 		SessionParams: map[string]interface{}{
 			core.L2OutputOracle:      predeploys.DevL2OutputOracle,
