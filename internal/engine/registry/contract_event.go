@@ -77,11 +77,11 @@ func (ei *EventHeuristic) Assess(td core.TransitData) (*core.Activation, bool, e
 
 	// 2. Check if the log event signature is in the list of signatures
 	activated := false
-	var sigHit common.Hash
-	for _, sig := range ei.sigs {
+	var sigHit string
+	for i, sig := range ei.sigs {
 		if log.Topics[0] == sig {
 			activated = true
-			sigHit = sig
+			sigHit = ei.cfg.Sigs[i]
 			break
 		}
 	}

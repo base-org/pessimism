@@ -96,6 +96,8 @@ func Test_Balance_Enforcement(t *testing.T) {
 
 	// Check that the balance enforcement was triggered using the mocked server cache.
 	posts := ts.TestPagerdutyServer.PagerdutyAlerts()
+	slackPosts := ts.TestSlackSvr.SlackAlerts()
+	assert.Greater(t, len(slackPosts), 0, "No balance enforcement alert was sent")
 	assert.Greater(t, len(posts), 0, "No balance enforcement alert was sent")
 	assert.Contains(t, posts[0].Payload.Summary, "balance_enforcement", "Balance enforcement alert was not sent")
 

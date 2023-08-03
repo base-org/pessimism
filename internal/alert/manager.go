@@ -131,7 +131,6 @@ func (am *alertManager) handlePagerdutyPost(alert core.Alert) error {
 		if resp.Status != string(client.SuccessStatus) {
 			return fmt.Errorf("could not post to pagerduty: %s", resp.Status)
 		}
-
 	}
 
 	return nil
