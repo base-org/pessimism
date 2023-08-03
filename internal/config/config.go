@@ -1,11 +1,11 @@
 package config
 
 import (
-	"github.com/base-org/pessimism/internal/alert"
 	"log"
 	"os"
 	"strconv"
 
+	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"

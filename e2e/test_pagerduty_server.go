@@ -2,12 +2,14 @@ package e2e
 
 import (
 	"encoding/json"
-	"github.com/base-org/pessimism/internal/client"
-	"github.com/base-org/pessimism/internal/logging"
-	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
 	"strings"
+
+	"github.com/base-org/pessimism/internal/client"
+	"github.com/base-org/pessimism/internal/logging"
+
+	"go.uber.org/zap"
 )
 
 // TestPagerdutyServer ... Mock server for testing pagerduty alerts

@@ -3,10 +3,10 @@ package e2e
 import (
 	"context"
 	"errors"
-	"github.com/base-org/pessimism/internal/alert"
 	"testing"
 	"time"
 
+	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/app"
 	"github.com/base-org/pessimism/internal/client"

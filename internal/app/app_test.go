@@ -2,9 +2,9 @@ package app_test
 
 import (
 	"context"
-	"github.com/base-org/pessimism/internal/alert"
 	"testing"
 
+	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/app"
 	"github.com/base-org/pessimism/internal/client"

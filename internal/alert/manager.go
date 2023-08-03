@@ -28,7 +28,6 @@ type Config struct {
 
 // alertManager ... Alert manager implementation
 type alertManager struct {
-	cfg    *Config
 	ctx    context.Context
 	cancel context.CancelFunc
 
