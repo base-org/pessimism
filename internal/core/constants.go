@@ -20,6 +20,7 @@ const (
 	L2Client
 	L2Geth
 	L2RawGeth
+	L1RawGeth
 )
 
 // Network ... Represents the network for which a pipeline's oracle

@@ -2,6 +2,7 @@ package config
 
 import (
 	"log"
+	"math/big"
 	"os"
 	"strconv"
 
@@ -21,10 +22,11 @@ const trueEnvVal = "1"
 // Config ... Application level configuration defined by `FilePath` value
 // TODO - Consider renaming to "environment config"
 type Config struct {
-	Environment   core.Env
-	BootStrapPath string
-	L1RpcEndpoint string
-	L2RpcEndpoint string
+	Environment         core.Env
+	BootStrapPath       string
+	L1RpcEndpoint       string
+	L2RpcEndpoint       string
+	NumOfBlocksPerBatch *big.Int
 
 	// TODO - Consider moving this URL to a more appropriate location
 	SlackURL     string
@@ -51,9 +53,10 @@ func NewConfig(fileName core.FilePath) *Config {
 		SlackChannel:  getEnvStrWithDefault("SLACK_CHANNEL", ""),
 
 		SystemConfig: &subsystem.Config{
-			MaxPipelineCount: getEnvInt("MAX_PIPELINE_COUNT"),
-			L1PollInterval:   getEnvInt("L1_POLL_INTERVAL"),
-			L2PollInterval:   getEnvInt("L2_POLL_INTERVAL"),
+			MaxPipelineCount:    getEnvInt("MAX_PIPELINE_COUNT"),
+			L1PollInterval:      getEnvInt("L1_POLL_INTERVAL"),
+			L2PollInterval:      getEnvInt("L2_POLL_INTERVAL"),
+			NumOfBlocksPerBatch: new(big.Int).SetInt64(int64(getEnvInt("Num_OF_BLOCKS_PER_BATCH"))),
 		},
 
 		MetricsConfig: &metrics.Config{

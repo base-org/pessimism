@@ -89,7 +89,7 @@ func (ed *EventDefinition) getTopics(ctx context.Context,
 // returns them if they are in the list of events to monitor
 func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) ([]core.TransitData, error) {
 	// 1. Convert arbitrary transit data to go-ethereum compatible block type
-	block, success := td.Value.(types.Block)
+	header, success := td.Value.(types.Header)
 	if !success {
 		return []core.TransitData{}, fmt.Errorf("could not convert to block")
 	}
@@ -104,8 +104,9 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 	}
 
 	topics := ed.getTopics(ctx, addresses, ed.ss)
-	hash := block.Header().Hash()
+	hash := header.Hash()
 
+	logging.NoContext().Info("hash", zap.String("hash", hash.String()))
 	// 3. Construct and execute a filter query on the provided block
 	// to get the relevant logs
 	query := ethereum.FilterQuery{

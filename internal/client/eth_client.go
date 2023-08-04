@@ -57,13 +57,15 @@ func GetRawL2Client(ctx context.Context) *rpc.Client {
 	return ctx.Value(core.L2RawGeth).(*rpc.Client)
 }
 
+func GetRawL1Client(ctx context.Context) *rpc.Client {
+	return ctx.Value(core.L1RawGeth).(*rpc.Client)
+}
+
 // NewEthClient ... Initializer
 func NewEthClient(ctx context.Context, rawURL string) (EthClient, error) {
 	return ethclient.DialContext(ctx, rawURL)
 }
 
-// RawL2EthClient ... Initializer
-func RawL2EthClient(ctx context.Context, rawURL string) (*rpc.Client, error) {
+func RawEthClient(ctx context.Context, rawURL string) (*rpc.Client, error) {
 	return rpc.DialContext(ctx, rawURL)
-
 }

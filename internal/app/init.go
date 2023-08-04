@@ -24,7 +24,8 @@ import (
 
 // InitializeContext ... Performs dependency injection to build context struct
 func InitializeContext(ctx context.Context, ss state.Store,
-	l1Client, l2Client client.EthClient, l2geth client.GethClient, rawL2EthClient *rpc.Client) context.Context {
+	l1Client, l2Client client.EthClient, l2geth client.GethClient,
+	rawL1EthClient *rpc.Client, rawL2EthClient *rpc.Client) context.Context {
 	ctx = context.WithValue(
 		ctx, core.State, ss)
 
@@ -36,6 +37,9 @@ func InitializeContext(ctx context.Context, ss state.Store,
 
 	ctx = context.WithValue(
 		ctx, core.L2Geth, l2geth)
+
+	ctx = context.WithValue(
+		ctx, core.L1RawGeth, rawL1EthClient)
 
 	return context.WithValue(
 		ctx, core.L2RawGeth, rawL2EthClient)

@@ -7,6 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/rpc"
 	"math/big"
+	"strconv"
 	"time"
 
 	"github.com/base-org/pessimism/internal/client"
@@ -55,7 +56,12 @@ func NewGethBlockOracle(ctx context.Context, cfg *core.ClientConfig,
 		return nil, err
 	}
 
-	rawClient := client.GetRawL2Client(ctx)
+	var rawClient *rpc.Client
+	if cfg.Network == core.Layer1 {
+		rawClient = client.GetRawL1Client(ctx)
+	} else if cfg.Network == core.Layer2 {
+		rawClient = client.GetRawL2Client(ctx)
+	}
 
 	od := NewGethBlockODef(cfg, ethClient, rawClient, nil, metrics.WithContext(ctx))
 
@@ -83,7 +89,7 @@ func (oracle *GethBlockODef) getCurrentHeightFromNetwork(ctx context.Context) *t
 }
 
 // BlockByRange non-inclusive.
-func (oracle *GethBlockODef) BlockByRange(ctx context.Context, startHeight, endHeight *big.Int) ([]*types.Block, error) {
+func (oracle *GethBlockODef) BlockByRange(ctx context.Context, startHeight, endHeight *big.Int) ([]*types.Header, error) {
 	count := new(big.Int).Sub(endHeight, startHeight).Uint64()
 	batchElems := make([]rpc.BatchElem, count)
 	for i := uint64(0); i < count; i++ {
@@ -91,7 +97,7 @@ func (oracle *GethBlockODef) BlockByRange(ctx context.Context, startHeight, endH
 		batchElems[i] = rpc.BatchElem{
 			Method: "eth_getBlockByNumber",
 			Args:   []interface{}{toBlockNumArg(height), false},
-			Result: new(types.Block),
+			Result: new(types.Header),
 			Error:  nil,
 		}
 	}
@@ -105,7 +111,7 @@ func (oracle *GethBlockODef) BlockByRange(ctx context.Context, startHeight, endH
 	//  - Ensure integrity that they build on top of each other
 	//  - Truncate out headers that do not exist (endHeight > "latest")
 	size := 0
-	blocks := make([]*types.Block, count)
+	blocks := make([]*types.Header, count)
 	for i, batchElem := range batchElems {
 		if batchElem.Error != nil {
 			return nil, batchElem.Error
@@ -113,7 +119,7 @@ func (oracle *GethBlockODef) BlockByRange(ctx context.Context, startHeight, endH
 			break
 		}
 
-		block := batchElem.Result.(*types.Block)
+		block := batchElem.Result.(*types.Header)
 
 		blocks[i] = block
 		size = size + 1
@@ -140,6 +146,68 @@ func toBlockNumArg(number *big.Int) string {
 	return fmt.Sprintf("<invalid %d>", number)
 }
 
+func timer() func() {
+	start := time.Now()
+	return func() {
+		logging.NoContext().Info("took", zap.String("took", time.Since(start).String()))
+	}
+}
+
+func (oracle *GethBlockODef) BatchedSendBlocks(ctx context.Context, startHeight *big.Int,
+	endHeight *big.Int, componentChan chan core.TransitData) {
+	defer timer()
+	totalBlocks := new(big.Int).Sub(endHeight, startHeight).Uint64() + 1
+	numOfBatches := totalBlocks / 1000 // already floor division
+	processingStartHeight := startHeight
+	for i := uint64(0); i < numOfBatches; i++ {
+		logging.WithContext(ctx).Info("batch processing blocks", zap.String("batch",
+			strconv.FormatUint(i, 10)))
+		processingEndHeight := new(big.Int).Add(processingStartHeight, big.NewInt(1000))
+		headers, err := oracle.BlockByRange(ctx, processingStartHeight, processingEndHeight)
+
+		if err != nil {
+			logging.WithContext(ctx).Error("problem fetching batch of blocks",
+				zap.NamedError("batchBlockFetch", err))
+			oracle.stats.RecordNodeError(oracle.cfg.Network)
+			i-- // added this so that it can retry.
+		}
+
+		for _, eachHeader := range headers {
+			componentChan <- core.TransitData{
+				OriginTS:  time.Now(),
+				Timestamp: time.Now(),
+				Type:      core.GethHeader,
+				Value:     *eachHeader,
+			}
+		}
+		processingStartHeight = processingEndHeight
+		logging.WithContext(ctx).Info("processed batch", zap.String("batch", strconv.FormatUint(i, 10)),
+			zap.String("newStartHeight", processingStartHeight.String()))
+	}
+
+	remainingBlocks := new(big.Int).SetUint64(1 + totalBlocks - (numOfBatches * 1000))
+	blocks, err := oracle.BlockByRange(ctx,
+		new(big.Int).Mul(new(big.Int).SetUint64(numOfBatches), big.NewInt(1000)), remainingBlocks)
+
+	logging.WithContext(ctx).Info("remaining blocks", zap.Uint64("blocks", remainingBlocks.Uint64()))
+
+	if err != nil {
+		logging.WithContext(ctx).Error("problem fetching batch of blocks", zap.NamedError("batchBlockFetch", err))
+		oracle.stats.RecordNodeError(oracle.cfg.Network)
+	}
+
+	for _, eachHeader := range blocks {
+		logging.WithContext(ctx).Info("eachHeader", zap.String("header", eachHeader.Number.String()))
+
+		componentChan <- core.TransitData{
+			OriginTS:  time.Now(),
+			Timestamp: time.Now(),
+			Type:      core.GethHeader,
+			Value:     *eachHeader,
+		}
+	}
+}
+
 // BackTestRoutine ...
 func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan chan core.TransitData,
 	startHeight *big.Int, endHeight *big.Int) error {
@@ -159,47 +227,8 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 	totalBlocks := new(big.Int).Sub(endHeight, startHeight).Uint64() + 1
 
 	if totalBlocks > 1000 {
-		numOfBatches := totalBlocks / 1000 // already floor division
-		processingStartHeight := startHeight
-		for i := uint64(0); i < numOfBatches; i++ {
-
-			processingEndHeight := new(big.Int).Add(processingStartHeight, big.NewInt(1000))
-			blocks, err := oracle.BlockByRange(ctx, processingStartHeight, processingEndHeight)
-
-			if err != nil {
-				logging.WithContext(ctx).Error("problem fetching batch of blocks", zap.NamedError("batchBlockFetch", err))
-				oracle.stats.RecordNodeError(oracle.cfg.Network)
-				i-- // added this so that it can retry.
-			}
-
-			for _, eachBlock := range blocks {
-				componentChan <- core.TransitData{
-					OriginTS:  time.Now(),
-					Timestamp: time.Now(),
-					Type:      core.GethBlock,
-					Value:     *eachBlock,
-				}
-			}
-			processingStartHeight = processingEndHeight
-		}
-
-		remainingBlocks := new(big.Int).SetUint64(1 + totalBlocks - (numOfBatches * 1000))
-		blocks, err := oracle.BlockByRange(ctx,
-			new(big.Int).Mul(new(big.Int).SetUint64(numOfBatches), big.NewInt(1000)), remainingBlocks)
-		if err != nil {
-			logging.WithContext(ctx).Error("problem fetching batch of blocks", zap.NamedError("batchBlockFetch", err))
-			oracle.stats.RecordNodeError(oracle.cfg.Network)
-		}
-
-		for _, eachBlock := range blocks {
-			componentChan <- core.TransitData{
-				OriginTS:  time.Now(),
-				Timestamp: time.Now(),
-				Type:      core.GethBlock,
-				Value:     *eachBlock,
-			}
-		}
-
+		logging.WithContext(ctx).Info("getting blocks in batches")
+		oracle.BatchedSendBlocks(ctx, startHeight, endHeight, componentChan)
 	} else {
 
 		blocks, err := oracle.BlockByRange(ctx, startHeight, new(big.Int).Add(endHeight, big.NewInt(1)))
@@ -275,7 +304,7 @@ func (oracle *GethBlockODef) getHeightToProcess(ctx context.Context) *big.Int {
 	if oracle.currHeight == nil {
 		logging.WithContext(ctx).Info("Current Height is nil, looking for starting height")
 		if oracle.cfg.StartHeight != nil {
-			logging.WithContext(ctx).Info("StartHeight found to be: %d, using that value.", zap.Int64("StartHeight",
+			logging.WithContext(ctx).Info("using this value as start height", zap.Int64("StartHeight",
 				oracle.cfg.StartHeight.Int64()))
 			return oracle.cfg.StartHeight
 		}
@@ -328,6 +357,12 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 	logging.WithContext(ctx).
 		Debug("Starting poll routine", zap.Duration("poll_interval", oracle.cfg.PollInterval),
 			zap.String(logging.CUUIDKey, oracle.cUUID.String()))
+
+	if oracle.cfg.StartHeight != nil {
+		logging.WithContext(ctx).Info("start height", zap.String("startHeight", oracle.cfg.StartHeight.String()))
+		currentMaxHeight := oracle.getCurrentHeightFromNetwork(ctx)
+		oracle.BatchedSendBlocks(ctx, big.NewInt(1000000), currentMaxHeight.Number, componentChan)
+	}
 
 	ticker := time.NewTicker(oracle.cfg.PollInterval * time.Millisecond) //nolint:durationcheck // inapplicable
 	for {

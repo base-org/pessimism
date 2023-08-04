@@ -5,6 +5,7 @@ package subsystem
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -21,9 +22,10 @@ import (
 
 // Config ... Used to store necessary API service config values
 type Config struct {
-	MaxPipelineCount int
-	L1PollInterval   int
-	L2PollInterval   int
+	MaxPipelineCount    int
+	L1PollInterval      int
+	L2PollInterval      int
+	NumOfBlocksPerBatch *big.Int
 }
 
 // GetPollInterval ... Returns config poll-interval for network type
@@ -38,6 +40,11 @@ func (cfg *Config) GetPollInterval(n core.Network) (time.Duration, error) {
 	default:
 		return 0, fmt.Errorf(networkNotFoundErr, n.String())
 	}
+}
+
+// GetNumOfBlocksPerBatch ... Returns the number of blocks for batch fetching
+func (cfg *Config) GetNumOfBlocksPerBatch() *big.Int {
+	return cfg.NumOfBlocksPerBatch
 }
 
 // Manager ... Subsystem manager interface
@@ -208,10 +215,11 @@ func (m *manager) BuildPipelineCfg(params *models.SessionRequestParams) (*core.P
 		DataType:     inType,
 		PipelineType: params.PipelineType(),
 		ClientConfig: &core.ClientConfig{
-			Network:      params.NetworkType(),
-			PollInterval: pollInterval,
-			StartHeight:  params.StartHeight,
-			EndHeight:    params.EndHeight,
+			Network:             params.NetworkType(),
+			PollInterval:        pollInterval,
+			StartHeight:         params.StartHeight,
+			EndHeight:           params.EndHeight,
+			NumOfBlocksPerBatch: m.cfg.GetNumOfBlocksPerBatch(),
 		},
 	}, nil
 }

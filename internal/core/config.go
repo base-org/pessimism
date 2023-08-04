@@ -7,11 +7,12 @@ import (
 
 // ClientConfig ... Configuration passed through to an oracle component constructor
 type ClientConfig struct {
-	Network      Network
-	PollInterval time.Duration
-	NumOfRetries int
-	StartHeight  *big.Int
-	EndHeight    *big.Int
+	Network             Network
+	PollInterval        time.Duration
+	NumOfRetries        int
+	StartHeight         *big.Int
+	EndHeight           *big.Int
+	NumOfBlocksPerBatch *big.Int
 }
 
 // SessionConfig ... Configuration passed through to a session constructor
