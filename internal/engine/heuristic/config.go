@@ -2,7 +2,7 @@ package heuristic
 
 import "github.com/base-org/pessimism/internal/core"
 
-// DeployConfig ... Configuration for deploying an heuristic session
+// DeployConfig ... Configuration for deploying a heuristic session
 type DeployConfig struct {
 	Stateful bool
 	StateKey *core.StateKey

@@ -98,7 +98,7 @@ func Test_ProcessHeuristicRequest(t *testing.T) {
 		},
 		{
 			name:        "Process Heuristic Success",
-			description: "When an heuristic is successfully processed, a suuid should be rendered",
+			description: "When a heuristic is successfully processed, a suuid should be rendered",
 			function:    "RunHeuristic",
 
 			constructionLogic: func() testSuite {

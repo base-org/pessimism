@@ -83,12 +83,12 @@ type Heuristic interface {
 The heuristic input type is a `RegisterType` that defines the type of data that the heuristic will receive as input. The heuristic input type is defined by the `InputType()` method of the `Heuristic` interface. The heuristic input type is used by the `RiskEngine` to determine if the input data is compatible with the heuristic. If the input data is not compatible with the heuristic, the `RiskEngine` will not execute the heuristic and will return an error.
 
 ### Addressing
-All heuristics have a boolean property `Addressing` which determines if the heuristic is addressable. To be addressable, an heuristic must only execute under the context of a single address.
+All heuristics have a boolean property `Addressing` which determines if the heuristic is addressable. To be addressable, a heuristic must only execute under the context of a single address.
 
 For example, a `balance_enforcement` heuristic session will be addressable because it only executes invalidation logic for the native ETH balance of a single address. 
 
 ### Heuristic States
-State is used to represent the current state of an heuristic. The state of an heuristic is represented by a `HeuristicState` type. The following states are supported:
+State is used to represent the current state of a heuristic. The state of a heuristic is represented by a `HeuristicState` type. The following states are supported:
 - `Running` - The heuristic is currently running and is being executed by the `RiskEngine`
 - `Inactive` - The heuristic is currently inactive and is not being executed by the `RiskEngine`
 - `Paused` - The heuristic is currently paused and is not being executed by the `RiskEngine`

@@ -5,7 +5,7 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
-// ProcessHeuristicRequest ... Processes an heuristic request type
+// ProcessHeuristicRequest ... Processes a heuristic request type
 func (svc *PessimismService) ProcessHeuristicRequest(ir *models.SessionRequestBody) (core.SUUID, error) {
 	if ir.MethodType() == models.Run { // Deploy heuristic session
 		return svc.RunHeuristicSession(&ir.Params)
@@ -15,7 +15,7 @@ func (svc *PessimismService) ProcessHeuristicRequest(ir *models.SessionRequestBo
 	return core.NilSUUID(), nil
 }
 
-// RunHeuristicSession ... Runs an heuristic session provided
+// RunHeuristicSession ... Runs a heuristic session provided
 func (svc *PessimismService) RunHeuristicSession(params *models.SessionRequestParams) (core.SUUID, error) {
 	pConfig, err := svc.m.BuildPipelineCfg(params)
 	if err != nil {

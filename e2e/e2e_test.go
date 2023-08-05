@@ -48,8 +48,8 @@ func Test_Balance_Enforcement(t *testing.T) {
 		StartHeight:   nil,
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
-			Dest: core.Pagerduty.String(),
-			Msg:  alertMsg,
+			Sev: core.HIGH.String(),
+			Msg: alertMsg,
 		},
 		SessionParams: map[string]interface{}{
 			"address": alice.String(),
@@ -85,7 +85,7 @@ func Test_Balance_Enforcement(t *testing.T) {
 		Data:  nil,
 	})
 
-	assert.Equal(t, len(ts.TestPagerdutyServer.PagerdutyAlerts()), 0, "No alerts should be sent before the transaction is sent")
+	assert.Equal(t, len(ts.TestPagerDutyServer.PagerDutyAlerts()), 0, "No alerts should be sent before the transaction is sent")
 
 	// Send the transaction to drain Alice's account of almost all ETH.
 	_, err = ts.L2Geth.AddL2Block(context.Background(), drainAliceTx)
@@ -95,7 +95,9 @@ func Test_Balance_Enforcement(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// Check that the balance enforcement was triggered using the mocked server cache.
-	posts := ts.TestPagerdutyServer.PagerdutyAlerts()
+	posts := ts.TestPagerDutyServer.PagerDutyAlerts()
+	slackPosts := ts.TestSlackSvr.SlackAlerts()
+	assert.Greater(t, len(slackPosts), 0, "No balance enforcement alert was sent")
 	assert.Greater(t, len(posts), 0, "No balance enforcement alert was sent")
 	assert.Contains(t, posts[0].Payload.Summary, "balance_enforcement", "Balance enforcement alert was not sent")
 
@@ -122,14 +124,14 @@ func Test_Balance_Enforcement(t *testing.T) {
 	// Wait for Pessimism to process the balance change.
 	time.Sleep(1 * time.Second)
 
-	// Empty the mocked Pagerduty server cache.
-	ts.TestPagerdutyServer.ClearAlerts()
+	// Empty the mocked PagerDuty server cache.
+	ts.TestPagerDutyServer.ClearAlerts()
 
 	// Wait to ensure that no new alerts are sent.
 	time.Sleep(1 * time.Second)
 
 	// Ensure that no new alerts were sent.
-	assert.Equal(t, len(ts.TestPagerdutyServer.Payloads), 0, "No alerts should be sent after the transaction is sent")
+	assert.Equal(t, len(ts.TestPagerDutyServer.Payloads), 0, "No alerts should be sent after the transaction is sent")
 }
 
 // Test_Balance_Enforce_With_Cooldown ... Tests the E2E flow of a single
@@ -230,8 +232,8 @@ func Test_Contract_Event(t *testing.T) {
 		StartHeight:   nil,
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
-			Msg:  alertMsg,
-			Dest: core.Slack.String(),
+			Msg: alertMsg,
+			Sev: core.LOW.String(),
 		},
 		SessionParams: map[string]interface{}{
 			"address": predeploys.DevSystemConfigAddr.String(),
@@ -346,8 +348,8 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 			StartHeight:   nil,
 			EndHeight:     nil,
 			AlertingParams: &core.AlertPolicy{
-				Dest: core.Slack.String(),
-				Msg:  alertMsg,
+				Sev: core.LOW.String(),
+				Msg: alertMsg,
 			},
 			SessionParams: map[string]interface{}{
 				core.L1Portal:            predeploys.DevOptimismPortal,
@@ -361,7 +363,7 @@ func Test_Withdrawal_Enforcement(t *testing.T) {
 			StartHeight:   nil,
 			EndHeight:     nil,
 			AlertingParams: &core.AlertPolicy{
-				Dest: core.Slack.String(),
+				Sev: core.LOW.String(),
 			},
 			SessionParams: map[string]interface{}{
 				core.L1Portal:            predeploys.DevOptimismPortal,
@@ -481,8 +483,8 @@ func Test_Fault_Detector(t *testing.T) {
 		StartHeight:   big.NewInt(0),
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
-			Dest: core.Slack.String(),
-			Msg:  alertMsg,
+			Sev: core.LOW.String(),
+			Msg: alertMsg,
 		},
 		SessionParams: map[string]interface{}{
 			core.L2OutputOracle:      predeploys.DevL2OutputOracle,

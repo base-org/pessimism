@@ -36,7 +36,7 @@ type SysTestSuite struct {
 	Close  func()
 
 	TestSlackSvr        *TestSlackServer
-	TestPagerdutyServer *TestPagerdutyServer
+	TestPagerDutyServer *TestPagerDutyServer
 }
 
 // L2TestSuite ... Stores all the information needed to run an e2e L2Geth test
@@ -51,7 +51,7 @@ type L2TestSuite struct {
 	Close  func()
 
 	TestSlackSvr        *TestSlackServer
-	TestPagerdutyServer *TestPagerdutyServer
+	TestPagerDutyServer *TestPagerDutyServer
 }
 
 // CreateSysTestSuite ... Creates a new L2Geth test suite
@@ -72,8 +72,8 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 	slackServer := NewTestSlackServer()
 	appCfg.AlertConfig.SlackConfig.URL = slackServer.Server.URL
 
-	pagerdutyServer := NewTestPagerdutyServer()
-	appCfg.AlertConfig.PagerdutyConfig.AlertEventsURL = pagerdutyServer.Server.URL
+	pagerdutyServer := NewTestPagerDutyServer()
+	appCfg.AlertConfig.MediumPagerDutyCfg.AlertEventsURL = pagerdutyServer.Server.URL
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
@@ -98,7 +98,7 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 		},
 		AppCfg:              appCfg,
 		TestSlackSvr:        slackServer,
-		TestPagerdutyServer: pagerdutyServer,
+		TestPagerDutyServer: pagerdutyServer,
 	}
 }
 
@@ -129,8 +129,8 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	slackServer := NewTestSlackServer()
 	appCfg.AlertConfig.SlackConfig.URL = slackServer.Server.URL
 
-	pagerdutyServer := NewTestPagerdutyServer()
-	appCfg.AlertConfig.PagerdutyConfig.AlertEventsURL = pagerdutyServer.Server.URL
+	pagerdutyServer := NewTestPagerDutyServer()
+	appCfg.AlertConfig.MediumPagerDutyCfg.AlertEventsURL = pagerdutyServer.Server.URL
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
@@ -155,7 +155,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 		},
 		AppCfg:              appCfg,
 		TestSlackSvr:        slackServer,
-		TestPagerdutyServer: pagerdutyServer,
+		TestPagerDutyServer: pagerdutyServer,
 	}
 }
 
@@ -189,7 +189,10 @@ func DefaultTestConfig() *config.Config {
 				URL:     "",
 				Channel: "test",
 			},
-			PagerdutyConfig: &client.PagerdutyConfig{
+			MediumPagerDutyCfg: &client.PagerDutyConfig{
+				AlertEventsURL: "",
+			},
+			HighPagerDutyCfg: &client.PagerDutyConfig{
 				AlertEventsURL: "",
 			},
 		},

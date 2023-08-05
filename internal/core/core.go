@@ -104,7 +104,7 @@ const (
 	NestedArgs = "args"
 )
 
-// SessionParams ... Parameters used to initialize an heuristic session
+// SessionParams ... Parameters used to initialize a heuristic session
 type SessionParams struct {
 	params map[string]any
 }

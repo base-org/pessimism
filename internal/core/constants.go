@@ -95,7 +95,7 @@ const (
 	FaultDetector
 )
 
-// String ... Converts an heuristic type to a string
+// String ... Converts a heuristic type to a string
 func (it HeuristicType) String() string {
 	switch it {
 	case BalanceEnforcement:
@@ -115,7 +115,7 @@ func (it HeuristicType) String() string {
 	}
 }
 
-// StringToHeuristicType ... Converts a string to an heuristic type
+// StringToHeuristicType ... Converts a string to a heuristic type
 func StringToHeuristicType(stringType string) HeuristicType {
 	switch stringType {
 	case "balance_enforcement":
@@ -137,6 +137,7 @@ func StringToHeuristicType(stringType string) HeuristicType {
 
 // AlertPolicy ... The alerting policy for a heuristic session
 type AlertPolicy struct {
+	Sev      string `json:"severity"`
 	Dest     string `json:"destination"`
 	Msg      string `json:"message"`
 	CoolDown int    `json:"cooldown_time"`
@@ -152,7 +153,12 @@ func (ap *AlertPolicy) CoolDownTime() time.Time {
 	return time.Now().Add(time.Duration(ap.CoolDown) * time.Second)
 }
 
-// Message ... Returns the message for an alert
+// Severity ... Returns the severity of an alert policy
+func (ap *AlertPolicy) Severity() Severity {
+	return StringToSev(ap.Sev)
+}
+
+// Message ... Returns the message for an alert policy
 func (ap *AlertPolicy) Message() string {
 	return ap.Msg
 }
@@ -167,7 +173,7 @@ type AlertDestination uint8
 
 const (
 	Slack AlertDestination = iota + 1
-	Pagerduty
+	PagerDuty
 	ThirdParty
 )
 
@@ -176,8 +182,8 @@ func (ad AlertDestination) String() string {
 	switch ad {
 	case Slack:
 		return "slack"
-	case Pagerduty:
-		return "pagerduty"
+	case PagerDuty:
+		return "pager_duty"
 	case ThirdParty:
 		return "third_party"
 	default:
@@ -190,8 +196,8 @@ func StringToAlertingDestType(stringType string) AlertDestination {
 	switch stringType {
 	case "slack":
 		return Slack
-	case "pagerduty":
-		return Pagerduty
+	case "pager_duty":
+		return PagerDuty
 	case "third_party":
 		return ThirdParty
 	}
