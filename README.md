@@ -41,7 +41,7 @@ To use the template, run the following command(s):
 
 2. Pull the latest image from Github container registry (ghcr) via `docker pull ghcr.io/base-org/pessimism:latest`
 
-3. Make sure you have followed the above instructions to creat a local config file (config.env) using the config.env.template
+3. Make sure you have followed the above instructions to create a local config file (config.env) using the config.env.template
 
 4. Run the following:
    * Without genesis.json: 
