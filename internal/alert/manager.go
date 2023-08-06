@@ -188,28 +188,20 @@ func (am *alertManager) EventLoop() error {
 
 // HandleAlert ... Handles the alert propagation logic
 func (am *alertManager) HandleAlert(alert core.Alert, policy *core.AlertPolicy) {
-	logger := logging.WithContext(am.ctx)
+	locations := []core.AlertDestination{policy.Destination()}
 
-	logger.Debug("Attempting to post alert to slack")
-	err := am.handleSlackPost(alert.SUUID, alert.Content, policy.Message())
-	if err != nil {
-		logger.Error("Could not post alert to slack", zap.Error(err))
-		locations := []core.AlertDestination{policy.Destination()}
+	am.metrics.RecordAlertGenerated(alert)
+	alert.Criticality = policy.Severity()
 
-		am.metrics.RecordAlertGenerated(alert)
-		alert.Criticality = policy.Severity()
-
-		// Fetch alerting destinations if severity is provided
-		if policy.Severity() != core.UNKNOWN {
-			locations = getSevMap()[policy.Severity()]
-		}
-
-		// Iterate over alerting destinations and propagate alert
-		for _, dest := range locations {
-			am.propagate(dest, alert, policy)
-		}
+	// Fetch alerting destinations if severity is provided
+	if policy.Severity() != core.UNKNOWN {
+		locations = getSevMap()[policy.Severity()]
 	}
 
+	// Iterate over alerting destinations and propagate alert
+	for _, dest := range locations {
+		am.propagate(dest, alert, policy)
+	}
 }
 
 // propagate ... Propagates an alert to a destination

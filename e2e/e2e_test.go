@@ -134,9 +134,9 @@ func Test_Balance_Enforcement(t *testing.T) {
 	assert.Equal(t, len(ts.TestPagerDutyServer.Payloads), 0, "No alerts should be sent after the transaction is sent")
 }
 
-// Test_Balance_Enforce_With_Cooldown ... Tests the E2E flow of a single
+// Test_Balance_Enforce_With_CoolDown ... Tests the E2E flow of a single
 // balance enforcement heuristic session on L2 network with a cooldown.
-func Test_Balance_Enforce_With_Cooldown(t *testing.T) {
+func Test_Balance_Enforce_With_CoolDown(t *testing.T) {
 
 	ts := e2e.CreateL2TestSuite(t)
 	defer ts.Close()
@@ -153,7 +153,8 @@ func Test_Balance_Enforce_With_Cooldown(t *testing.T) {
 		StartHeight:   nil,
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
-			CoolDown: 10000000,
+			// Set a cooldown of one minute.
+			CoolDown: 60,
 			Dest:     core.Slack.String(),
 			Msg:      alertMsg,
 		},
