@@ -129,13 +129,16 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 	// 1. Check to see if there are any failed queries to reprocess
 	// If failures occur again, add the caller (Transform)
 	// function input to the DLQ and return
-	var tds []core.TransitData
+	var (
+		tds []core.TransitData
+		err error
+	)
 
 	if !ed.dlq.Empty() {
 		logger.Debug("Attempting to reprocess failed queries",
 			zap.Int("dlq_size", ed.dlq.Size()))
 
-		tds, err := ed.attemptDLQ(ctx)
+		tds, err = ed.attemptDLQ(ctx)
 		// NOTE ... Returning here is intentional to ensure that block events
 		// downstream are processed in the sequential order for which they came in
 		if err != nil {
@@ -146,6 +149,7 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 		}
 		logger.Debug("Successfully reprocessed failed queries",
 			zap.String(logging.PUUIDKey, ed.pUUID.String()))
+
 	}
 
 	// 2. If there are no failed queries, then process the current block data
