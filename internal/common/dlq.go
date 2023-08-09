@@ -61,3 +61,8 @@ func (d *DLQ[E]) PopAll() []*E {
 func (d *DLQ[E]) Empty() bool {
 	return len(d.dlq) == 0
 }
+
+// Size ... Returns the size of the DLQ
+func (d *DLQ[E]) Size() int {
+	return len(d.dlq)
+}

@@ -18,7 +18,16 @@ import (
 	"go.uber.org/zap"
 )
 
-// EventDefinition ...
+const (
+	// dlqMaxSize ... Max size of the DLQ
+	// NOTE ... This could be made configurable via env vars
+	// or some other mechanism if needed
+	dlqMaxSize = 100
+)
+
+// EventDefinition ... Represents the stateful definition of the event log pipe component
+// Used to transform block data into event logs (block->events)
+// Uses a DLQ to reprocess failed queries & state store to get events to monitor
 type EventDefinition struct {
 	client client.EthClient
 	dlq    *p_common.DLQ[core.TransitData]
@@ -29,6 +38,7 @@ type EventDefinition struct {
 	SK *core.StateKey
 }
 
+// NewEventDefinition ... Initializes the event log pipe definition
 func NewEventDefinition(ctx context.Context, n core.Network) (*EventDefinition, error) {
 	// 1. Load dependencies from context
 	client, err := client.FromContext(ctx, n)
@@ -43,7 +53,7 @@ func NewEventDefinition(ctx context.Context, n core.Network) (*EventDefinition, 
 
 	// 2. Construct the pipe definition
 	ed := &EventDefinition{
-		dlq:    p_common.NewTransitDLQ(10),
+		dlq:    p_common.NewTransitDLQ(dlqMaxSize),
 		client: client,
 		ss:     ss,
 	}
@@ -126,14 +136,22 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 
 	// 2. If there are no failed queries, then process the current block data
 	// and add a data input to the DLQ if it fails for reprocessing next block
-	tds, err = ed.transformFunc(ctx, td)
+	tds2, err := ed.transformFunc(ctx, td)
 	if err != nil {
-		err = ed.dlq.Add(&td)
-		if err != nil {
-			return tds, err
+		err2 := ed.dlq.Add(&td)
+		if err2 != nil {
+			logging.WithContext(ctx).Error(err2.Error())
 		}
+
+		logging.WithContext(ctx).Error("Failed to process block data",
+			zap.Int("dlq_size", ed.dlq.Size()))
+
+		return tds, err
 	}
 
+	// 3. Concatenate the results from the failed queries and the current block data
+	// and return
+	tds = append(tds, tds2...)
 	return tds, nil
 }
 

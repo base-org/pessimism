@@ -2,11 +2,13 @@ package pipe_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/registry/pipe"
 	"github.com/base-org/pessimism/internal/state"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -26,6 +28,19 @@ type testSuite struct {
 func defConstructor(t *testing.T) *testSuite {
 	ctrl := gomock.NewController(t)
 	ctx, suite := mocks.Context(context.Background(), ctrl)
+
+	// Populate the state store with the events to monitor
+	// NOTE - There's likely a more extensible way to handle nested keys in the state store
+	_ = state.InsertUnique(ctx, &core.StateKey{
+		Nesting: true,
+	}, "0x00000000")
+
+	innerKey := &core.StateKey{
+		Nesting: false,
+		ID:      "0x00000000",
+	}
+
+	_ = state.InsertUnique(ctx, innerKey, "transfer(address,address,uint256)")
 
 	ed, err := pipe.NewEventDefinition(ctx, core.Layer1)
 	if err != nil {
@@ -50,39 +65,84 @@ func TestEventLogPipe(t *testing.T) {
 		runner      func(t *testing.T, suite *testSuite)
 	}{
 		{
-			name:        "No Error When no Events to Monitor",
+			name:        "Error when failed FilterQuery",
 			constructor: defConstructor,
 			runner: func(t *testing.T, suite *testSuite) {
+				suite.mockSuite.MockL1.EXPECT().FilterLogs(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("unknown block"))
+
 				_, err := suite.def.Transform(suite.ctx, core.TransitData{
-					Value: types.Block{},
-				})
-				assert.NoError(t, err)
+					Value: *types.NewBlockWithHeader(&types.Header{})})
+				assert.Error(t, err)
 			},
 		},
 		{
-			name: "No Error When no Events to Monitor",
+			name: "No Error When Successful Filter Query",
 			constructor: func(t *testing.T) *testSuite {
 				ts := defConstructor(t)
 
-				state.InsertUnique(ts.ctx, &core.StateKey{
-					Nesting: true,
-				}, "0x00000000")
-
-				innerKey := &core.StateKey{
-					Nesting: false,
-					ID:      "0x00000000",
-				}
-
-				state.InsertUnique(ts.ctx, innerKey, "transfer(address,address,uint256)")
 				return ts
 			},
 			runner: func(t *testing.T, suite *testSuite) {
 				suite.mockSuite.MockL1.EXPECT().FilterLogs(gomock.Any(), gomock.Any()).Return(nil, nil)
 
-				_, err := suite.def.Transform(suite.ctx, core.TransitData{
-					Value: types.NewBlockWithHeader(&types.Header{}),
+				tds, err := suite.def.Transform(suite.ctx, core.TransitData{
+					Value: *types.NewBlockWithHeader(&types.Header{}),
 				})
 				assert.NoError(t, err)
+				assert.Empty(t, tds)
+			},
+		},
+		{
+			name: "DLQ Retry When Failed Filter Query",
+			constructor: func(t *testing.T) *testSuite {
+				ts := defConstructor(t)
+
+				return ts
+			},
+			runner: func(t *testing.T, suite *testSuite) {
+				// 1. Fail the first filter query and assert that the DLQ is populated
+				suite.mockSuite.MockL1.EXPECT().
+					FilterLogs(gomock.Any(), gomock.Any()).
+					Return(nil, fmt.Errorf("unknown block"))
+
+				tds, err := suite.def.Transform(suite.ctx, core.TransitData{
+					Value: *types.NewBlockWithHeader(&types.Header{}),
+				})
+				assert.Error(t, err)
+				assert.Empty(t, tds)
+
+				log1 := types.Log{
+					Address: common.HexToAddress("0x0"),
+				}
+
+				log2 := types.Log{
+					Address: common.HexToAddress("0x1"),
+				}
+
+				// 2. Retry the filter query and assert that the DLQ is empty
+				suite.mockSuite.MockL1.EXPECT().
+					FilterLogs(gomock.Any(), gomock.Any()).
+					Return([]types.Log{log1}, nil)
+
+				suite.mockSuite.MockL1.EXPECT().
+					FilterLogs(gomock.Any(), gomock.Any()).
+					Return([]types.Log{log2}, nil)
+
+				tds, err = suite.def.Transform(suite.ctx, core.TransitData{
+					Value: *types.NewBlockWithHeader(&types.Header{}),
+				})
+
+				assert.NoError(t, err)
+				assert.NotEmpty(t, tds)
+
+				actualLog1, ok := tds[0].Value.(types.Log)
+				assert.True(t, ok)
+
+				actualLog2, ok := tds[1].Value.(types.Log)
+				assert.True(t, ok)
+
+				assert.Equal(t, actualLog1, log1)
+				assert.Equal(t, actualLog2, log2)
 			},
 		},
 	}
