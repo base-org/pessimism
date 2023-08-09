@@ -53,7 +53,6 @@ func TestEventLogPipe(t *testing.T) {
 			name:        "No Error When no Events to Monitor",
 			constructor: defConstructor,
 			runner: func(t *testing.T, suite *testSuite) {
-
 				_, err := suite.def.Transform(suite.ctx, core.TransitData{
 					Value: types.Block{},
 				})
