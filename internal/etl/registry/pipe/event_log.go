@@ -23,9 +23,10 @@ type EventDefinition struct {
 	client client.EthClient
 	dlq    *p_common.DLQ[core.TransitData]
 
-	sk    *core.StateKey
 	pUUID core.PUUID
 	ss    state.Store
+
+	SK *core.StateKey
 }
 
 func NewEventDefinition(ctx context.Context, n core.Network) (*EventDefinition, error) {
@@ -67,7 +68,7 @@ func NewEventParserPipe(ctx context.Context, cfg *core.ClientConfig,
 	// 3. Set the post component construction fields on the definition
 	// There's likely a more extensible way to construct this definition fields
 	// given that they're used by component implementations across the ETL
-	ed.sk = p.StateKey().Clone()
+	ed.SK = p.StateKey().Clone()
 	ed.pUUID = p.PUUID()
 	return p, nil
 }
@@ -82,9 +83,9 @@ func (ed *EventDefinition) getTopics(ctx context.Context,
 	for _, address := range addresses {
 		innerKey := &core.StateKey{
 			Nesting: false,
-			Prefix:  ed.sk.Prefix,
+			Prefix:  ed.SK.Prefix,
 			ID:      address,
-			PUUID:   ed.sk.PUUID,
+			PUUID:   ed.SK.PUUID,
 		}
 
 		// 1.1 Attempt to fetch the events to monitor from the state store
@@ -175,7 +176,7 @@ func (ed *EventDefinition) transformFunc(ctx context.Context, td core.TransitDat
 	logging.NoContext().Debug("Getting addresses",
 		zap.String(logging.PUUIDKey, ed.pUUID.String()))
 
-	addresses, err := ed.ss.GetSlice(ctx, ed.sk)
+	addresses, err := ed.ss.GetSlice(ctx, ed.SK)
 	if err != nil {
 		return []core.TransitData{}, err
 	}

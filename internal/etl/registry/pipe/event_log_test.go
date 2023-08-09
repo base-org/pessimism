@@ -6,6 +6,8 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/registry/pipe"
+	"github.com/base-org/pessimism/internal/state"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
@@ -25,15 +27,17 @@ func defConstructor(t *testing.T) *testSuite {
 	ctrl := gomock.NewController(t)
 	ctx, suite := mocks.Context(context.Background(), ctrl)
 
-	p, err := pipe.NewEventDefinition(ctx, core.Layer1)
-
+	ed, err := pipe.NewEventDefinition(ctx, core.Layer1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	nilKey := &core.StateKey{}
+	ed.SK = nilKey
+
 	return &testSuite{
 		ctx:       ctx,
-		def:       p,
+		def:       ed,
 		mockSuite: suite,
 	}
 }
@@ -50,7 +54,35 @@ func TestEventLogPipe(t *testing.T) {
 			constructor: defConstructor,
 			runner: func(t *testing.T, suite *testSuite) {
 
-				_, err := suite.def.Transform(suite.ctx, core.TransitData{})
+				_, err := suite.def.Transform(suite.ctx, core.TransitData{
+					Value: types.Block{},
+				})
+				assert.NoError(t, err)
+			},
+		},
+		{
+			name: "No Error When no Events to Monitor",
+			constructor: func(t *testing.T) *testSuite {
+				ts := defConstructor(t)
+
+				state.InsertUnique(ts.ctx, &core.StateKey{
+					Nesting: true,
+				}, "0x00000000")
+
+				innerKey := &core.StateKey{
+					Nesting: false,
+					ID:      "0x00000000",
+				}
+
+				state.InsertUnique(ts.ctx, innerKey, "transfer(address,address,uint256)")
+				return ts
+			},
+			runner: func(t *testing.T, suite *testSuite) {
+				suite.mockSuite.MockL1.EXPECT().FilterLogs(gomock.Any(), gomock.Any()).Return(nil, nil)
+
+				_, err := suite.def.Transform(suite.ctx, core.TransitData{
+					Value: types.NewBlockWithHeader(&types.Header{}),
+				})
 				assert.NoError(t, err)
 			},
 		},
