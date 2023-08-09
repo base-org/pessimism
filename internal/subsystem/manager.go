@@ -157,7 +157,7 @@ func (m *manager) BuildDeployCfg(pConfig *core.PipelineConfig,
 	}, nil
 }
 
-// RunSession ... Runs an heuristic session
+// RunSession ... Runs a heuristic session
 func (m *manager) RunSession(cfg *heuristic.DeployConfig) (core.SUUID, error) {
 	// 1. Verify that pipeline constraints are met
 	// NOTE - Consider introducing a config validation step or module

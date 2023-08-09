@@ -15,7 +15,7 @@ import (
 
 func Test_EventLoop(t *testing.T) {
 	sc := mocks.NewMockSlackClient(gomock.NewController(t))
-	pdc := mocks.NewMockPagerdutyClient(gomock.NewController(t))
+	pdc := mocks.NewMockPagerDutyClient(gomock.NewController(t))
 
 	ctx := context.Background()
 

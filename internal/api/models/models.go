@@ -7,7 +7,7 @@ import (
 	"github.com/base-org/pessimism/internal/logging"
 )
 
-// NewSessionAcceptedResp ...Returns an heuristic response with status accepted
+// NewSessionAcceptedResp ...Returns a heuristic response with status accepted
 func NewSessionAcceptedResp(id core.SUUID) *SessionResponse {
 	return &SessionResponse{
 		Status: OK,

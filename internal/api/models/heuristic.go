@@ -48,9 +48,8 @@ type SessionRequestParams struct {
 	StartHeight *big.Int `json:"start_height"`
 	EndHeight   *big.Int `json:"end_height"`
 
-	SessionParams map[string]interface{} `json:"heuristic_params"`
-	// TODO(#81): No Support for Multiple Alerting Destinations for an Heuristic Session
-	AlertingParams *core.AlertPolicy `json:"alerting_params"`
+	SessionParams  map[string]interface{} `json:"heuristic_params"`
+	AlertingParams *core.AlertPolicy      `json:"alerting_params"`
 }
 
 // Params ... Returns the heuristic session params

@@ -154,7 +154,7 @@ func MakePUUID(pt PipelineType, firstCID, lastCID CUUID) PUUID {
 	}
 }
 
-// MakeSUUID ... Constructs an heuristic PID sequence & random UUID
+// MakeSUUID ... Constructs a heuristic PID sequence & random UUID
 func MakeSUUID(n Network, pt PipelineType, ht HeuristicType) SUUID {
 	pID := SessionPID{
 		byte(n),
@@ -207,7 +207,7 @@ func (uuid PUUID) String() string {
 	)
 }
 
-// String ... Returns string representation of an heuristic session PID
+// String ... Returns string representation of a heuristic session PID
 func (pid SessionPID) String() string {
 	return fmt.Sprintf("%s:%s:%s",
 		Network(pid[0]).String(),
@@ -216,7 +216,7 @@ func (pid SessionPID) String() string {
 	)
 }
 
-// String ... Returns string representation of an heuristic session UUID
+// String ... Returns string representation of a heuristic session UUID
 func (uuid SUUID) String() string {
 	return fmt.Sprintf("%s::%s",
 		uuid.PID.String(), uuid.UUID.ShortString())

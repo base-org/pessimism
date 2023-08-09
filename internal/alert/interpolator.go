@@ -30,7 +30,7 @@ const (
 )
 
 const (
-	PagerdutyMsgFmt = `
+	PagerDutyMsgFmt = `
 	Heuristic Triggered: %s
 	Network: %s
 	Assessment: 
@@ -41,7 +41,7 @@ const (
 // Interpolator ... Interface for interpolating messages
 type Interpolator interface {
 	InterpolateSlackMessage(sUUID core.SUUID, content string, msg string) string
-	InterpolatePagerdutyMessage(sUUID core.SUUID, message string) string
+	InterpolatePagerDutyMessage(sUUID core.SUUID, message string) string
 }
 
 // interpolator ... Interpolator implementation
@@ -62,9 +62,9 @@ func (*interpolator) InterpolateSlackMessage(sUUID core.SUUID, content string, m
 		msg)
 }
 
-// InterpolatePagerdutyMessage ... Interpolates a pagerduty message with the given heuristic session UUID and message
-func (*interpolator) InterpolatePagerdutyMessage(sUUID core.SUUID, message string) string {
-	return fmt.Sprintf(PagerdutyMsgFmt,
+// InterpolatePagerDutyMessage ... Interpolates a pagerduty message with the given heuristic session UUID and message
+func (*interpolator) InterpolatePagerDutyMessage(sUUID core.SUUID, message string) string {
+	return fmt.Sprintf(PagerDutyMsgFmt,
 		sUUID.PID.HeuristicType().String(),
 		sUUID.PID.Network(),
 		message)

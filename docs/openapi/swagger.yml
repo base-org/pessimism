@@ -38,7 +38,7 @@ paths:
     get:
       tags:
         - heuristic
-      summary: Returns an heuristic session.
+      summary: Returns a heuristic session.
       description: >-
         Returns heuristic session metadata for some specified session uuid. If no uuid is specified, then all sessions are returned. **NOTE - This is currently unimplemented.**
       parameters:
