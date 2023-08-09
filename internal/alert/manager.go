@@ -190,7 +190,6 @@ func (am *alertManager) EventLoop() error {
 func (am *alertManager) HandleAlert(alert core.Alert, policy *core.AlertPolicy) {
 	locations := []core.AlertDestination{policy.Destination()}
 
-	am.metrics.RecordAlertGenerated(alert)
 	alert.Criticality = policy.Severity()
 
 	// Fetch alerting destinations if severity is provided

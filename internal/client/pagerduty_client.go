@@ -1,4 +1,4 @@
-//go:generate mockgen -package mocks --destination ../mocks/pagerduty_client.go . PagerDutyClient
+//go:generate mockgen -package mocks --destination ../mocks/pagerduty_client.go . PagerdutyClient
 
 package client
 
@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -134,6 +135,10 @@ type PagerDutyAPIResponse struct {
 // PostEvent ... Posts a new event to PagerDuty
 func (pdc pagerdutyClient) PostEvent(ctx context.Context, event *PagerDutyEventTrigger) (*PagerDutyAPIResponse, error) {
 	// 1. Create and marshal payload into request object body
+
+	if pdc.integrationKey == "" {
+		return nil, fmt.Errorf("no Pagerduty integration key provided")
+	}
 
 	payload, err := newPagerDutyPayload(pdc.integrationKey, event).marshal()
 	if err != nil {

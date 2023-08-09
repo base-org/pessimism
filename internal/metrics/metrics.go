@@ -35,7 +35,7 @@ type Metricer interface {
 	DecActivePipelines(pipelineType core.PipelineType, network core.Network)
 	RecordBlockLatency(network core.Network, latency float64)
 	RecordHeuristicRun(heuristic heuristic.Heuristic)
-	RecordAlertGenerated(alert core.Alert)
+	RecordAlertGenerated(alert core.Alert, dest core.AlertDestination)
 	RecordNodeError(network core.Network)
 	RecordPipelineLatency(pUUID core.PUUID, latency float64)
 	RecordAssessmentError(h heuristic.Heuristic)
@@ -206,12 +206,11 @@ func (m *Metrics) RecordHeuristicRun(h heuristic.Heuristic) {
 }
 
 // RecordAlertGenerated ... Records that an alert has been generated for a given heuristic
-func (m *Metrics) RecordAlertGenerated(alert core.Alert) {
+func (m *Metrics) RecordAlertGenerated(alert core.Alert, dest core.AlertDestination) {
 	net := alert.SUUID.PID.Network().String()
 	h := alert.SUUID.PID.HeuristicType().String()
 	pipeline := alert.Ptype.String()
-	dest := alert.Dest.String()
-	m.AlertsGenerated.WithLabelValues(net, h, pipeline, dest).Inc()
+	m.AlertsGenerated.WithLabelValues(net, h, pipeline, dest.String()).Inc()
 }
 
 // RecordNodeError ... Records that an error has been caught for a given node
@@ -246,15 +245,15 @@ var NoopMetrics Metricer = new(noopMetricer)
 func (n *noopMetricer) RecordUp() {}
 func (n *noopMetricer) IncActiveHeuristics(_ core.HeuristicType, _ core.Network, _ core.PipelineType) {
 }
-func (n *noopMetricer) RecordInvExecutionTime(_ heuristic.Heuristic, _ float64) {}
-func (n *noopMetricer) IncActivePipelines(_ core.PipelineType, _ core.Network)  {}
-func (n *noopMetricer) DecActivePipelines(_ core.PipelineType, _ core.Network)  {}
-func (n *noopMetricer) RecordHeuristicRun(_ heuristic.Heuristic)                {}
-func (n *noopMetricer) RecordAlertGenerated(_ core.Alert)                       {}
-func (n *noopMetricer) RecordNodeError(_ core.Network)                          {}
-func (n *noopMetricer) RecordBlockLatency(_ core.Network, _ float64)            {}
-func (n *noopMetricer) RecordPipelineLatency(_ core.PUUID, _ float64)           {}
-func (n *noopMetricer) RecordAssessmentError(_ heuristic.Heuristic)             {}
+func (n *noopMetricer) RecordInvExecutionTime(_ heuristic.Heuristic, _ float64)    {}
+func (n *noopMetricer) IncActivePipelines(_ core.PipelineType, _ core.Network)     {}
+func (n *noopMetricer) DecActivePipelines(_ core.PipelineType, _ core.Network)     {}
+func (n *noopMetricer) RecordHeuristicRun(_ heuristic.Heuristic)                   {}
+func (n *noopMetricer) RecordAlertGenerated(_ core.Alert, _ core.AlertDestination) {}
+func (n *noopMetricer) RecordNodeError(_ core.Network)                             {}
+func (n *noopMetricer) RecordBlockLatency(_ core.Network, _ float64)               {}
+func (n *noopMetricer) RecordPipelineLatency(_ core.PUUID, _ float64)              {}
+func (n *noopMetricer) RecordAssessmentError(_ heuristic.Heuristic)                {}
 
 func (n *noopMetricer) Shutdown(_ context.Context) error {
 	return nil
