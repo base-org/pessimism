@@ -10,15 +10,13 @@ import (
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/metrics"
-	"github.com/base-org/pessimism/internal/mocks"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_AppFlow(t *testing.T) {
 
-	ctx := mocks.Context(context.Background(), gomock.NewController(t))
+	ctx := context.Background()
 
 	cfg := &config.Config{
 		ServerConfig: &server.Config{

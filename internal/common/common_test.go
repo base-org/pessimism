@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/base-org/pessimism/internal/common"
+	"github.com/base-org/pessimism/internal/core"
 	geth_common "github.com/ethereum/go-ethereum/common"
 
 	"github.com/stretchr/testify/assert"
@@ -31,4 +32,33 @@ func Test_SliceToAddresses(t *testing.T) {
 	assert.Equal(t, convertedAddresses,
 		[]geth_common.Address{geth_common.HexToAddress("0x00000000"), geth_common.HexToAddress("0x00000001")})
 
+}
+
+// Test_DLQ ... Tests all DLQ functionality
+func Test_DLQ(t *testing.T) {
+	dlq := common.NewTransitDLQ(5)
+
+	// A. Add 5 elements and test size
+	for i := 0; i < 5; i++ {
+		td := core.NewTransitData(core.RegisterType(0), nil)
+
+		err := dlq.Add(&td)
+		assert.NoError(t, err)
+	}
+
+	// B. Add 6th element and test error
+	td := core.NewTransitData(core.RegisterType(0), nil)
+	err := dlq.Add(&td)
+
+	assert.Error(t, err)
+
+	// C. Pop 1 element and test size
+	elem, err := dlq.Pop()
+	assert.Equal(t, elem.Type, core.RegisterType(0))
+	assert.NoError(t, err)
+
+	// D. Pop all elements and test size
+	entries := dlq.PopAll()
+	assert.Equal(t, len(entries), 4)
+	assert.True(t, dlq.Empty(), true)
 }
