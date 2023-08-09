@@ -149,7 +149,6 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 		}
 		logger.Debug("Successfully reprocessed failed queries",
 			zap.String(logging.PUUIDKey, ed.pUUID.String()))
-
 	}
 
 	// 2. If there are no failed queries, then process the current block data
