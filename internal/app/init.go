@@ -74,8 +74,8 @@ func InitializeServer(ctx context.Context, cfg *config.Config, m subsystem.Manag
 // InitializeAlerting ... Performs dependency injection to build alerting struct
 func InitializeAlerting(ctx context.Context, cfg *config.Config) alert.Manager {
 	sc := client.NewSlackClient(cfg.AlertConfig.SlackConfig)
-	pdc := client.NewPagerdutyClient(cfg.AlertConfig.HighPagerDutyCfg)
-	medPdc := client.NewPagerdutyClient(cfg.AlertConfig.MediumPagerDutyCfg)
+	pdc := client.NewPagerDutyClient(cfg.AlertConfig.HighPagerDutyCfg)
+	medPdc := client.NewPagerDutyClient(cfg.AlertConfig.MediumPagerDutyCfg)
 
 	return alert.NewManager(ctx, sc, medPdc, pdc)
 }

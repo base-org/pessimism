@@ -86,7 +86,7 @@ func (eh *egressHandler) HasEngineRelay() bool {
 	return eh.relay != nil
 }
 
-// AddRelay ... Adds a relay assuming no existings ones
+// AddRelay ... Adds a relay assuming no existing ones
 func (eh *egressHandler) AddRelay(relay *core.EngineInputRelay) error {
 	if eh.HasEngineRelay() {
 		return fmt.Errorf(engineEgressExistsErr)

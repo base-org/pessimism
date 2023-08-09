@@ -31,8 +31,8 @@ func Test_AppFlow(t *testing.T) {
 		},
 		AlertConfig: &alert.Config{
 			SlackConfig:        &client.SlackConfig{},
-			MediumPagerDutyCfg: &client.PagerdutyConfig{},
-			HighPagerDutyCfg:   &client.PagerdutyConfig{},
+			MediumPagerDutyCfg: &client.PagerDutyConfig{},
+			HighPagerDutyCfg:   &client.PagerDutyConfig{},
 		},
 	}
 

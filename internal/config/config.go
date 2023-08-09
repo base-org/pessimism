@@ -53,12 +53,12 @@ func NewConfig(fileName core.FilePath) *Config {
 				URL:     getEnvStrWithDefault("SLACK_URL", ""),
 			},
 
-			HighPagerDutyCfg: &client.PagerdutyConfig{
+			HighPagerDutyCfg: &client.PagerDutyConfig{
 				AlertEventsURL:  getEnvStrWithDefault("P0_PAGERDUTY_ALERT_EVENTS_URL", ""),
 				ChangeEventsURL: getEnvStrWithDefault("P0_PAGERDUTY_CHANGE_EVENTS_URL", ""),
 				IntegrationKey:  getEnvStrWithDefault("P0_PAGERDUTY_INTEGRATION_KEY", ""),
 			},
-			MediumPagerDutyCfg: &client.PagerdutyConfig{
+			MediumPagerDutyCfg: &client.PagerDutyConfig{
 				AlertEventsURL:  getEnvStrWithDefault("P1_PAGERDUTY_ALERT_EVENTS_URL", ""),
 				ChangeEventsURL: getEnvStrWithDefault("P1_PAGERDUTY_CHANGE_EVENTS_URL", ""),
 				IntegrationKey:  getEnvStrWithDefault("P1_PAGERDUTY_INTEGRATION_KEY", ""),

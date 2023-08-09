@@ -12,22 +12,22 @@ import (
 	"go.uber.org/zap"
 )
 
-// TestPagerdutyServer ... Mock server for testing pagerduty alerts
-type TestPagerdutyServer struct {
+// TestPagerDutyServer ... Mock server for testing pagerduty alerts
+type TestPagerDutyServer struct {
 	Server   *httptest.Server
-	Payloads []*client.PagerdutyRequest
+	Payloads []*client.PagerDutyRequest
 }
 
-// NewTestPagerdutyServer ... Creates a new mock pagerduty server
-func NewTestPagerdutyServer() *TestPagerdutyServer {
-	ts := &TestPagerdutyServer{
-		Payloads: []*client.PagerdutyRequest{},
+// NewTestPagerDutyServer ... Creates a new mock pagerduty server
+func NewTestPagerDutyServer() *TestPagerDutyServer {
+	ts := &TestPagerDutyServer{
+		Payloads: []*client.PagerDutyRequest{},
 	}
 
 	ts.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimSpace(r.URL.Path) {
 		case "/":
-			ts.mockPagerdutyPost(w, r)
+			ts.mockPagerDutyPost(w, r)
 		default:
 			http.NotFoundHandler().ServeHTTP(w, r)
 		}
@@ -37,13 +37,13 @@ func NewTestPagerdutyServer() *TestPagerdutyServer {
 }
 
 // Close ... Closes the server
-func (svr *TestPagerdutyServer) Close() {
+func (svr *TestPagerDutyServer) Close() {
 	svr.Server.Close()
 }
 
-// mockPagerdutyPost ... Mocks a pagerduty post request
-func (svr *TestPagerdutyServer) mockPagerdutyPost(w http.ResponseWriter, r *http.Request) {
-	var alert *client.PagerdutyRequest
+// mockPagerDutyPost ... Mocks a pagerduty post request
+func (svr *TestPagerDutyServer) mockPagerDutyPost(w http.ResponseWriter, r *http.Request) {
+	var alert *client.PagerDutyRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&alert); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -57,14 +57,14 @@ func (svr *TestPagerdutyServer) mockPagerdutyPost(w http.ResponseWriter, r *http
 	_, _ = w.Write([]byte(`{"status":success, "message":""}`))
 }
 
-// PagerdutyAlerts ... Returns the pagerduty alerts
-func (svr *TestPagerdutyServer) PagerdutyAlerts() []*client.PagerdutyRequest {
+// PagerDutyAlerts ... Returns the pagerduty alerts
+func (svr *TestPagerDutyServer) PagerDutyAlerts() []*client.PagerDutyRequest {
 	logging.NoContext().Info("Payloads", zap.Any("payloads", svr.Payloads))
 
 	return svr.Payloads
 }
 
 // ClearAlerts ... Clears the alerts
-func (svr *TestPagerdutyServer) ClearAlerts() {
-	svr.Payloads = []*client.PagerdutyRequest{}
+func (svr *TestPagerDutyServer) ClearAlerts() {
+	svr.Payloads = []*client.PagerDutyRequest{}
 }

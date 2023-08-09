@@ -1,4 +1,4 @@
-//go:generate mockgen -package mocks --destination ../mocks/pagerduty_client.go . PagerdutyClient
+//go:generate mockgen -package mocks --destination ../mocks/pagerduty_client.go . PagerDutyClient
 
 package client
 
@@ -15,45 +15,45 @@ import (
 	"go.uber.org/zap"
 )
 
-// PagerdutyAction represents the type of actions that can be triggered by an event
-type PagerdutyAction string
+// PagerDutyAction represents the type of actions that can be triggered by an event
+type PagerDutyAction string
 
 const (
-	Trigger                PagerdutyAction = "trigger"
-	PagerdutyAckAction     PagerdutyAction = "acknowledge"
-	PagerdutyResolveAction PagerdutyAction = "resolve"
+	Trigger                PagerDutyAction = "trigger"
+	PagerDutyAckAction     PagerDutyAction = "acknowledge"
+	PagerDutyResolveAction PagerDutyAction = "resolve"
 )
 
-// PagerdutySeverity represents the severity of an event
-type PagerdutySeverity string
+// PagerDutySeverity represents the severity of an event
+type PagerDutySeverity string
 
 const (
-	Critical PagerdutySeverity = "critical"
-	Error    PagerdutySeverity = "error"
-	Warning  PagerdutySeverity = "warning"
-	Info     PagerdutySeverity = "info"
+	Critical PagerDutySeverity = "critical"
+	Error    PagerDutySeverity = "error"
+	Warning  PagerDutySeverity = "warning"
+	Info     PagerDutySeverity = "info"
 )
 
-// PagerdutyResponseStatus is the response status of a Pagerduty API call
-type PagerdutyResponseStatus string
+// PagerDutyResponseStatus is the response status of a PagerDuty API call
+type PagerDutyResponseStatus string
 
 const (
-	SuccessStatus PagerdutyResponseStatus = "success"
+	SuccessStatus PagerDutyResponseStatus = "success"
 )
 
-// PagerdutyConfig ... Represents the configuration vars for a Pagerduty client
-type PagerdutyConfig struct {
+// PagerDutyConfig ... Represents the configuration vars for a PagerDuty client
+type PagerDutyConfig struct {
 	IntegrationKey  string
 	ChangeEventsURL string
 	AlertEventsURL  string
 }
 
-// PagerdutyClient ... Interface for Pagerduty client
-type PagerdutyClient interface {
-	PostEvent(ctx context.Context, event *PagerdutyEventTrigger) (*PagerdutyAPIResponse, error)
+// PagerDutyClient ... Interface for PagerDuty client
+type PagerDutyClient interface {
+	PostEvent(ctx context.Context, event *PagerDutyEventTrigger) (*PagerDutyAPIResponse, error)
 }
 
-// pagerdutyClient ... Pagerduty client for making requests
+// pagerdutyClient ... PagerDuty client for making requests
 type pagerdutyClient struct {
 	integrationKey  string
 	changeEventsURL string
@@ -61,10 +61,10 @@ type pagerdutyClient struct {
 	client          *http.Client
 }
 
-// NewPagerdutyClient ... Initializer for Pagerduty client
-func NewPagerdutyClient(cfg *PagerdutyConfig) PagerdutyClient {
+// NewPagerDutyClient ... Initializer for PagerDuty client
+func NewPagerDutyClient(cfg *PagerDutyConfig) PagerDutyClient {
 	if cfg.IntegrationKey == "" {
-		logging.NoContext().Warn("No Pagerduty integration key provided")
+		logging.NoContext().Warn("No PagerDuty integration key provided")
 	}
 
 	return &pagerdutyClient{
@@ -75,37 +75,37 @@ func NewPagerdutyClient(cfg *PagerdutyConfig) PagerdutyClient {
 	}
 }
 
-// PagerdutyEventTrigger ... Represents caller specified fields for a Pagerduty event
-type PagerdutyEventTrigger struct {
+// PagerDutyEventTrigger ... Represents caller specified fields for a PagerDuty event
+type PagerDutyEventTrigger struct {
 	Message  string
-	Action   PagerdutyAction
-	Severity PagerdutySeverity
+	Action   PagerDutyAction
+	Severity PagerDutySeverity
 	DedupKey string
 }
 
-// PagerdutyRequest ... Used to construct a Pagerduty api request
-type PagerdutyRequest struct {
+// PagerDutyRequest ... Used to construct a PagerDuty api request
+type PagerDutyRequest struct {
 	RoutingKey  string           `json:"routing_key"`
-	EventAction PagerdutyAction  `json:"event_action"`
+	EventAction PagerDutyAction  `json:"event_action"`
 	DedupKey    string           `json:"dedup_key"`
-	Payload     PagerdutyPayload `json:"payload"`
+	Payload     PagerDutyPayload `json:"payload"`
 }
 
-// PagerdutyPayload ... Represents the payload of a Pagerduty event
-type PagerdutyPayload struct {
+// PagerDutyPayload ... Represents the payload of a PagerDuty event
+type PagerDutyPayload struct {
 	Summary   string            `json:"summary"`
 	Source    string            `json:"source"`
-	Severity  PagerdutySeverity `json:"severity"`
+	Severity  PagerDutySeverity `json:"severity"`
 	Timestamp time.Time         `json:"timestamp"`
 }
 
-// newPagerdutyPayload ... Initializes a new Pagerduty payload given the integration key and event
-func newPagerdutyPayload(integrationKey string, event *PagerdutyEventTrigger) *PagerdutyRequest {
-	return &PagerdutyRequest{
+// newPagerDutyPayload ... Initializes a new PagerDuty payload given the integration key and event
+func newPagerDutyPayload(integrationKey string, event *PagerDutyEventTrigger) *PagerDutyRequest {
+	return &PagerDutyRequest{
 		RoutingKey:  integrationKey,
 		EventAction: event.Action,
 		DedupKey:    event.DedupKey,
-		Payload: PagerdutyPayload{
+		Payload: PagerDutyPayload{
 			Summary:   event.Message,
 			Source:    "Pessimism",
 			Severity:  event.Severity,
@@ -114,8 +114,8 @@ func newPagerdutyPayload(integrationKey string, event *PagerdutyEventTrigger) *P
 	}
 }
 
-// marshal ... Marshals the Pagerduty payload
-func (req *PagerdutyRequest) marshal() ([]byte, error) {
+// marshal ... Marshals the PagerDuty payload
+func (req *PagerDutyRequest) marshal() ([]byte, error) {
 	bytes, err := json.Marshal(req)
 	if err != nil {
 		return nil, err
@@ -124,18 +124,18 @@ func (req *PagerdutyRequest) marshal() ([]byte, error) {
 	return bytes, nil
 }
 
-// PagerdutyAPIResponse ... Represents the structure of a Pagerduty API response
-type PagerdutyAPIResponse struct {
+// PagerDutyAPIResponse ... Represents the structure of a PagerDuty API response
+type PagerDutyAPIResponse struct {
 	Status   string `json:"status"`
 	Message  string `json:"message"`
 	DedupKey string `json:"dedup_key"`
 }
 
-// PostEvent ... Posts a new event to Pagerduty
-func (pdc pagerdutyClient) PostEvent(ctx context.Context, event *PagerdutyEventTrigger) (*PagerdutyAPIResponse, error) {
+// PostEvent ... Posts a new event to PagerDuty
+func (pdc pagerdutyClient) PostEvent(ctx context.Context, event *PagerDutyEventTrigger) (*PagerDutyAPIResponse, error) {
 	// 1. Create and marshal payload into request object body
 
-	payload, err := newPagerdutyPayload(pdc.integrationKey, event).marshal()
+	payload, err := newPagerDutyPayload(pdc.integrationKey, event).marshal()
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func (pdc pagerdutyClient) PostEvent(ctx context.Context, event *PagerdutyEventT
 
 	req.Header.Set("Content-Type", "application/json")
 
-	// 2. Make request to Pagerduty
+	// 2. Make request to PagerDuty
 	resp, err := pdc.client.Do(req)
 	defer func() {
 		if err = resp.Body.Close(); err != nil {
@@ -161,7 +161,7 @@ func (pdc pagerdutyClient) PostEvent(ctx context.Context, event *PagerdutyEventT
 		return nil, err
 	}
 
-	var apiResp *PagerdutyAPIResponse
+	var apiResp *PagerDutyAPIResponse
 	if err := json.Unmarshal(bytes, &apiResp); err != nil {
 		return nil, err
 	}

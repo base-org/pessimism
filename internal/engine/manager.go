@@ -74,7 +74,7 @@ func (em *engineManager) Transit() chan core.HeuristicInput {
 	return em.etlIngress
 }
 
-// DeleteHeuristicSession ... Deletes an heuristic session
+// DeleteHeuristicSession ... Deletes a heuristic session
 func (em *engineManager) DeleteHeuristicSession(_ core.SUUID) (core.SUUID, error) {
 	return core.NilSUUID(), nil
 }
@@ -125,7 +125,7 @@ func (em *engineManager) updateSharedState(params *core.SessionParams,
 	return nil
 }
 
-// DeployHeuristicSession ... Deploys an heuristic session to be processed by the engine
+// DeployHeuristicSession ... Deploys a heuristic session to be processed by the engine
 func (em *engineManager) DeployHeuristicSession(cfg *heuristic.DeployConfig) (core.SUUID, error) {
 	reg, exists := em.heuristics[cfg.HeuristicType]
 	if !exists {

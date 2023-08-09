@@ -61,7 +61,7 @@ func (ss *sessionStore) GetSUUIDsByPUUID(pUUID core.PUUID) ([]core.SUUID, error)
 	return nil, fmt.Errorf("pipeline UUID doesn't exists in store heuristic mapping")
 }
 
-// AddSession ... Adds an heuristic session to the store
+// AddSession ... Adds a heuristic session to the store
 func (ss *sessionStore) AddSession(sUUID core.SUUID,
 	pUUID core.PUUID, h heuristic.Heuristic) error {
 	if _, found := ss.instanceMap[sUUID]; found {

@@ -176,7 +176,7 @@ func (m *Metrics) RecordAssessmentError(h heuristic.Heuristic) {
 	m.HeuristicErrors.WithLabelValues(ht).Inc()
 }
 
-// RecordInvExecutionTime ... Records the time it took to execute an heuristic
+// RecordInvExecutionTime ... Records the time it took to execute a heuristic
 func (m *Metrics) RecordInvExecutionTime(h heuristic.Heuristic, latency float64) {
 	ht := h.SUUID().PID.HeuristicType().String()
 	m.InvExecutionTime.WithLabelValues(ht).Set(latency)

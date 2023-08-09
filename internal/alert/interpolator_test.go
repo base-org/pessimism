@@ -22,14 +22,14 @@ func Test_InterpolateSlackMessage(t *testing.T) {
 	assert.Equal(t, expected, actual, "should be equal")
 }
 
-func Test_InterpolatePagerdutyMessage(t *testing.T) {
+func Test_InterpolatePagerDutyMessage(t *testing.T) {
 	sUUID := core.NilSUUID()
 
 	msg := "Test alert"
 
 	expected := "\n\tHeuristic Triggered: unknown\n\tNetwork: unknown\n\tAssessment: \n\tTest alert\n\t"
 
-	actual := alert.NewInterpolator().InterpolatePagerdutyMessage(sUUID, msg)
+	actual := alert.NewInterpolator().InterpolatePagerDutyMessage(sUUID, msg)
 
 	assert.Equal(t, expected, actual, "should be equal")
 }

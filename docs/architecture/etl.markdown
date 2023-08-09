@@ -125,7 +125,7 @@ graph LR;
 
 ### (TBD) Aggregator
 **NOTE - This component type is still in-development**
-Aggregators are used to solve the problem where a pipe or an heuristic input will require multiple sources of data to perform an execution sequence. Since aggregators are subscribing to more than one data stream with different output frequencies, they must employ a synchronization policy for collecting and propagating multi-data inputs within a highly asynchronous environment.
+Aggregators are used to solve the problem where a pipe or a heuristic input will require multiple sources of data to perform an execution sequence. Since aggregators are subscribing to more than one data stream with different output frequencies, they must employ a synchronization policy for collecting and propagating multi-data inputs within a highly asynchronous environment.
 
 #### Attributes
 * Able to read heterogenous transit data from an arbitrary number of component ingresses
@@ -137,7 +137,7 @@ _Only send output at the update of a single ingress stream_
 
 Single Value Subscription refers to a synchronization policy where a bucketed multi-data tuple is submitted every time there’s an update to a single input data queue.
 
-For example we can have an heuristic that subscribes to blocks from two heterogenous chains (layer1, layer2) or `{ChainA, ChainB}`, let's assume `BLOCK_TIME(ChainA) > BLOCK_TIME(ChainB)`.
+For example we can have a heuristic that subscribes to blocks from two heterogenous chains (layer1, layer2) or `{ChainA, ChainB}`, let's assume `BLOCK_TIME(ChainA) > BLOCK_TIME(ChainB)`.
 
 We can either specify that the heuristic will run every time there's an update or a new block from `ChainA`:
 ```
