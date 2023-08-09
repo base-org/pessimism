@@ -102,7 +102,9 @@ func (ed *EventDefinition) getTopics(ctx context.Context,
 		// and continue if there is an error
 		events, err := ss.GetSlice(ctx, innerKey)
 		if err != nil {
-			logging.WithContext(ctx).Error(err.Error())
+			logging.WithContext(ctx).Error("Failed to get events to monitor",
+				zap.String(logging.PUUIDKey, ed.pUUID.String()),
+				zap.Error(err))
 			continue
 		}
 
@@ -123,15 +125,27 @@ func (ed *EventDefinition) getTopics(ctx context.Context,
 // Transform ... Attempts to reprocess previously failed queries first
 // before attempting to process the current block data
 func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) ([]core.TransitData, error) {
+	logger := logging.WithContext(ctx)
 	// 1. Check to see if there are any failed queries to reprocess
 	// If failures occur again, add the caller (Transform)
 	// function input to the DLQ and return
-	tds, err := ed.attemptDLQ(ctx)
-	if err != nil {
-		err = ed.dlq.Add(&td)
+	var tds []core.TransitData
+
+	if !ed.dlq.Empty() {
+		logger.Debug("Attempting to reprocess failed queries",
+			zap.Int("dlq_size", ed.dlq.Size()))
+
+		tds, err := ed.attemptDLQ(ctx)
+		// NOTE ... Returning here is intentional to ensure that block events
+		// downstream are processed in the sequential order for which they came in
 		if err != nil {
-			return tds, err
+			err = ed.dlq.Add(&td)
+			if err != nil {
+				return tds, err
+			}
 		}
+		logger.Debug("Successfully reprocessed failed queries",
+			zap.String(logging.PUUIDKey, ed.pUUID.String()))
 	}
 
 	// 2. If there are no failed queries, then process the current block data

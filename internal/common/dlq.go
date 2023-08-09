@@ -12,7 +12,7 @@ const (
 )
 
 // DLQ ... Dead Letter Queue construct
-// Used to store block hashes of ETL events
+// Used to store ETL events
 // that failed to be processed
 type DLQ[E any] struct {
 	size int
