@@ -60,6 +60,7 @@ func NewEventDefinition(ctx context.Context, n core.Network) (*EventDefinition, 
 	}
 	return ed, nil
 }
+<<<<<<< HEAD
 
 // NewEventParserPipe ... Initializer
 func NewEventParserPipe(ctx context.Context, cfg *core.ClientConfig,
@@ -70,6 +71,18 @@ func NewEventParserPipe(ctx context.Context, cfg *core.ClientConfig,
 		return nil, err
 	}
 
+=======
+
+// NewEventParserPipe ... Initializer
+func NewEventParserPipe(ctx context.Context, cfg *core.ClientConfig,
+	opts ...component.Option) (component.Component, error) {
+	// 1. Construct the pipe definition
+	ed, err := NewEventDefinition(ctx, cfg.Network)
+	if err != nil {
+		return nil, err
+	}
+
+>>>>>>> d9da3aec27e458936600f46e40aed8141688994d
 	// 2. Embed the definition into a generic pipe construction
 	p, err := component.NewPipe(ctx, ed, core.GethBlock, core.EventLog, opts...)
 	if err != nil {
