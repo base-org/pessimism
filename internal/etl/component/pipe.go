@@ -75,13 +75,17 @@ func (p *Pipe) EventLoop() error {
 	for {
 		select {
 		case inputData := <-inChan:
+			// 1. Transform the input data to some output data
+			// NOTE ... Continuing to process data even if there is an error
+			// is done in the event of partial processing where some data
+			// may be successfully processed and some may not
 			outputData, err := p.def.Transform(p.ctx, inputData)
 			if err != nil {
 				// TODO - Introduce metrics service (`prometheus`) call
 				logger.Error(err.Error(), zap.String("ID", p.id.String()))
-				continue
 			}
 
+			// 2. Determine if component is at the end of a pipeline, emit metrics if so
 			if p.egressHandler.PathEnd() {
 				latency := float64(time.Since(inputData.OriginTS).Milliseconds())
 
@@ -90,16 +94,17 @@ func (p *Pipe) EventLoop() error {
 						latency)
 			}
 
-			if length := len(outputData); length > 0 {
-				logger.Debug("Received tranformation output data",
-					zap.String("ID", p.id.String()),
-					zap.Int("Length", length))
-			} else {
-				logger.Debug("Received output data of length 0",
-					zap.String("ID", p.id.String()))
+			// 3. Verify that some output data was produced and continue if not
+			length := len(outputData)
+			logger.Debug("Received transformation output data",
+				zap.String("ID", p.id.String()),
+				zap.Int("Length", length))
+
+			if length == 0 {
 				continue
 			}
 
+			// 4. Batch send output data to subscribed downstream components
 			logger.Debug("Sending data batch",
 				zap.String("ID", p.id.String()),
 				zap.String("Type", p.OutputType().String()))
