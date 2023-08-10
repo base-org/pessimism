@@ -168,7 +168,6 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 				IncMissedBlock(ed.pUUID)
 		}
 
-		// NOTE ... If the DLQ is not full, then we add the entry to the DLQ
 		_ = ed.dlq.Add(&td)
 		logging.WithContext(ctx).Error("Failed to process block data",
 			zap.Int("dlq_size", ed.dlq.Size()))
