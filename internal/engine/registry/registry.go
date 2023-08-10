@@ -48,6 +48,12 @@ func NewHeuristicTable() HeuristicTable {
 			InputType:       core.EventLog,
 			Constructor:     constructWithdrawalEnforce,
 		},
+		core.LargeWithdrawal: {
+			PrepareValidate: WithdrawEnforcePrepare,
+			Policy:          core.OnlyLayer1,
+			InputType:       core.EventLog,
+			Constructor:     constructLargeWithdrawal,
+		},
 	}
 
 	return tbl
@@ -99,6 +105,18 @@ func constructWithdrawalEnforce(ctx context.Context, isp *core.SessionParams) (h
 	}
 
 	return NewWithdrawalEnforceInv(ctx, cfg)
+}
+
+// constructLargeWithdrawal ... Constructs a large withdrawal heuristic instance
+func constructLargeWithdrawal(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
+	cfg := &LargeWithdrawalCfg{}
+	err := cfg.Unmarshal(isp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return NewLargeWithdrawHeuristic(ctx, cfg)
 }
 
 // ValidateEventTracking ... Ensures that an address and nested args exist in the session params

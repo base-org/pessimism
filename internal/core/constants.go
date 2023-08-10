@@ -93,6 +93,7 @@ const (
 	ContractEvent
 	WithdrawalEnforcement
 	FaultDetector
+	LargeWithdrawal
 )
 
 // String ... Converts a heuristic type to a string
@@ -109,6 +110,9 @@ func (it HeuristicType) String() string {
 
 	case FaultDetector:
 		return "fault_detector"
+
+	case LargeWithdrawal:
+		return "large_withdrawal"
 
 	default:
 		return "unknown"
@@ -129,6 +133,9 @@ func StringToHeuristicType(stringType string) HeuristicType {
 
 	case "fault_detector":
 		return FaultDetector
+
+	case "large_withdrawal":
+		return LargeWithdrawal
 
 	default:
 		return HeuristicType(0)
