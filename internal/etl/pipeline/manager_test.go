@@ -32,7 +32,9 @@ func Test_Manager(t *testing.T) {
 				reg := registry.NewRegistry()
 				ctrl := gomock.NewController(t)
 
-				ctx := mocks.Context(context.Background(), ctrl)
+				ctx, _ := mocks.Context(context.Background(), ctrl)
+
+				ctx = context.WithValue(ctx, core.State, state.NewMemState())
 
 				return NewManager(ctx, NewAnalyzer(reg), reg, NewEtlStore(), NewComponentGraph(), nil)
 			},
@@ -63,7 +65,7 @@ func Test_Manager(t *testing.T) {
 				reg := registry.NewRegistry()
 				ctrl := gomock.NewController(t)
 
-				ctx := mocks.Context(context.Background(), ctrl)
+				ctx, _ := mocks.Context(context.Background(), ctrl)
 
 				ctx = context.WithValue(ctx, core.State, state.NewMemState())
 
