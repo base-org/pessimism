@@ -1,0 +1,26 @@
+alertRoutes:
+  low:
+    slack:
+      - config:
+          url: "https://hooks.coinbase-corp.com/api/-QPutCgWZzYwbW6bvG6aNA"
+          channel: "#pessimism-local-dev"
+
+  medium:
+    slack:
+      - config:
+          url: "https://hooks.coinbase-corp.com/api/-QPutCgWZzYwbW6bvG6aNA"
+          channel: "#pessimism-local-dev"
+    pagerduty:
+      - config:
+          integration_key: "be5df8ec5ba24f0ec014be9845bab1f4"
+
+  high:
+    slack:
+      - config:
+          url: "https://hooks.coinbase-corp.com/api/-QPutCgWZzYwbW6bvG6aNA"
+          channel: "#pessimism-local-dev"
+    pagerduty:
+      - config:
+          integration_key: "be5df8ec5ba24f0ec014be9845bab1f5"
+        config_2:
+          integration_key: "be5df8ec5ba24f0ec014be9845bab1f4"
