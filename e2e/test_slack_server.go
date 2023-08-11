@@ -2,23 +2,22 @@ package e2e
 
 import (
 	"encoding/json"
+	"github.com/base-org/pessimism/internal/client/alert_clients"
 	"net/http"
 	"net/http/httptest"
 	"strings"
-
-	"github.com/base-org/pessimism/internal/client"
 )
 
 // TestSlackServer ... Mock server for testing slack alerts
 type TestSlackServer struct {
 	Server   *httptest.Server
-	Payloads []*client.SlackPayload
+	Payloads []*alert_clients.SlackPayload
 }
 
 // NewTestSlackServer ... Creates a new mock slack server
 func NewTestSlackServer() *TestSlackServer {
 	ts := &TestSlackServer{
-		Payloads: []*client.SlackPayload{},
+		Payloads: []*alert_clients.SlackPayload{},
 	}
 
 	ts.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -40,7 +39,7 @@ func (svr *TestSlackServer) Close() {
 
 // mockSlackPost ... Mocks a slack post request
 func (svr *TestSlackServer) mockSlackPost(w http.ResponseWriter, r *http.Request) {
-	var alert *client.SlackPayload
+	var alert *alert_clients.SlackPayload
 
 	if err := json.NewDecoder(r.Body).Decode(&alert); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -55,11 +54,11 @@ func (svr *TestSlackServer) mockSlackPost(w http.ResponseWriter, r *http.Request
 }
 
 // SlackAlerts ... Returns the slack alerts
-func (svr *TestSlackServer) SlackAlerts() []*client.SlackPayload {
+func (svr *TestSlackServer) SlackAlerts() []*alert_clients.SlackPayload {
 	return svr.Payloads
 }
 
 // ClearAlerts ... Clears the alerts
 func (svr *TestSlackServer) ClearAlerts() {
-	svr.Payloads = []*client.SlackPayload{}
+	svr.Payloads = []*alert_clients.SlackPayload{}
 }

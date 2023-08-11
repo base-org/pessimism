@@ -2,11 +2,11 @@ package e2e
 
 import (
 	"encoding/json"
+	"github.com/base-org/pessimism/internal/client/alert_clients"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 
-	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/logging"
 
 	"go.uber.org/zap"
@@ -15,13 +15,13 @@ import (
 // TestPagerDutyServer ... Mock server for testing pagerduty alerts
 type TestPagerDutyServer struct {
 	Server   *httptest.Server
-	Payloads []*client.PagerDutyRequest
+	Payloads []*alert_clients.PagerDutyRequest
 }
 
 // NewTestPagerDutyServer ... Creates a new mock pagerduty server
 func NewTestPagerDutyServer() *TestPagerDutyServer {
 	ts := &TestPagerDutyServer{
-		Payloads: []*client.PagerDutyRequest{},
+		Payloads: []*alert_clients.PagerDutyRequest{},
 	}
 
 	ts.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -43,7 +43,7 @@ func (svr *TestPagerDutyServer) Close() {
 
 // mockPagerDutyPost ... Mocks a pagerduty post request
 func (svr *TestPagerDutyServer) mockPagerDutyPost(w http.ResponseWriter, r *http.Request) {
-	var alert *client.PagerDutyRequest
+	var alert *alert_clients.PagerDutyRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&alert); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -58,7 +58,7 @@ func (svr *TestPagerDutyServer) mockPagerDutyPost(w http.ResponseWriter, r *http
 }
 
 // PagerDutyAlerts ... Returns the pagerduty alerts
-func (svr *TestPagerDutyServer) PagerDutyAlerts() []*client.PagerDutyRequest {
+func (svr *TestPagerDutyServer) PagerDutyAlerts() []*alert_clients.PagerDutyRequest {
 	logging.NoContext().Info("Payloads", zap.Any("payloads", svr.Payloads))
 
 	return svr.Payloads
@@ -66,5 +66,5 @@ func (svr *TestPagerDutyServer) PagerDutyAlerts() []*client.PagerDutyRequest {
 
 // ClearAlerts ... Clears the alerts
 func (svr *TestPagerDutyServer) ClearAlerts() {
-	svr.Payloads = []*client.PagerDutyRequest{}
+	svr.Payloads = []*alert_clients.PagerDutyRequest{}
 }

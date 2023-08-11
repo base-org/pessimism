@@ -7,7 +7,6 @@ import (
 
 	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/server"
-	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
@@ -48,21 +47,9 @@ func NewConfig(fileName core.FilePath) *Config {
 		Environment:   core.Env(getEnvStr("ENV")),
 
 		AlertConfig: &alert.Config{
-			SlackConfig: &client.SlackConfig{
-				Channel: getEnvStrWithDefault("SLACK_CHANNEL", ""),
-				URL:     getEnvStrWithDefault("SLACK_URL", ""),
-			},
-
-			HighPagerDutyCfg: &client.PagerDutyConfig{
-				AlertEventsURL:  getEnvStrWithDefault("P0_PAGERDUTY_ALERT_EVENTS_URL", ""),
-				ChangeEventsURL: getEnvStrWithDefault("P0_PAGERDUTY_CHANGE_EVENTS_URL", ""),
-				IntegrationKey:  getEnvStrWithDefault("P0_PAGERDUTY_INTEGRATION_KEY", ""),
-			},
-			MediumPagerDutyCfg: &client.PagerDutyConfig{
-				AlertEventsURL:  getEnvStrWithDefault("P1_PAGERDUTY_ALERT_EVENTS_URL", ""),
-				ChangeEventsURL: getEnvStrWithDefault("P1_PAGERDUTY_CHANGE_EVENTS_URL", ""),
-				IntegrationKey:  getEnvStrWithDefault("P1_PAGERDUTY_INTEGRATION_KEY", ""),
-			},
+			AlertRoutingCfgPath:     getEnvStrWithDefault("ALERT_ROUTE_CFG_PATH", ""),
+			SlackURL:                getEnvStrWithDefault("SLACK_URL", ""),
+			PagerdutyAlertEventsUrl: getEnvStrWithDefault("PAGERDUTY_ALERT_EVENTS_URL", ""),
 		},
 
 		SystemConfig: &subsystem.Config{

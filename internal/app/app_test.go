@@ -2,12 +2,12 @@ package app_test
 
 import (
 	"context"
+	"github.com/base-org/pessimism/internal/client/alert_clients"
 	"testing"
 
 	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/app"
-	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/metrics"
 
@@ -28,9 +28,9 @@ func Test_AppFlow(t *testing.T) {
 			Enabled: false,
 		},
 		AlertConfig: &alert.Config{
-			SlackConfig:        &client.SlackConfig{},
-			MediumPagerDutyCfg: &client.PagerDutyConfig{},
-			HighPagerDutyCfg:   &client.PagerDutyConfig{},
+			SlackConfig:        &alert_clients.SlackConfig{},
+			MediumPagerDutyCfg: &alert_clients.PagerDutyConfig{},
+			HighPagerDutyCfg:   &alert_clients.PagerDutyConfig{},
 		},
 	}
 

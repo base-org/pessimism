@@ -1,6 +1,22 @@
 package core
 
-import "time"
+import (
+	"os"
+	"path/filepath"
+	"time"
+
+	"gopkg.in/yaml.v3"
+)
+
+// PagerDutySeverity represents the severity of an event
+type PagerDutySeverity string
+
+const (
+	Critical PagerDutySeverity = "critical"
+	Error    PagerDutySeverity = "error"
+	Warning  PagerDutySeverity = "warning"
+	Info     PagerDutySeverity = "info"
+)
 
 // Severity ... The severity of an alert
 type Severity uint8
@@ -45,6 +61,23 @@ func (s Severity) String() string {
 	}
 }
 
+func (s Severity) ToPagerdutySev() PagerDutySeverity {
+	switch s {
+	case LOW:
+		return Warning
+	case MEDIUM:
+		return Error
+	case HIGH:
+		return Critical
+
+	case UNKNOWN:
+		return Error
+
+	default:
+		return Error
+	}
+}
+
 // Alert ... An alert
 type Alert struct {
 	Criticality Severity
@@ -55,4 +88,38 @@ type Alert struct {
 	Ptype       PipelineType
 
 	Content string
+}
+
+type AlertRoute string
+
+const (
+	AlertRouteSlack     AlertRoute = "slack"
+	AlertRoutePagerDuty AlertRoute = "pagerduty"
+)
+
+type AlertRoutesTable struct {
+	AlertRoutes map[string]AlertRouteMap `yaml:"alertRoutes"`
+}
+
+type AlertRouteMap map[string][]map[string]Config
+type Config struct {
+	URL            string `yaml:"url"`
+	Channel        string `yaml:"channel"`
+	IntegrationKey string `yaml:"integration_key"`
+}
+
+func ParseAlertConfig(path string) (*AlertRoutesTable, error) {
+	f, err := os.ReadFile(filepath.Clean(path))
+	if err != nil {
+		return nil, err
+	}
+
+	d := &AlertRoutesTable{}
+	err = yaml.Unmarshal(f, &d)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return d, nil
 }

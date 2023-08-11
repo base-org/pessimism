@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"errors"
+	"github.com/base-org/pessimism/internal/client/alert_clients"
 	"testing"
 	"time"
 
@@ -185,14 +186,14 @@ func DefaultTestConfig() *config.Config {
 			Port: port,
 		},
 		AlertConfig: &alert.Config{
-			SlackConfig: &client.SlackConfig{
+			SlackConfig: &alert_clients.SlackConfig{
 				URL:     "",
 				Channel: "test",
 			},
-			MediumPagerDutyCfg: &client.PagerDutyConfig{
+			MediumPagerDutyCfg: &alert_clients.PagerDutyConfig{
 				AlertEventsURL: "",
 			},
-			HighPagerDutyCfg: &client.PagerDutyConfig{
+			HighPagerDutyCfg: &alert_clients.PagerDutyConfig{
 				AlertEventsURL: "",
 			},
 		},

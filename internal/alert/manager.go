@@ -5,9 +5,9 @@ package alert
 import (
 	"context"
 	"fmt"
+	"github.com/base-org/pessimism/internal/client/alert_clients"
 	"time"
 
-	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
@@ -36,9 +36,9 @@ type Manager interface {
 
 // Config ... Alert manager configuration
 type Config struct {
-	SlackConfig        *client.SlackConfig
-	MediumPagerDutyCfg *client.PagerDutyConfig
-	HighPagerDutyCfg   *client.PagerDutyConfig
+	AlertRoutingCfgPath     string
+	SlackURL                string
+	PagerdutyAlertEventsUrl string
 }
 
 // alertManager ... Alert manager implementation
@@ -49,17 +49,14 @@ type alertManager struct {
 	store        Store
 	interpolator Interpolator
 	cdHandler    CoolDownHandler
+	acm          *alert_clients.AlertClientMap
 
 	metrics      metrics.Metricer
 	alertTransit chan core.Alert
-	pdcP0        client.PagerDutyClient
-	pdcP1        client.PagerDutyClient
-	sc           client.SlackClient
 }
 
 // NewManager ... Instantiates a new alert manager
-func NewManager(ctx context.Context, sc client.SlackClient, pdc client.PagerDutyClient,
-	hpdc client.PagerDutyClient) Manager {
+func NewManager(ctx context.Context, acm *alert_clients.AlertClientMap) Manager {
 	// NOTE - Consider constructing dependencies in higher level
 	// abstraction and passing them in
 
@@ -68,13 +65,7 @@ func NewManager(ctx context.Context, sc client.SlackClient, pdc client.PagerDuty
 	am := &alertManager{
 		ctx:       ctx,
 		cdHandler: NewCoolDownHandler(),
-		sc:        sc,
-
-		// NOTE - This is a major regression and is a quick hack to enable
-		// multi-service paging in the short-term. Going forward, all alerting
-		// configurations should be highly configurable and non-opinionated.
-		pdcP0: hpdc,
-		pdcP1: pdc,
+		acm:       acm,
 
 		cancel:       cancel,
 		interpolator: NewInterpolator(),
@@ -97,44 +88,52 @@ func (am *alertManager) Transit() chan core.Alert {
 	return am.alertTransit
 }
 
-// handleSlackPost ... Handles posting an alert to slack channel
+// handleSlackPost ... Handles posting an alert to slack channels
 func (am *alertManager) handleSlackPost(sUUID core.SUUID, content string, msg string) error {
-	slackMsg := am.interpolator.InterpolateSlackMessage(sUUID, content, msg)
-
-	resp, err := am.sc.PostData(am.ctx, slackMsg)
-	if err != nil {
-		return err
+	// Create event trigger
+	event := &alert_clients.AlertEventTrigger{
+		Message: am.interpolator.InterpolateSlackMessage(sUUID, content, msg),
 	}
 
-	if !resp.Ok && resp.Err != "" {
-		return fmt.Errorf(resp.Err)
+	// TODO: Deduplicate alerts to same slack channel
+	// Send event to slack clients
+	for sev, _ := range am.acm.SlackClients {
+		for _, sc := range am.acm.SlackClients[sev] {
+			resp, err := sc.PostEvent(am.ctx, event)
+			if err != nil {
+				return err
+			}
+
+			if resp.Status != alert_clients.SuccessStatus {
+				return fmt.Errorf("could not post to slack: %s", resp.Message)
+			}
+		}
 	}
 
 	return nil
 }
 
+// TODO: fix pdc calls to use sev
 // handlePagerDutyPost ... Handles posting an alert to pagerduty
 func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
-	clients := []client.PagerDutyClient{am.pdcP1}
-	if alert.Criticality == core.HIGH {
-		clients = append(clients, am.pdcP0)
-	}
 
 	pdMsg := am.interpolator.InterpolatePagerDutyMessage(alert.SUUID, alert.Content)
 
-	for _, pdc := range clients {
-		resp, err := pdc.PostEvent(am.ctx, &client.PagerDutyEventTrigger{
-			Message:  pdMsg,
-			Action:   client.Trigger,
-			Severity: client.Critical,
-			DedupKey: alert.SUUID.String(),
-		})
-		if err != nil {
-			return err
-		}
+	event := &alert_clients.AlertEventTrigger{
+		Message:  pdMsg,
+		DedupKey: alert.PUUID,
+	}
 
-		if resp.Status != string(client.SuccessStatus) {
-			return fmt.Errorf("could not post to pagerduty: %s", resp.Status)
+	for sev, _ := range am.acm.PagerdutyClients {
+		for _, pdc := range am.acm.PagerdutyClients[sev] {
+			resp, err := pdc.PostEvent(am.ctx, event)
+			if err != nil {
+				return err
+			}
+
+			if resp.Status != alert_clients.SuccessStatus {
+				return fmt.Errorf("could not post to pagerduty: %s", resp.Message)
+			}
 		}
 	}
 
@@ -176,7 +175,6 @@ func (am *alertManager) EventLoop() error {
 				zap.String(logging.SUUIDKey, alert.SUUID.String()))
 
 			am.HandleAlert(alert, policy)
-			am.metrics.RecordAlertGenerated(alert)
 
 			// 4. Add alert to cool down if applicable
 			if policy.HasCoolDown() {
@@ -200,6 +198,8 @@ func (am *alertManager) HandleAlert(alert core.Alert, policy *core.AlertPolicy) 
 	// Iterate over alerting destinations and propagate alert
 	for _, dest := range locations {
 		am.propagate(dest, alert, policy)
+		am.metrics.RecordAlertGenerated(alert, dest)
+
 	}
 }
 
