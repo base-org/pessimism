@@ -2,7 +2,7 @@ package alert_test
 
 import (
 	"context"
-	"github.com/base-org/pessimism/internal/client/alert_clients"
+	"github.com/base-org/pessimism/internal/client/alert_client"
 	"testing"
 	"time"
 
@@ -44,7 +44,7 @@ func Test_EventLoop(t *testing.T) {
 	assert.Nil(t, err)
 
 	sc.EXPECT().PostData(gomock.Any(), gomock.Any()).
-		Return(&alert_clients.SlackAPIResponse{
+		Return(&alert_client.SlackAPIResponse{
 			Ok:  true,
 			Err: "",
 		}, nil).

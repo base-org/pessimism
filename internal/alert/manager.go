@@ -5,7 +5,7 @@ package alert
 import (
 	"context"
 	"fmt"
-	"github.com/base-org/pessimism/internal/client/alert_clients"
+	"github.com/base-org/pessimism/internal/client/alert_client"
 	"time"
 
 	"github.com/base-org/pessimism/internal/core"
@@ -14,17 +14,19 @@ import (
 	"go.uber.org/zap"
 )
 
-// NOTE - This should be user defined in the future
-// with modularity in mind so that users can define
-// their own independent alerting policies
-func getSevMap() map[core.Severity][]core.AlertDestination {
-	return map[core.Severity][]core.AlertDestination{
-		core.UNKNOWN: {core.AlertDestination(0)},
-		core.LOW:     {core.Slack},
-		core.MEDIUM:  {core.PagerDuty, core.Slack},
-		core.HIGH:    {core.PagerDuty, core.Slack},
-	}
-}
+var SupportedAlertClients = []core.AlertRoute{"slack", "pagerduty"}
+
+//// NOTE - This should be user defined in the future
+//// with modularity in mind so that users can define
+//// their own independent alerting policies
+//func getSevMap() map[core.Severity][]core.AlertDestination {
+//	return map[core.Severity][]core.AlertDestination{
+//		core.UNKNOWN: {core.AlertDestination(0)},
+//		core.LOW:     {core.Slack},
+//		core.MEDIUM:  {core.PagerDuty, core.Slack},
+//		core.HIGH:    {core.PagerDuty, core.Slack},
+//	}
+//}
 
 // Manager ... Interface for alert manager
 type Manager interface {
@@ -45,18 +47,20 @@ type Config struct {
 type alertManager struct {
 	ctx    context.Context
 	cancel context.CancelFunc
+	cfg    *Config
 
 	store        Store
 	interpolator Interpolator
 	cdHandler    CoolDownHandler
-	acm          *alert_clients.AlertClientMap
+	acm          *alert_client.AlertClientMap
 
+	logger       *zap.Logger
 	metrics      metrics.Metricer
 	alertTransit chan core.Alert
 }
 
 // NewManager ... Instantiates a new alert manager
-func NewManager(ctx context.Context, acm *alert_clients.AlertClientMap) Manager {
+func NewManager(ctx context.Context, acm *alert_client.AlertClientMap) Manager {
 	// NOTE - Consider constructing dependencies in higher level
 	// abstraction and passing them in
 
@@ -65,13 +69,14 @@ func NewManager(ctx context.Context, acm *alert_clients.AlertClientMap) Manager 
 	am := &alertManager{
 		ctx:       ctx,
 		cdHandler: NewCoolDownHandler(),
-		acm:       acm,
+		acm:       acm.ParseCfgToRouteMap(SupportedAlertClients...),
 
 		cancel:       cancel,
 		interpolator: NewInterpolator(),
 		store:        NewStore(),
 		alertTransit: make(chan core.Alert),
 		metrics:      metrics.WithContext(ctx),
+		logger:       logging.WithContext(ctx),
 	}
 
 	return am
@@ -89,51 +94,55 @@ func (am *alertManager) Transit() chan core.Alert {
 }
 
 // handleSlackPost ... Handles posting an alert to slack channels
-func (am *alertManager) handleSlackPost(sUUID core.SUUID, content string, msg string) error {
-	// Create event trigger
-	event := &alert_clients.AlertEventTrigger{
-		Message: am.interpolator.InterpolateSlackMessage(sUUID, content, msg),
+func (am *alertManager) handleSlackPost(alert core.Alert, policy *core.AlertPolicy) error {
+	// Check if user has defined slack clients for this criticality
+	if _, ok := am.acm.SlackClients[alert.Criticality.String()]; !ok {
+		return fmt.Errorf("no slack clients for criticality: %s", alert.Criticality.String())
 	}
 
-	// TODO: Deduplicate alerts to same slack channel
-	// Send event to slack clients
-	for sev, _ := range am.acm.SlackClients {
-		for _, sc := range am.acm.SlackClients[sev] {
-			resp, err := sc.PostEvent(am.ctx, event)
-			if err != nil {
-				return err
-			}
+	// Create event trigger
+	event := &alert_client.AlertEventTrigger{
+		Message:  am.interpolator.InterpolateSlackMessage(alert.SUUID, alert.Content, policy.Msg),
+		Severity: alert.Criticality,
+	}
 
-			if resp.Status != alert_clients.SuccessStatus {
-				return fmt.Errorf("could not post to slack: %s", resp.Message)
-			}
+	for _, sc := range am.acm.SlackClients[alert.Criticality.String()] {
+		resp, err := sc.PostEvent(am.ctx, event)
+		if err != nil {
+			return err
+		}
+
+		if resp.Status != alert_client.SuccessStatus {
+			return fmt.Errorf("could not post to slack: %s", resp.Message)
 		}
 	}
 
 	return nil
 }
 
-// TODO: fix pdc calls to use sev
 // handlePagerDutyPost ... Handles posting an alert to pagerduty
 func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
+	// Check if pagerduty client array exists
+	if _, ok := am.acm.PagerdutyClients[alert.Criticality.String()]; !ok {
+		return fmt.Errorf("no slack clients for criticality: %s", alert.Criticality.String())
+	}
 
 	pdMsg := am.interpolator.InterpolatePagerDutyMessage(alert.SUUID, alert.Content)
 
-	event := &alert_clients.AlertEventTrigger{
+	event := &alert_client.AlertEventTrigger{
 		Message:  pdMsg,
 		DedupKey: alert.PUUID,
+		Severity: alert.Criticality,
 	}
 
-	for sev, _ := range am.acm.PagerdutyClients {
-		for _, pdc := range am.acm.PagerdutyClients[sev] {
-			resp, err := pdc.PostEvent(am.ctx, event)
-			if err != nil {
-				return err
-			}
+	for _, pdc := range am.acm.PagerdutyClients[alert.Criticality.String()] {
+		resp, err := pdc.PostEvent(am.ctx, event)
+		if err != nil {
+			return err
+		}
 
-			if resp.Status != alert_clients.SuccessStatus {
-				return fmt.Errorf("could not post to pagerduty: %s", resp.Message)
-			}
+		if resp.Status != alert_client.SuccessStatus {
+			return fmt.Errorf("could not post to pagerduty: %s", resp.Message)
 		}
 	}
 
@@ -142,7 +151,6 @@ func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
 
 // EventLoop ... Event loop for alert manager subsystem
 func (am *alertManager) EventLoop() error {
-	logger := logging.WithContext(am.ctx)
 	ticker := time.NewTicker(time.Second * 1)
 
 	for {
@@ -159,19 +167,19 @@ func (am *alertManager) EventLoop() error {
 			// 1. Fetch alert policy
 			policy, err := am.store.GetAlertPolicy(alert.SUUID)
 			if err != nil {
-				logger.Error("Could not determine alerting destination", zap.Error(err))
+				am.logger.Error("Could not determine alerting destination", zap.Error(err))
 				continue
 			}
 
 			// 2. Check if alert is in cool down
 			if policy.HasCoolDown() && am.cdHandler.IsCoolDown(alert.SUUID) {
-				logger.Debug("Alert is in cool down",
+				am.logger.Debug("Alert is in cool down",
 					zap.String(logging.SUUIDKey, alert.SUUID.String()))
 				continue
 			}
 
 			// 3. Log & propagate alert
-			logger.Info("received alert",
+			am.logger.Info("received alert",
 				zap.String(logging.SUUIDKey, alert.SUUID.String()))
 
 			am.HandleAlert(alert, policy)
@@ -186,49 +194,14 @@ func (am *alertManager) EventLoop() error {
 
 // HandleAlert ... Handles the alert propagation logic
 func (am *alertManager) HandleAlert(alert core.Alert, policy *core.AlertPolicy) {
-	locations := []core.AlertDestination{policy.Destination()}
-
 	alert.Criticality = policy.Severity()
 
-	// Fetch alerting destinations if severity is provided
-	if policy.Severity() != core.UNKNOWN {
-		locations = getSevMap()[policy.Severity()]
+	if err := am.handleSlackPost(alert, policy); err != nil {
+		am.logger.Error("could not post to slack", zap.Error(err))
 	}
 
-	// Iterate over alerting destinations and propagate alert
-	for _, dest := range locations {
-		am.propagate(dest, alert, policy)
-		am.metrics.RecordAlertGenerated(alert, dest)
-
-	}
-}
-
-// propagate ... Propagates an alert to a destination
-func (am *alertManager) propagate(dest core.AlertDestination, alert core.Alert, policy *core.AlertPolicy) {
-	logger := logging.WithContext(am.ctx)
-
-	switch dest {
-	case core.Slack: // TODO: add more alert destinations
-		logger.Debug("Attempting to post alert to slack")
-
-		err := am.handleSlackPost(alert.SUUID, alert.Content, policy.Message())
-		if err != nil {
-			logger.Error("Could not post alert to slack", zap.Error(err))
-		}
-
-	case core.PagerDuty:
-		logger.Debug("Attempting to post alert to pagerduty")
-		err := am.handlePagerDutyPost(alert)
-		if err != nil {
-			logger.Error("Could not post alert to pagerduty", zap.Error(err))
-		}
-
-	case core.ThirdParty:
-		logger.Error("Attempting to post alert to third_party which is not yet supported")
-
-	default:
-		logger.Error("Attempting to post alert to unknown destination",
-			zap.String("destination", policy.Destination().String()))
+	if err := am.handlePagerDutyPost(alert); err != nil {
+		am.logger.Error("could not post to pagerduty", zap.Error(err))
 	}
 }
 

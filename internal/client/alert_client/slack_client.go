@@ -1,6 +1,6 @@
 //go:generate mockgen -package mocks --destination ../mocks/slack_client.go . SlackClient
 
-package alert_clients
+package alert_client
 
 // NOTE - API endpoint specifications for slack client
 // can be found here - https://api.slack.com/methods/chat.postMessage

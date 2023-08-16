@@ -1,4 +1,4 @@
-package alert_clients
+package alert_client
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"github.com/base-org/pessimism/internal/logging"
 )
 
+// AlertStatus ... A standardized response status for alert clients
 type AlertStatus string
 
 const (
@@ -13,26 +14,25 @@ const (
 	FailureStatus AlertStatus = "failure"
 )
 
+// AlertClient ... An interface for alert clients to implement
 type AlertClient interface {
 	PostEvent(ctx context.Context, data *AlertEventTrigger) (*AlertAPIResponse, error)
 }
 
+// AlertEventTrigger ... A standardized event trigger for alert clients
 type AlertEventTrigger struct {
 	Message  string
 	Severity core.Severity
 	DedupKey core.PUUID
 }
 
-type AlertClientMap struct {
-	SlackClients     map[string][]AlertClient
-	PagerdutyClients map[string][]AlertClient
-}
-
+// AlertAPIResponse ... A standardized response for alert clients
 type AlertAPIResponse struct {
 	Status  AlertStatus
 	Message string
 }
 
+// ToPagerdutyEvent ... Converts an AlertEventTrigger to a PagerDutyEventTrigger
 func (a *AlertEventTrigger) ToPagerdutyEvent() *PagerDutyEventTrigger {
 	return &PagerDutyEventTrigger{
 		DedupKey: a.DedupKey.String(),
@@ -41,18 +41,35 @@ func (a *AlertEventTrigger) ToPagerdutyEvent() *PagerDutyEventTrigger {
 	}
 }
 
-// GetClientMap TODO this function is a mess but it works for now
-// GetClientMap ... Returns a mapping of alert clients
-func GetClientMap(a *core.AlertRoutesTable, routes ...core.AlertRoute) *AlertClientMap {
+// Config ... A global config to be used to instantiate alert clients
+type Config struct {
+	PagerDutyEventUrl string
+	RouteMapCfgPath   string
+}
 
-	// 1. Create a new alert client map
-	acm := &AlertClientMap{
+// AlertClientMap ... A map for alert clients
+type AlertClientMap struct {
+	SlackClients     map[string][]AlertClient
+	PagerdutyClients map[string][]AlertClient
+	cfg              *Config
+	Params           *core.AlertRoutesTable
+}
+
+func NewAlertClientMap(cfg *Config, params *core.AlertRoutesTable) *AlertClientMap {
+	return &AlertClientMap{
+		cfg:              cfg,
+		Params:           params,
 		PagerdutyClients: make(map[string][]AlertClient),
 		SlackClients:     make(map[string][]AlertClient),
 	}
+}
 
-	// 2. Loop through alert routes table
-	for k, v := range a.AlertRoutes {
+// ParseCfgToRouteMap TODO this function is a mess but it works for now
+// ParseCfgToRouteMap ... Returns a mapping of alert clients
+func (a *AlertClientMap) ParseCfgToRouteMap(routes ...core.AlertRoute) *AlertClientMap {
+
+	// Loop through alert routes table
+	for k, v := range a.Params.AlertRoutes {
 		for _, route := range routes {
 			for _, n := range v[string(route)] {
 				for _, cfg := range n {
@@ -63,9 +80,10 @@ func GetClientMap(a *core.AlertRoutesTable, routes ...core.AlertRoute) *AlertCli
 						pdcfg := &PagerDutyConfig{
 							Priority:       k,
 							IntegrationKey: cfg.IntegrationKey,
+							AlertEventsURL: a.cfg.PagerDutyEventUrl,
 						}
 						cli := NewPagerDutyClient(pdcfg)
-						acm.PagerdutyClients[k] = append(acm.PagerdutyClients[k], cli)
+						a.PagerdutyClients[k] = append(a.PagerdutyClients[k], cli)
 					case core.AlertRouteSlack:
 						scfg := &SlackConfig{
 							Channel:  cfg.Channel,
@@ -73,7 +91,7 @@ func GetClientMap(a *core.AlertRoutesTable, routes ...core.AlertRoute) *AlertCli
 							Priority: k,
 						}
 						cli := NewSlackClient(scfg)
-						acm.SlackClients[k] = append(acm.SlackClients[k], cli)
+						a.SlackClients[k] = append(a.SlackClients[k], cli)
 					// If route is not supported, log a warning
 					default:
 						logging.NoContext().Warn("Invalid alert route provided")
@@ -83,5 +101,5 @@ func GetClientMap(a *core.AlertRoutesTable, routes ...core.AlertRoute) *AlertCli
 		}
 	}
 
-	return acm
+	return a
 }

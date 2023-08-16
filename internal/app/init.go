@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	"github.com/base-org/pessimism/internal/client/alert_clients"
+	"github.com/base-org/pessimism/internal/client/alert_client"
 
 	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/handlers"
@@ -74,20 +74,16 @@ func InitializeServer(ctx context.Context, cfg *config.Config, m subsystem.Manag
 
 // InitializeAlerting ... Performs dependency injection to build alerting struct
 func InitializeAlerting(ctx context.Context, cfg *config.Config) (alert.Manager, error) {
-	//sc := client.NewSlackClient(cfg.AlertConfig.SlackConfig)
-	//pdc := client.NewPagerDutyClient(cfg.AlertConfig.HighPagerDutyCfg)
-	//medPdc := client.NewPagerDutyClient(cfg.AlertConfig.MediumPagerDutyCfg)
-
 	// Parses Alert Routing config
-	params, err := core.ParseAlertConfig(cfg.AlertConfig.AlertRoutingCfgPath)
+	params, err := core.ParseAlertConfig(cfg.AlertConfig.RouteMapCfgPath)
 	if err != nil {
 		return nil, err
 	}
 
-	// Generates Alert Client Map for supported alert routes
-	csm := alert_clients.GetClientMap(params, core.AlertRouteSlack, core.AlertRoutePagerDuty)
+	// Init alert client map
+	acm := alert_client.NewAlertClientMap(cfg.AlertConfig, params)
 
-	return alert.NewManager(ctx, csm), nil
+	return alert.NewManager(ctx, acm), nil
 }
 
 // InitializeETL ... Performs dependency injection to build etl struct

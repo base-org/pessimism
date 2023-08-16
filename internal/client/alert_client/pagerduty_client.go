@@ -1,6 +1,6 @@
 //go:generate mockgen -package mocks --destination ../mocks/pagerduty_client.go . PagerdutyClient
 
-package alert_clients
+package alert_client
 
 import (
 	"bytes"
@@ -149,6 +149,9 @@ func (pdc pagerdutyClient) PostEvent(ctx context.Context, event *AlertEventTrigg
 				zap.Error(err))
 		}
 	}()
+	if err != nil {
+		return nil, err
+	}
 
 	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {

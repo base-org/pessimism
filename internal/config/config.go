@@ -1,11 +1,11 @@
 package config
 
 import (
+	"github.com/base-org/pessimism/internal/client/alert_client"
 	"log"
 	"os"
 	"strconv"
 
-	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
@@ -30,7 +30,7 @@ type Config struct {
 	SystemConfig  *subsystem.Config
 	ServerConfig  *server.Config
 	MetricsConfig *metrics.Config
-	AlertConfig   *alert.Config
+	AlertConfig   *alert_client.Config
 }
 
 // NewConfig ... Initializer
@@ -46,10 +46,9 @@ func NewConfig(fileName core.FilePath) *Config {
 		BootStrapPath: getEnvStrWithDefault("BOOTSTRAP_PATH", ""),
 		Environment:   core.Env(getEnvStr("ENV")),
 
-		AlertConfig: &alert.Config{
-			AlertRoutingCfgPath:     getEnvStrWithDefault("ALERT_ROUTE_CFG_PATH", ""),
-			SlackURL:                getEnvStrWithDefault("SLACK_URL", ""),
-			PagerdutyAlertEventsUrl: getEnvStrWithDefault("PAGERDUTY_ALERT_EVENTS_URL", ""),
+		AlertConfig: &alert_client.Config{
+			RouteMapCfgPath:   getEnvStrWithDefault("ALERT_ROUTE_CFG_PATH", ""),
+			PagerDutyEventUrl: getEnvStrWithDefault("PAGERDUTY_ALERT_EVENTS_URL", ""),
 		},
 
 		SystemConfig: &subsystem.Config{

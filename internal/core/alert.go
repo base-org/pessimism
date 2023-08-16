@@ -81,7 +81,6 @@ func (s Severity) ToPagerdutySev() PagerDutySeverity {
 // Alert ... An alert
 type Alert struct {
 	Criticality Severity
-	Dest        AlertDestination
 	PUUID       PUUID
 	SUUID       SUUID
 	Timestamp   time.Time

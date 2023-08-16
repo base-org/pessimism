@@ -6,7 +6,7 @@ package mocks
 
 import (
 	context "context"
-	client "github.com/base-org/pessimism/internal/client/alert_clients"
+	client "github.com/base-org/pessimism/internal/client/alert_client"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
