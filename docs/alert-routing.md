@@ -41,3 +41,13 @@ Pessimism currently defines the following severities for alerts:
 | medium   | Alerts that could be hazardous, but may not be completely destructive       |
 | high     | Alerts that require immediate attention and could result in a loss of funds |
 
+
+## PagerDuty Severity Mapping
+PagerDuty supports the following severities: `critical`, `error`, `warning`, and `info`.
+Pessimism maps the Pessimism severities to PagerDuty severities as follows ([ref](../internal/core/alert.go)):
+
+| Pessimism | PagerDuty |
+|-----------|-----------|
+| low       | warning   |
+| medium    | error     |
+| high      | critical  |
