@@ -1,0 +1,27 @@
+## This is a template for alert routing configuration.
+alertRoutes:
+  low:
+    slack:
+      config:
+        url: ""
+        channel: ""
+
+  medium:
+    slack:
+      config:
+        url: ""
+        channel: ""
+    pagerduty:
+      config:
+        integration_key: ""
+
+  high:
+    slack:
+      config:
+        url: ""
+        channel: ""
+    pagerduty:
+      config:
+        integration_key: ""
+      config_2:
+        integration_key: ""
