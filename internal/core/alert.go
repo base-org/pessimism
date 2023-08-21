@@ -91,28 +91,25 @@ type Alert struct {
 	Content string
 }
 
-type AlertRoute string
-
-const (
-	AlertRouteSlack     AlertRoute = "slack"
-	AlertRoutePagerDuty AlertRoute = "pagerduty"
-)
-
+// AlertRoutingParams ... The routing parameters for alerts
 type AlertRoutingParams struct {
 	AlertRoutes *SeverityMap `yaml:"alertRoutes"`
 }
 
+// SeverityMap ... A map of severity to alert client config
 type SeverityMap struct {
 	Low    *AlertClientCfg `yaml:"low"`
 	Medium *AlertClientCfg `yaml:"medium"`
 	High   *AlertClientCfg `yaml:"high"`
 }
 
+// AlertClientCfg ... The alert client config
 type AlertClientCfg struct {
 	Slack     map[string]*Config `yaml:"slack"`
 	PagerDuty map[string]*Config `yaml:"pagerduty"`
 }
 
+// Config ... The config for an alert client
 type Config struct {
 	URL            string `yaml:"url"`
 	Channel        string `yaml:"channel"`

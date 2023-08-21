@@ -60,7 +60,7 @@ func NewManager(ctx context.Context, cfg *Config, cm ClientMap) Manager {
 
 		cancel:       cancel,
 		interpolator: NewInterpolator(),
-		store:        NewStore(cfg),
+		store:        NewStore(),
 		alertTransit: make(chan core.Alert),
 		metrics:      metrics.WithContext(ctx),
 		logger:       logging.WithContext(ctx),
