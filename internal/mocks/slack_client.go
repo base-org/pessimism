@@ -6,9 +6,9 @@ package mocks
 
 import (
 	context "context"
-	client "github.com/base-org/pessimism/internal/client/alert_client"
 	reflect "reflect"
 
+	client "github.com/base-org/pessimism/internal/client"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -35,17 +35,17 @@ func (m *MockSlackClient) EXPECT() *MockSlackClientMockRecorder {
 	return m.recorder
 }
 
-// PostData mocks base method.
-func (m *MockSlackClient) PostData(arg0 context.Context, arg1 string) (*client.SlackAPIResponse, error) {
+// PostEvent mocks base method.
+func (m *MockSlackClient) PostEvent(arg0 context.Context, arg1 *client.AlertEventTrigger) (*client.AlertAPIResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PostData", arg0, arg1)
-	ret0, _ := ret[0].(*client.SlackAPIResponse)
+	ret := m.ctrl.Call(m, "PostEvent", arg0, arg1)
+	ret0, _ := ret[0].(*client.AlertAPIResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// PostData indicates an expected call of PostData.
-func (mr *MockSlackClientMockRecorder) PostData(arg0, arg1 interface{}) *gomock.Call {
+// PostEvent indicates an expected call of PostEvent.
+func (mr *MockSlackClientMockRecorder) PostEvent(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostData", reflect.TypeOf((*MockSlackClient)(nil).PostData), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostEvent", reflect.TypeOf((*MockSlackClient)(nil).PostEvent), arg0, arg1)
 }

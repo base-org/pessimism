@@ -1,21 +1,25 @@
-//go:generate mockgen -package mocks --destination ../mocks/pagerduty_client.go . PagerdutyClient
+//go:generate mockgen -package mocks --destination ../mocks/pagerduty_client.go . PagerDutyClient
 
-package alert_client
+package client
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/base-org/pessimism/internal/core"
 	"io"
 	"net/http"
 	"time"
 
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
 
 	"go.uber.org/zap"
 )
+
+type PagerDutyClient interface {
+	AlertClient
+}
 
 type PagerDutyAction string
 
@@ -40,7 +44,7 @@ type pagerdutyClient struct {
 }
 
 // NewPagerDutyClient ... Initializer for PagerDuty client
-func NewPagerDutyClient(cfg *PagerDutyConfig) AlertClient {
+func NewPagerDutyClient(cfg *PagerDutyConfig) PagerDutyClient {
 	if cfg.IntegrationKey == "" {
 		logging.NoContext().Warn("No PagerDuty integration key provided")
 	}

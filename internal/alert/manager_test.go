@@ -2,66 +2,214 @@ package alert_test
 
 import (
 	"context"
-	"github.com/base-org/pessimism/internal/client/alert_client"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/base-org/pessimism/internal/alert"
+	"github.com/base-org/pessimism/internal/client"
+	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/mocks"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_EventLoop(t *testing.T) {
-	sc := mocks.NewMockSlackClient(gomock.NewController(t))
-	pdc := mocks.NewMockPagerDutyClient(gomock.NewController(t))
+
+	cfg := &config.Config{
+		AlertConfig: &alert.Config{
+			AlertRoutingCfgPath:     "test_data/alert-routing-test.yaml",
+			PagerdutyAlertEventsURL: "test",
+		},
+	}
 
 	ctx := context.Background()
 
-	am := alert.NewManager(ctx, sc, pdc, pdc)
+	c := gomock.NewController(t)
 
-	go func() {
-		_ = am.EventLoop()
-	}()
+	tests := []struct {
+		name        string
+		description string
+		test        func(t *testing.T)
+	}{
+		{
+			name:        "Test Low sev",
+			description: "Test low sev alert sends to slack",
+			test: func(t *testing.T) {
+				cm := alert.NewClientMap(cfg.AlertConfig)
+				am := alert.NewManager(ctx, cfg.AlertConfig, cm)
 
-	defer func() {
-		_ = am.Shutdown()
-	}()
+				go func() {
+					_ = am.EventLoop()
+				}()
 
-	ingress := am.Transit()
+				defer func() {
+					_ = am.Shutdown()
+				}()
 
-	testAlert := core.Alert{
-		Dest:  core.Slack,
-		SUUID: core.NilSUUID(),
+				ingress := am.Transit()
+
+				cm.SetSlackClients([]client.SlackClient{mocks.NewMockSlackClient(c)}, core.LOW)
+
+				alert := core.Alert{
+					Criticality: core.LOW,
+					SUUID:       core.NilSUUID(),
+				}
+				policy := &core.AlertPolicy{
+					Sev: core.LOW.String(),
+					Msg: "test",
+				}
+
+				err := am.AddSession(core.NilSUUID(), policy)
+				assert.Nil(t, err)
+
+				for _, cli := range cm.GetSlackClients(core.LOW) {
+					sc, ok := cli.(*mocks.MockSlackClient)
+					assert.True(t, ok)
+
+					sc.EXPECT().PostEvent(gomock.Any(), gomock.Any()).Return(
+						&client.AlertAPIResponse{
+							Message: "test",
+							Status:  client.SuccessStatus,
+						}, nil).Times(1)
+				}
+
+				ingress <- alert
+				time.Sleep(1 * time.Second)
+				testid := core.MakeSUUID(1, 1, 1)
+				alert = core.Alert{
+					Criticality: core.UNKNOWN,
+					SUUID:       testid,
+				}
+				ingress <- alert
+				time.Sleep(1 * time.Second)
+
+			},
+		},
+		{
+			name:        "Test Medium sev",
+			description: "Test medium sev alert sends to just PagerDuty",
+			test: func(t *testing.T) {
+				cm := alert.NewClientMap(cfg.AlertConfig)
+				am := alert.NewManager(ctx, cfg.AlertConfig, cm)
+
+				go func() {
+					_ = am.EventLoop()
+				}()
+
+				defer func() {
+					_ = am.Shutdown()
+				}()
+
+				ingress := am.Transit()
+
+				cm.SetPagerDutyClients([]client.PagerDutyClient{mocks.NewMockPagerDutyClient(c)}, core.MEDIUM)
+
+				alert := core.Alert{
+					Criticality: core.MEDIUM,
+					SUUID:       core.NilSUUID(),
+				}
+				policy := &core.AlertPolicy{
+					Sev: core.MEDIUM.String(),
+					Msg: "test",
+				}
+
+				err := am.AddSession(core.NilSUUID(), policy)
+				assert.Nil(t, err)
+
+				for _, cli := range cm.GetPagerDutyClients(core.MEDIUM) {
+					pdc, ok := cli.(*mocks.MockPagerDutyClient)
+					assert.True(t, ok)
+
+					pdc.EXPECT().PostEvent(gomock.Any(), gomock.Any()).Return(
+						&client.AlertAPIResponse{
+							Message: "test",
+							Status:  client.SuccessStatus,
+						}, nil).Times(1)
+				}
+
+				ingress <- alert
+				time.Sleep(1 * time.Second)
+				testid := core.MakeSUUID(1, 1, 1)
+				alert = core.Alert{
+					Criticality: core.UNKNOWN,
+					SUUID:       testid,
+				}
+				ingress <- alert
+				time.Sleep(1 * time.Second)
+
+			},
+		},
+		{
+			name:        "Test High sev",
+			description: "Test high sev alert sends to both slack and PagerDuty",
+			test: func(t *testing.T) {
+				cm := alert.NewClientMap(cfg.AlertConfig)
+				am := alert.NewManager(ctx, cfg.AlertConfig, cm)
+
+				go func() {
+					_ = am.EventLoop()
+				}()
+
+				defer func() {
+					_ = am.Shutdown()
+				}()
+
+				ingress := am.Transit()
+
+				cm.SetSlackClients([]client.SlackClient{mocks.NewMockSlackClient(c), mocks.NewMockSlackClient(c)}, core.HIGH)
+				cm.SetPagerDutyClients([]client.PagerDutyClient{mocks.NewMockPagerDutyClient(c), mocks.NewMockPagerDutyClient(c)}, core.HIGH)
+
+				alert := core.Alert{
+					Criticality: core.HIGH,
+					SUUID:       core.NilSUUID(),
+				}
+				policy := &core.AlertPolicy{
+					Sev: core.HIGH.String(),
+					Msg: "test",
+				}
+				err := am.AddSession(core.NilSUUID(), policy)
+				assert.Nil(t, err)
+
+				for _, cli := range cm.GetPagerDutyClients(core.HIGH) {
+					pdc, ok := cli.(*mocks.MockPagerDutyClient)
+					assert.True(t, ok)
+
+					pdc.EXPECT().PostEvent(gomock.Any(), gomock.Any()).Return(
+						&client.AlertAPIResponse{
+							Message: "test",
+							Status:  client.SuccessStatus,
+						}, nil).Times(1)
+				}
+
+				for _, cli := range cm.GetSlackClients(core.HIGH) {
+					sc, ok := cli.(*mocks.MockSlackClient)
+					assert.True(t, ok)
+					sc.EXPECT().PostEvent(gomock.Any(), gomock.Any()).Return(
+						&client.AlertAPIResponse{
+							Message: "test",
+							Status:  client.SuccessStatus,
+						}, nil).Times(1)
+				}
+				ingress <- alert
+				time.Sleep(1 * time.Second)
+				testid := core.MakeSUUID(1, 1, 1)
+				alert = core.Alert{
+					Criticality: core.UNKNOWN,
+					SUUID:       testid,
+				}
+				ingress <- alert
+				time.Sleep(1 * time.Second)
+			},
+		},
 	}
 
-	err := am.AddSession(core.NilSUUID(),
-		&core.AlertPolicy{
-			Dest: core.Slack.String(),
-			Msg:  "test",
+	for i, test := range tests {
+		t.Run(fmt.Sprintf("%s:%d", test.name, i), func(t *testing.T) {
+			test.test(t)
 		})
-	assert.Nil(t, err)
-
-	sc.EXPECT().PostData(gomock.Any(), gomock.Any()).
-		Return(&alert_client.SlackAPIResponse{
-			Ok:  true,
-			Err: "",
-		}, nil).
-		Times(1)
-
-	ingress <- testAlert
-
-	time.Sleep(1 * time.Second)
-
-	testID := core.MakeSUUID(1, 1, 1)
-
-	testAlert = core.Alert{
-		Dest:  core.ThirdParty,
-		SUUID: testID,
 	}
 
-	ingress <- testAlert
-
-	time.Sleep(1 * time.Second)
 }

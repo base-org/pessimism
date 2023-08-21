@@ -3,6 +3,7 @@ package alert
 import (
 	"fmt"
 
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 )
 
@@ -17,13 +18,19 @@ type Store interface {
 // store ... Alert store implementation
 // Used to store critical alerting metadata (ie. alert destination, message, etc.)
 type store struct {
-	defMap map[core.SUUID]*core.AlertPolicy
+	defMap           map[core.SUUID]*core.AlertPolicy
+	pagerDutyClients map[core.Severity][]client.PagerDutyClient
+	slackClients     map[core.Severity][]client.SlackClient
+	cfg              *Config
 }
 
 // NewStore ... Initializer
-func NewStore() Store {
+func NewStore(cfg *Config) Store {
 	return &store{
-		defMap: make(map[core.SUUID]*core.AlertPolicy),
+		cfg:              cfg,
+		defMap:           make(map[core.SUUID]*core.AlertPolicy),
+		pagerDutyClients: make(map[core.Severity][]client.PagerDutyClient),
+		slackClients:     make(map[core.Severity][]client.SlackClient),
 	}
 }
 

@@ -1,6 +1,6 @@
 //go:generate mockgen -package mocks --destination ../mocks/slack_client.go . SlackClient
 
-package alert_client
+package client
 
 // NOTE - API endpoint specifications for slack client
 // can be found here - https://api.slack.com/methods/chat.postMessage
@@ -16,6 +16,10 @@ import (
 	"go.uber.org/zap"
 )
 
+type SlackClient interface {
+	AlertClient
+}
+
 type SlackConfig struct {
 	Channel  string
 	URL      string
@@ -30,7 +34,7 @@ type slackClient struct {
 }
 
 // NewSlackClient ... Initializer
-func NewSlackClient(cfg *SlackConfig) AlertClient {
+func NewSlackClient(cfg *SlackConfig) SlackClient {
 	if cfg.URL == "" {
 		logging.NoContext().Warn("No Slack webhook URL not provided")
 	}

@@ -3,7 +3,6 @@ package e2e
 import (
 	"context"
 	"errors"
-	"github.com/base-org/pessimism/internal/client/alert_client"
 	"testing"
 	"time"
 
@@ -71,15 +70,19 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 	appCfg := DefaultTestConfig()
 
 	slackServer := NewTestSlackServer()
-	appCfg.AlertConfig.SlackConfig.URL = slackServer.Server.URL
 
 	pagerdutyServer := NewTestPagerDutyServer()
-	appCfg.AlertConfig.MediumPagerDutyCfg.AlertEventsURL = pagerdutyServer.Server.URL
+
+	appCfg.AlertConfig.AlertRoutingCfgPath = "alert-routing-cfg.yaml"
+	appCfg.AlertConfig.PagerdutyAlertEventsURL = pagerdutyServer.Server.URL
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	UpdateSlackUrls(appCfg.AlertConfig, slackServer.Server.URL)
+
 	if err := pess.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -128,15 +131,19 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	appCfg := DefaultTestConfig()
 
 	slackServer := NewTestSlackServer()
-	appCfg.AlertConfig.SlackConfig.URL = slackServer.Server.URL
 
 	pagerdutyServer := NewTestPagerDutyServer()
-	appCfg.AlertConfig.MediumPagerDutyCfg.AlertEventsURL = pagerdutyServer.Server.URL
+
+	appCfg.AlertConfig.AlertRoutingCfgPath = "alert-routing-cfg.yaml"
+	appCfg.AlertConfig.PagerdutyAlertEventsURL = pagerdutyServer.Server.URL
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	UpdateSlackUrls(appCfg.AlertConfig, slackServer.Server.URL)
+
 	if err := pess.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -186,16 +193,8 @@ func DefaultTestConfig() *config.Config {
 			Port: port,
 		},
 		AlertConfig: &alert.Config{
-			SlackConfig: &alert_client.SlackConfig{
-				URL:     "",
-				Channel: "test",
-			},
-			MediumPagerDutyCfg: &alert_client.PagerDutyConfig{
-				AlertEventsURL: "",
-			},
-			HighPagerDutyCfg: &alert_client.PagerDutyConfig{
-				AlertEventsURL: "",
-			},
+			PagerdutyAlertEventsURL: "",
+			AlertRoutingCfgPath:     "",
 		},
 	}
 }
@@ -222,5 +221,19 @@ func WaitForTransaction(hash common.Hash, client *ethclient.Client, timeout time
 			return nil, errors.New("timeout")
 		case <-ticker.C:
 		}
+	}
+}
+
+func UpdateSlackUrls(cfg *alert.Config, url string) {
+	for i := range cfg.AlertRoutingParams.AlertRoutes.High.Slack {
+		cfg.AlertRoutingParams.AlertRoutes.High.Slack[i].URL = url
+	}
+
+	for i := range cfg.AlertRoutingParams.AlertRoutes.Medium.Slack {
+		cfg.AlertRoutingParams.AlertRoutes.Medium.Slack[i].URL = url
+	}
+
+	for i := range cfg.AlertRoutingParams.AlertRoutes.Low.Slack {
+		cfg.AlertRoutingParams.AlertRoutes.Low.Slack[i].URL = url
 	}
 }

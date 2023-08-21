@@ -1,11 +1,12 @@
 package config
 
 import (
-	"github.com/base-org/pessimism/internal/client/alert_client"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 
+	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v3"
 )
 
 // TrueEnvVal ... Represents the encoded string value for true (ie. 1)
@@ -30,7 +32,7 @@ type Config struct {
 	SystemConfig  *subsystem.Config
 	ServerConfig  *server.Config
 	MetricsConfig *metrics.Config
-	AlertConfig   *alert_client.Config
+	AlertConfig   *alert.Config
 }
 
 // NewConfig ... Initializer
@@ -46,9 +48,9 @@ func NewConfig(fileName core.FilePath) *Config {
 		BootStrapPath: getEnvStrWithDefault("BOOTSTRAP_PATH", ""),
 		Environment:   core.Env(getEnvStr("ENV")),
 
-		AlertConfig: &alert_client.Config{
-			RouteMapCfgPath:   getEnvStrWithDefault("ALERT_ROUTE_CFG_PATH", ""),
-			PagerDutyEventUrl: getEnvStrWithDefault("PAGERDUTY_ALERT_EVENTS_URL", ""),
+		AlertConfig: &alert.Config{
+			AlertRoutingCfgPath:     getEnvStrWithDefault("ALERT_ROUTE_CFG_PATH", ""),
+			PagerdutyAlertEventsURL: getEnvStrWithDefault("PAGERDUTY_ALERT_EVENTS_URL", ""),
 		},
 
 		SystemConfig: &subsystem.Config{
@@ -96,6 +98,23 @@ func (cfg *Config) IsBootstrap() bool {
 	return cfg.BootStrapPath != ""
 }
 
+func (cfg *Config) ParseAlertConfig() error {
+	f, err := os.ReadFile(filepath.Clean(cfg.AlertConfig.AlertRoutingCfgPath))
+	if err != nil {
+		return err
+	}
+
+	d := &core.AlertRoutingParams{}
+	err = yaml.Unmarshal(f, &d)
+
+	if err != nil {
+		return err
+	}
+
+	cfg.AlertConfig.AlertRoutingParams = d
+	return nil
+}
+
 // getEnvStr ... Reads env var from process environment, panics if not found
 func getEnvStr(key string) string {
 	envVar, ok := os.LookupEnv(key)
@@ -109,7 +128,7 @@ func getEnvStr(key string) string {
 }
 
 // getEnvStrWithDefault ... Reads env var from process environment, returns default if not found
-func getEnvStrWithDefault(key string, defaultValue string) string { //nolint: unparam // empty str default ok
+func getEnvStrWithDefault(key string, defaultValue string) string {
 	envVar, ok := os.LookupEnv(key)
 
 	// Not found

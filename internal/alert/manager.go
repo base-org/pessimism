@@ -5,28 +5,14 @@ package alert
 import (
 	"context"
 	"fmt"
-	"github.com/base-org/pessimism/internal/client/alert_client"
 	"time"
 
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"go.uber.org/zap"
 )
-
-var SupportedAlertClients = []core.AlertRoute{"slack", "pagerduty"}
-
-//// NOTE - This should be user defined in the future
-//// with modularity in mind so that users can define
-//// their own independent alerting policies
-//func getSevMap() map[core.Severity][]core.AlertDestination {
-//	return map[core.Severity][]core.AlertDestination{
-//		core.UNKNOWN: {core.AlertDestination(0)},
-//		core.LOW:     {core.Slack},
-//		core.MEDIUM:  {core.PagerDuty, core.Slack},
-//		core.HIGH:    {core.PagerDuty, core.Slack},
-//	}
-//}
 
 // Manager ... Interface for alert manager
 type Manager interface {
@@ -39,8 +25,8 @@ type Manager interface {
 // Config ... Alert manager configuration
 type Config struct {
 	AlertRoutingCfgPath     string
-	SlackURL                string
-	PagerdutyAlertEventsUrl string
+	PagerdutyAlertEventsURL string
+	AlertRoutingParams      *core.AlertRoutingParams
 }
 
 // alertManager ... Alert manager implementation
@@ -52,7 +38,7 @@ type alertManager struct {
 	store        Store
 	interpolator Interpolator
 	cdHandler    CoolDownHandler
-	acm          *alert_client.AlertClientMap
+	cm           ClientMap
 
 	logger       *zap.Logger
 	metrics      metrics.Metricer
@@ -60,7 +46,7 @@ type alertManager struct {
 }
 
 // NewManager ... Instantiates a new alert manager
-func NewManager(ctx context.Context, acm *alert_client.AlertClientMap) Manager {
+func NewManager(ctx context.Context, cfg *Config, cm ClientMap) Manager {
 	// NOTE - Consider constructing dependencies in higher level
 	// abstraction and passing them in
 
@@ -69,11 +55,12 @@ func NewManager(ctx context.Context, acm *alert_client.AlertClientMap) Manager {
 	am := &alertManager{
 		ctx:       ctx,
 		cdHandler: NewCoolDownHandler(),
-		acm:       acm.ParseCfgToRouteMap(SupportedAlertClients...),
+		cfg:       cfg,
+		cm:        cm,
 
 		cancel:       cancel,
 		interpolator: NewInterpolator(),
-		store:        NewStore(),
+		store:        NewStore(cfg),
 		alertTransit: make(chan core.Alert),
 		metrics:      metrics.WithContext(ctx),
 		logger:       logging.WithContext(ctx),
@@ -87,7 +74,7 @@ func (am *alertManager) AddSession(sUUID core.SUUID, policy *core.AlertPolicy) e
 	return am.store.AddAlertPolicy(sUUID, policy)
 }
 
-// TODO - Rename this to ingress()
+// Transit TODO - Rename this to ingress()
 // Transit ... Returns inter-subsystem transit channel for receiving alerts
 func (am *alertManager) Transit() chan core.Alert {
 	return am.alertTransit
@@ -95,26 +82,29 @@ func (am *alertManager) Transit() chan core.Alert {
 
 // handleSlackPost ... Handles posting an alert to slack channels
 func (am *alertManager) handleSlackPost(alert core.Alert, policy *core.AlertPolicy) error {
-	// Check if user has defined slack clients for this criticality
-	if _, ok := am.acm.SlackClients[alert.Criticality.String()]; !ok {
-		return fmt.Errorf("no slack clients for criticality: %s", alert.Criticality.String())
+	slackClients := am.cm.GetSlackClients(alert.Criticality)
+	if slackClients == nil {
+		am.logger.Warn("No slack clients defined for criticality", zap.Any("alert", alert))
+		return nil
 	}
 
 	// Create event trigger
-	event := &alert_client.AlertEventTrigger{
+	event := &client.AlertEventTrigger{
 		Message:  am.interpolator.InterpolateSlackMessage(alert.SUUID, alert.Content, policy.Msg),
 		Severity: alert.Criticality,
 	}
 
-	for _, sc := range am.acm.SlackClients[alert.Criticality.String()] {
+	for _, sc := range slackClients {
 		resp, err := sc.PostEvent(am.ctx, event)
 		if err != nil {
 			return err
 		}
 
-		if resp.Status != alert_client.SuccessStatus {
+		if resp.Status != client.SuccessStatus {
 			return fmt.Errorf("could not post to slack: %s", resp.Message)
 		}
+		am.logger.Debug("Successfully posted to Slack", zap.Any("resp", resp))
+		am.metrics.RecordAlertGenerated(alert, core.Slack)
 	}
 
 	return nil
@@ -122,28 +112,30 @@ func (am *alertManager) handleSlackPost(alert core.Alert, policy *core.AlertPoli
 
 // handlePagerDutyPost ... Handles posting an alert to pagerduty
 func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
-	// Check if pagerduty client array exists
-	if _, ok := am.acm.PagerdutyClients[alert.Criticality.String()]; !ok {
-		return fmt.Errorf("no slack clients for criticality: %s", alert.Criticality.String())
+	pdClients := am.cm.GetPagerDutyClients(alert.Criticality)
+
+	if pdClients == nil {
+		am.logger.Warn("No pagerduty clients defined for criticality", zap.Any("alert", alert))
+		return nil
 	}
 
-	pdMsg := am.interpolator.InterpolatePagerDutyMessage(alert.SUUID, alert.Content)
-
-	event := &alert_client.AlertEventTrigger{
-		Message:  pdMsg,
+	event := &client.AlertEventTrigger{
+		Message:  am.interpolator.InterpolatePagerDutyMessage(alert.SUUID, alert.Content),
 		DedupKey: alert.PUUID,
 		Severity: alert.Criticality,
 	}
 
-	for _, pdc := range am.acm.PagerdutyClients[alert.Criticality.String()] {
+	for _, pdc := range pdClients {
 		resp, err := pdc.PostEvent(am.ctx, event)
 		if err != nil {
 			return err
 		}
 
-		if resp.Status != alert_client.SuccessStatus {
+		if resp.Status != client.SuccessStatus {
 			return fmt.Errorf("could not post to pagerduty: %s", resp.Message)
 		}
+		am.logger.Debug("Successfully posted to Slack", zap.Any("resp", resp))
+		am.metrics.RecordAlertGenerated(alert, core.PagerDuty)
 	}
 
 	return nil
@@ -152,6 +144,12 @@ func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
 // EventLoop ... Event loop for alert manager subsystem
 func (am *alertManager) EventLoop() error {
 	ticker := time.NewTicker(time.Second * 1)
+
+	if am.cfg.AlertRoutingParams == nil {
+		am.logger.Warn("No alert routing params defined")
+	}
+
+	am.cm.InitAlertClients(am.cfg.AlertRoutingParams)
 
 	for {
 		select {

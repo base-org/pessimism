@@ -5,11 +5,24 @@ import (
 	"testing"
 
 	"github.com/base-org/pessimism/internal/alert"
+	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_Store(t *testing.T) {
+
+	cfg := &config.Config{
+		AlertConfig: &alert.Config{
+			AlertRoutingCfgPath:     "test_data/alert-routing-test.yaml",
+			PagerdutyAlertEventsURL: "test",
+		},
+	}
+
+	err := cfg.ParseAlertConfig()
+	assert.Nil(t, err, fmt.Sprintf("failed to parse alert config: %v", err))
+
 	var tests = []struct {
 		name        string
 		description string
@@ -19,7 +32,7 @@ func Test_Store(t *testing.T) {
 			name:        "Test Get Alert Policy Success",
 			description: "Test GetAlertPolicy",
 			testLogic: func(t *testing.T) {
-				am := alert.NewStore()
+				am := alert.NewStore(cfg.AlertConfig)
 
 				sUUID := core.MakeSUUID(core.Layer1, core.Live, core.BalanceEnforcement)
 				policy := &core.AlertPolicy{
@@ -39,7 +52,7 @@ func Test_Store(t *testing.T) {
 			name:        "Test Add Alert Policy Success",
 			description: "Test adding of arbitrary Alert Policies",
 			testLogic: func(t *testing.T) {
-				am := alert.NewStore()
+				am := alert.NewStore(cfg.AlertConfig)
 
 				sUUID := core.MakeSUUID(core.Layer1, core.Live, core.BalanceEnforcement)
 				policy := &core.AlertPolicy{
@@ -58,7 +71,7 @@ func Test_Store(t *testing.T) {
 			name:        "Test NewStore",
 			description: "Test NewStore logic",
 			testLogic: func(t *testing.T) {
-				am := alert.NewStore()
+				am := alert.NewStore(cfg.AlertConfig)
 				assert.NotNil(t, am, "failed to instantiate alert store")
 			},
 		},

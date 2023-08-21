@@ -117,7 +117,7 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 			Name:      "alerts_generated_total",
 			Help:      "Number of total alerts generated for a given heuristic",
 			Namespace: metricsNamespace,
-		}, []string{"network", "heuristic", "pipeline", "destination"}),
+		}, []string{"network", "heuristic", "pipeline", "severity", "destination"}),
 
 		NodeErrors: factory.NewCounterVec(prometheus.CounterOpts{
 			Name:      "node_errors_total",
@@ -210,7 +210,8 @@ func (m *Metrics) RecordAlertGenerated(alert core.Alert, dest core.AlertDestinat
 	net := alert.SUUID.PID.Network().String()
 	h := alert.SUUID.PID.HeuristicType().String()
 	pipeline := alert.Ptype.String()
-	m.AlertsGenerated.WithLabelValues(net, h, pipeline, dest.String()).Inc()
+	sev := alert.Criticality.String()
+	m.AlertsGenerated.WithLabelValues(net, h, pipeline, sev, dest.String()).Inc()
 }
 
 // RecordNodeError ... Records that an error has been caught for a given node

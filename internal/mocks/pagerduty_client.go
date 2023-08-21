@@ -6,9 +6,9 @@ package mocks
 
 import (
 	context "context"
-	client "github.com/base-org/pessimism/internal/client/alert_client"
 	reflect "reflect"
 
+	client "github.com/base-org/pessimism/internal/client"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -36,10 +36,10 @@ func (m *MockPagerDutyClient) EXPECT() *MockPagerDutyClientMockRecorder {
 }
 
 // PostEvent mocks base method.
-func (m *MockPagerDutyClient) PostEvent(arg0 context.Context, arg1 *client.PagerDutyEventTrigger) (*client.PagerDutyAPIResponse, error) {
+func (m *MockPagerDutyClient) PostEvent(arg0 context.Context, arg1 *client.AlertEventTrigger) (*client.AlertAPIResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PostEvent", arg0, arg1)
-	ret0, _ := ret[0].(*client.PagerDutyAPIResponse)
+	ret0, _ := ret[0].(*client.AlertAPIResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

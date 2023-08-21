@@ -2,7 +2,6 @@ package app_test
 
 import (
 	"context"
-	"github.com/base-org/pessimism/internal/client/alert_client"
 	"testing"
 
 	"github.com/base-org/pessimism/internal/alert"
@@ -28,9 +27,8 @@ func Test_AppFlow(t *testing.T) {
 			Enabled: false,
 		},
 		AlertConfig: &alert.Config{
-			SlackConfig:        &alert_client.SlackConfig{},
-			MediumPagerDutyCfg: &alert_client.PagerDutyConfig{},
-			HighPagerDutyCfg:   &alert_client.PagerDutyConfig{},
+			AlertRoutingCfgPath:     "../alert/test_data/alert-routing-test.yaml",
+			PagerdutyAlertEventsURL: "test",
 		},
 	}
 

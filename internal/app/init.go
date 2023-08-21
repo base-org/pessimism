@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"github.com/base-org/pessimism/internal/client/alert_client"
 
 	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/handlers"
@@ -19,6 +18,7 @@ import (
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/state"
 	"github.com/base-org/pessimism/internal/subsystem"
+
 	"go.uber.org/zap"
 )
 
@@ -74,16 +74,13 @@ func InitializeServer(ctx context.Context, cfg *config.Config, m subsystem.Manag
 
 // InitializeAlerting ... Performs dependency injection to build alerting struct
 func InitializeAlerting(ctx context.Context, cfg *config.Config) (alert.Manager, error) {
-	// Parses Alert Routing config
-	params, err := core.ParseAlertConfig(cfg.AlertConfig.RouteMapCfgPath)
-	if err != nil {
+	if err := cfg.ParseAlertConfig(); err != nil {
 		return nil, err
 	}
 
-	// Init alert client map
-	acm := alert_client.NewAlertClientMap(cfg.AlertConfig, params)
+	clientMap := alert.NewClientMap(cfg.AlertConfig)
 
-	return alert.NewManager(ctx, acm), nil
+	return alert.NewManager(ctx, cfg.AlertConfig, clientMap), nil
 }
 
 // InitializeETL ... Performs dependency injection to build etl struct
