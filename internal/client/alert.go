@@ -8,14 +8,6 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
-// AlertStatus ... A standardized response status for alert clients
-type AlertStatus string
-
-const (
-	SuccessStatus AlertStatus = "success"
-	FailureStatus AlertStatus = "failure"
-)
-
 // AlertClient ... An interface for alert clients to implement
 type AlertClient interface {
 	PostEvent(ctx context.Context, data *AlertEventTrigger) (*AlertAPIResponse, error)
@@ -30,7 +22,7 @@ type AlertEventTrigger struct {
 
 // AlertAPIResponse ... A standardized response for alert clients
 type AlertAPIResponse struct {
-	Status  AlertStatus
+	Status  core.AlertStatus
 	Message string
 }
 

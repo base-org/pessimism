@@ -72,7 +72,7 @@ func Test_EventLoop(t *testing.T) {
 					sc.EXPECT().PostEvent(gomock.Any(), gomock.Any()).Return(
 						&client.AlertAPIResponse{
 							Message: "test",
-							Status:  client.SuccessStatus,
+							Status:  core.SuccessStatus,
 						}, nil).Times(1)
 				}
 
@@ -126,7 +126,7 @@ func Test_EventLoop(t *testing.T) {
 					pdc.EXPECT().PostEvent(gomock.Any(), gomock.Any()).Return(
 						&client.AlertAPIResponse{
 							Message: "test",
-							Status:  client.SuccessStatus,
+							Status:  core.SuccessStatus,
 						}, nil).Times(1)
 				}
 
@@ -180,7 +180,7 @@ func Test_EventLoop(t *testing.T) {
 					pdc.EXPECT().PostEvent(gomock.Any(), gomock.Any()).Return(
 						&client.AlertAPIResponse{
 							Message: "test",
-							Status:  client.SuccessStatus,
+							Status:  core.SuccessStatus,
 						}, nil).Times(1)
 				}
 
@@ -190,7 +190,7 @@ func Test_EventLoop(t *testing.T) {
 					sc.EXPECT().PostEvent(gomock.Any(), gomock.Any()).Return(
 						&client.AlertAPIResponse{
 							Message: "test",
-							Status:  client.SuccessStatus,
+							Status:  core.SuccessStatus,
 						}, nil).Times(1)
 				}
 				ingress <- alert

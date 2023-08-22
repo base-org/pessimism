@@ -27,12 +27,15 @@ const (
 	Trigger PagerDutyAction = "trigger"
 )
 
+const (
+	Source = "pessimism"
+)
+
 // PagerDutyConfig ... Represents the configuration vars for a PagerDuty client
 type PagerDutyConfig struct {
 	IntegrationKey  string
 	ChangeEventsURL string
 	AlertEventsURL  string
-	Priority        string
 }
 
 // pagerdutyClient ... PagerDuty client for making requests
@@ -88,7 +91,7 @@ func newPagerDutyPayload(integrationKey string, event *PagerDutyEventTrigger) *P
 		DedupKey:    event.DedupKey,
 		Payload: PagerDutyPayload{
 			Summary:   event.Message,
-			Source:    "Pessimism",
+			Source:    Source,
 			Severity:  event.Severity,
 			Timestamp: time.Now(),
 		},
@@ -107,16 +110,16 @@ func (req *PagerDutyRequest) marshal() ([]byte, error) {
 
 // PagerDutyAPIResponse ... Represents the structure of a PagerDuty API response
 type PagerDutyAPIResponse struct {
-	Status   string `json:"status"`
-	Message  string `json:"message"`
-	DedupKey string `json:"dedup_key"`
+	Status   core.AlertStatus `json:"status"`
+	Message  string           `json:"message"`
+	DedupKey string           `json:"dedup_key"`
 }
 
 // ToAlertResponse ... Converts a PagerDuty API response to an AlertAPIResponse
 func (p *PagerDutyAPIResponse) ToAlertResponse() *AlertAPIResponse {
-	status := SuccessStatus
-	if p.Status != "success" {
-		status = FailureStatus
+	status := core.SuccessStatus
+	if p.Status != core.SuccessStatus {
+		status = core.FailureStatus
 	}
 
 	return &AlertAPIResponse{

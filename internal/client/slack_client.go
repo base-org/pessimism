@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/base-org/pessimism/internal/core"
 	"io"
 	"net/http"
 
@@ -77,9 +78,9 @@ type SlackAPIResponse struct {
 
 // ToAlertResponse ... Converts a slack API response to an alert API response
 func (a *SlackAPIResponse) ToAlertResponse() *AlertAPIResponse {
-	status := SuccessStatus
+	status := core.SuccessStatus
 	if !a.Ok {
-		status = FailureStatus
+		status = core.FailureStatus
 	}
 
 	return &AlertAPIResponse{

@@ -14,6 +14,14 @@ const (
 	Info     PagerDutySeverity = "info"
 )
 
+// AlertStatus ... A standardized response status for alert clients
+type AlertStatus string
+
+const (
+	SuccessStatus AlertStatus = "success"
+	FailureStatus AlertStatus = "failure"
+)
+
 // Severity ... The severity of an alert
 type Severity uint8
 
