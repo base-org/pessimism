@@ -9,12 +9,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/base-org/pessimism/internal/core"
 	"io"
 	"net/http"
 
-	"github.com/base-org/pessimism/internal/logging"
 	"go.uber.org/zap"
+
+	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/logging"
 )
 
 type SlackClient interface {

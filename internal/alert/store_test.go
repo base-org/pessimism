@@ -15,7 +15,7 @@ func Test_Store(t *testing.T) {
 
 	cfg := &config.Config{
 		AlertConfig: &alert.Config{
-			AlertRoutingCfgPath:     "test_data/alert-routing-test.yaml",
+			RoutingCfgPath:          "test_data/alert-routing-test.yaml",
 			PagerdutyAlertEventsURL: "test",
 		},
 	}

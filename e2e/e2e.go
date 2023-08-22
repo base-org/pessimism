@@ -73,7 +73,7 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 
 	pagerdutyServer := NewTestPagerDutyServer()
 
-	appCfg.AlertConfig.AlertRoutingCfgPath = "alert-routing-cfg.yaml"
+	appCfg.AlertConfig.RoutingCfgPath = "alert-routing-cfg.yaml"
 	appCfg.AlertConfig.PagerdutyAlertEventsURL = pagerdutyServer.Server.URL
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
@@ -134,7 +134,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 
 	pagerdutyServer := NewTestPagerDutyServer()
 
-	appCfg.AlertConfig.AlertRoutingCfgPath = "alert-routing-cfg.yaml"
+	appCfg.AlertConfig.RoutingCfgPath = "alert-routing-cfg.yaml"
 	appCfg.AlertConfig.PagerdutyAlertEventsURL = pagerdutyServer.Server.URL
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
@@ -194,7 +194,7 @@ func DefaultTestConfig() *config.Config {
 		},
 		AlertConfig: &alert.Config{
 			PagerdutyAlertEventsURL: "",
-			AlertRoutingCfgPath:     "",
+			RoutingCfgPath:          "",
 		},
 	}
 }

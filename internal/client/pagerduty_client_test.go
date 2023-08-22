@@ -1,11 +1,12 @@
 package client_test
 
 import (
-	"github.com/base-org/pessimism/internal/core"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/base-org/pessimism/internal/client"
+	"github.com/base-org/pessimism/internal/core"
 )
 
 func Test_PagerdutyAPIResponse_To_AlertAPIResponse(t *testing.T) {

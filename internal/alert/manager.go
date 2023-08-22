@@ -24,7 +24,7 @@ type Manager interface {
 
 // Config ... Alert manager configuration
 type Config struct {
-	AlertRoutingCfgPath     string
+	RoutingCfgPath          string
 	PagerdutyAlertEventsURL string
 	AlertRoutingParams      *core.AlertRoutingParams
 }

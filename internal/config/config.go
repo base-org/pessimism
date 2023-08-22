@@ -49,7 +49,7 @@ func NewConfig(fileName core.FilePath) *Config {
 		Environment:   core.Env(getEnvStr("ENV")),
 
 		AlertConfig: &alert.Config{
-			AlertRoutingCfgPath:     getEnvStrWithDefault("ALERT_ROUTE_CFG_PATH", ""),
+			RoutingCfgPath:          getEnvStrWithDefault("ALERT_ROUTE_CFG_PATH", ""),
 			PagerdutyAlertEventsURL: getEnvStrWithDefault("PAGERDUTY_ALERT_EVENTS_URL", ""),
 		},
 
@@ -99,7 +99,7 @@ func (cfg *Config) IsBootstrap() bool {
 }
 
 func (cfg *Config) ParseAlertConfig() error {
-	f, err := os.ReadFile(filepath.Clean(cfg.AlertConfig.AlertRoutingCfgPath))
+	f, err := os.ReadFile(filepath.Clean(cfg.AlertConfig.RoutingCfgPath))
 	if err != nil {
 		return err
 	}
