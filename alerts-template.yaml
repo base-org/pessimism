@@ -2,26 +2,26 @@
 alertRoutes:
   low:
     slack:
-      p1_route:
+      low_oncall:
         url: ""
         channel: ""
 
   medium:
     slack:
-      p1_route:
+      medium_oncall:
         url: ""
         channel: ""
-    p1_route:
+    medium_oncall:
       config:
         integration_key: ""
 
   high:
     slack:
-      p0_route:
+      high_oncall:
         url: ""
         channel: ""
     pagerduty:
-      p0_route:
+      high_oncall:
         integration_key: ""
-      p1_route:
+      medium_oncall:
         integration_key: ""
