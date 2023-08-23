@@ -11,13 +11,13 @@ import (
 
 func TestSlackResponseToAlertResponse(t *testing.T) {
 	testSlackSuccess := &client.SlackAPIResponse{
-		Ok:  true,
-		Err: "",
+		Message: "ok",
+		Err:     "",
 	}
 
 	testSlackFailure := &client.SlackAPIResponse{
-		Ok:  false,
-		Err: "error",
+		Message: "not ok",
+		Err:     "error",
 	}
 
 	resSuc := testSlackSuccess.ToAlertResponse()

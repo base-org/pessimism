@@ -75,14 +75,14 @@ func (sp *SlackPayload) marshal() ([]byte, error) {
 
 // SlackAPIResponse ... represents the structure of a slack API response
 type SlackAPIResponse struct {
-	Ok  bool   `json:"ok"`
-	Err string `json:"error"`
+	Message string `json:"message"`
+	Err     string `json:"error"`
 }
 
 // ToAlertResponse ... Converts a slack API response to an alert API response
 func (a *SlackAPIResponse) ToAlertResponse() *AlertAPIResponse {
 	status := core.SuccessStatus
-	if !a.Ok {
+	if a.Message != "ok" {
 		status = core.FailureStatus
 	}
 

@@ -63,14 +63,14 @@ func (svr *TestSlackServer) mockSlackPost(w http.ResponseWriter, r *http.Request
 
 	if err := json.NewDecoder(r.Body).Decode(&alert); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(`{"ok":false, "error":"could not decode slack payload"}`))
+		_, _ = w.Write([]byte(`{"message":"", "error":"could not decode slack payload"}`))
 		return
 	}
 
 	svr.Payloads = append(svr.Payloads, alert)
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"ok":true, "error":""}`))
+	_, _ = w.Write([]byte(`{"message":"ok", "error":""}`))
 }
 
 // SlackAlerts ... Returns the slack alerts
