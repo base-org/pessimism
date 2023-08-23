@@ -2,13 +2,13 @@ alertRoutes:
   low:
     slack:
       config:
-        url: "test-low"
+        url: "http://127.0.0.1:7100"
         channel: "#test-low"
 
   medium:
     slack:
       config:
-        url: "test-medium"
+        url: "http://127.0.0.1:7100"
         channel: "#test-medium"
     pagerduty:
       config:
@@ -17,10 +17,10 @@ alertRoutes:
   high:
     slack:
       config:
-        url: "test-high"
+        url: "http://127.0.0.1:7100"
         channel: "#test-high"
       config_2:
-        url: "test-high-2"
+        url: "http://127.0.0.1:7100"
         channel: "#test-high-2"
 
     pagerduty:

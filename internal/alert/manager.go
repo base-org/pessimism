@@ -74,8 +74,8 @@ func (am *alertManager) AddSession(sUUID core.SUUID, policy *core.AlertPolicy) e
 	return am.store.AddAlertPolicy(sUUID, policy)
 }
 
-// Transit TODO - Rename this to ingress()
 // Transit ... Returns inter-subsystem transit channel for receiving alerts
+// TODO - Rename this to ingress()
 func (am *alertManager) Transit() chan core.Alert {
 	return am.alertTransit
 }

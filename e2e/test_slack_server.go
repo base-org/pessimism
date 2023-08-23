@@ -2,11 +2,16 @@ package e2e
 
 import (
 	"encoding/json"
+	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 
+	"go.uber.org/zap"
+
 	"github.com/base-org/pessimism/internal/client"
+	"github.com/base-org/pessimism/internal/logging"
 )
 
 // TestSlackServer ... Mock server for testing slack alerts
@@ -16,21 +21,32 @@ type TestSlackServer struct {
 }
 
 // NewTestSlackServer ... Creates a new mock slack server
-func NewTestSlackServer() *TestSlackServer {
-	ts := &TestSlackServer{
+func NewTestSlackServer(url string, port int) *TestSlackServer { //nolint:dupl //This will be addressed
+	l, err := net.Listen("tcp", fmt.Sprintf("%s:%d", url, port))
+	if err != nil {
+		panic(err)
+	}
+
+	ss := &TestSlackServer{
 		Payloads: []*client.SlackPayload{},
 	}
 
-	ts.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ss.Server = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimSpace(r.URL.Path) {
 		case "/":
-			ts.mockSlackPost(w, r)
+			ss.mockSlackPost(w, r)
 		default:
 			http.NotFoundHandler().ServeHTTP(w, r)
 		}
 	}))
 
-	return ts
+	ss.Server.Listener.Close()
+	ss.Server.Listener = l
+	ss.Server.Start()
+
+	logging.NoContext().Info("Test slack server started", zap.String("url", url), zap.Int("port", port))
+
+	return ss
 }
 
 // Close ... Closes the server

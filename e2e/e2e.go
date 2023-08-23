@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -22,6 +23,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+)
+
+const (
+	SlackTestServerPort = 7100
+	PagerDutyTestPort   = 7200
 )
 
 // SysTestSuite ... Stores all the information needed to run an e2e system test
@@ -69,19 +75,17 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 
 	appCfg := DefaultTestConfig()
 
-	slackServer := NewTestSlackServer()
+	slackServer := NewTestSlackServer("127.0.0.1", SlackTestServerPort)
 
-	pagerdutyServer := NewTestPagerDutyServer()
+	pagerdutyServer := NewTestPagerDutyServer("127.0.0.1", PagerDutyTestPort)
 
 	appCfg.AlertConfig.RoutingCfgPath = "alert-routing-cfg.yaml"
-	appCfg.AlertConfig.PagerdutyAlertEventsURL = pagerdutyServer.Server.URL
+	appCfg.AlertConfig.PagerdutyAlertEventsURL = fmt.Sprintf("http://127.0.0.1:%d", PagerDutyTestPort)
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	UpdateSlackUrls(appCfg.AlertConfig, slackServer.Server.URL)
 
 	if err := pess.Start(); err != nil {
 		t.Fatal(err)
@@ -99,6 +103,8 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 		Close: func() {
 			kill()
 			node.Close()
+			slackServer.Close()
+			pagerdutyServer.Close()
 		},
 		AppCfg:              appCfg,
 		TestSlackSvr:        slackServer,
@@ -130,19 +136,17 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 
 	appCfg := DefaultTestConfig()
 
-	slackServer := NewTestSlackServer()
+	slackServer := NewTestSlackServer("127.0.0.1", SlackTestServerPort)
 
-	pagerdutyServer := NewTestPagerDutyServer()
+	pagerdutyServer := NewTestPagerDutyServer("127.0.0.1", PagerDutyTestPort)
 
 	appCfg.AlertConfig.RoutingCfgPath = "alert-routing-cfg.yaml"
-	appCfg.AlertConfig.PagerdutyAlertEventsURL = pagerdutyServer.Server.URL
+	appCfg.AlertConfig.PagerdutyAlertEventsURL = fmt.Sprintf("http://127.0.0.1:%d", PagerDutyTestPort)
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	UpdateSlackUrls(appCfg.AlertConfig, slackServer.Server.URL)
 
 	if err := pess.Start(); err != nil {
 		t.Fatal(err)
@@ -160,6 +164,8 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 		Close: func() {
 			kill()
 			sys.Close()
+			slackServer.Close()
+			pagerdutyServer.Close()
 		},
 		AppCfg:              appCfg,
 		TestSlackSvr:        slackServer,
@@ -221,19 +227,5 @@ func WaitForTransaction(hash common.Hash, client *ethclient.Client, timeout time
 			return nil, errors.New("timeout")
 		case <-ticker.C:
 		}
-	}
-}
-
-func UpdateSlackUrls(cfg *alert.Config, url string) {
-	for i := range cfg.RoutingParams.AlertRoutes.High.Slack {
-		cfg.RoutingParams.AlertRoutes.High.Slack[i].URL = url
-	}
-
-	for i := range cfg.RoutingParams.AlertRoutes.Medium.Slack {
-		cfg.RoutingParams.AlertRoutes.Medium.Slack[i].URL = url
-	}
-
-	for i := range cfg.RoutingParams.AlertRoutes.Low.Slack {
-		cfg.RoutingParams.AlertRoutes.Low.Slack[i].URL = url
 	}
 }

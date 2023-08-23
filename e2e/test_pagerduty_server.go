@@ -2,6 +2,8 @@ package e2e
 
 import (
 	"encoding/json"
+	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -19,21 +21,32 @@ type TestPagerDutyServer struct {
 }
 
 // NewTestPagerDutyServer ... Creates a new mock pagerduty server
-func NewTestPagerDutyServer() *TestPagerDutyServer {
-	ts := &TestPagerDutyServer{
+func NewTestPagerDutyServer(url string, port int) *TestPagerDutyServer { //nolint:dupl //This will be addressed
+	l, err := net.Listen("tcp", fmt.Sprintf("%s:%d", url, port))
+	if err != nil {
+		panic(err)
+	}
+
+	pds := &TestPagerDutyServer{
 		Payloads: []*client.PagerDutyRequest{},
 	}
 
-	ts.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	pds.Server = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimSpace(r.URL.Path) {
 		case "/":
-			ts.mockPagerDutyPost(w, r)
+			pds.mockPagerDutyPost(w, r)
 		default:
 			http.NotFoundHandler().ServeHTTP(w, r)
 		}
 	}))
 
-	return ts
+	pds.Server.Listener.Close()
+	pds.Server.Listener = l
+	pds.Server.Start()
+
+	logging.NoContext().Info("Test pagerduty server started", zap.String("url", url), zap.Int("port", port))
+
+	return pds
 }
 
 // Close ... Closes the server

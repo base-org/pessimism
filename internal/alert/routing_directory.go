@@ -7,6 +7,7 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 )
 
+// RoutingDirectory ... Interface for routing directory
 type RoutingDirectory interface {
 	GetPagerDutyClients(sev core.Severity) []client.PagerDutyClient
 	GetSlackClients(sev core.Severity) []client.SlackClient
@@ -15,12 +16,16 @@ type RoutingDirectory interface {
 	SetSlackClients([]client.SlackClient, core.Severity)
 }
 
+// routingDirectory ... Routing directory implementation
+// NOTE: This implementation works for now, but if we add more routing clients in the future,
+// we should consider refactoring this to be more generic
 type routingDirectory struct {
 	pagerDutyClients map[core.Severity][]client.PagerDutyClient
 	slackClients     map[core.Severity][]client.SlackClient
 	cfg              *Config
 }
 
+// NewRoutingDirectory ... Instantiates a new routing directory
 func NewRoutingDirectory(cfg *Config) RoutingDirectory {
 	return &routingDirectory{
 		cfg:              cfg,
@@ -39,10 +44,12 @@ func (rd *routingDirectory) GetSlackClients(sev core.Severity) []client.SlackCli
 	return rd.slackClients[sev]
 }
 
+// SetSlackClients ... Sets the slack clients for the given severity level
 func (rd *routingDirectory) SetSlackClients(clients []client.SlackClient, sev core.Severity) {
 	copy(rd.slackClients[sev][0:], clients)
 }
 
+// SetPagerDutyClients ... Sets the pager duty clients for the given severity level
 func (rd *routingDirectory) SetPagerDutyClients(clients []client.PagerDutyClient, sev core.Severity) {
 	copy(rd.pagerDutyClients[sev][0:], clients)
 }
