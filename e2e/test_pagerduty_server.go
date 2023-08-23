@@ -47,14 +47,14 @@ func (svr *TestPagerDutyServer) mockPagerDutyPost(w http.ResponseWriter, r *http
 
 	if err := json.NewDecoder(r.Body).Decode(&alert); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(`{"status":false, "message":"could not decode pagerduty payload"}`))
+		_, _ = w.Write([]byte(`{"status":"failure"", "message":"could not decode pagerduty payload"}`))
 		return
 	}
 
 	svr.Payloads = append(svr.Payloads, alert)
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status":success, "message":""}`))
+	_, _ = w.Write([]byte(`{"status":"success", "message":""}`))
 }
 
 // PagerDutyAlerts ... Returns the pagerduty alerts

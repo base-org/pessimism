@@ -5,24 +5,12 @@ import (
 	"testing"
 
 	"github.com/base-org/pessimism/internal/alert"
-	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_Store(t *testing.T) {
-
-	cfg := &config.Config{
-		AlertConfig: &alert.Config{
-			RoutingCfgPath:          "test_data/alert-routing-test.yaml",
-			PagerdutyAlertEventsURL: "test",
-		},
-	}
-
-	err := cfg.ParseAlertConfig()
-	assert.Nil(t, err, fmt.Sprintf("failed to parse alert config: %v", err))
-
 	var tests = []struct {
 		name        string
 		description string

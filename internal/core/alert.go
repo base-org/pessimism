@@ -65,12 +65,7 @@ func (s Severity) String() string {
 	}
 }
 
-// ToPagerDutySev ... Converts a severity to a pagerduty severity
-// This mapping is opinionated as follows:
-//   - LOW -> Warning
-//   - MEDIUM -> Error
-//   - HIGH -> Critical
-//   - UNKNOWN -> Error
+// ToPagerDutySev ... Converts a severity to a pagerduty severity. See docs/alert-routing.md for more on this
 func (s Severity) ToPagerDutySev() PagerDutySeverity {
 	switch s {
 	case LOW:

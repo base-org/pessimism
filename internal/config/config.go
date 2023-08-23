@@ -104,14 +104,14 @@ func (cfg *Config) ParseAlertConfig() error {
 		return err
 	}
 
-	d := &core.AlertRoutingParams{}
-	err = yaml.Unmarshal(f, &d)
+	params := &core.AlertRoutingParams{}
+	err = yaml.Unmarshal(f, &params)
 
 	if err != nil {
 		return err
 	}
 
-	cfg.AlertConfig.AlertRoutingParams = d
+	cfg.AlertConfig.RoutingParams = params
 	return nil
 }
 

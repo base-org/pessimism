@@ -64,15 +64,15 @@ func (mr *MockClientMapMockRecorder) GetSlackClients(arg0 interface{}) *gomock.C
 }
 
 // InitAlertClients mocks base method.
-func (m *MockClientMap) InitAlertClients(arg0 *core.AlertRoutingParams) {
+func (m *MockClientMap) InitializeRouting(arg0 *core.AlertRoutingParams) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InitAlertClients", arg0)
+	m.ctrl.Call(m, "InitializeRouting", arg0)
 }
 
 // InitAlertClients indicates an expected call of InitAlertClients.
 func (mr *MockClientMapMockRecorder) InitAlertClients(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitAlertClients", reflect.TypeOf((*MockClientMap)(nil).InitAlertClients), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitializeRouting", reflect.TypeOf((*MockClientMap)(nil).InitializeRouting), arg0)
 }
 
 // SetPagerDutyClients mocks base method.

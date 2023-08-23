@@ -38,7 +38,7 @@ func Test_EventLoop(t *testing.T) {
 			name:        "Test Low sev",
 			description: "Test low sev alert sends to slack",
 			test: func(t *testing.T) {
-				cm := alert.NewClientMap(cfg.AlertConfig)
+				cm := alert.NewRoutingDirectory(cfg.AlertConfig)
 				am := alert.NewManager(ctx, cfg.AlertConfig, cm)
 
 				go func() {
@@ -92,7 +92,7 @@ func Test_EventLoop(t *testing.T) {
 			name:        "Test Medium sev",
 			description: "Test medium sev alert sends to just PagerDuty",
 			test: func(t *testing.T) {
-				cm := alert.NewClientMap(cfg.AlertConfig)
+				cm := alert.NewRoutingDirectory(cfg.AlertConfig)
 				am := alert.NewManager(ctx, cfg.AlertConfig, cm)
 
 				go func() {
@@ -146,7 +146,7 @@ func Test_EventLoop(t *testing.T) {
 			name:        "Test High sev",
 			description: "Test high sev alert sends to both slack and PagerDuty",
 			test: func(t *testing.T) {
-				cm := alert.NewClientMap(cfg.AlertConfig)
+				cm := alert.NewRoutingDirectory(cfg.AlertConfig)
 				am := alert.NewManager(ctx, cfg.AlertConfig, cm)
 
 				go func() {

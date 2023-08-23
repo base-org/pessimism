@@ -48,7 +48,7 @@ func Test_Balance_Enforcement(t *testing.T) {
 		StartHeight:   nil,
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
-			Sev: core.HIGH.String(),
+			Sev: core.MEDIUM.String(),
 			Msg: alertMsg,
 		},
 		SessionParams: map[string]interface{}{
@@ -97,8 +97,8 @@ func Test_Balance_Enforcement(t *testing.T) {
 	// Check that the balance enforcement was triggered using the mocked server cache.
 	posts := ts.TestPagerDutyServer.PagerDutyAlerts()
 	slackPosts := ts.TestSlackSvr.SlackAlerts()
-	assert.Greater(t, len(slackPosts), 0, "No balance enforcement alert was sent")
-	assert.Greater(t, len(posts), 0, "No balance enforcement alert was sent")
+	assert.Greater(t, len(slackPosts), 1, "No balance enforcement alert was sent")
+	assert.Greater(t, len(posts), 1, "No balance enforcement alert was sent")
 	assert.Contains(t, posts[0].Payload.Summary, "balance_enforcement", "Balance enforcement alert was not sent")
 
 	// Get Bobs's balance.
@@ -202,7 +202,7 @@ func Test_Balance_Enforce_With_CoolDown(t *testing.T) {
 	// Check that the balance enforcement was triggered using the mocked server cache.
 	posts := ts.TestSlackSvr.SlackAlerts()
 
-	// assert.Equal(t, 1, len(posts), "No balance enforcement alert was sent")
+	assert.Equal(t, 1, len(posts), "No balance enforcement alert was sent")
 	assert.Contains(t, posts[0].Text, "balance_enforcement", "Balance enforcement alert was not sent")
 	assert.Contains(t, posts[0].Text, alertMsg)
 
@@ -273,6 +273,66 @@ func Test_Contract_Event(t *testing.T) {
 	assert.Equal(t, len(posts), 1, "No system contract event alert was sent")
 	assert.Contains(t, posts[0].Text, "contract_event", "System contract event alert was not sent")
 	assert.Contains(t, posts[0].Text, alertMsg, "System contract event message was not propagated")
+}
+
+// Test_Withdrawal_Enforcement ... Tests the E2E flow of a contract event heuristic with high priority alerts all
+// necessary destinations
+func Test_Contract_Event_High_Priority(t *testing.T) {
+
+	ts := e2e.CreateSysTestSuite(t)
+	defer ts.Close()
+
+	l1Client := ts.Sys.Clients["l1"]
+
+	updateSig := "ConfigUpdate(uint256,uint8,bytes)"
+	alertMsg := "System config gas config updated"
+
+	err := ts.App.BootStrap([]*models.SessionRequestParams{{
+		Network:       core.Layer1.String(),
+		PType:         core.Live.String(),
+		HeuristicType: core.ContractEvent.String(),
+		StartHeight:   nil,
+		EndHeight:     nil,
+		AlertingParams: &core.AlertPolicy{
+			Msg: alertMsg,
+			Sev: core.HIGH.String(),
+		},
+		SessionParams: map[string]interface{}{
+			"address": predeploys.DevSystemConfigAddr.String(),
+			"args":    []interface{}{updateSig},
+		},
+	}})
+
+	assert.NoError(t, err, "Error bootstrapping heuristic session")
+
+	sysCfg, err := bindings.NewSystemConfig(predeploys.DevSystemConfigAddr, l1Client)
+	assert.NoError(t, err, "Error getting system config")
+
+	opts, err := bind.NewKeyedTransactorWithChainID(ts.Cfg.Secrets.SysCfgOwner, ts.Cfg.L1ChainIDBig())
+	assert.NoError(t, err, "Error getting system config owner pk")
+
+	overhead := big.NewInt(10000)
+	scalar := big.NewInt(1)
+
+	tx, err := sysCfg.SetGasConfig(opts, overhead, scalar)
+	assert.NoError(t, err, "Error setting gas config")
+
+	txTimeoutDuration := 10 * time.Duration(ts.Cfg.DeployConfig.L1BlockTime) * time.Second
+	receipt, err := e2e.WaitForTransaction(tx.Hash(), l1Client, txTimeoutDuration)
+
+	assert.NoError(t, err, "Error waiting for transaction")
+	assert.Equal(t, receipt.Status, types.ReceiptStatusSuccessful, "transaction failed")
+
+	time.Sleep(3 * time.Second)
+	slackPosts := ts.TestSlackSvr.SlackAlerts()
+	pdPosts := ts.TestPagerDutyServer.PagerDutyAlerts()
+
+	assert.Equal(t, 2, len(slackPosts), "Incorrect Number of slack posts sent")
+	assert.Equal(t, 2, len(pdPosts), "Incorrect Number of pagerduty posts sent")
+	assert.Contains(t, slackPosts[0].Text, "contract_event", "System contract event alert was not sent")
+	assert.Contains(t, slackPosts[1].Text, "contract_event", "System contract event alert was not sent")
+	assert.Contains(t, pdPosts[0].Payload.Summary, "contract_event", "System contract event alert was not sent")
+	assert.Contains(t, pdPosts[1].Payload.Summary, "contract_event", "System contract event alert was not sent")
 }
 
 // TestAccount defines an account for testing.

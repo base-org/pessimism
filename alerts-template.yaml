@@ -21,7 +21,7 @@ alertRoutes:
         url: ""
         channel: ""
     pagerduty:
-      config:
+      high_priority:
         integration_key: ""
-      config_2:
+      med_priority_oncall:
         integration_key: ""

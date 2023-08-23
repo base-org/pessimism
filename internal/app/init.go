@@ -78,7 +78,7 @@ func InitializeAlerting(ctx context.Context, cfg *config.Config) (alert.Manager,
 		return nil, err
 	}
 
-	clientMap := alert.NewClientMap(cfg.AlertConfig)
+	clientMap := alert.NewRoutingDirectory(cfg.AlertConfig)
 
 	return alert.NewManager(ctx, cfg.AlertConfig, clientMap), nil
 }

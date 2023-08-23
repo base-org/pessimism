@@ -225,15 +225,15 @@ func WaitForTransaction(hash common.Hash, client *ethclient.Client, timeout time
 }
 
 func UpdateSlackUrls(cfg *alert.Config, url string) {
-	for i := range cfg.AlertRoutingParams.AlertRoutes.High.Slack {
-		cfg.AlertRoutingParams.AlertRoutes.High.Slack[i].URL = url
+	for i := range cfg.RoutingParams.AlertRoutes.High.Slack {
+		cfg.RoutingParams.AlertRoutes.High.Slack[i].URL = url
 	}
 
-	for i := range cfg.AlertRoutingParams.AlertRoutes.Medium.Slack {
-		cfg.AlertRoutingParams.AlertRoutes.Medium.Slack[i].URL = url
+	for i := range cfg.RoutingParams.AlertRoutes.Medium.Slack {
+		cfg.RoutingParams.AlertRoutes.Medium.Slack[i].URL = url
 	}
 
-	for i := range cfg.AlertRoutingParams.AlertRoutes.Low.Slack {
-		cfg.AlertRoutingParams.AlertRoutes.Low.Slack[i].URL = url
+	for i := range cfg.RoutingParams.AlertRoutes.Low.Slack {
+		cfg.RoutingParams.AlertRoutes.Low.Slack[i].URL = url
 	}
 }

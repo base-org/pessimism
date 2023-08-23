@@ -44,7 +44,7 @@ Pessimism currently defines the following severities for alerts:
 
 ## PagerDuty Severity Mapping
 PagerDuty supports the following severities: `critical`, `error`, `warning`, and `info`.
-Pessimism maps the Pessimism severities to PagerDuty severities as follows ([ref](../internal/core/alert.go)):
+Pessimism maps the Pessimism severities to [PagerDuty severities](https://developer.pagerduty.com/docs/ZG9jOjExMDI5NTgx-send-an-alert-event) as follows ([ref](../internal/core/alert.go)):
 
 | Pessimism | PagerDuty |
 |-----------|-----------|

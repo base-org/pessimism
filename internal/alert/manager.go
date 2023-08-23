@@ -26,7 +26,7 @@ type Manager interface {
 type Config struct {
 	RoutingCfgPath          string
 	PagerdutyAlertEventsURL string
-	AlertRoutingParams      *core.AlertRoutingParams
+	RoutingParams           *core.AlertRoutingParams
 }
 
 // alertManager ... Alert manager implementation
@@ -38,7 +38,7 @@ type alertManager struct {
 	store        Store
 	interpolator Interpolator
 	cdHandler    CoolDownHandler
-	cm           ClientMap
+	cm           RoutingDirectory
 
 	logger       *zap.Logger
 	metrics      metrics.Metricer
@@ -46,7 +46,7 @@ type alertManager struct {
 }
 
 // NewManager ... Instantiates a new alert manager
-func NewManager(ctx context.Context, cfg *Config, cm ClientMap) Manager {
+func NewManager(ctx context.Context, cfg *Config, cm RoutingDirectory) Manager {
 	// NOTE - Consider constructing dependencies in higher level
 	// abstraction and passing them in
 
@@ -103,7 +103,7 @@ func (am *alertManager) handleSlackPost(alert core.Alert, policy *core.AlertPoli
 		if resp.Status != core.SuccessStatus {
 			return fmt.Errorf("could not post to slack: %s", resp.Message)
 		}
-		am.logger.Debug("Successfully posted to Slack", zap.Any("resp", resp))
+		am.logger.Debug("Successfully posted to Slack", zap.String("resp", resp.Message))
 		am.metrics.RecordAlertGenerated(alert, core.Slack)
 	}
 
@@ -145,11 +145,11 @@ func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
 func (am *alertManager) EventLoop() error {
 	ticker := time.NewTicker(time.Second * 1)
 
-	if am.cfg.AlertRoutingParams == nil {
+	if am.cfg.RoutingParams == nil {
 		am.logger.Warn("No alert routing params defined")
 	}
 
-	am.cm.InitAlertClients(am.cfg.AlertRoutingParams)
+	am.cm.InitializeRouting(am.cfg.RoutingParams)
 
 	for {
 		select {
