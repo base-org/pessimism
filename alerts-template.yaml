@@ -22,6 +22,6 @@ alertRoutes:
         channel: ""
     pagerduty:
       high_oncall:
-        integration_key: ""
+        integration_key: ${MY_INTEGRATION_KEY}
       medium_oncall:
         integration_key: ""

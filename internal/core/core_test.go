@@ -3,6 +3,8 @@ package core_test
 import (
 	"testing"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
@@ -59,4 +61,25 @@ func Test_SessionParams(t *testing.T) {
 	nestedArgs := isp.NestedArgs()
 	assert.Equal(t, nestedArgs, []interface{}{"bland(1,2,3)"}, "NestedArgs should return the correct value")
 
+}
+
+func Test_UnmarshalYaml(t *testing.T) {
+
+	type test struct {
+		TestKey  core.StringFromEnv `yaml:"test_key"`
+		TestKey2 core.StringFromEnv `yaml:"test_key2"`
+	}
+
+	t.Setenv("test_key", "test_value")
+
+	yml := []byte(`
+test_key: ${test_key}
+test_key2: "test_value2"
+`)
+
+	t1 := &test{}
+	err := yaml.Unmarshal(yml, t1)
+	assert.Nil(t, err, "Unmarshal should not return an error")
+	assert.Equal(t, "test_value", t1.TestKey.String(), "Unmarshal should return the correct value")
+	assert.Equal(t, "test_value2", t1.TestKey2.String(), "Unmarshal should return the correct value")
 }

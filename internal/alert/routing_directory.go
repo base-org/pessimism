@@ -72,8 +72,8 @@ func (rd *routingDirectory) paramsToRouteDirectory(acc *core.AlertClientCfg, sev
 	if acc.Slack != nil {
 		for name, cfg := range acc.Slack {
 			conf := &client.SlackConfig{
-				URL:     cfg.URL,
-				Channel: cfg.Channel,
+				URL:     cfg.URL.String(),
+				Channel: cfg.Channel.String(),
 			}
 			client := client.NewSlackClient(conf, name)
 			rd.slackClients[sev] = append(rd.slackClients[sev], client)
@@ -83,7 +83,7 @@ func (rd *routingDirectory) paramsToRouteDirectory(acc *core.AlertClientCfg, sev
 	if acc.PagerDuty != nil {
 		for name, cfg := range acc.PagerDuty {
 			conf := &client.PagerDutyConfig{
-				IntegrationKey: cfg.IntegrationKey,
+				IntegrationKey: cfg.IntegrationKey.String(),
 				AlertEventsURL: rd.cfg.PagerdutyAlertEventsURL,
 			}
 			client := client.NewPagerDutyClient(conf, name)

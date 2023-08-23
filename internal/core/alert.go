@@ -114,7 +114,7 @@ type AlertClientCfg struct {
 
 // Config ... The config for an alert client
 type Config struct {
-	URL            string `yaml:"url"`
-	Channel        string `yaml:"channel"`
-	IntegrationKey string `yaml:"integration_key"`
+	URL            StringFromEnv `yaml:"url"`
+	Channel        StringFromEnv `yaml:"channel"`
+	IntegrationKey StringFromEnv `yaml:"integration_key"`
 }
