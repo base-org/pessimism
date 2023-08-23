@@ -30,19 +30,21 @@ type SlackConfig struct {
 
 // slackClient ... Slack client
 type slackClient struct {
+	name    string
 	url     string
 	channel string
 	client  *http.Client
 }
 
 // NewSlackClient ... Initializer
-func NewSlackClient(cfg *SlackConfig) SlackClient {
+func NewSlackClient(cfg *SlackConfig, name string) SlackClient {
 	if cfg.URL == "" {
 		logging.NoContext().Warn("No Slack webhook URL not provided")
 	}
 
 	return &slackClient{
-		url: cfg.URL,
+		url:  cfg.URL,
+		name: name,
 		// NOTE - This is a default client, we can add more configuration to it
 		// when necessary
 		channel: cfg.Channel,
@@ -130,4 +132,9 @@ func (sc slackClient) PostEvent(ctx context.Context, event *AlertEventTrigger) (
 	}
 
 	return apiResp.ToAlertResponse(), nil
+}
+
+// GetName ... returns the name of the slack client
+func (sc slackClient) GetName() string {
+	return sc.name
 }

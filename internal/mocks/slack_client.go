@@ -35,6 +35,20 @@ func (m *MockSlackClient) EXPECT() *MockSlackClientMockRecorder {
 	return m.recorder
 }
 
+// GetName mocks base method.
+func (m *MockSlackClient) GetName() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetName")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetName indicates an expected call of GetName.
+func (mr *MockSlackClientMockRecorder) GetName() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetName", reflect.TypeOf((*MockSlackClient)(nil).GetName))
+}
+
 // PostEvent mocks base method.
 func (m *MockSlackClient) PostEvent(arg0 context.Context, arg1 *client.AlertEventTrigger) (*client.AlertAPIResponse, error) {
 	m.ctrl.T.Helper()

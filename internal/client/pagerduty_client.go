@@ -40,6 +40,7 @@ type PagerDutyConfig struct {
 
 // pagerdutyClient ... PagerDuty client for making requests
 type pagerdutyClient struct {
+	name            string
 	integrationKey  string
 	changeEventsURL string
 	alertEventsURL  string
@@ -47,12 +48,13 @@ type pagerdutyClient struct {
 }
 
 // NewPagerDutyClient ... Initializer for PagerDuty client
-func NewPagerDutyClient(cfg *PagerDutyConfig) PagerDutyClient {
+func NewPagerDutyClient(cfg *PagerDutyConfig, name string) PagerDutyClient {
 	if cfg.IntegrationKey == "" {
 		logging.NoContext().Warn("No PagerDuty integration key provided")
 	}
 
 	return &pagerdutyClient{
+		name:            name,
 		integrationKey:  cfg.IntegrationKey,
 		changeEventsURL: cfg.ChangeEventsURL,
 		alertEventsURL:  cfg.AlertEventsURL,
@@ -129,7 +131,7 @@ func (p *PagerDutyAPIResponse) ToAlertResponse() *AlertAPIResponse {
 }
 
 // PostEvent ... Posts a new event to PagerDuty
-func (pdc pagerdutyClient) PostEvent(ctx context.Context, event *AlertEventTrigger) (*AlertAPIResponse, error) {
+func (pdc *pagerdutyClient) PostEvent(ctx context.Context, event *AlertEventTrigger) (*AlertAPIResponse, error) {
 	// 1. Create and marshal payload into request object body
 
 	if pdc.integrationKey == "" {
@@ -171,4 +173,9 @@ func (pdc pagerdutyClient) PostEvent(ctx context.Context, event *AlertEventTrigg
 	}
 
 	return apiResp.ToAlertResponse(), nil
+}
+
+// GetName ... Returns the name of the PagerDuty client
+func (pdc *pagerdutyClient) GetName() string {
+	return pdc.name
 }

@@ -11,6 +11,7 @@ import (
 // AlertClient ... An interface for alert clients to implement
 type AlertClient interface {
 	PostEvent(ctx context.Context, data *AlertEventTrigger) (*AlertAPIResponse, error)
+	GetName() string
 }
 
 // AlertEventTrigger ... A standardized event trigger for alert clients

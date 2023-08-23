@@ -101,10 +101,10 @@ func (am *alertManager) handleSlackPost(alert core.Alert, policy *core.AlertPoli
 		}
 
 		if resp.Status != core.SuccessStatus {
-			return fmt.Errorf("could not post to slack: %s", resp.Message)
+			return fmt.Errorf("client %s could not post to slack: %s", sc.GetName(), resp.Message)
 		}
 		am.logger.Debug("Successfully posted to Slack", zap.String("resp", resp.Message))
-		am.metrics.RecordAlertGenerated(alert, core.Slack)
+		am.metrics.RecordAlertGenerated(alert, core.Slack, sc.GetName())
 	}
 
 	return nil
@@ -132,10 +132,11 @@ func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
 		}
 
 		if resp.Status != core.SuccessStatus {
-			return fmt.Errorf("could not post to pagerduty: %s", resp.Message)
+			return fmt.Errorf("client %s could not post to pagerduty: %s", pdc.GetName(), resp.Message)
 		}
-		am.logger.Debug("Successfully posted to Slack", zap.Any("resp", resp))
-		am.metrics.RecordAlertGenerated(alert, core.PagerDuty)
+
+		am.logger.Debug("Successfully posted to ", zap.Any("resp", resp))
+		am.metrics.RecordAlertGenerated(alert, core.PagerDuty, pdc.GetName())
 	}
 
 	return nil

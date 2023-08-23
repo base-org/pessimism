@@ -8,7 +8,7 @@ alertRoutes:
 
   medium:
     slack:
-      config:
+      medium_priority_oncall:
         url: ""
         channel: ""
     pagerduty:
