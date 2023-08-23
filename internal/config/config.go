@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -98,7 +99,12 @@ func (cfg *Config) IsBootstrap() bool {
 	return cfg.BootStrapPath != ""
 }
 
+// ParseAlertConfig ... Parses the alert config
 func (cfg *Config) ParseAlertConfig() error {
+	if cfg.AlertConfig.RoutingCfgPath == "" {
+		return fmt.Errorf("alert routing config path is empty")
+	}
+
 	f, err := os.ReadFile(filepath.Clean(cfg.AlertConfig.RoutingCfgPath))
 	if err != nil {
 		return err
