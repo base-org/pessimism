@@ -40,7 +40,10 @@ func NewTestPagerDutyServer(url string, port int) *TestPagerDutyServer { //nolin
 		}
 	}))
 
-	pds.Server.Listener.Close()
+	err = pds.Server.Listener.Close()
+	if err != nil {
+		panic(err)
+	}
 	pds.Server.Listener = l
 	pds.Server.Start()
 

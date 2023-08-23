@@ -40,7 +40,10 @@ func NewTestSlackServer(url string, port int) *TestSlackServer { //nolint:dupl /
 		}
 	}))
 
-	ss.Server.Listener.Close()
+	err = ss.Server.Listener.Close()
+	if err != nil {
+		panic(err)
+	}
 	ss.Server.Listener = l
 	ss.Server.Start()
 
