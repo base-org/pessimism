@@ -51,7 +51,7 @@ type Metrics struct {
 	ActivePipelines  *prometheus.GaugeVec
 	ActiveHeuristics *prometheus.GaugeVec
 	HeuristicRuns    *prometheus.CounterVec
-	AlertsGenerated  *prometheus.GaugeVec
+	AlertsGenerated  *prometheus.CounterVec
 	NodeErrors       *prometheus.CounterVec
 	BlockLatency     *prometheus.GaugeVec
 	PipelineLatency  *prometheus.GaugeVec
@@ -113,8 +113,8 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 			Subsystem: SubsystemHeuristics,
 		}, []string{"network", "heuristic"}),
 
-		AlertsGenerated: factory.NewGaugeVec(prometheus.GaugeOpts{
-			Name:      "alerts_generated",
+		AlertsGenerated: factory.NewCounterVec(prometheus.CounterOpts{
+			Name:      "alerts_generated_total",
 			Help:      "Number of total alerts generated for a given heuristic",
 			Namespace: metricsNamespace,
 		}, []string{"network", "heuristic", "pipeline", "severity", "destination", "client_name"}),
