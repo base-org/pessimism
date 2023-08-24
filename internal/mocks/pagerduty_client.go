@@ -35,11 +35,25 @@ func (m *MockPagerDutyClient) EXPECT() *MockPagerDutyClientMockRecorder {
 	return m.recorder
 }
 
+// GetName mocks base method.
+func (m *MockPagerDutyClient) GetName() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetName")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetName indicates an expected call of GetName.
+func (mr *MockPagerDutyClientMockRecorder) GetName() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetName", reflect.TypeOf((*MockPagerDutyClient)(nil).GetName))
+}
+
 // PostEvent mocks base method.
-func (m *MockPagerDutyClient) PostEvent(arg0 context.Context, arg1 *client.PagerDutyEventTrigger) (*client.PagerDutyAPIResponse, error) {
+func (m *MockPagerDutyClient) PostEvent(arg0 context.Context, arg1 *client.AlertEventTrigger) (*client.AlertAPIResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PostEvent", arg0, arg1)
-	ret0, _ := ret[0].(*client.PagerDutyAPIResponse)
+	ret0, _ := ret[0].(*client.AlertAPIResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

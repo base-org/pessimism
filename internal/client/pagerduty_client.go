@@ -6,39 +6,29 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
 
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
 
 	"go.uber.org/zap"
 )
 
-// PagerDutyAction represents the type of actions that can be triggered by an event
+type PagerDutyClient interface {
+	AlertClient
+}
+
 type PagerDutyAction string
 
 const (
-	Trigger                PagerDutyAction = "trigger"
-	PagerDutyAckAction     PagerDutyAction = "acknowledge"
-	PagerDutyResolveAction PagerDutyAction = "resolve"
+	Trigger PagerDutyAction = "trigger"
 )
 
-// PagerDutySeverity represents the severity of an event
-type PagerDutySeverity string
-
 const (
-	Critical PagerDutySeverity = "critical"
-	Error    PagerDutySeverity = "error"
-	Warning  PagerDutySeverity = "warning"
-	Info     PagerDutySeverity = "info"
-)
-
-// PagerDutyResponseStatus is the response status of a PagerDuty API call
-type PagerDutyResponseStatus string
-
-const (
-	SuccessStatus PagerDutyResponseStatus = "success"
+	Source = "pessimism"
 )
 
 // PagerDutyConfig ... Represents the configuration vars for a PagerDuty client
@@ -48,13 +38,9 @@ type PagerDutyConfig struct {
 	AlertEventsURL  string
 }
 
-// PagerDutyClient ... Interface for PagerDuty client
-type PagerDutyClient interface {
-	PostEvent(ctx context.Context, event *PagerDutyEventTrigger) (*PagerDutyAPIResponse, error)
-}
-
 // pagerdutyClient ... PagerDuty client for making requests
 type pagerdutyClient struct {
+	name            string
 	integrationKey  string
 	changeEventsURL string
 	alertEventsURL  string
@@ -62,12 +48,13 @@ type pagerdutyClient struct {
 }
 
 // NewPagerDutyClient ... Initializer for PagerDuty client
-func NewPagerDutyClient(cfg *PagerDutyConfig) PagerDutyClient {
+func NewPagerDutyClient(cfg *PagerDutyConfig, name string) PagerDutyClient {
 	if cfg.IntegrationKey == "" {
 		logging.NoContext().Warn("No PagerDuty integration key provided")
 	}
 
 	return &pagerdutyClient{
+		name:            name,
 		integrationKey:  cfg.IntegrationKey,
 		changeEventsURL: cfg.ChangeEventsURL,
 		alertEventsURL:  cfg.AlertEventsURL,
@@ -78,36 +65,35 @@ func NewPagerDutyClient(cfg *PagerDutyConfig) PagerDutyClient {
 // PagerDutyEventTrigger ... Represents caller specified fields for a PagerDuty event
 type PagerDutyEventTrigger struct {
 	Message  string
-	Action   PagerDutyAction
-	Severity PagerDutySeverity
+	Severity core.PagerDutySeverity
 	DedupKey string
 }
 
 // PagerDutyRequest ... Used to construct a PagerDuty api request
 type PagerDutyRequest struct {
 	RoutingKey  string           `json:"routing_key"`
-	EventAction PagerDutyAction  `json:"event_action"`
 	DedupKey    string           `json:"dedup_key"`
 	Payload     PagerDutyPayload `json:"payload"`
+	EventAction PagerDutyAction  `json:"event_action"`
 }
 
 // PagerDutyPayload ... Represents the payload of a PagerDuty event
 type PagerDutyPayload struct {
-	Summary   string            `json:"summary"`
-	Source    string            `json:"source"`
-	Severity  PagerDutySeverity `json:"severity"`
-	Timestamp time.Time         `json:"timestamp"`
+	Summary   string                 `json:"summary"`
+	Source    string                 `json:"source"`
+	Severity  core.PagerDutySeverity `json:"severity"`
+	Timestamp time.Time              `json:"timestamp"`
 }
 
 // newPagerDutyPayload ... Initializes a new PagerDuty payload given the integration key and event
 func newPagerDutyPayload(integrationKey string, event *PagerDutyEventTrigger) *PagerDutyRequest {
 	return &PagerDutyRequest{
 		RoutingKey:  integrationKey,
-		EventAction: event.Action,
+		EventAction: Trigger,
 		DedupKey:    event.DedupKey,
 		Payload: PagerDutyPayload{
 			Summary:   event.Message,
-			Source:    "Pessimism",
+			Source:    Source,
 			Severity:  event.Severity,
 			Timestamp: time.Now(),
 		},
@@ -126,16 +112,33 @@ func (req *PagerDutyRequest) marshal() ([]byte, error) {
 
 // PagerDutyAPIResponse ... Represents the structure of a PagerDuty API response
 type PagerDutyAPIResponse struct {
-	Status   string `json:"status"`
-	Message  string `json:"message"`
-	DedupKey string `json:"dedup_key"`
+	Status   core.AlertStatus `json:"status"`
+	Message  string           `json:"message"`
+	DedupKey string           `json:"dedup_key"`
+}
+
+// ToAlertResponse ... Converts a PagerDuty API response to an AlertAPIResponse
+func (p *PagerDutyAPIResponse) ToAlertResponse() *AlertAPIResponse {
+	status := core.SuccessStatus
+	if p.Status != core.SuccessStatus {
+		status = core.FailureStatus
+	}
+
+	return &AlertAPIResponse{
+		Status:  status,
+		Message: p.Message,
+	}
 }
 
 // PostEvent ... Posts a new event to PagerDuty
-func (pdc pagerdutyClient) PostEvent(ctx context.Context, event *PagerDutyEventTrigger) (*PagerDutyAPIResponse, error) {
+func (pdc *pagerdutyClient) PostEvent(ctx context.Context, event *AlertEventTrigger) (*AlertAPIResponse, error) {
 	// 1. Create and marshal payload into request object body
 
-	payload, err := newPagerDutyPayload(pdc.integrationKey, event).marshal()
+	if pdc.integrationKey == "" {
+		return nil, fmt.Errorf("no Pagerduty integration key provided")
+	}
+
+	payload, err := newPagerDutyPayload(pdc.integrationKey, event.ToPagerdutyEvent()).marshal()
 	if err != nil {
 		return nil, err
 	}
@@ -155,6 +158,9 @@ func (pdc pagerdutyClient) PostEvent(ctx context.Context, event *PagerDutyEventT
 				zap.Error(err))
 		}
 	}()
+	if err != nil {
+		return nil, err
+	}
 
 	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -166,5 +172,10 @@ func (pdc pagerdutyClient) PostEvent(ctx context.Context, event *PagerDutyEventT
 		return nil, err
 	}
 
-	return apiResp, nil
+	return apiResp.ToAlertResponse(), nil
+}
+
+// GetName ... Returns the name of the PagerDuty client
+func (pdc *pagerdutyClient) GetName() string {
+	return pdc.name
 }

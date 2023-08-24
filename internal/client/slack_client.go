@@ -12,35 +12,39 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/base-org/pessimism/internal/logging"
 	"go.uber.org/zap"
+
+	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/logging"
 )
 
-type SlackConfig struct {
-	Channel string
-	URL     string
+type SlackClient interface {
+	AlertClient
 }
 
-// SlackClient ... Interface for slack client
-type SlackClient interface {
-	PostData(context.Context, string) (*SlackAPIResponse, error)
+type SlackConfig struct {
+	Channel  string
+	URL      string
+	Priority string
 }
 
 // slackClient ... Slack client
 type slackClient struct {
+	name    string
 	url     string
 	channel string
 	client  *http.Client
 }
 
 // NewSlackClient ... Initializer
-func NewSlackClient(cfg *SlackConfig) SlackClient {
+func NewSlackClient(cfg *SlackConfig, name string) SlackClient {
 	if cfg.URL == "" {
 		logging.NoContext().Warn("No Slack webhook URL not provided")
 	}
 
 	return &slackClient{
-		url: cfg.URL,
+		url:  cfg.URL,
+		name: name,
 		// NOTE - This is a default client, we can add more configuration to it
 		// when necessary
 		channel: cfg.Channel,
@@ -48,7 +52,7 @@ func NewSlackClient(cfg *SlackConfig) SlackClient {
 	}
 }
 
-// slackPayload represents the structure of a slack alert
+// SlackPayload represents the structure of a slack alert
 type SlackPayload struct {
 	Text    interface{} `json:"text"`
 	Channel string      `json:"channel"`
@@ -71,14 +75,27 @@ func (sp *SlackPayload) marshal() ([]byte, error) {
 
 // SlackAPIResponse ... represents the structure of a slack API response
 type SlackAPIResponse struct {
-	Ok  bool   `json:"ok"`
-	Err string `json:"error"`
+	Message string `json:"message"`
+	Err     string `json:"error"`
 }
 
-// PostAlert ... handles posting data to slack
-func (sc slackClient) PostData(ctx context.Context, str string) (*SlackAPIResponse, error) {
+// ToAlertResponse ... Converts a slack API response to an alert API response
+func (a *SlackAPIResponse) ToAlertResponse() *AlertAPIResponse {
+	status := core.SuccessStatus
+	if a.Message != "ok" {
+		status = core.FailureStatus
+	}
+
+	return &AlertAPIResponse{
+		Status:  status,
+		Message: a.Err,
+	}
+}
+
+// PostEvent ... handles posting an event to slack
+func (sc slackClient) PostEvent(ctx context.Context, event *AlertEventTrigger) (*AlertAPIResponse, error) {
 	// 1. make & marshal payload into request object body
-	payload, err := newSlackPayload(str, sc.channel).marshal()
+	payload, err := newSlackPayload(event.Message, sc.channel).marshal()
 	if err != nil {
 		return nil, err
 	}
@@ -114,5 +131,10 @@ func (sc slackClient) PostData(ctx context.Context, str string) (*SlackAPIRespon
 		return nil, err
 	}
 
-	return apiResp, err
+	return apiResp.ToAlertResponse(), nil
+}
+
+// GetName ... returns the name of the slack client
+func (sc slackClient) GetName() string {
+	return sc.name
 }

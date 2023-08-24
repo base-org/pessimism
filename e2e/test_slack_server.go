@@ -2,11 +2,16 @@ package e2e
 
 import (
 	"encoding/json"
+	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 
+	"go.uber.org/zap"
+
 	"github.com/base-org/pessimism/internal/client"
+	"github.com/base-org/pessimism/internal/logging"
 )
 
 // TestSlackServer ... Mock server for testing slack alerts
@@ -16,21 +21,35 @@ type TestSlackServer struct {
 }
 
 // NewTestSlackServer ... Creates a new mock slack server
-func NewTestSlackServer() *TestSlackServer {
-	ts := &TestSlackServer{
+func NewTestSlackServer(url string, port int) *TestSlackServer { //nolint:dupl //This will be addressed
+	l, err := net.Listen("tcp", fmt.Sprintf("%s:%d", url, port))
+	if err != nil {
+		panic(err)
+	}
+
+	ss := &TestSlackServer{
 		Payloads: []*client.SlackPayload{},
 	}
 
-	ts.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ss.Server = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimSpace(r.URL.Path) {
 		case "/":
-			ts.mockSlackPost(w, r)
+			ss.mockSlackPost(w, r)
 		default:
 			http.NotFoundHandler().ServeHTTP(w, r)
 		}
 	}))
 
-	return ts
+	err = ss.Server.Listener.Close()
+	if err != nil {
+		panic(err)
+	}
+	ss.Server.Listener = l
+	ss.Server.Start()
+
+	logging.NoContext().Info("Test slack server started", zap.String("url", url), zap.Int("port", port))
+
+	return ss
 }
 
 // Close ... Closes the server
@@ -44,14 +63,14 @@ func (svr *TestSlackServer) mockSlackPost(w http.ResponseWriter, r *http.Request
 
 	if err := json.NewDecoder(r.Body).Decode(&alert); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(`{"ok":false, "error":"could not decode slack payload"}`))
+		_, _ = w.Write([]byte(`{"message":"", "error":"could not decode slack payload"}`))
 		return
 	}
 
 	svr.Payloads = append(svr.Payloads, alert)
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"ok":true, "error":""}`))
+	_, _ = w.Write([]byte(`{"message":"ok", "error":""}`))
 }
 
 // SlackAlerts ... Returns the slack alerts

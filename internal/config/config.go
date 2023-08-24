@@ -1,13 +1,14 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 
 	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/server"
-	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v3"
 )
 
 // TrueEnvVal ... Represents the encoded string value for true (ie. 1)
@@ -48,21 +50,8 @@ func NewConfig(fileName core.FilePath) *Config {
 		Environment:   core.Env(getEnvStr("ENV")),
 
 		AlertConfig: &alert.Config{
-			SlackConfig: &client.SlackConfig{
-				Channel: getEnvStrWithDefault("SLACK_CHANNEL", ""),
-				URL:     getEnvStrWithDefault("SLACK_URL", ""),
-			},
-
-			HighPagerDutyCfg: &client.PagerDutyConfig{
-				AlertEventsURL:  getEnvStrWithDefault("P0_PAGERDUTY_ALERT_EVENTS_URL", ""),
-				ChangeEventsURL: getEnvStrWithDefault("P0_PAGERDUTY_CHANGE_EVENTS_URL", ""),
-				IntegrationKey:  getEnvStrWithDefault("P0_PAGERDUTY_INTEGRATION_KEY", ""),
-			},
-			MediumPagerDutyCfg: &client.PagerDutyConfig{
-				AlertEventsURL:  getEnvStrWithDefault("P1_PAGERDUTY_ALERT_EVENTS_URL", ""),
-				ChangeEventsURL: getEnvStrWithDefault("P1_PAGERDUTY_CHANGE_EVENTS_URL", ""),
-				IntegrationKey:  getEnvStrWithDefault("P1_PAGERDUTY_INTEGRATION_KEY", ""),
-			},
+			RoutingCfgPath:          getEnvStrWithDefault("ALERT_ROUTE_CFG_PATH", ""),
+			PagerdutyAlertEventsURL: getEnvStrWithDefault("PAGERDUTY_ALERT_EVENTS_URL", ""),
 		},
 
 		SystemConfig: &subsystem.Config{
@@ -110,6 +99,28 @@ func (cfg *Config) IsBootstrap() bool {
 	return cfg.BootStrapPath != ""
 }
 
+// ParseAlertConfig ... Parses the alert config
+func (cfg *Config) ParseAlertConfig() error {
+	if cfg.AlertConfig.RoutingCfgPath == "" {
+		return fmt.Errorf("alert routing config path is empty")
+	}
+
+	f, err := os.ReadFile(filepath.Clean(cfg.AlertConfig.RoutingCfgPath))
+	if err != nil {
+		return err
+	}
+
+	params := &core.AlertRoutingParams{}
+	err = yaml.Unmarshal(f, &params)
+
+	if err != nil {
+		return err
+	}
+
+	cfg.AlertConfig.RoutingParams = params
+	return nil
+}
+
 // getEnvStr ... Reads env var from process environment, panics if not found
 func getEnvStr(key string) string {
 	envVar, ok := os.LookupEnv(key)
@@ -123,7 +134,7 @@ func getEnvStr(key string) string {
 }
 
 // getEnvStrWithDefault ... Reads env var from process environment, returns default if not found
-func getEnvStrWithDefault(key string, defaultValue string) string { //nolint: unparam // empty str default ok
+func getEnvStrWithDefault(key string, defaultValue string) string {
 	envVar, ok := os.LookupEnv(key)
 
 	// Not found
