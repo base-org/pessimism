@@ -275,7 +275,7 @@ func Test_Contract_Event(t *testing.T) {
 	assert.Contains(t, posts[0].Text, alertMsg, "System contract event message was not propagated")
 }
 
-// Test_Withdrawal_Enforcement ... Tests the E2E flow of a contract event heuristic with high priority alerts all
+// Test_Contract_Event_High_Priority ... Tests the E2E flow of a contract event heuristic with high priority alerts all
 // necessary destinations
 func Test_Contract_Event_High_Priority(t *testing.T) {
 
@@ -327,6 +327,7 @@ func Test_Contract_Event_High_Priority(t *testing.T) {
 	slackPosts := ts.TestSlackSvr.SlackAlerts()
 	pdPosts := ts.TestPagerDutyServer.PagerDutyAlerts()
 
+	// Expect 2 alerts to each destination as alert-routing-cfg.yaml has two slack and two pagerduty destinations
 	assert.Equal(t, 2, len(slackPosts), "Incorrect Number of slack posts sent")
 	assert.Equal(t, 2, len(pdPosts), "Incorrect Number of pagerduty posts sent")
 	assert.Contains(t, slackPosts[0].Text, "contract_event", "System contract event alert was not sent")

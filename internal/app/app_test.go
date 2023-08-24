@@ -27,7 +27,7 @@ func Test_AppFlow(t *testing.T) {
 			Enabled: false,
 		},
 		AlertConfig: &alert.Config{
-			RoutingCfgPath:          "../alert/test_data/alert-routing-test.yaml",
+			RoutingCfgPath:          "../../e2e/alert-routing-cfg.yaml",
 			PagerdutyAlertEventsURL: "test",
 		},
 	}
