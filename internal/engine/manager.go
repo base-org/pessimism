@@ -271,26 +271,30 @@ func (em *engineManager) executeHeuristic(ctx context.Context, data core.Heurist
 	logger := logging.WithContext(ctx)
 
 	start := time.Now()
-	// Execute heuristic using risk engine and return alert if activation occurs
-	outcome, activated := em.engine.Execute(ctx, data.Input, h)
+	// 1.  Executes heuristic for outcomes using risk engine
+	outcomes, activated := em.engine.Execute(ctx, data.Input, h)
 
 	em.metrics.RecordHeuristicRun(h)
 	em.metrics.RecordInvExecutionTime(h, float64(time.Since(start).Nanoseconds()))
 
+	// 2. Send alerts if activated
 	if activated {
-		// Generate & send alert
-		alert := core.Alert{
-			Timestamp: outcome.TimeStamp,
-			SUUID:     h.SUUID(),
-			Content:   outcome.Message,
-			PUUID:     data.PUUID,
-			Ptype:     data.PUUID.PipelineType(),
+
+		for _, oc := range outcomes {
+			// Generate & send alert
+			alert := core.Alert{
+				Timestamp: oc.TimeStamp,
+				SUUID:     h.SUUID(),
+				Content:   oc.Message,
+				PUUID:     data.PUUID,
+				Ptype:     data.PUUID.PipelineType(),
+			}
+
+			logger.Warn("Heuristic alert",
+				zap.String(logging.SUUIDKey, h.SUUID().String()),
+				zap.String("message", oc.Message))
+
+			em.alertOutgress <- alert
 		}
-
-		logger.Warn("Heuristic alert",
-			zap.String(logging.SUUIDKey, h.SUUID().String()),
-			zap.String("message", outcome.Message))
-
-		em.alertOutgress <- alert
 	}
 }

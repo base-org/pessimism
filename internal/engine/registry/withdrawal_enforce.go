@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/base-org/pessimism/internal/client"
+	p_common "github.com/base-org/pessimism/internal/common"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/logging"
@@ -60,7 +61,7 @@ func NewWithdrawalEnforceInv(ctx context.Context, cfg *WithdrawalEnforceCfg) (he
 		return nil, err
 	}
 
-	withdrawalHash := crypto.Keccak256Hash([]byte(WithdrawalProvenEvent))
+	withdrawalHash := crypto.Keccak256Hash([]byte(p_common.WithdrawalProvenEvent))
 
 	addr := common.HexToAddress(cfg.L2ToL1Address)
 	addr2 := common.HexToAddress(cfg.L1PortalAddress)
@@ -87,7 +88,7 @@ func NewWithdrawalEnforceInv(ctx context.Context, cfg *WithdrawalEnforceCfg) (he
 
 // Assess ... Verifies than an L1 WithdrawalProven has a correlating hash
 // to the withdrawal storage of the L2ToL1MessagePasser
-func (wi *WithdrawalEnforceInv) Assess(td core.TransitData) (*core.Activation, bool, error) {
+func (wi *WithdrawalEnforceInv) Assess(td core.TransitData) ([]*core.Activation, bool, error) {
 	logging.NoContext().Debug("Checking activation for withdrawal enforcement heuristic",
 		zap.String("data", fmt.Sprintf("%v", td)))
 
@@ -119,11 +120,11 @@ func (wi *WithdrawalEnforceInv) Assess(td core.TransitData) (*core.Activation, b
 
 	// 4. If the withdrawal does not exist, activate
 	if !exists {
-		return &core.Activation{
+		return []*core.Activation{{
 			TimeStamp: time.Now(),
 			Message: fmt.Sprintf(withdrawalEnforceMsg,
 				wi.cfg.L1PortalAddress, wi.cfg.L2ToL1Address, wi.SUUID(), log.TxHash.Hex()),
-		}, true, nil
+		}}, true, nil
 	}
 
 	return nil, false, nil

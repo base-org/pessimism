@@ -31,6 +31,7 @@ type EthClient interface {
 
 	HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error)
 	BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error)
+	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
 
 	BalanceAt(ctx context.Context, account common.Address, number *big.Int) (*big.Int, error)
 	FilterLogs(ctx context.Context, query ethereum.FilterQuery) ([]types.Log, error)

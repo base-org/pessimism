@@ -50,7 +50,7 @@ func NewBalanceHeuristic(cfg *BalanceInvConfig) (heuristic.Heuristic, error) {
 
 // Assess ... Checks if the balance is within the bounds
 // specified in the config
-func (bi *BalanceHeuristic) Assess(td core.TransitData) (*core.Activation, bool, error) {
+func (bi *BalanceHeuristic) Assess(td core.TransitData) ([]*core.Activation, bool, error) {
 	logging.NoContext().Debug("Checking activation for balance heuristic", zap.String("data", fmt.Sprintf("%v", td)))
 
 	// 1. Validate and extract balance input
@@ -94,12 +94,12 @@ func (bi *BalanceHeuristic) Assess(td core.TransitData) (*core.Activation, bool,
 			lower = "-∞"
 		}
 
-		return &core.Activation{
+		return []*core.Activation{{
 			TimeStamp: time.Now(),
 			Message: fmt.Sprintf(reportMsg, balance,
 				upper, lower,
 				bi.SUUID(), bi.cfg.Address),
-		}, true, nil
+		}}, true, nil
 	}
 
 	// No activation

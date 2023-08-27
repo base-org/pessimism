@@ -64,6 +64,15 @@ func NewRegistry() Registry {
 				PUUID:   nil,
 			},
 		},
+		core.TxReceipt: {
+			Addressing:           false,
+			DataType:             core.TxReceipt,
+			ComponentType:        core.Pipe,
+			ComponentConstructor: pipe.NewReceiptPipe,
+
+			Dependencies: makeDeps(core.GethBlock),
+			Sk:           noState(),
+		},
 	}
 
 	return &componentRegistry{registers}

@@ -59,7 +59,7 @@ func NewEventHeuristic(cfg *EventInvConfig) heuristic.Heuristic {
 
 // Assess ... Checks if the balance is within the bounds
 // specified in the config
-func (ei *EventHeuristic) Assess(td core.TransitData) (*core.Activation, bool, error) {
+func (ei *EventHeuristic) Assess(td core.TransitData) ([]*core.Activation, bool, error) {
 	// 1. Validate and extract the log event from the transit data
 	err := ei.ValidateInput(td)
 	if err != nil {
@@ -90,7 +90,7 @@ func (ei *EventHeuristic) Assess(td core.TransitData) (*core.Activation, bool, e
 		return nil, false, nil
 	}
 
-	return &core.Activation{
+	return []*core.Activation{&core.Activation{
 		Message: fmt.Sprintf(eventReportMsg, ei.cfg.ContractName, log.Address, log.TxHash.Hex(), sigHit),
-	}, true, nil
+	}}, true, nil
 }

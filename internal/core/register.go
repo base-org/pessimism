@@ -7,6 +7,7 @@ const (
 	AccountBalance RegisterType = iota + 1
 	GethBlock
 	EventLog
+	TxReceipt
 )
 
 // String ... Returns string representation of a

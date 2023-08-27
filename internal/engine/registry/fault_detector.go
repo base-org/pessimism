@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/base-org/pessimism/internal/client"
+	p_common "github.com/base-org/pessimism/internal/common"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/logging"
@@ -14,10 +15,9 @@ import (
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
 	"github.com/ethereum-optimism/optimism/op-node/rollup"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/rlp"
-
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 	"go.uber.org/zap"
 )
 
@@ -89,7 +89,7 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heu
 		return nil, err
 	}
 
-	outputSig := crypto.Keccak256Hash([]byte(OutputProposedEvent))
+	outputSig := crypto.Keccak256Hash([]byte(p_common.OutputProposedEvent))
 	addr := common.HexToAddress(cfg.L2ToL1Address)
 
 	outputOracle, err := bindings.NewL2OutputOracleFilterer(addr, l1Client)
@@ -113,7 +113,7 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heu
 }
 
 // Assess ... Performs the fault detection heuristic logic
-func (fd *faultDetectorInv) Assess(td core.TransitData) (*core.Activation, bool, error) {
+func (fd *faultDetectorInv) Assess(td core.TransitData) ([]*core.Activation, bool, error) {
 	logging.NoContext().Debug("Checking activation for fault detector heuristic",
 		zap.String("data", fmt.Sprintf("%v", td)))
 
@@ -165,10 +165,10 @@ func (fd *faultDetectorInv) Assess(td core.TransitData) (*core.Activation, bool,
 
 	// 6. Compare the expected state root with the actual state root; if they are not equal, then activate
 	if expectedStateRoot != actualStateRoot {
-		return &core.Activation{
+		return []*core.Activation{&core.Activation{
 			TimeStamp: time.Now(),
 			Message:   fmt.Sprintf(faultDetectMsg, fd.cfg.L2OutputOracle, fd.cfg.L2ToL1Address, fd.SUUID(), log.TxHash),
-		}, true, nil
+		}}, true, nil
 	}
 
 	return nil, false, nil

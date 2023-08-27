@@ -24,7 +24,7 @@ const (
 type RiskEngine interface {
 	Type() Type
 	Execute(context.Context, core.TransitData,
-		heuristic.Heuristic) (*core.Activation, bool)
+		heuristic.Heuristic) ([]*core.Activation, bool)
 }
 
 // hardCodedEngine ... Hard coded execution engine
@@ -45,7 +45,7 @@ func (e *hardCodedEngine) Type() Type {
 
 // Execute ... Executes the heuristic
 func (e *hardCodedEngine) Execute(ctx context.Context, data core.TransitData,
-	h heuristic.Heuristic) (*core.Activation, bool) {
+	h heuristic.Heuristic) ([]*core.Activation, bool) {
 	logger := logging.WithContext(ctx)
 
 	logger.Debug("Performing heuristic activation",

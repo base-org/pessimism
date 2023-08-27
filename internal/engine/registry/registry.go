@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	p_common "github.com/base-org/pessimism/internal/common"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/logging"
@@ -53,6 +54,12 @@ func NewHeuristicTable() HeuristicTable {
 			Policy:          core.OnlyLayer1,
 			InputType:       core.EventLog,
 			Constructor:     constructLargeWithdrawal,
+		},
+		core.LargeFundMovement: {
+			PrepareValidate: ValidateAddressing,
+			Policy:          core.BothNetworks,
+			InputType:       core.TxReceipt,
+			Constructor:     constructLargeFundMovement,
 		},
 	}
 
@@ -119,6 +126,18 @@ func constructLargeWithdrawal(ctx context.Context, isp *core.SessionParams) (heu
 	return NewLargeWithdrawHeuristic(ctx, cfg)
 }
 
+// constructLargeFundMovement ... Constructs a large fund movement heuristic instance
+func constructLargeFundMovement(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
+	cfg := &FundsMovementCfg{}
+	err := cfg.Unmarshal(isp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return NewFundsMovement(ctx, cfg)
+}
+
 // ValidateEventTracking ... Ensures that an address and nested args exist in the session params
 func ValidateEventTracking(cfg *core.SessionParams) error {
 	err := ValidateAddressing(cfg)
@@ -179,7 +198,7 @@ func WithdrawEnforcePrepare(cfg *core.SessionParams) error {
 		return err
 	}
 
-	cfg.SetNestedArg(WithdrawalProvenEvent)
+	cfg.SetNestedArg(p_common.WithdrawalProvenEvent)
 	return nil
 }
 
@@ -203,6 +222,6 @@ func FaultDetectionPrepare(cfg *core.SessionParams) error {
 
 	cfg.SetValue(logging.AddrKey, l2OutputOracle)
 
-	cfg.SetNestedArg(OutputProposedEvent)
+	cfg.SetNestedArg(p_common.OutputProposedEvent)
 	return nil
 }

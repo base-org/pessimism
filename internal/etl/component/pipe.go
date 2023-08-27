@@ -58,7 +58,7 @@ func (p *Pipe) Close() error {
 }
 
 // EventLoop ... Driver loop for component that actively subscribes
-// to an input channel where transit data is read, transformed, and transitte
+// to an input channel where transit data is read, transformed, and transited
 // to downstream components
 func (p *Pipe) EventLoop() error {
 	logger := logging.WithContext(p.ctx)

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
@@ -16,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 
+	p_common "github.com/base-org/pessimism/internal/common"
 	"go.uber.org/zap"
 )
 
@@ -65,7 +65,7 @@ func NewLargeWithdrawHeuristic(ctx context.Context, cfg *LargeWithdrawalCfg) (he
 		return nil, err
 	}
 
-	withdrawalHash := crypto.Keccak256Hash([]byte(WithdrawalProvenEvent))
+	withdrawalHash := crypto.Keccak256Hash([]byte(p_common.WithdrawalProvenEvent))
 
 	addr := common.HexToAddress(cfg.L2ToL1Address)
 	addr2 := common.HexToAddress(cfg.L1PortalAddress)
@@ -92,7 +92,7 @@ func NewLargeWithdrawHeuristic(ctx context.Context, cfg *LargeWithdrawalCfg) (he
 
 // Assess ... Verifies than an L1 WithdrawalProven has a correlating hash
 // to the withdrawal storage of the L2ToL1MessagePasser
-func (wi *LargeWithdrawHeuristic) Assess(td core.TransitData) (*core.Activation, bool, error) {
+func (wi *LargeWithdrawHeuristic) Assess(td core.TransitData) ([]*core.Activation, bool, error) {
 	logging.NoContext().Debug("Checking activation for withdrawal enforcement heuristic",
 		zap.String("data", fmt.Sprintf("%v", td)))
 
@@ -111,32 +111,32 @@ func (wi *LargeWithdrawHeuristic) Assess(td core.TransitData) (*core.Activation,
 	}
 
 	// 2. Parse the log to a WithdrawalProven structured type
-	provenWithdrawal, err := wi.l1PortalFilter.ParseWithdrawalProven(log)
+	_, err := wi.l1PortalFilter.ParseWithdrawalProven(log)
 	if err != nil {
 		return nil, false, err
 	}
 
-	// 3. Check if the withdrawal exists in the message outbox of the L2ToL1MessagePasser contract
-	iterator, err := wi.l2tol1MessagePasser.FilterMessagePassed(nil,
-		[]*big.Int{}, []common.Address{provenWithdrawal.From}, []common.Address{provenWithdrawal.To})
-	if err != nil {
-		return nil, false, err
-	}
+	// // 3. Check if the withdrawal exists in the message outbox of the L2ToL1MessagePasser contract
+	// iterator, err := wi.l2tol1MessagePasser.FilterMessagePassed(nil,
+	// 	[]*big.Int{}, []common.Address{provenWithdrawal.From}, []common.Address{provenWithdrawal.To})
+	// if err != nil {
+	// 	return nil, false, err
+	// }
 
-	for iterator.Next() {
-		if iterator.Event.WithdrawalHash == provenWithdrawal.WithdrawalHash { // Found the associated withdrawal on L2
-			// 4. Check if the withdrawal amount is greater than the threshold
-			if iterator.Event.Value.Cmp(wi.cfg.Threshold) == 1 {
-				return &core.Activation{
-					TimeStamp: time.Now(),
-					Message: fmt.Sprintf(largeWithdrawalMsg,
-						wi.cfg.L1PortalAddress, wi.cfg.L2ToL1Address,
-						wi.SUUID(), log.TxHash.Hex(), iterator.Event.Raw.TxHash,
-						iterator.Event.Value),
-				}, true, nil
-			}
-		}
-	}
+	// for iterator.Next() {
+	// 	if iterator.Event.WithdrawalHash == provenWithdrawal.WithdrawalHash { // Found the associated withdrawal on L2
+	// 		// 4. Check if the withdrawal amount is greater than the threshold
+	// 		if iterator.Event.Value.Cmp(wi.cfg.Threshold) == 1 {
+	// 			return &core.Activation{
+	// 				TimeStamp: time.Now(),
+	// 				Message: fmt.Sprintf(largeWithdrawalMsg,
+	// 					wi.cfg.L1PortalAddress, wi.cfg.L2ToL1Address,
+	// 					wi.SUUID(), log.TxHash.Hex(), iterator.Event.Raw.TxHash,
+	// 					iterator.Event.Value),
+	// 			}, true, nil
+	// 		}
+	// 	}
+	// }
 
 	return nil, false, nil
 }
