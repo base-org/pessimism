@@ -1,0 +1,30 @@
+alertRoutes:
+  low:
+    slack:
+      config:
+        url: "test-low"
+        channel: "#test-low"
+
+  medium:
+    slack:
+      config:
+        url: "test-medium"
+        channel: "#test-medium"
+    pagerduty:
+      config:
+        integration_key: "test-medium"
+
+  high:
+    slack:
+      config:
+        url: "test-high"
+        channel: "#test-high"
+      config_2:
+        url: "test-high-2"
+        channel: "#test-high-2"
+
+    pagerduty:
+      config:
+        integration_key: "test-high-1"
+      config_2:
+        integration_key: "test-high-2"

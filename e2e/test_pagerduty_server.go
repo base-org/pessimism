@@ -2,6 +2,8 @@ package e2e
 
 import (
 	"encoding/json"
+	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -19,21 +21,35 @@ type TestPagerDutyServer struct {
 }
 
 // NewTestPagerDutyServer ... Creates a new mock pagerduty server
-func NewTestPagerDutyServer() *TestPagerDutyServer {
-	ts := &TestPagerDutyServer{
+func NewTestPagerDutyServer(url string, port int) *TestPagerDutyServer { //nolint:dupl //This will be addressed
+	l, err := net.Listen("tcp", fmt.Sprintf("%s:%d", url, port))
+	if err != nil {
+		panic(err)
+	}
+
+	pds := &TestPagerDutyServer{
 		Payloads: []*client.PagerDutyRequest{},
 	}
 
-	ts.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	pds.Server = httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch strings.TrimSpace(r.URL.Path) {
 		case "/":
-			ts.mockPagerDutyPost(w, r)
+			pds.mockPagerDutyPost(w, r)
 		default:
 			http.NotFoundHandler().ServeHTTP(w, r)
 		}
 	}))
 
-	return ts
+	err = pds.Server.Listener.Close()
+	if err != nil {
+		panic(err)
+	}
+	pds.Server.Listener = l
+	pds.Server.Start()
+
+	logging.NoContext().Info("Test pagerduty server started", zap.String("url", url), zap.Int("port", port))
+
+	return pds
 }
 
 // Close ... Closes the server
@@ -47,14 +63,14 @@ func (svr *TestPagerDutyServer) mockPagerDutyPost(w http.ResponseWriter, r *http
 
 	if err := json.NewDecoder(r.Body).Decode(&alert); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(`{"status":false, "message":"could not decode pagerduty payload"}`))
+		_, _ = w.Write([]byte(`{"status":"failure"", "message":"could not decode pagerduty payload"}`))
 		return
 	}
 
 	svr.Payloads = append(svr.Payloads, alert)
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status":success, "message":""}`))
+	_, _ = w.Write([]byte(`{"status":"success", "message":""}`))
 }
 
 // PagerDutyAlerts ... Returns the pagerduty alerts
