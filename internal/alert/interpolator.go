@@ -2,8 +2,9 @@ package alert
 
 import (
 	"fmt"
-
 	"github.com/base-org/pessimism/internal/core"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // TODO: add timestamp to the message
@@ -13,7 +14,7 @@ const (
 
 	// slackMsgFmt ... Slack message format
 	SlackMsgFmt = `
-	⚠️🚨 Pessimism Alert: %s 🚨⚠️
+	⚠️🚨%s Severity Pessimism Alert: %s 🚨⚠️
 
 	_Heuristic activation conditions met_
 
@@ -40,7 +41,7 @@ const (
 
 // Interpolator ... Interface for interpolating messages
 type Interpolator interface {
-	InterpolateSlackMessage(sUUID core.SUUID, content string, msg string) string
+	InterpolateSlackMessage(sev core.Severity, sUUID core.SUUID, content string, msg string) string
 	InterpolatePagerDutyMessage(sUUID core.SUUID, message string) string
 }
 
@@ -53,8 +54,9 @@ func NewInterpolator() Interpolator {
 }
 
 // InterpolateSlackMessage ... Interpolates a slack message with the given heuristic session UUID and message
-func (*interpolator) InterpolateSlackMessage(sUUID core.SUUID, content string, msg string) string {
+func (*interpolator) InterpolateSlackMessage(sev core.Severity, sUUID core.SUUID, content string, msg string) string {
 	return fmt.Sprintf(SlackMsgFmt,
+		cases.Title(language.English).String(sev.String()),
 		sUUID.PID.HeuristicType().String(),
 		sUUID.PID.Network(),
 		sUUID.String(),
