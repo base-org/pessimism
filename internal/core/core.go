@@ -3,7 +3,11 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"regexp"
 	"time"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -193,3 +197,27 @@ const (
 	L2ToL1MessagePasser = "l2_to_l1_address"  //#nosec G101: False positive, this isn't a credential
 	L2OutputOracle      = "l2_output_address" //#nosec G101: False positive, this isn't a credential
 )
+
+// Regexp for parsing yaml files
+var reVar = regexp.MustCompile(`^\${(\w+)}$`)
+
+type StringFromEnv string
+
+// UnmarshalYAML implements the yaml.Unmarshaler interface to allow parsing strings from env vars.
+func (e *StringFromEnv) UnmarshalYAML(value *yaml.Node) error {
+	var s string
+	if err := value.Decode(&s); err != nil {
+		return err
+	}
+	if match := reVar.FindStringSubmatch(s); len(match) > 0 {
+		*e = StringFromEnv(os.Getenv(match[1]))
+	} else {
+		*e = StringFromEnv(s)
+	}
+	return nil
+}
+
+// String returns the string value, implementing the flag.Value interface.
+func (e *StringFromEnv) String() string {
+	return string(*e)
+}

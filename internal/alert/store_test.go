@@ -6,6 +6,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/core"
+
 	"github.com/stretchr/testify/assert"
 )
 

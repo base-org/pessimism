@@ -7,7 +7,6 @@ import (
 	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/app"
-	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/metrics"
 
@@ -28,9 +27,8 @@ func Test_AppFlow(t *testing.T) {
 			Enabled: false,
 		},
 		AlertConfig: &alert.Config{
-			SlackConfig:        &client.SlackConfig{},
-			MediumPagerDutyCfg: &client.PagerDutyConfig{},
-			HighPagerDutyCfg:   &client.PagerDutyConfig{},
+			RoutingCfgPath:          "../../e2e/alert-routing-cfg.yaml",
+			PagerdutyAlertEventsURL: "test",
 		},
 	}
 
