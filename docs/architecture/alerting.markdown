@@ -24,14 +24,17 @@ end
 subgraph AM["Alerting Manager"]
     alertingRelay --> |Alert|EL
     EL[eventLoop] --> |Alert SUUID|AS["AlertStore"]
-    AS --> |Alert Destination|EL
-    EL --> |Submit alert|AD[Destination]
-    AD --> |Slack|SH["Slack Handler"]
-    AD --> |counterParty|CPH["Counterparty Handler"]
+    AS --> |Alert Policy|EL
+    EL --> |Submit alert|SR["SeverityRouter"]
+    SR --> SH["Slack"]
+    SR --> PH["PagerDuty"]
+    SR --> CPH["CounterParty Handler"]
 
 end
 CPH --> |"HTTP POST"|TPH["Third Party API"]
 SH --> |"HTTP POST"|SlackAPI("Slack Webhook API")
+PH --> |"HTTP POST"|PagerDutyAPI("PagerDuty API")
+
 </div>
 {% endraw %}
 
@@ -49,9 +52,12 @@ An alert destination is a configurable destination that an alert can be sent to.
 #### Slack
 The Slack alert destination is a configurable destination that allows alerts to be sent to a specific Slack channel. The Slack alert destination will be configured with a Slack webhook URL. The Slack alert destination will then use this URL to send alerts to the specified Slack channel.
 
-**NOTE: As of now Pessimism can only post alerts to a single slack channel**
 
-### Cooldown
+#### PagerDuty
+The PagerDuty alert destination is a configurable destination that allows alerts to be sent to a specific PagerDuty services via the use of integration keys. Pessimism also uses the SUUID associated with an alert as a deduplication key for PagerDuty. This is done to ensure that PagerDuty will not be spammed with duplicate or incidents. 
+
+
+### Alert CoolDowns
 To ensure that alerts aren't spammed to destinations once invoked, a time based cooldown value (`cooldown_time`) can be defined within the  `alert_params` of a heuristic session config. This time value determines how long a heuristic session must wait before being allowed to alert again. 
 
 An example of this is shown below:
@@ -73,3 +79,6 @@ An example of this is shown below:
       }
     }
 ```
+
+### Alert Messages
+Pessimism allows for the arbitrary customization of alert messages. This is done by defining an `message` value string within the `alerting_params` of a heuristic session bootstrap config or session creation request. This is critical for providing additional context on alerts that allow for easier ingestion by downstream consumers (i.e, alert responders). 
