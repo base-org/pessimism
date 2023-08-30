@@ -10,7 +10,7 @@
     },
     "heuristic_params": {
       "address": "0xfC0157aA4F5DB7177830ACddB3D5a9BB5BE9cc5e",
-      "args": ["Transfer(address, address, uint256)"]
+      "args": ["Transfer(address,address,uint256)"]
     }
   },
   {
