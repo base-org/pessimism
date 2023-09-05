@@ -90,7 +90,7 @@ func (am *alertManager) handleSlackPost(alert core.Alert, policy *core.AlertPoli
 
 	// Create event trigger
 	event := &client.AlertEventTrigger{
-		Message:  am.interpolator.InterpolateSlackMessage(alert.SUUID, alert.Content, policy.Msg),
+		Message:  am.interpolator.InterpolateSlackMessage(alert.Criticality, alert.SUUID, alert.Content, policy.Msg),
 		Severity: alert.Criticality,
 	}
 
