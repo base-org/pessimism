@@ -4,16 +4,19 @@ title: Telemetry
 permalink: /telemetry
 ---
 
-Pessimism uses [Prometheus](https://prometheus.io/docs/introduction/overview/) for telemetry. The application spins up a metrics server on a specified port (default 7300) and exposes the `/metrics` endpoint. 
+Pessimism uses [Prometheus](https://prometheus.io/docs/introduction/overview/) for telemetry. The application spins up a metrics server on a specified port (default 7300) and exposes the `/metrics` endpoint.
 
 ### Local Testing
+
 To verify that metrics are being collected locally, curl the metrics endpoint via `curl localhost:7300/metrics`. The response should display all custom and system metrics.
 
 ### Server Configuration
-The default configuration within `config.env.template` should be suitable in most cases, however if you do not want to run the metrics server, set `METRICS_ENABLED=0` and the metrics server will not be started. This is useful mainly for testing purposes. 
+
+The default configuration within `config.env.template` should be suitable in most cases, however if you do not want to run the metrics server, set `METRICS_ENABLED=0` and the metrics server will not be started. This is useful mainly for testing purposes.
 
 ## Generating Documentation
-To generate documentation for metrics, run `make docs` from the root of the repository. This will generate markdown 
+
+To generate documentation for metrics, run `make docs` from the root of the repository. This will generate markdown
 which can be pasted directly below to keep current system metric documentation up to date.
 
 ## Current Metrics
