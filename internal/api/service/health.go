@@ -16,7 +16,8 @@ import (
 func (svc *PessimismService) CheckHealth() *models.HealthCheck {
 	var wg sync.WaitGroup
 
-	wg.Add(2)
+	checks := 2 // number of checks to perform
+	wg.Add(checks)
 
 	hc := &models.ChainConnectionStatus{
 		IsL1Healthy: false,
