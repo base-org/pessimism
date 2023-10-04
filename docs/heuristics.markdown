@@ -117,7 +117,7 @@ The hardcoded `fault_detector` heuristic scans for active `OutputProposed` event
 
 | Name              | Type   | Description                                     |
 |-------------------|--------|-------------------------------------------------|
-| l2_output_address | string | The address of the L1 output oracle             |
+| l2_output_address | string | The address of the L2 output oracle             |
 | l2_to_l1_address  | string | The address of the L2ToL1MessagePasser contract |
 
 ### Example Deploy Request
