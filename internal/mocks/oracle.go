@@ -25,7 +25,7 @@ func (md *mockOracleDefinition) ReadRoutine(_ context.Context, _ chan core.Trans
 }
 
 func (md *mockOracleDefinition) Height() (*big.Int, error) {
-	return nil, nil
+	return big.NewInt(0), nil
 }
 
 // NewDummyOracle ... Takes in a register type that specifies the mocked output type

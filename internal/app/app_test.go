@@ -8,6 +8,7 @@ import (
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/app"
 	"github.com/base-org/pessimism/internal/config"
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/metrics"
 
 	"github.com/stretchr/testify/assert"
@@ -27,8 +28,9 @@ func Test_AppFlow(t *testing.T) {
 			Enabled: false,
 		},
 		AlertConfig: &alert.Config{
-			RoutingCfgPath:          "../../e2e/alert-routing-cfg.yaml",
+			RoutingCfgPath:          "",
 			PagerdutyAlertEventsURL: "test",
+			RoutingParams:           &core.AlertRoutingParams{},
 		},
 	}
 

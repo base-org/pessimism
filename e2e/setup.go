@@ -91,7 +91,7 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 	pagerdutyURL := fmt.Sprintf("http://127.0.0.1:%d", pagerdutyServer.Port)
 
 	appCfg.AlertConfig.PagerdutyAlertEventsURL = pagerdutyURL
-	appCfg.AlertConfig.RoutingParams = DefaultRoutingParams(slackURL)
+	appCfg.AlertConfig.RoutingParams = DefaultRoutingParams(core.StringFromEnv(slackURL))
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
@@ -130,6 +130,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	cfg := op_e2e.DefaultSystemConfig(t)
 	cfg.DeployConfig.FinalizationPeriodSeconds = 2
 
+	// Don't output rollup service logs unless ENABLE_ROLLUP_LOGS is set
 	if len(os.Getenv("ENABLE_ROLLUP_LOGS")) == 0 {
 		t.Log("set env 'ENABLE_ROLLUP_LOGS' to show rollup logs")
 		for name, logger := range cfg.Loggers {
@@ -167,7 +168,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	pagerdutyURL := fmt.Sprintf("http://127.0.0.1:%d", pagerdutyServer.Port)
 
 	appCfg.AlertConfig.PagerdutyAlertEventsURL = pagerdutyURL
-	appCfg.AlertConfig.RoutingParams = DefaultRoutingParams(slackURL)
+	appCfg.AlertConfig.RoutingParams = DefaultRoutingParams(core.StringFromEnv(slackURL))
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
@@ -231,15 +232,13 @@ func DefaultTestConfig() *config.Config {
 }
 
 // DefaultRoutingParams ... Returns a default routing params configuration for testing
-func DefaultRoutingParams(slackURL string) *core.AlertRoutingParams {
-
-	envURL := core.StringFromEnv(slackURL)
+func DefaultRoutingParams(slackURL core.StringFromEnv) *core.AlertRoutingParams {
 	return &core.AlertRoutingParams{
 		AlertRoutes: &core.SeverityMap{
 			Low: &core.AlertClientCfg{
 				Slack: map[string]*core.AlertConfig{
 					"config": {
-						URL:     envURL,
+						URL:     slackURL,
 						Channel: "#test-low",
 					},
 				},
@@ -247,7 +246,7 @@ func DefaultRoutingParams(slackURL string) *core.AlertRoutingParams {
 			Medium: &core.AlertClientCfg{
 				Slack: map[string]*core.AlertConfig{
 					"config": {
-						URL:     envURL,
+						URL:     slackURL,
 						Channel: "#test-medium",
 					},
 				},
@@ -260,11 +259,11 @@ func DefaultRoutingParams(slackURL string) *core.AlertRoutingParams {
 			High: &core.AlertClientCfg{
 				Slack: map[string]*core.AlertConfig{
 					"config": {
-						URL:     envURL,
+						URL:     slackURL,
 						Channel: "#test-high",
 					},
 					"config_2": {
-						URL:     envURL,
+						URL:     slackURL,
 						Channel: "#test-high-2",
 					},
 				},

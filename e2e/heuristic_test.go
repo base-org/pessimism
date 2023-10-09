@@ -242,6 +242,7 @@ func TestWithdrawalEnforcement(t *testing.T) {
 			},
 		},
 	})
+	assert.NoError(t, err, "Error bootstrapping heuristic session")
 
 	optimismPortal, err := bindings.NewOptimismPortal(ts.Cfg.L1Deployments.OptimismPortalProxy, ts.L1Client)
 	assert.NoError(t, err)
