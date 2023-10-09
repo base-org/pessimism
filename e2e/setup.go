@@ -98,7 +98,6 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 		t.Fatal(err)
 	}
 
-	t.Parallel()
 	if err := pess.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +173,6 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 		t.Fatal(err)
 	}
 
-	t.Parallel()
 	if err := pess.Start(); err != nil {
 		t.Fatal(err)
 	}
