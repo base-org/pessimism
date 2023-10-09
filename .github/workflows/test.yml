@@ -75,15 +75,8 @@ jobs:
       with:
         go-version: 1.21
 
-    - name: Setup foundry
-      id: foundry
-      run: |
-        curl -L https://foundry.paradigm.xyz | bash
-        source $HOME/.bashrc
-        foundryup
-        echo 'export PATH=$HOME/.foundry/bin:$PATH' >> $BASH_ENV
-        source $HOME/.bashrc
-        forge --version
+    - name: Install foundry
+      uses: foundry-rs/foundry-toolchain@v1
 
     - name: Setup devnet resources
       id: devnet
