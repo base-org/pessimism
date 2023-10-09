@@ -40,7 +40,7 @@ jobs:
     - name: Run Unit Tests
       id: unit
       run: | 
-        go test -coverprofile=coverage.out ./internal/... >> out.txt
+        go test -v -coverprofile=coverage.out ./internal/... 
 
     # - name: Generate Coverage
     #   run: |
