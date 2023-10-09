@@ -1,29 +1,45 @@
 package service
 
 import (
+	"sync"
 	"time"
+
+	"go.uber.org/zap"
 
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
-
-	"go.uber.org/zap"
 )
 
 // CheckHealth ... Returns health check for server
 func (svc *PessimismService) CheckHealth() *models.HealthCheck {
-	// TODO(#88): Parallelized Node Queries for Health Checking
+	var wg sync.WaitGroup
+
+	checks := 2 // number of checks to perform
+	wg.Add(checks)
+
 	hc := &models.ChainConnectionStatus{
-		IsL1Healthy: svc.CheckETHRPCHealth(core.Layer1),
-		IsL2Healthy: svc.CheckETHRPCHealth(core.Layer2),
+		IsL1Healthy: false,
+		IsL2Healthy: false,
 	}
 
-	healthy := hc.IsL1Healthy && hc.IsL2Healthy
+	go func() {
+		defer wg.Done()
+
+		hc.IsL1Healthy = svc.CheckETHRPCHealth(core.Layer1)
+	}()
+
+	go func() {
+		defer wg.Done()
+		hc.IsL2Healthy = svc.CheckETHRPCHealth(core.Layer2)
+	}()
+
+	wg.Wait()
 
 	return &models.HealthCheck{
 		Timestamp:             time.Now(),
-		Healthy:               healthy,
+		Healthy:               hc.IsL1Healthy && hc.IsL2Healthy,
 		ChainConnectionStatus: hc,
 	}
 }
