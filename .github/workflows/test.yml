@@ -36,7 +36,7 @@ jobs:
     - name: Setup devnet resources
       id: devnet
       run: |
-        make devnet
+        make devnet-allocs
 
     - name: Run Unit Tests
       id: unit
