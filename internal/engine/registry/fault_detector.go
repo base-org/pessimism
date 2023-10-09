@@ -154,7 +154,7 @@ func (fd *faultDetectorInv) Assess(td core.TransitData) (*core.Activation, bool,
 		return nil, false, err
 	}
 
-	// 5. Compute the expected state root of the L2 block using the rollup node software
+	// 5. Compute the expected state root of the L2 block using the roll-up node software
 	asInfo := blockToInfo(outputBlock)
 	expectedStateRoot, err := rollup.ComputeL2OutputRootV0(asInfo, proofResp.StorageHash)
 	if err != nil {

@@ -27,6 +27,10 @@ type AddressBalanceODef struct {
 	sk         *core.StateKey
 }
 
+func (oracle *AddressBalanceODef) Height() (*big.Int, error) {
+	return oracle.currHeight, nil
+}
+
 // NewAddressBalanceODef ... Initializer for address.balance oracle definition
 func NewAddressBalanceODef(cfg *core.ClientConfig, client client.EthClient,
 	h *big.Int) *AddressBalanceODef {

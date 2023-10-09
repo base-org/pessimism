@@ -102,10 +102,13 @@ func RunPessimism(_ *cli.Context) error {
 			return err
 		}
 
-		if err := pessimism.BootStrap(sessions); err != nil {
+		ids, err := pessimism.BootStrap(sessions)
+		if err != nil {
 			logger.Fatal("Error bootstrapping application state", zap.Error(err))
 			return err
 		}
+
+		logger.Info("Received bootstrapped session UUIDs", zap.Any(logging.SUUIDKey, ids))
 
 		logger.Debug("Application state successfully bootstrapped")
 	}

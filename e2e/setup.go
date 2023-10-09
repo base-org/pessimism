@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -23,26 +24,30 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-)
-
-const (
-	SlackTestServerPort = 7100
-	PagerDutyTestPort   = 7200
+	"github.com/ethereum/go-ethereum/log"
 )
 
 // SysTestSuite ... Stores all the information needed to run an e2e system test
 type SysTestSuite struct {
 	t *testing.T
 
+	// Optimism
 	Cfg *op_e2e.SystemConfig
 	Sys *op_e2e.System
 
-	App    *app.Application
-	AppCfg *config.Config
-	Close  func()
+	// Pessimism
+	App        *app.Application
+	AppCfg     *config.Config
+	Subsystems *subsystem.Manager
+	Close      func()
 
+	// Mock servers
 	TestSlackSvr        *TestSlackServer
 	TestPagerDutyServer *TestPagerDutyServer
+
+	// Clients
+	L1Client *ethclient.Client
+	L2Client *ethclient.Client
 }
 
 // L2TestSuite ... Stores all the information needed to run an e2e L2Geth test
@@ -64,6 +69,7 @@ type L2TestSuite struct {
 func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 	ctx := context.Background()
 	nodeCfg := op_e2e.DefaultSystemConfig(t)
+	logging.New(core.Development)
 
 	node, err := op_e2e.NewOpGeth(t, ctx, &nodeCfg)
 	if err != nil {
@@ -75,12 +81,17 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 
 	appCfg := DefaultTestConfig()
 
-	slackServer := NewTestSlackServer("127.0.0.1", SlackTestServerPort)
+	slackServer := NewTestSlackServer("127.0.0.1", 0)
 
-	pagerdutyServer := NewTestPagerDutyServer("127.0.0.1", PagerDutyTestPort)
+	pagerdutyServer := NewTestPagerDutyServer("127.0.0.1", 0)
 
-	appCfg.AlertConfig.RoutingCfgPath = "alert-routing-cfg.yaml"
-	appCfg.AlertConfig.PagerdutyAlertEventsURL = fmt.Sprintf("http://127.0.0.1:%d", PagerDutyTestPort)
+	appCfg.AlertConfig.RoutingCfgPath = ""
+
+	slackURL := fmt.Sprintf("http://127.0.0.1:%d", slackServer.Port)
+	pagerdutyURL := fmt.Sprintf("http://127.0.0.1:%d", pagerdutyServer.Port)
+
+	appCfg.AlertConfig.PagerdutyAlertEventsURL = pagerdutyURL
+	appCfg.AlertConfig.RoutingParams = DefaultRoutingParams(slackURL)
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
@@ -92,8 +103,6 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 	}
 
 	go pess.ListenForShutdown(kill)
-
-	logging.New(core.Development)
 
 	return &L2TestSuite{
 		t:      t,
@@ -114,17 +123,29 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 
 // CreateSysTestSuite ... Creates a new SysTestSuite
 func CreateSysTestSuite(t *testing.T) *SysTestSuite {
+	t.Log("Creating system test suite")
 	ctx := context.Background()
+	logging.New(core.Development)
 
 	cfg := op_e2e.DefaultSystemConfig(t)
-	cfg.DeployConfig.FinalizationPeriodSeconds = 6
+	cfg.DeployConfig.FinalizationPeriodSeconds = 2
 
-	sys, err := cfg.Start()
+	if len(os.Getenv("ENABLE_ROLLUP_LOGS")) == 0 {
+		t.Log("set env 'ENABLE_ROLLUP_LOGS' to show rollup logs")
+		for name, logger := range cfg.Loggers {
+			t.Logf("discarding logs for %s", name)
+			logger.SetHandler(log.DiscardHandler())
+		}
+	}
+
+	sys, err := cfg.Start(t)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	gethClient, err := client.NewGethClient(sys.Nodes["sequencer"].HTTPEndpoint())
+	t.Parallel()
+
+	gethClient, err := client.NewGethClient(sys.EthInstances["sequencer"].HTTPEndpoint())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,12 +157,17 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 
 	appCfg := DefaultTestConfig()
 
-	slackServer := NewTestSlackServer("127.0.0.1", SlackTestServerPort)
+	slackServer := NewTestSlackServer("127.0.0.1", 0)
 
-	pagerdutyServer := NewTestPagerDutyServer("127.0.0.1", PagerDutyTestPort)
+	pagerdutyServer := NewTestPagerDutyServer("127.0.0.1", 0)
 
-	appCfg.AlertConfig.RoutingCfgPath = "alert-routing-cfg.yaml"
-	appCfg.AlertConfig.PagerdutyAlertEventsURL = fmt.Sprintf("http://127.0.0.1:%d", PagerDutyTestPort)
+	appCfg.AlertConfig.RoutingCfgPath = ""
+
+	slackURL := fmt.Sprintf("http://127.0.0.1:%d", slackServer.Port)
+	pagerdutyURL := fmt.Sprintf("http://127.0.0.1:%d", pagerdutyServer.Port)
+
+	appCfg.AlertConfig.PagerdutyAlertEventsURL = pagerdutyURL
+	appCfg.AlertConfig.RoutingParams = DefaultRoutingParams(slackURL)
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
@@ -153,8 +179,6 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	}
 
 	go pess.ListenForShutdown(kill)
-
-	logging.New(core.Development)
 
 	return &SysTestSuite{
 		t:   t,
@@ -168,15 +192,16 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 			pagerdutyServer.Close()
 		},
 		AppCfg:              appCfg,
+		Subsystems:          pess.Subsystems,
 		TestSlackSvr:        slackServer,
 		TestPagerDutyServer: pagerdutyServer,
+		L1Client:            sys.Clients["l1"],
+		L2Client:            sys.Clients["sequencer"],
 	}
 }
 
 // DefaultTestConfig ... Returns a default app config for testing
 func DefaultTestConfig() *config.Config {
-	port := 6980
-	metPort := 6300
 	l1PollInterval := 900
 	l2PollInterval := 300
 	maxPipelines := 10
@@ -192,15 +217,66 @@ func DefaultTestConfig() *config.Config {
 		MetricsConfig: &metrics.Config{
 			Enabled: false,
 			Host:    "localhost",
-			Port:    metPort,
+			Port:    0,
 		},
 		ServerConfig: &server.Config{
 			Host: "localhost",
-			Port: port,
+			Port: 0,
 		},
 		AlertConfig: &alert.Config{
 			PagerdutyAlertEventsURL: "",
 			RoutingCfgPath:          "",
+		},
+	}
+}
+
+// DefaultRoutingParams ... Returns a default routing params configuration for testing
+func DefaultRoutingParams(slackURL string) *core.AlertRoutingParams {
+
+	envURL := core.StringFromEnv(slackURL)
+	return &core.AlertRoutingParams{
+		AlertRoutes: &core.SeverityMap{
+			Low: &core.AlertClientCfg{
+				Slack: map[string]*core.AlertConfig{
+					"config": {
+						URL:     envURL,
+						Channel: "#test-low",
+					},
+				},
+			},
+			Medium: &core.AlertClientCfg{
+				Slack: map[string]*core.AlertConfig{
+					"config": {
+						URL:     envURL,
+						Channel: "#test-medium",
+					},
+				},
+				PagerDuty: map[string]*core.AlertConfig{
+					"config": {
+						IntegrationKey: "test-medium",
+					},
+				},
+			},
+			High: &core.AlertClientCfg{
+				Slack: map[string]*core.AlertConfig{
+					"config": {
+						URL:     envURL,
+						Channel: "#test-high",
+					},
+					"config_2": {
+						URL:     envURL,
+						Channel: "#test-high-2",
+					},
+				},
+				PagerDuty: map[string]*core.AlertConfig{
+					"config": {
+						IntegrationKey: "test-high-1",
+					},
+					"config_2": {
+						IntegrationKey: "test-high-2",
+					},
+				},
+			},
 		},
 	}
 }

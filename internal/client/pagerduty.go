@@ -38,7 +38,7 @@ type PagerDutyConfig struct {
 	AlertEventsURL  string
 }
 
-// pagerdutyClient ... PagerDuty client for making requests
+// pagerDutyClient ... PagerDuty client for making requests
 type pagerdutyClient struct {
 	name            string
 	integrationKey  string
@@ -135,7 +135,7 @@ func (pdc *pagerdutyClient) PostEvent(ctx context.Context, event *AlertEventTrig
 	// 1. Create and marshal payload into request object body
 
 	if pdc.integrationKey == "" {
-		return nil, fmt.Errorf("no Pagerduty integration key provided")
+		return nil, fmt.Errorf("no PagerDuty integration key provided")
 	}
 
 	payload, err := newPagerDutyPayload(pdc.integrationKey, event.ToPagerdutyEvent()).marshal()

@@ -16,7 +16,7 @@ func getCfg() *config.Config {
 			RoutingParams: &core.AlertRoutingParams{
 				AlertRoutes: &core.SeverityMap{
 					Low: &core.AlertClientCfg{
-						Slack: map[string]*core.Config{
+						Slack: map[string]*core.AlertConfig{
 							"test1": {
 								Channel: "test1",
 								URL:     "test1",
@@ -24,12 +24,12 @@ func getCfg() *config.Config {
 						},
 					},
 					Medium: &core.AlertClientCfg{
-						PagerDuty: map[string]*core.Config{
+						PagerDuty: map[string]*core.AlertConfig{
 							"test1": {
 								IntegrationKey: "test1",
 							},
 						},
-						Slack: map[string]*core.Config{
+						Slack: map[string]*core.AlertConfig{
 							"test2": {
 								Channel: "test2",
 								URL:     "test2",
@@ -37,7 +37,7 @@ func getCfg() *config.Config {
 						},
 					},
 					High: &core.AlertClientCfg{
-						PagerDuty: map[string]*core.Config{
+						PagerDuty: map[string]*core.AlertConfig{
 							"test1": {
 								IntegrationKey: "test1",
 							},
@@ -45,7 +45,7 @@ func getCfg() *config.Config {
 								IntegrationKey: "test2",
 							},
 						},
-						Slack: map[string]*core.Config{
+						Slack: map[string]*core.AlertConfig{
 							"test2": {
 								Channel: "test2",
 								URL:     "test2",

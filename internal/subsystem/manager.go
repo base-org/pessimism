@@ -5,6 +5,7 @@ package subsystem
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 
@@ -40,8 +41,7 @@ func (cfg *Config) GetPollInterval(n core.Network) (time.Duration, error) {
 	}
 }
 
-// Manager ... Subsystem manager interface
-type Manager interface {
+type Subsystem interface {
 	BuildDeployCfg(pConfig *core.PipelineConfig, sConfig *core.SessionConfig) (*heuristic.DeployConfig, error)
 	BuildPipelineCfg(params *models.SessionRequestParams) (*core.PipelineConfig, error)
 	RunSession(cfg *heuristic.DeployConfig) (core.SUUID, error)
@@ -51,7 +51,7 @@ type Manager interface {
 }
 
 // manager ... Subsystem manager struct
-type manager struct {
+type Manager struct {
 	cfg *Config
 	ctx context.Context
 
@@ -66,8 +66,8 @@ type manager struct {
 // NewManager ... Initializer for the subsystem manager
 func NewManager(ctx context.Context, cfg *Config, etl pipeline.Manager, eng engine.Manager,
 	a alert.Manager,
-) Manager {
-	return &manager{
+) *Manager {
+	return &Manager{
 		cfg:       cfg,
 		ctx:       ctx,
 		etl:       etl,
@@ -79,7 +79,7 @@ func NewManager(ctx context.Context, cfg *Config, etl pipeline.Manager, eng engi
 }
 
 // Shutdown ... Shuts down all subsystems in primary data flow order
-func (m *manager) Shutdown() error {
+func (m *Manager) Shutdown() error {
 	// 1. Shutdown ETL subsystem
 	if err := m.etl.Shutdown(); err != nil {
 		return err
@@ -95,7 +95,7 @@ func (m *manager) Shutdown() error {
 }
 
 // StartEventRoutines ... Starts the event loop routines for the subsystems
-func (m *manager) StartEventRoutines(ctx context.Context) {
+func (m *Manager) StartEventRoutines(ctx context.Context) {
 	logger := logging.WithContext(ctx)
 
 	m.Add(1)
@@ -127,7 +127,7 @@ func (m *manager) StartEventRoutines(ctx context.Context) {
 }
 
 // BuildDeployCfg ... Builds a deploy config provided a pipeline & session config
-func (m *manager) BuildDeployCfg(pConfig *core.PipelineConfig,
+func (m *Manager) BuildDeployCfg(pConfig *core.PipelineConfig,
 	sConfig *core.SessionConfig) (*heuristic.DeployConfig, error) {
 	// 1. Fetch state key using risk engine input register type
 	sk, stateful, err := m.etl.GetStateKey(pConfig.DataType)
@@ -158,7 +158,7 @@ func (m *manager) BuildDeployCfg(pConfig *core.PipelineConfig,
 }
 
 // RunSession ... Runs a heuristic session
-func (m *manager) RunSession(cfg *heuristic.DeployConfig) (core.SUUID, error) {
+func (m *Manager) RunSession(cfg *heuristic.DeployConfig) (core.SUUID, error) {
 	// 1. Verify that pipeline constraints are met
 	// NOTE - Consider introducing a config validation step or module
 	if !cfg.Reuse && m.etlLimitReached() {
@@ -192,7 +192,7 @@ func (m *manager) RunSession(cfg *heuristic.DeployConfig) (core.SUUID, error) {
 }
 
 // BuildPipelineCfg ... Builds a pipeline config provided a set of heuristic request params
-func (m *manager) BuildPipelineCfg(params *models.SessionRequestParams) (*core.PipelineConfig, error) {
+func (m *Manager) BuildPipelineCfg(params *models.SessionRequestParams) (*core.PipelineConfig, error) {
 	inType, err := m.eng.GetInputType(params.Heuristic())
 	if err != nil {
 		return nil, err
@@ -217,6 +217,10 @@ func (m *manager) BuildPipelineCfg(params *models.SessionRequestParams) (*core.P
 }
 
 // etlLimitReached ... Returns true if the ETL pipeline count is at or above the max
-func (m *manager) etlLimitReached() bool {
+func (m *Manager) etlLimitReached() bool {
 	return m.etl.ActiveCount() >= m.cfg.MaxPipelineCount
+}
+
+func (m *Manager) PipelineHeight(pUUID core.PUUID) (*big.Int, error) {
+	return m.etl.GetPipelineHeight(pUUID)
 }

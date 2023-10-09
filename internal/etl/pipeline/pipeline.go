@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"fmt"
+	"math/big"
 	"sync"
 
 	"github.com/base-org/pessimism/internal/core"
@@ -12,6 +13,7 @@ import (
 
 // Pipeline ... Pipeline interface
 type Pipeline interface {
+	BlockHeight() (*big.Int, error)
 	Config() *core.PipelineConfig
 	Components() []component.Component
 	UUID() core.PUUID
@@ -66,6 +68,16 @@ func (pl *pipeline) Components() []component.Component {
 // UUID ... Returns pipeline UUID
 func (pl *pipeline) UUID() core.PUUID {
 	return pl.id
+}
+
+func (pl *pipeline) BlockHeight() (*big.Int, error) {
+	comp := pl.components[len(pl.components)-1]
+	oracle, ok := comp.(*component.Oracle)
+	if !ok {
+		return nil, fmt.Errorf("could not cast component to oracle")
+	}
+
+	return oracle.Height()
 }
 
 // AddEngineRelay ... Adds a relay to the pipeline that forces it to send transformed heuristic input

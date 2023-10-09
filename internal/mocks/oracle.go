@@ -24,6 +24,10 @@ func (md *mockOracleDefinition) ReadRoutine(_ context.Context, _ chan core.Trans
 	return nil
 }
 
+func (md *mockOracleDefinition) Height() (*big.Int, error) {
+	return nil, nil
+}
+
 // NewDummyOracle ... Takes in a register type that specifies the mocked output type
 // Useful for testing inter-component connectivity and higher level component management abstractions
 func NewDummyOracle(ctx context.Context, ot core.RegisterType, opts ...component.Option) (component.Component, error) {

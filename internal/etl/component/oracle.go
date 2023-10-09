@@ -17,6 +17,7 @@ type OracleDefinition interface {
 	BackTestRoutine(ctx context.Context, componentChan chan core.TransitData,
 		startHeight *big.Int, endHeight *big.Int) error
 	ReadRoutine(ctx context.Context, componentChan chan core.TransitData) error
+	Height() (*big.Int, error)
 }
 
 // Oracle ... Component used to represent a data source reader; E.g, Eth block indexing, interval API polling
@@ -51,6 +52,11 @@ func NewOracle(ctx context.Context, outType core.RegisterType,
 		zap.String(logging.CUUIDKey, o.metaData.id.String()))
 
 	return o, nil
+}
+
+// Height ... Returns the current block height of the oracle
+func (o *Oracle) Height() (*big.Int, error) {
+	return o.definition.Height()
 }
 
 // Close ... This function is called at the end when processes related to oracle need to shut down
