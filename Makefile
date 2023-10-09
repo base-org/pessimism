@@ -31,7 +31,7 @@ test:
 
 .PHONY: test-e2e
 e2e-test:
-	@ go test ./e2e/...  -timeout $(TEST_LIMIT) -deploy-config ../.devnet/devnetL1.json
+	@ go test ./e2e/...  -timeout $(TEST_LIMIT) -deploy-config ../.devnet/devnetL1.json -parallel=4
 
 .PHONY: lint
 lint:
