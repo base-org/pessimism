@@ -144,8 +144,6 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 		t.Fatal(err)
 	}
 
-	t.Parallel()
-
 	gethClient, err := client.NewGethClient(sys.EthInstances["sequencer"].HTTPEndpoint())
 	if err != nil {
 		t.Fatal(err)
