@@ -33,6 +33,11 @@ jobs:
       with:
         go-version: 1.21
 
+    - name: Setup devnet resources
+      id: devnet
+      run: |
+        make devnet
+
     - name: Run Unit Tests
       id: unit
       run: | 
