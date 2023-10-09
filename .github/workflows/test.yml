@@ -33,11 +33,6 @@ jobs:
       with:
         go-version: 1.21
 
-    - name: Setup devnet resources
-      id: devnet
-      run: |
-        make devnet-allocs
-
     - name: Run Unit Tests
       id: unit
       run: | 
@@ -75,6 +70,11 @@ jobs:
       uses: actions/setup-go@v3
       with:
         go-version: 1.21
+
+    - name: Setup devnet resources
+      id: devnet
+      run: |
+        make devnet-allocs
 
     - name: Run E2E Integration Tests
       run: make e2e-test
