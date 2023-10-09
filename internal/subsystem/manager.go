@@ -1,4 +1,4 @@
-//go:generate mockgen -package mocks --destination ../mocks/subsystem.go --mock_names Manager=SubManager . Manager
+//go:generate mockgen -package mocks --destination ../mocks/subsystem.go --mock_names Subsystem=SubManager . Subsystem
 
 package subsystem
 
