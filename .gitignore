@@ -3,3 +3,4 @@ config.env
 /.vscode/
 /.idea
 genesis.json
+alert-routing.yaml

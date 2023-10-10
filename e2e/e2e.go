@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -22,6 +23,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+)
+
+const (
+	SlackTestServerPort = 7100
+	PagerDutyTestPort   = 7200
 )
 
 // SysTestSuite ... Stores all the information needed to run an e2e system test
@@ -69,16 +75,18 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 
 	appCfg := DefaultTestConfig()
 
-	slackServer := NewTestSlackServer()
-	appCfg.AlertConfig.SlackConfig.URL = slackServer.Server.URL
+	slackServer := NewTestSlackServer("127.0.0.1", SlackTestServerPort)
 
-	pagerdutyServer := NewTestPagerDutyServer()
-	appCfg.AlertConfig.MediumPagerDutyCfg.AlertEventsURL = pagerdutyServer.Server.URL
+	pagerdutyServer := NewTestPagerDutyServer("127.0.0.1", PagerDutyTestPort)
+
+	appCfg.AlertConfig.RoutingCfgPath = "alert-routing-cfg.yaml"
+	appCfg.AlertConfig.PagerdutyAlertEventsURL = fmt.Sprintf("http://127.0.0.1:%d", PagerDutyTestPort)
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if err := pess.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -95,6 +103,8 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 		Close: func() {
 			kill()
 			node.Close()
+			slackServer.Close()
+			pagerdutyServer.Close()
 		},
 		AppCfg:              appCfg,
 		TestSlackSvr:        slackServer,
@@ -126,16 +136,18 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 
 	appCfg := DefaultTestConfig()
 
-	slackServer := NewTestSlackServer()
-	appCfg.AlertConfig.SlackConfig.URL = slackServer.Server.URL
+	slackServer := NewTestSlackServer("127.0.0.1", SlackTestServerPort)
 
-	pagerdutyServer := NewTestPagerDutyServer()
-	appCfg.AlertConfig.MediumPagerDutyCfg.AlertEventsURL = pagerdutyServer.Server.URL
+	pagerdutyServer := NewTestPagerDutyServer("127.0.0.1", PagerDutyTestPort)
+
+	appCfg.AlertConfig.RoutingCfgPath = "alert-routing-cfg.yaml"
+	appCfg.AlertConfig.PagerdutyAlertEventsURL = fmt.Sprintf("http://127.0.0.1:%d", PagerDutyTestPort)
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	if err := pess.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -152,6 +164,8 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 		Close: func() {
 			kill()
 			sys.Close()
+			slackServer.Close()
+			pagerdutyServer.Close()
 		},
 		AppCfg:              appCfg,
 		TestSlackSvr:        slackServer,
@@ -185,16 +199,8 @@ func DefaultTestConfig() *config.Config {
 			Port: port,
 		},
 		AlertConfig: &alert.Config{
-			SlackConfig: &client.SlackConfig{
-				URL:     "",
-				Channel: "test",
-			},
-			MediumPagerDutyCfg: &client.PagerDutyConfig{
-				AlertEventsURL: "",
-			},
-			HighPagerDutyCfg: &client.PagerDutyConfig{
-				AlertEventsURL: "",
-			},
+			PagerdutyAlertEventsURL: "",
+			RoutingCfgPath:          "",
 		},
 	}
 }

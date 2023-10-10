@@ -18,6 +18,7 @@ import (
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/state"
 	"github.com/base-org/pessimism/internal/subsystem"
+
 	"go.uber.org/zap"
 )
 
@@ -72,12 +73,14 @@ func InitializeServer(ctx context.Context, cfg *config.Config, m subsystem.Manag
 */
 
 // InitializeAlerting ... Performs dependency injection to build alerting struct
-func InitializeAlerting(ctx context.Context, cfg *config.Config) alert.Manager {
-	sc := client.NewSlackClient(cfg.AlertConfig.SlackConfig)
-	pdc := client.NewPagerDutyClient(cfg.AlertConfig.HighPagerDutyCfg)
-	medPdc := client.NewPagerDutyClient(cfg.AlertConfig.MediumPagerDutyCfg)
+func InitializeAlerting(ctx context.Context, cfg *config.Config) (alert.Manager, error) {
+	if err := cfg.ParseAlertConfig(); err != nil {
+		return nil, err
+	}
 
-	return alert.NewManager(ctx, sc, medPdc, pdc)
+	clientMap := alert.NewRoutingDirectory(cfg.AlertConfig)
+
+	return alert.NewManager(ctx, cfg.AlertConfig, clientMap), nil
 }
 
 // InitializeETL ... Performs dependency injection to build etl struct
@@ -107,7 +110,11 @@ func NewPessimismApp(ctx context.Context, cfg *config.Config) (*Application, fun
 		return nil, nil, err
 	}
 
-	alerting := InitializeAlerting(ctx, cfg)
+	alerting, err := InitializeAlerting(ctx, cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	engine := InitializeEngine(ctx, alerting.Transit())
 	etl := InitializeETL(ctx, engine.Transit())
 
