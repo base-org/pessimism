@@ -25,11 +25,16 @@ baseurl: "/pessimism" # the subpath of your site, e.g. /blog
 url: "base-org.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 
 # Build settings
-theme: minima
-skin: dark
+remote_theme: jekyll/minima
+minima:
+  skin: dark
+    # Set the minima theme as default
 
 plugins:
-  - jekyll-feed
+  - jekyll-relative-links
+  - jekyll-readme-index
+  - jemoji
+  - jekyll-remote-theme
 
 # Exclude from processing.
 # The following items will not be processed, by default.
