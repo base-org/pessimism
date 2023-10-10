@@ -1,5 +1,4 @@
 ---
-title: Home
 layout: home
 ---
 
