@@ -50,7 +50,7 @@ func NewConfig(fileName core.FilePath) *Config {
 		Environment:   core.Env(getEnvStr("ENV")),
 
 		AlertConfig: &alert.Config{
-			RoutingCfgPath:          getEnvStrWithDefault("ALERT_ROUTE_CFG_PATH", ""),
+			RoutingCfgPath:          getEnvStrWithDefault("ALERT_ROUTE_CFG_PATH", "alerts-routing.yaml"),
 			PagerdutyAlertEventsURL: getEnvStrWithDefault("PAGERDUTY_ALERT_EVENTS_URL", ""),
 			RoutingParams:           nil, // This is populated after the config is created (see IngestAlertConfig)
 		},
@@ -121,7 +121,7 @@ func getEnvStr(key string) string {
 }
 
 // getEnvStrWithDefault ... Reads env var from process environment, returns default if not found
-func getEnvStrWithDefault(key string, defaultValue string) string {
+func getEnvStrWithDefault(key, defaultValue string) string {
 	envVar, ok := os.LookupEnv(key)
 
 	// Not found

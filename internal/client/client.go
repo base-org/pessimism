@@ -59,7 +59,6 @@ func NewBundle(ctx context.Context, cfg *Config) (*Bundle, error) {
 		L2Client:      l2Client,
 		L2Geth:        l2Geth,
 	}, nil
-
 }
 
 // FromContext ... Retrieves the client bundle from the context

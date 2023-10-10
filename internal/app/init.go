@@ -29,7 +29,6 @@ func InitializeContext(ctx context.Context, ss state.Store, cb *client.Bundle) c
 
 	return context.WithValue(
 		ctx, core.Clients, cb)
-
 }
 
 // InitializeMetrics ... Performs dependency injection to build metrics struct
