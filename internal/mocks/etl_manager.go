@@ -5,6 +5,7 @@
 package mocks
 
 import (
+	big "math/big"
 	reflect "reflect"
 
 	core "github.com/base-org/pessimism/internal/core"
@@ -77,6 +78,21 @@ func (m *EtlManager) EventLoop() error {
 func (mr *EtlManagerMockRecorder) EventLoop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventLoop", reflect.TypeOf((*EtlManager)(nil).EventLoop))
+}
+
+// GetPipelineHeight mocks base method.
+func (m *EtlManager) GetPipelineHeight(arg0 core.PUUID) (*big.Int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPipelineHeight", arg0)
+	ret0, _ := ret[0].(*big.Int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPipelineHeight indicates an expected call of GetPipelineHeight.
+func (mr *EtlManagerMockRecorder) GetPipelineHeight(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPipelineHeight", reflect.TypeOf((*EtlManager)(nil).GetPipelineHeight), arg0)
 }
 
 // GetStateKey mocks base method.

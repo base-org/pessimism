@@ -9,6 +9,7 @@ import (
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/config"
+	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/subsystem"
@@ -24,19 +25,19 @@ type Application struct {
 	ctx     context.Context
 	metrics metrics.Metricer
 
-	sub    subsystem.Manager
-	server *server.Server
+	Subsystems *subsystem.Manager
+	server     *server.Server
 }
 
 // New ... Initializer
 func New(ctx context.Context, cfg *config.Config,
-	sub subsystem.Manager, server *server.Server, stats metrics.Metricer) *Application {
+	sub *subsystem.Manager, server *server.Server, stats metrics.Metricer) *Application {
 	return &Application{
-		ctx:     ctx,
-		cfg:     cfg,
-		sub:     sub,
-		server:  server,
-		metrics: stats,
+		ctx:        ctx,
+		cfg:        cfg,
+		Subsystems: sub,
+		server:     server,
+		metrics:    stats,
 	}
 }
 
@@ -46,7 +47,7 @@ func (a *Application) Start() error {
 	a.metrics.Start()
 
 	// Spawn subsystem event loop routines
-	a.sub.StartEventRoutines(a.ctx)
+	a.Subsystems.StartEventRoutines(a.ctx)
 
 	// Start the API server
 	a.server.Start()
@@ -73,29 +74,36 @@ func (a *Application) End() <-chan os.Signal {
 }
 
 // BootStrap ... Bootstraps the application
-func (a *Application) BootStrap(sessions []*BootSession) error {
+func (a *Application) BootStrap(sessions []*BootSession) ([]*core.HeuristicID, error) {
 	logger := logging.WithContext(a.ctx)
+	ids := make([]*core.HeuristicID, 0, len(sessions))
 
 	for _, session := range sessions {
-		pConfig, err := a.sub.BuildPipelineCfg(session)
+		pConfig, err := a.Subsystems.BuildPipelineCfg(session)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		sConfig := session.SessionConfig()
 
-		deployCfg, err := a.sub.BuildDeployCfg(pConfig, sConfig)
+		deployCfg, err := a.Subsystems.BuildDeployCfg(pConfig, sConfig)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		sUUID, err := a.sub.RunSession(deployCfg)
+		sUUID, err := a.Subsystems.RunSession(deployCfg)
 		if err != nil {
-			return err
+			return nil, err
 		}
+
+		ids = append(ids, &core.HeuristicID{
+			SUUID: sUUID,
+			PUUID: deployCfg.PUUID,
+		})
 
 		logger.Info("heuristic session started",
 			zap.String(logging.SUUIDKey, sUUID.String()))
 	}
-	return nil
+
+	return ids, nil
 }

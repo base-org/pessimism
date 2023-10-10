@@ -221,3 +221,8 @@ func (uuid SUUID) String() string {
 	return fmt.Sprintf("%s::%s",
 		uuid.PID.String(), uuid.UUID.ShortString())
 }
+
+type HeuristicID struct {
+	PUUID PUUID
+	SUUID SUUID
+}

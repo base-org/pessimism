@@ -22,11 +22,11 @@ type Service interface {
 // PessimismService ... API service
 type PessimismService struct {
 	ctx context.Context
-	m   subsystem.Manager
+	m   subsystem.Subsystem
 }
 
 // New ... Initializer
-func New(ctx context.Context, m subsystem.Manager) *PessimismService {
+func New(ctx context.Context, m subsystem.Subsystem) *PessimismService {
 	return &PessimismService{
 		ctx: ctx,
 		m:   m,

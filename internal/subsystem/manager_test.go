@@ -19,7 +19,7 @@ func testErr() error {
 }
 
 type testSuite struct {
-	subsys subsystem.Manager
+	subsys *subsystem.Manager
 
 	mockEtl  *mocks.EtlManager
 	mockEng  *mocks.EngineManager

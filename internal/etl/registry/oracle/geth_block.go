@@ -62,6 +62,10 @@ func NewGethBlockOracle(ctx context.Context, cfg *core.ClientConfig,
 	return oracle, nil
 }
 
+func (oracle *GethBlockODef) Height() (*big.Int, error) {
+	return oracle.currHeight, nil
+}
+
 // getCurrentHeightFromNetwork ... Gets the current height of the network and will not quit until found
 func (oracle *GethBlockODef) getCurrentHeightFromNetwork(ctx context.Context) *types.Header {
 	for {

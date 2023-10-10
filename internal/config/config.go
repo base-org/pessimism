@@ -13,10 +13,10 @@ import (
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/subsystem"
+	"gopkg.in/yaml.v2"
 
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
-	"gopkg.in/yaml.v3"
 )
 
 // TrueEnvVal ... Represents the encoded string value for true (ie. 1)
@@ -52,6 +52,7 @@ func NewConfig(fileName core.FilePath) *Config {
 		AlertConfig: &alert.Config{
 			RoutingCfgPath:          getEnvStrWithDefault("ALERT_ROUTE_CFG_PATH", ""),
 			PagerdutyAlertEventsURL: getEnvStrWithDefault("PAGERDUTY_ALERT_EVENTS_URL", ""),
+			RoutingParams:           nil, // This is populated after the config is created (see IngestAlertConfig)
 		},
 
 		SystemConfig: &subsystem.Config{
@@ -99,28 +100,6 @@ func (cfg *Config) IsBootstrap() bool {
 	return cfg.BootStrapPath != ""
 }
 
-// ParseAlertConfig ... Parses the alert config
-func (cfg *Config) ParseAlertConfig() error {
-	if cfg.AlertConfig.RoutingCfgPath == "" {
-		return fmt.Errorf("alert routing config path is empty")
-	}
-
-	f, err := os.ReadFile(filepath.Clean(cfg.AlertConfig.RoutingCfgPath))
-	if err != nil {
-		return err
-	}
-
-	params := &core.AlertRoutingParams{}
-	err = yaml.Unmarshal(f, &params)
-
-	if err != nil {
-		return err
-	}
-
-	cfg.AlertConfig.RoutingParams = params
-	return nil
-}
-
 // getEnvStr ... Reads env var from process environment, panics if not found
 func getEnvStr(key string) string {
 	envVar, ok := os.LookupEnv(key)
@@ -158,4 +137,36 @@ func getEnvInt(key string) int {
 		log.Fatalf("env val is not int; got: %s=%s; err: %s", key, val, err.Error())
 	}
 	return intRep
+}
+
+// IngestAlertConfig ... Ingests an alerting config provided a file path
+func (cfg *Config) IngestAlertConfig() error {
+	// (1) Error if no routing config path is provided
+	if cfg.AlertConfig.RoutingCfgPath == "" && cfg.AlertConfig.RoutingParams == nil {
+		return fmt.Errorf("alert routing config path is empty")
+	}
+
+	// (2) Return nil if a routing param struct is already provided
+	if cfg.AlertConfig.RoutingParams != nil {
+		return nil
+	}
+
+	// (3) Read the YAML file contents into a routing param struct
+	f, err := os.ReadFile(filepath.Clean(cfg.AlertConfig.RoutingCfgPath))
+	if err != nil {
+		return err
+	}
+
+	var params *core.AlertRoutingParams
+	err = yaml.Unmarshal(f, &params)
+	if err != nil {
+		return err
+	}
+
+	// (4) Set the routing params and return
+	if params != nil {
+		cfg.AlertConfig.RoutingParams = params
+	}
+
+	return nil
 }

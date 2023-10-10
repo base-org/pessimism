@@ -53,7 +53,7 @@ func InitializeMetrics(ctx context.Context, cfg *config.Config) (metrics.Metrice
 }
 
 // InitializeServer ... Performs dependency injection to build server struct
-func InitializeServer(ctx context.Context, cfg *config.Config, m subsystem.Manager) (*server.Server, func(), error) {
+func InitializeServer(ctx context.Context, cfg *config.Config, m *subsystem.Manager) (*server.Server, func(), error) {
 	apiService := service.New(ctx, m)
 	handler, err := handlers.New(ctx, apiService)
 	if err != nil {
@@ -74,7 +74,7 @@ func InitializeServer(ctx context.Context, cfg *config.Config, m subsystem.Manag
 
 // InitializeAlerting ... Performs dependency injection to build alerting struct
 func InitializeAlerting(ctx context.Context, cfg *config.Config) (alert.Manager, error) {
-	if err := cfg.ParseAlertConfig(); err != nil {
+	if err := cfg.IngestAlertConfig(); err != nil {
 		return nil, err
 	}
 

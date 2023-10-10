@@ -31,7 +31,7 @@ test:
 
 .PHONY: test-e2e
 e2e-test:
-	@ go test ./e2e/...  -timeout $(TEST_LIMIT)
+	@ go test ./e2e/...  -timeout $(TEST_LIMIT) -deploy-config ../.devnet/devnetL1.json -parallel=4 -v
 
 .PHONY: lint
 lint:
@@ -65,3 +65,7 @@ metrics-docs: build-app
 		@echo "$(GREEN) Generating metric documentation...$(COLOR_END)"
 		@./bin/pessimism doc metrics
 
+
+devnet-allocs:
+	@echo "$(GREEN) Generating devnet allocs...$(COLOR_END)"
+	@./scripts/devnet-allocs.sh
