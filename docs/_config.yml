@@ -20,7 +20,7 @@
 
 title: Pessimism
 description: >- # this means to ignore newlines until "baseurl:"
-  Detect real-time threats on Op-stack compatible chains
+  Detect real-time threats and events on OP Stack compatible blockchains
 baseurl: "/pessimism" # the subpath of your site, e.g. /blog
 url: "base-org.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 
@@ -28,6 +28,7 @@ url: "base-org.github.io" # the base hostname & protocol for your site, e.g. htt
 theme: minima
 plugins:
   - jekyll-feed
+  - jekyll-algolia
 
 # Exclude from processing.
 # The following items will not be processed, by default.
