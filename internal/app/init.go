@@ -23,19 +23,13 @@ import (
 )
 
 // InitializeContext ... Performs dependency injection to build context struct
-func InitializeContext(ctx context.Context, ss state.Store,
-	l1Client, l2Client client.EthClient, l2geth client.GethClient) context.Context {
+func InitializeContext(ctx context.Context, ss state.Store, cb *client.Bundle) context.Context {
 	ctx = context.WithValue(
 		ctx, core.State, ss)
 
-	ctx = context.WithValue(
-		ctx, core.L1Client, l1Client)
-
-	ctx = context.WithValue(
-		ctx, core.L2Client, l2Client)
-
 	return context.WithValue(
-		ctx, core.L2Geth, l2geth)
+		ctx, core.Clients, cb)
+
 }
 
 // InitializeMetrics ... Performs dependency injection to build metrics struct

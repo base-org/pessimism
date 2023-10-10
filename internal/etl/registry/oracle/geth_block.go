@@ -45,7 +45,7 @@ func NewGethBlockODef(cfg *core.ClientConfig, client client.EthClient,
 // NewGethBlockOracle ... Initializer for geth.block oracle component
 func NewGethBlockOracle(ctx context.Context, cfg *core.ClientConfig,
 	opts ...component.Option) (component.Component, error) {
-	client, err := client.FromContext(ctx, cfg.Network)
+	client, err := client.FromNetwork(ctx, cfg.Network)
 	if err != nil {
 		return nil, err
 	}
