@@ -24,7 +24,7 @@ Currently, there are three total component types:
 The diagram below showcases how interactivity between components occurs:
 
 {% raw %}
-<div class="mermaid">
+<div class="mermaid" background="#fefdfc">
 graph LR;
     A((Component0)) -->|dataX| C[Ingress];
 
