@@ -26,9 +26,10 @@ url: "base-org.github.io" # the base hostname & protocol for your site, e.g. htt
 
 # Build settings
 theme: minima
+skin: dark
+
 plugins:
   - jekyll-feed
-  - jekyll-algolia
 
 # Exclude from processing.
 # The following items will not be processed, by default.

@@ -1,8 +1,9 @@
 ---
+title: Home
 layout: home
 ---
 
-Detect real-time threats on Op-stack compatible chains
+Welcome to the Pessimism documentation. This documentation is intended to provide a high-level overview of the Pessimism architecture and core algorithms.
 
 ## Contents
 

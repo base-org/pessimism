@@ -14,6 +14,7 @@ The hardcoded `balance_enforcement` heuristic checks the native ETH balance of s
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
+| network | string | The network to run the heuristic on |
 | address | string | The address to check the balance of |
 | lower | float | The ETH lower bound of the balance |
 | upper | float | The ETH upper bound of the balance |
@@ -48,6 +49,7 @@ The hardcoded `contract_event` heuristic scans newly produced blocks for a speci
 
 | Name    | Type     | Description                                        |
 |---------|----------|----------------------------------------------------|
+| network | string   | The network to run the heuristic on                |
 | address | string   | The address of the contract to scan for the events |
 | args    | []string | The event signatures to scan for                   |
 
@@ -82,10 +84,10 @@ The hardcoded `withdrawal_enforcement` heuristic scans for active `WithdrawalPro
 
 ### Parameters
 
-| Name              | Type   | Description                                     |
-|-------------------|--------|-------------------------------------------------|
-| l1_portal_address | string | The address of the L1Portal contract            |
-| l2_to_l1_address  | string | The address of the L2ToL1MessagePasser contract |
+| Network | Name              | Type   | Description                                     |
+|---------|-------------------|--------|-------------------------------------------------|
+| layer1  | l1_portal_address | string | The address of the OptimismPortal contract      |
+| layer2  | l2_to_l1_address  | string | The address of the L2ToL1MessagePasser contract |
 
 ### Example Deploy Request
 
@@ -115,10 +117,10 @@ The hardcoded `fault_detector` heuristic scans for active `OutputProposed` event
 
 ### Parameters
 
-| Name              | Type   | Description                                     |
-|-------------------|--------|-------------------------------------------------|
-| l2_output_address | string | The address of the L1 output oracle             |
-| l2_to_l1_address  | string | The address of the L2ToL1MessagePasser contract |
+| Network | Name              | Type   | Description                                     |
+|---------|-------------------|--------|-------------------------------------------------|
+| layer2  | l2_output_address | string | The address of the L1 output oracle             |
+| layer1  | l2_to_l1_address  | string | The address of the L2ToL1MessagePasser contract |
 
 ### Example Deploy Request
 
