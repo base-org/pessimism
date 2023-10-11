@@ -17,7 +17,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	indexer_client "github.com/ethereum-optimism/optimism/indexer/client"
-	"gopkg.in/yaml.v2"
 
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
