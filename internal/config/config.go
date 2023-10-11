@@ -14,6 +14,7 @@ import (
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/subsystem"
+	"gopkg.in/yaml.v2"
 
 	indexer_client "github.com/ethereum-optimism/optimism/indexer/client"
 	"gopkg.in/yaml.v2"
