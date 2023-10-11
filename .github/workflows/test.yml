@@ -78,7 +78,7 @@ jobs:
     - name: Install foundry
       uses: foundry-rs/foundry-toolchain@v1
 
-    - name: Setup devnet resources
+    - name: Setup devnet Resources
       id: devnet
       run: |
         make devnet-allocs

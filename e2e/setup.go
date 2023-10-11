@@ -77,7 +77,12 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 	}
 
 	ss := state.NewMemState()
-	ctx = app.InitializeContext(ctx, ss, node.L2Client, node.L2Client, nil)
+
+	bundle := &client.Bundle{
+		L1Client: node.L2Client,
+		L2Client: node.L2Client,
+	}
+	ctx = app.InitializeContext(ctx, ss, bundle)
 
 	appCfg := DefaultTestConfig()
 
@@ -150,9 +155,14 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	}
 
 	ss := state.NewMemState()
-	ctx = app.InitializeContext(ctx, ss,
-		sys.Clients["l1"],
-		sys.Clients["sequencer"], gethClient)
+
+	bundle := &client.Bundle{
+		L1Client: sys.Clients["l1"],
+		L2Client: sys.Clients["sequencer"],
+		L2Geth:   gethClient,
+	}
+
+	ctx = app.InitializeContext(ctx, ss, bundle)
 
 	appCfg := DefaultTestConfig()
 

@@ -46,7 +46,9 @@ func Test_Manager(t *testing.T) {
 
 				assert.NoError(t, err)
 
-				cc := &core.ClientConfig{}
+				cc := &core.ClientConfig{
+					Network: core.Layer1,
+				}
 				c, err := m.InferComponent(cc, cUUID, core.NilPUUID(), register)
 				assert.NoError(t, err)
 

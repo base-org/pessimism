@@ -4,22 +4,12 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 
-	"github.com/base-org/pessimism/internal/core"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient/gethclient"
 	"github.com/ethereum/go-ethereum/rpc"
 )
-
-func L2GethFromContext(ctx context.Context) (GethClient, error) {
-	if client, ok := ctx.Value(core.L2Geth).(GethClient); ok {
-		return client, nil
-	}
-
-	return nil, fmt.Errorf("could not load eth client object from context")
-}
 
 // GethClient ... Provides interface wrapper for gethClient functions
 type GethClient interface {

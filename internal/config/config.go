@@ -9,11 +9,14 @@ import (
 
 	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/server"
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/subsystem"
 	"gopkg.in/yaml.v2"
+
+	indexer_client "github.com/ethereum-optimism/optimism/indexer/client"
 
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -27,13 +30,12 @@ const trueEnvVal = "1"
 type Config struct {
 	Environment   core.Env
 	BootStrapPath string
-	L1RpcEndpoint string
-	L2RpcEndpoint string
 
-	SystemConfig  *subsystem.Config
-	ServerConfig  *server.Config
-	MetricsConfig *metrics.Config
 	AlertConfig   *alert.Config
+	ClientConfig  *client.Config
+	MetricsConfig *metrics.Config
+	ServerConfig  *server.Config
+	SystemConfig  *subsystem.Config
 }
 
 // NewConfig ... Initializer
@@ -43,14 +45,12 @@ func NewConfig(fileName core.FilePath) *Config {
 	}
 
 	config := &Config{
-		L1RpcEndpoint: getEnvStr("L1_RPC_ENDPOINT"),
-		L2RpcEndpoint: getEnvStr("L2_RPC_ENDPOINT"),
 
 		BootStrapPath: getEnvStrWithDefault("BOOTSTRAP_PATH", ""),
 		Environment:   core.Env(getEnvStr("ENV")),
 
 		AlertConfig: &alert.Config{
-			RoutingCfgPath:          getEnvStrWithDefault("ALERT_ROUTE_CFG_PATH", ""),
+			RoutingCfgPath:          getEnvStrWithDefault("ALERT_ROUTE_CFG_PATH", "alerts-routing.yaml"),
 			PagerdutyAlertEventsURL: getEnvStrWithDefault("PAGERDUTY_ALERT_EVENTS_URL", ""),
 			RoutingParams:           nil, // This is populated after the config is created (see IngestAlertConfig)
 		},
@@ -74,6 +74,14 @@ func NewConfig(fileName core.FilePath) *Config {
 			KeepAlive:    getEnvInt("SERVER_KEEP_ALIVE_TIME"),
 			ReadTimeout:  getEnvInt("SERVER_READ_TIMEOUT"),
 			WriteTimeout: getEnvInt("SERVER_WRITE_TIMEOUT"),
+		},
+		ClientConfig: &client.Config{
+			L1RpcEndpoint: getEnvStr("L1_RPC_ENDPOINT"),
+			L2RpcEndpoint: getEnvStr("L2_RPC_ENDPOINT"),
+			IndexerCfg: &indexer_client.Config{
+				BaseURL:         getEnvStrWithDefault("INDEXER_URL", ""),
+				PaginationLimit: getEnvIntWithDefault("INDEXER_PAGINATION_LIMIT", 0),
+			},
 		},
 	}
 
@@ -113,7 +121,7 @@ func getEnvStr(key string) string {
 }
 
 // getEnvStrWithDefault ... Reads env var from process environment, returns default if not found
-func getEnvStrWithDefault(key string, defaultValue string) string {
+func getEnvStrWithDefault(key, defaultValue string) string {
 	envVar, ok := os.LookupEnv(key)
 
 	// Not found
@@ -122,6 +130,23 @@ func getEnvStrWithDefault(key string, defaultValue string) string {
 	}
 
 	return envVar
+}
+
+// getEnvIntWithDefault ... Reads env var from process environment, returns default if not found
+func getEnvIntWithDefault(key string, defaultValue int) int {
+	envVar, ok := os.LookupEnv(key)
+
+	// Not found
+	if !ok {
+		return defaultValue
+	}
+
+	intRep, err := strconv.Atoi(envVar)
+	if err != nil {
+		log.Fatalf("env val is not int; got: %s=%s; err: %s", key, envVar, err.Error())
+	}
+
+	return intRep
 }
 
 // getEnvBool ... Reads env vars and converts to booleans

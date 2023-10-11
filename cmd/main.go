@@ -58,27 +58,14 @@ func RunPessimism(_ *cli.Context) error {
 	logging.New(cfg.Environment)
 	logger := logging.WithContext(ctx)
 
-	l1Client, err := client.NewEthClient(ctx, cfg.L1RpcEndpoint)
-	if err != nil {
-		logger.Fatal("Error creating L1 client", zap.Error(err))
-		return err
-	}
-
-	l2Client, err := client.NewEthClient(ctx, cfg.L2RpcEndpoint)
-	if err != nil {
-		logger.Fatal("Error creating L1 client", zap.Error(err))
-		return err
-	}
-
-	l2Geth, err := client.NewGethClient(cfg.L2RpcEndpoint)
-	if err != nil {
-		logger.Fatal("Error creating L2 GETH client", zap.Error(err))
-		return err
-	}
-
 	ss := state.NewMemState()
+	bundle, err := client.NewBundle(ctx, cfg.ClientConfig)
+	if err != nil {
+		logger.Fatal("Error creating client bundle", zap.Error(err))
+		return err
+	}
 
-	ctx = app.InitializeContext(ctx, ss, l1Client, l2Client, l2Geth)
+	ctx = app.InitializeContext(ctx, ss, bundle)
 
 	pessimism, shutDown, err := app.NewPessimismApp(ctx, cfg)
 

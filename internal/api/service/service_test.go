@@ -5,8 +5,9 @@ import (
 	"fmt"
 
 	svc "github.com/base-org/pessimism/internal/api/service"
+	"github.com/base-org/pessimism/internal/app"
+	"github.com/base-org/pessimism/internal/client"
 
-	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/mocks"
 	"github.com/golang/mock/gomock"
 )
@@ -33,8 +34,10 @@ func createTestSuite(ctrl *gomock.Controller) *testSuite {
 	ethClient := mocks.NewMockEthClient(ctrl)
 	ctx := context.Background()
 
-	ctx = context.WithValue(ctx, core.L1Client, ethClient)
-	ctx = context.WithValue(ctx, core.L2Client, ethClient)
+	ctx = app.InitializeContext(ctx, nil, &client.Bundle{
+		L1Client: ethClient,
+		L2Client: ethClient,
+	})
 
 	service := svc.New(ctx, sysMock)
 	return &testSuite{

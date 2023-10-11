@@ -74,17 +74,7 @@ type faultDetectorInv struct {
 
 // NewFaultDetector ... Initializer
 func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heuristic, error) {
-	l2Client, err := client.FromContext(ctx, core.Layer2)
-	if err != nil {
-		return nil, err
-	}
-
-	l1Client, err := client.FromContext(ctx, core.Layer1)
-	if err != nil {
-		return nil, err
-	}
-
-	l2Geth, err := client.L2GethFromContext(ctx)
+	bundle, err := client.FromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +82,7 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heu
 	outputSig := crypto.Keccak256Hash([]byte(OutputProposedEvent))
 	addr := common.HexToAddress(cfg.L2ToL1Address)
 
-	outputOracle, err := bindings.NewL2OutputOracleFilterer(addr, l1Client)
+	outputOracle, err := bindings.NewL2OutputOracleFilterer(addr, bundle.L1Client)
 	if err != nil {
 		return nil, err
 	}
@@ -105,8 +95,8 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heu
 		l2tol1MessagePasser:  addr,
 		stats:                metrics.WithContext(ctx),
 
-		l2Client:     l2Client,
-		l2GethClient: l2Geth,
+		l2Client:     bundle.L2Client,
+		l2GethClient: bundle.L2Geth,
 
 		Heuristic: heuristic.NewBaseHeuristic(core.EventLog),
 	}, nil
