@@ -21,17 +21,11 @@ const (
 	Dynamic
 )
 
-// EngineInput ... Parameter wrapper for engine execution input
-type EngineInput struct {
+// ExecInput ... Parameter wrapper for engine execution input
+type ExecInput struct {
 	ctx context.Context
 	hi  core.HeuristicInput
 	h   heuristic.Heuristic
-}
-
-// EngineOutput ... Parameter wrapper for engine execution output
-type EngineOutput struct {
-	act       *core.Activation
-	activated bool
 }
 
 // RiskEngine ... Execution engine interface
@@ -39,14 +33,14 @@ type RiskEngine interface {
 	Type() Type
 	Execute(context.Context, core.TransitData,
 		heuristic.Heuristic) (*core.Activation, bool)
-	AddWorkerIngress(chan EngineInput)
+	AddWorkerIngress(chan ExecInput)
 	EventLoop(context.Context)
 }
 
 // hardCodedEngine ... Hard coded execution engine
 // IE: native hardcoded application code for heuristic implementation
 type hardCodedEngine struct {
-	heuristicIn chan EngineInput
+	heuristicIn chan ExecInput
 	alertEgress chan core.Alert
 }
 
@@ -58,17 +52,17 @@ func NewHardCodedEngine(egress chan core.Alert) RiskEngine {
 }
 
 // Type ... Returns the engine type
-func (e *hardCodedEngine) Type() Type {
+func (hce *hardCodedEngine) Type() Type {
 	return HardCoded
 }
 
 // AddWorkerIngress ... Adds a worker ingress channel
-func (e *hardCodedEngine) AddWorkerIngress(ingress chan EngineInput) {
-	e.heuristicIn = ingress
+func (hce *hardCodedEngine) AddWorkerIngress(ingress chan ExecInput) {
+	hce.heuristicIn = ingress
 }
 
 // Execute ... Executes the heuristic
-func (e *hardCodedEngine) Execute(ctx context.Context, data core.TransitData,
+func (hce *hardCodedEngine) Execute(ctx context.Context, data core.TransitData,
 	h heuristic.Heuristic) (*core.Activation, bool) {
 	logger := logging.WithContext(ctx)
 
@@ -123,7 +117,6 @@ func (hce *hardCodedEngine) EventLoop(ctx context.Context) {
 
 				hce.alertEgress <- alert
 			}
-
 		}
 	}
 }

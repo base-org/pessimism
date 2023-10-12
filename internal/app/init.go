@@ -87,13 +87,13 @@ func InitializeETL(ctx context.Context, transit chan core.HeuristicInput) pipeli
 }
 
 // InitializeEngine ... Performs dependency injection to build engine struct
-func InitializeEngine(ctx context.Context, transit chan core.Alert) engine.Manager {
+func InitializeEngine(ctx context.Context, cfg *config.Config, transit chan core.Alert) engine.Manager {
 	store := engine.NewSessionStore()
 	am := engine.NewAddressingMap()
 	re := engine.NewHardCodedEngine(transit)
 	it := e_registry.NewHeuristicTable()
 
-	return engine.NewManager(ctx, re, am, store, it, transit)
+	return engine.NewManager(ctx, cfg.EngineConfig, re, am, store, it, transit)
 }
 
 // NewPessimismApp ... Performs dependency injection to build app struct
@@ -108,7 +108,7 @@ func NewPessimismApp(ctx context.Context, cfg *config.Config) (*Application, fun
 		return nil, nil, err
 	}
 
-	engine := InitializeEngine(ctx, alerting.Transit())
+	engine := InitializeEngine(ctx, cfg, alerting.Transit())
 	etl := InitializeETL(ctx, engine.Transit())
 
 	m := subsystem.NewManager(ctx, cfg.SystemConfig, etl, engine, alerting)

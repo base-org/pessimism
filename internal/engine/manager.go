@@ -16,6 +16,10 @@ import (
 	"go.uber.org/zap"
 )
 
+type Config struct {
+	WorkerCount int
+}
+
 // Manager ... Engine manager interface
 type Manager interface {
 	GetInputType(ht core.HeuristicType) (core.RegisterType, error)
@@ -45,7 +49,7 @@ type engineManager struct {
 	alertEgress chan core.Alert
 
 	// Used to send execution requests to engine worker subscribers
-	workerEgress chan EngineInput
+	workerEgress chan ExecInput
 
 	metrics    metrics.Metricer
 	engine     RiskEngine
@@ -55,7 +59,7 @@ type engineManager struct {
 }
 
 // NewManager ... Initializer
-func NewManager(ctx context.Context, engine RiskEngine, addr AddressingMap,
+func NewManager(ctx context.Context, cfg *Config, engine RiskEngine, addr AddressingMap,
 	store SessionStore, it registry.HeuristicTable, alertEgress chan core.Alert) Manager {
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -64,7 +68,7 @@ func NewManager(ctx context.Context, engine RiskEngine, addr AddressingMap,
 		cancel:       cancel,
 		alertEgress:  alertEgress,
 		etlIngress:   make(chan core.HeuristicInput),
-		workerEgress: make(chan EngineInput),
+		workerEgress: make(chan ExecInput),
 		engine:       engine,
 		addresser:    addr,
 		store:        store,
@@ -72,11 +76,8 @@ func NewManager(ctx context.Context, engine RiskEngine, addr AddressingMap,
 		metrics:      metrics.WithContext(ctx),
 	}
 
-	// TODO - Make this configurable
-	count := 4
-
 	// Start engine worker pool for concurrent heuristic execution
-	for i := 0; i < count; i++ {
+	for i := 0; i < cfg.WorkerCount; i++ {
 		logging.WithContext(ctx).Debug("Starting engine worker routine", zap.Int("worker", i))
 
 		engine.AddWorkerIngress(em.workerEgress)
@@ -285,7 +286,7 @@ func (em *engineManager) executeNonAddressHeuristics(ctx context.Context, data c
 
 // executeHeuristic ... Sends heuristic input to engine worker pool for execution
 func (em *engineManager) executeHeuristic(ctx context.Context, data core.HeuristicInput, h heuristic.Heuristic) {
-	ei := EngineInput{
+	ei := ExecInput{
 		ctx: ctx,
 		hi:  data,
 		h:   h,

@@ -10,9 +10,9 @@ permalink: /architecture/risk-engine
 
 ## Overview
 
-The Risk Engine is responsible for handling and executing active heuristics. It is the primary downstream consumer of ETL output. The Risk Engine will receive data from the ETL and execute the heuristics associated with the data. If an invalidation occurs, the Risk Engine will return an `InvalidationOutcome` to the `EngineManager`. The `EngineManager` will then create an `Alert` using the `InvalidationOutcome` and publish it to the Alerting system.
+The Risk Engine is responsible for handling and executing active heuristics. It is the primary downstream consumer of ETL output. The Risk Engine will receive data from the ETL and execute the heuristics associated with the data. If an invalidation occurs, the Risk Engine will return an `InvalidationOutcome` to the `EngineManager`. The `EngineManager` will then create an `Alert` using the `Activation` and publish it to the Alerting system.
 
-The Risk Engine will execute the heuristics associated with some ingested input data and return an `InvalidationOutcome` to the `EngineManager`. The `EngineManager` will then create an `Alert` using the `InvalidationOutcome` and publish it to the Alerting system.
+The Risk Engine will execute the heuristics associated with some ingested input data and return an `Activation` to the `EngineManager`. The `EngineManager` will then create an `Alert` using the `Activation` and publish it to the Alerting subsystem.
 
 The following diagram further exemplifies this key interaction:
 
@@ -45,7 +45,7 @@ The ETL publishes `Heuristic Input` to the Risk Engine using a relay channel. Th
 
 ## Heuristic Session
 
-An heuristic session refers to the execution and representation of a single heuristic. An heuristic session is uniquely identified by a `SUUID` and is associated with a single `PUUID`. An heuristic session is created by the `EngineManager` when a user requests to run an active session. The `EngineManager` will create a new `HeuristicSession` and pass it to the `RiskEngine` to be executed. The `RiskEngine` will then execute the heuristic session and return an `InvalidationOutcome` to the `EngineManager`. The `EngineManager` will then create an `Alert` using the `InvalidationOutcome` and publish it to the Alerting system.
+A heuristic session refers to the execution and representation of a single heuristic. A heuristic session is uniquely identified by a `SUUID` and is associated with a single `PUUID`. A heuristic session is created by the `EngineManager` when a user requests to run an active session. The `EngineManager` will create a new `HeuristicSession` and pass it to the `RiskEngine` to be executed. The `RiskEngine` will then execute the heuristic session and return an `InvalidationOutcome` to the `EngineManager`. The `EngineManager` will then create an `Alert` using the `InvalidationOutcome` and publish it to the Alerting system.
 
 ## Session UUID (SUUID)
 
@@ -71,7 +71,7 @@ The heuristic input is a struct that contains the following fields:
 
 ## Heuristic
 
-An heuristic is a logical execution module that defines some set of invalidation criteria. The heuristic is responsible for processing the input data and determining if an invalidation has occurred. If an invalidation has occurred, the heuristic will return a `InvalidationOutcome` that contains relevant metadata necessary for the `EngineManager` to create an `Alert`.
+A heuristic is a logical execution module that defines some set of invalidation criteria. The heuristic is responsible for processing the input data and determining if an invalidation has occurred. If an invalidation has occurred, the heuristic will return a `InvalidationOutcome` that contains relevant metadata necessary for the `EngineManager` to create an `Alert`.
 
 ### Hardcoded Base Heuristic
 
@@ -97,6 +97,10 @@ The heuristic input type is a `RegisterType` that defines the type of data that 
 All heuristics have a boolean property `Addressing` which determines if the heuristic is addressable. To be addressable, a heuristic must only execute under the context of a single address.
 
 For example, a `balance_enforcement` heuristic session will be addressable because it only executes invalidation logic for the native ETH balance of a single address.
+
+### Parallelism
+Heuristics are executed by different worker routines in parallel to ensure that a heuristic assessment operation doesn't block upstream processing or other heuristic operations. The number of worker routines that are spawned to execute a heuristic is defined by the `ENGINE_WORKER_COUNT` environment variable. The default value is currently `6`.
+
 
 ### Heuristic States
 

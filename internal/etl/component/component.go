@@ -28,7 +28,7 @@ type Component interface {
 	Type() core.ComponentType
 
 	// AddRelay ... Adds an engine relay to component egress routing
-	AddRelay(relay *core.EngineInputRelay) error
+	AddRelay(relay *core.ExecInputRelay) error
 
 	// AddEgress ...
 	AddEgress(core.CUUID, chan core.TransitData) error

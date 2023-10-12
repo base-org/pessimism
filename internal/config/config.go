@@ -11,6 +11,7 @@ import (
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/engine"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/subsystem"
@@ -23,7 +24,10 @@ import (
 )
 
 // TrueEnvVal ... Represents the encoded string value for true (ie. 1)
-const trueEnvVal = "1"
+const (
+	trueEnvVal           = "1"
+	maxEngineWorkerCount = 6
+)
 
 // Config ... Application level configuration defined by `FilePath` value
 // TODO - Consider renaming to "environment config"
@@ -33,6 +37,7 @@ type Config struct {
 
 	AlertConfig   *alert.Config
 	ClientConfig  *client.Config
+	EngineConfig  *engine.Config
 	MetricsConfig *metrics.Config
 	ServerConfig  *server.Config
 	SystemConfig  *subsystem.Config
@@ -55,10 +60,17 @@ func NewConfig(fileName core.FilePath) *Config {
 			RoutingParams:           nil, // This is populated after the config is created (see IngestAlertConfig)
 		},
 
-		SystemConfig: &subsystem.Config{
-			MaxPipelineCount: getEnvInt("MAX_PIPELINE_COUNT"),
-			L1PollInterval:   getEnvInt("L1_POLL_INTERVAL"),
-			L2PollInterval:   getEnvInt("L2_POLL_INTERVAL"),
+		ClientConfig: &client.Config{
+			L1RpcEndpoint: getEnvStr("L1_RPC_ENDPOINT"),
+			L2RpcEndpoint: getEnvStr("L2_RPC_ENDPOINT"),
+			IndexerCfg: &indexer_client.Config{
+				BaseURL:         getEnvStrWithDefault("INDEXER_URL", ""),
+				PaginationLimit: getEnvIntWithDefault("INDEXER_PAGINATION_LIMIT", 0),
+			},
+		},
+
+		EngineConfig: &engine.Config{
+			WorkerCount: getEnvIntWithDefault("ENGINE_WORKER_COUNT", maxEngineWorkerCount),
 		},
 
 		MetricsConfig: &metrics.Config{
@@ -75,13 +87,11 @@ func NewConfig(fileName core.FilePath) *Config {
 			ReadTimeout:  getEnvInt("SERVER_READ_TIMEOUT"),
 			WriteTimeout: getEnvInt("SERVER_WRITE_TIMEOUT"),
 		},
-		ClientConfig: &client.Config{
-			L1RpcEndpoint: getEnvStr("L1_RPC_ENDPOINT"),
-			L2RpcEndpoint: getEnvStr("L2_RPC_ENDPOINT"),
-			IndexerCfg: &indexer_client.Config{
-				BaseURL:         getEnvStrWithDefault("INDEXER_URL", ""),
-				PaginationLimit: getEnvIntWithDefault("INDEXER_PAGINATION_LIMIT", 0),
-			},
+
+		SystemConfig: &subsystem.Config{
+			MaxPipelineCount: getEnvInt("MAX_PIPELINE_COUNT"),
+			L1PollInterval:   getEnvInt("L1_POLL_INTERVAL"),
+			L2PollInterval:   getEnvInt("L2_POLL_INTERVAL"),
 		},
 	}
 
