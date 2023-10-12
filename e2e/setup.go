@@ -14,6 +14,7 @@ import (
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/engine"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/state"
@@ -210,14 +211,17 @@ func DefaultTestConfig() *config.Config {
 	l1PollInterval := 900
 	l2PollInterval := 300
 	maxPipelines := 10
+	workerCount := 4
 
 	return &config.Config{
 		Environment:   core.Development,
 		BootStrapPath: "",
-		SystemConfig: &subsystem.Config{
-			MaxPipelineCount: maxPipelines,
-			L2PollInterval:   l2PollInterval,
-			L1PollInterval:   l1PollInterval,
+		AlertConfig: &alert.Config{
+			PagerdutyAlertEventsURL: "",
+			RoutingCfgPath:          "",
+		},
+		EngineConfig: &engine.Config{
+			WorkerCount: workerCount,
 		},
 		MetricsConfig: &metrics.Config{
 			Enabled: false,
@@ -228,9 +232,10 @@ func DefaultTestConfig() *config.Config {
 			Host: "localhost",
 			Port: 0,
 		},
-		AlertConfig: &alert.Config{
-			PagerdutyAlertEventsURL: "",
-			RoutingCfgPath:          "",
+		SystemConfig: &subsystem.Config{
+			MaxPipelineCount: maxPipelines,
+			L2PollInterval:   l2PollInterval,
+			L1PollInterval:   l1PollInterval,
 		},
 	}
 }

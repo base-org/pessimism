@@ -44,10 +44,8 @@ type engineManager struct {
 
 	// Used to receive heuristic input from ETL subsystem
 	etlIngress chan core.HeuristicInput
-
 	// Used to send alerts to alerting subsystem
 	alertEgress chan core.Alert
-
 	// Used to send execution requests to engine worker subscribers
 	workerEgress chan ExecInput
 
@@ -77,6 +75,7 @@ func NewManager(ctx context.Context, cfg *Config, engine RiskEngine, addr Addres
 	}
 
 	// Start engine worker pool for concurrent heuristic execution
+	// TODO: Add validation checks for worker count
 	for i := 0; i < cfg.WorkerCount; i++ {
 		logging.WithContext(ctx).Debug("Starting engine worker routine", zap.Int("worker", i))
 
