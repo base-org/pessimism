@@ -90,7 +90,7 @@ func InitializeETL(ctx context.Context, transit chan core.HeuristicInput) pipeli
 func InitializeEngine(ctx context.Context, transit chan core.Alert) engine.Manager {
 	store := engine.NewSessionStore()
 	am := engine.NewAddressingMap()
-	re := engine.NewHardCodedEngine()
+	re := engine.NewHardCodedEngine(transit)
 	it := e_registry.NewHeuristicTable()
 
 	return engine.NewManager(ctx, re, am, store, it, transit)

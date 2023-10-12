@@ -26,7 +26,7 @@ func Test_EventLoop(t *testing.T) {
 	ctx = context.WithValue(ctx, core.State, ss)
 
 	em := engine.NewManager(ctx,
-		engine.NewHardCodedEngine(),
+		engine.NewHardCodedEngine(make(chan core.Alert)),
 		engine.NewAddressingMap(),
 		engine.NewSessionStore(),
 		registry.NewHeuristicTable(),

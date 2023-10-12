@@ -90,8 +90,6 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 
 	pagerdutyServer := NewTestPagerDutyServer("127.0.0.1", 0)
 
-	appCfg.AlertConfig.RoutingCfgPath = ""
-
 	slackURL := fmt.Sprintf("http://127.0.0.1:%d", slackServer.Port)
 	pagerdutyURL := fmt.Sprintf("http://127.0.0.1:%d", pagerdutyServer.Port)
 
@@ -169,8 +167,6 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	slackServer := NewTestSlackServer("127.0.0.1", 0)
 
 	pagerdutyServer := NewTestPagerDutyServer("127.0.0.1", 0)
-
-	appCfg.AlertConfig.RoutingCfgPath = ""
 
 	slackURL := fmt.Sprintf("http://127.0.0.1:%d", slackServer.Port)
 	pagerdutyURL := fmt.Sprintf("http://127.0.0.1:%d", pagerdutyServer.Port)
