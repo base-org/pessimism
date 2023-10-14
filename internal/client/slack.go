@@ -60,7 +60,7 @@ type SlackPayload struct {
 
 // newSlackPayload ... initializes a new slack payload
 func newSlackPayload(text interface{}, channel string) *SlackPayload {
-	return &SlackPayload{Text: text}
+	return &SlackPayload{Text: text, Channel: channel}
 }
 
 // marshal ... marshals the slack payload
