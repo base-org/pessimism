@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -23,9 +24,8 @@ type SlackClient interface {
 }
 
 type SlackConfig struct {
-	Channel  string
-	URL      string
-	Priority string
+	Channel string
+	URL     string
 }
 
 // slackClient ... Slack client
@@ -60,7 +60,7 @@ type SlackPayload struct {
 
 // newSlackPayload ... initializes a new slack payload
 func newSlackPayload(text interface{}, channel string) *SlackPayload {
-	return &SlackPayload{Text: text, Channel: channel}
+	return &SlackPayload{Text: text}
 }
 
 // marshal ... marshals the slack payload
@@ -120,15 +120,30 @@ func (sc slackClient) PostEvent(ctx context.Context, event *AlertEventTrigger) (
 		}
 	}()
 
-	// 3. read and unmarshal response
+	// 3.a. read and validate response
 	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
+	// 3.b. validate status code
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("Slack API returned bad status code %d", resp.StatusCode)
+	}
+
+	// 3.c. validate response body
+	if string(bytes) == "ok" {
+		return &AlertAPIResponse{
+			Status:  core.SuccessStatus,
+			Message: "ok",
+		}, nil
+
+	}
+
+	// 4 convert response to alert response
 	var apiResp *SlackAPIResponse
-	if err := json.Unmarshal(bytes, &apiResp); err != nil {
-		return nil, err
+	if err = json.Unmarshal(bytes, &apiResp); err != nil {
+		return nil, fmt.Errorf("could not unmarshal slack response: %w", err)
 	}
 
 	return apiResp.ToAlertResponse(), nil

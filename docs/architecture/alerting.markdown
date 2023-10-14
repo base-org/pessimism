@@ -57,7 +57,23 @@ An alert destination is a configurable destination that an alert can be sent to.
 
 #### Slack
 
-The Slack alert destination is a configurable destination that allows alerts to be sent to a specific Slack channel. The Slack alert destination will be configured with a Slack webhook URL. The Slack alert destination will then use this URL to send alerts to the specified Slack channel.
+The Slack alert destination is a configurable destination that allows alerts to be sent to a specific Slack channel. The Slack alert destination will be configured with a Slack webhook URL. The Slack alert destination will then use this URL to send alerts to the specified Slack channel. 
+
+#### Setting up Slack
+1. Add the [Incoming WebHooks](https://test-2kg5313.slack.com/apps/A0F7XDUAZ-incoming-webhooks?utm_source=in-prod&utm_medium=inprod-btn_app_install-index-click&tab=more_info) app to your Slack workspace. 
+2. Using the app, add a new webhook to your workspace for some specific channel.
+3. Copy the webhook URL into an [alert routing](../alert-routing.md) entry for some severity level. This should look something like:
+```yml
+alertRoutes:
+  low:
+    slack:
+      low_oncall:
+        url: "https://hooks.slack.com/services/{API_KEY}"
+        channel: "#make-onchain-less-boring"
+
+```
+
+Done! You should now see any generated alerts being forwarded to your specified Slack channel.
 
 #### PagerDuty
 
