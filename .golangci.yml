@@ -221,3 +221,7 @@ issues:
         - wrapcheck
         - lll
         - whitespace
+
+    - path: mock_servers.go
+      linters:
+        - gomnd

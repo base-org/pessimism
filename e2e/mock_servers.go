@@ -64,7 +64,7 @@ func (svr *TestPagerDutyServer) Close() {
 
 // RandBool ... Returns a random boolean based on the current time
 func RandBool() bool {
-	return rand.Intn(2) == 1 //nolint:gosec,gomnd //This is not a security issue as this is only used for testing
+	return rand.Intn(2) == 1 //#nosec G404: This is not a cryptographic use case
 }
 
 // mockPagerDutyPost ... Mocks a pagerduty post request
