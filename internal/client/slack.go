@@ -128,7 +128,7 @@ func (sc slackClient) PostEvent(ctx context.Context, event *AlertEventTrigger) (
 
 	// 3.b. validate status code
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Slack API returned bad status code %d", resp.StatusCode)
+		return nil, fmt.Errorf("slack API returned bad status code %d", resp.StatusCode)
 	}
 
 	// 3.c. validate response body
@@ -137,7 +137,6 @@ func (sc slackClient) PostEvent(ctx context.Context, event *AlertEventTrigger) (
 			Status:  core.SuccessStatus,
 			Message: "ok",
 		}, nil
-
 	}
 
 	// 4 convert response to alert response

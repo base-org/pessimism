@@ -3,6 +3,7 @@ package e2e
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -61,6 +62,11 @@ func (svr *TestPagerDutyServer) Close() {
 	svr.Server.Close()
 }
 
+// RandBool ... Returns a random boolean based on the current time
+func RandBool() bool {
+	return rand.Intn(2) == 1 //nolint:gosec,gomnd //This is not a security issue as this is only used for testing
+}
+
 // mockPagerDutyPost ... Mocks a pagerduty post request
 func (svr *TestPagerDutyServer) mockPagerDutyPost(w http.ResponseWriter, r *http.Request) {
 	var alert *client.PagerDutyRequest
@@ -73,8 +79,16 @@ func (svr *TestPagerDutyServer) mockPagerDutyPost(w http.ResponseWriter, r *http
 
 	svr.Payloads = append(svr.Payloads, alert)
 
+	// Randomly return different API payload responses
+	// This ensures that the client implementation can handle different
+	// slack workspace types
+	publicAPI := RandBool()
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(`{"status":"success", "message":""}`))
+	if publicAPI {
+		_, _ = w.Write([]byte(`ok`))
+	} else {
+		_, _ = w.Write([]byte(`{"status":"success", "message":""}`))
+	}
 }
 
 // PagerDutyAlerts ... Returns the pagerduty alerts

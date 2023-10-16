@@ -187,6 +187,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 		t.Fatal(err)
 	}
 
+	t.Parallel()
 	go pess.ListenForShutdown(kill)
 
 	return &SysTestSuite{
