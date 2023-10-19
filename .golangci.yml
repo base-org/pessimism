@@ -1,7 +1,7 @@
 run:
   # Analysis timeout, e.g. 30s, 5m.
   # Default: 1m
-  timeout: 3m
+  timeout: 5m
 
 # https://github.com/golangci/golangci-lint/blob/master/.golangci.reference.yml
 linters-settings:
