@@ -11,7 +11,7 @@ import (
 type egressHandler struct {
 	egresses map[core.ComponentPID]chan core.TransitData
 
-	relay *core.EngineInputRelay
+	relay *core.ExecInputRelay
 }
 
 // newEgress ... Initializer
@@ -87,7 +87,7 @@ func (eh *egressHandler) HasEngineRelay() bool {
 }
 
 // AddRelay ... Adds a relay assuming no existing ones
-func (eh *egressHandler) AddRelay(relay *core.EngineInputRelay) error {
+func (eh *egressHandler) AddRelay(relay *core.ExecInputRelay) error {
 	if eh.HasEngineRelay() {
 		return fmt.Errorf(engineEgressExistsErr)
 	}
