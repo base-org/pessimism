@@ -48,11 +48,11 @@ func TestBalanceEnforcement(t *testing.T) {
 		},
 	}})
 
-	assert.NoError(t, err, "Failed to bootstrap balance enforcement heuristic session")
+	require.NoError(t, err, "Failed to bootstrap balance enforcement heuristic session")
 
 	// Get Alice's balance.
 	aliceAmt, err := ts.L2Geth.L2Client.BalanceAt(context.Background(), alice, nil)
-	assert.NoError(t, err, "Failed to get Alice's balance")
+	require.NoError(t, err, "Failed to get Alice's balance")
 
 	// Determine the gas cost of the transaction.
 	gasAmt := 1_000_001
@@ -76,11 +76,11 @@ func TestBalanceEnforcement(t *testing.T) {
 		Data:  nil,
 	})
 
-	assert.Equal(t, len(ts.TestPagerDutyServer.PagerDutyAlerts()), 0, "No alerts should be sent before the transaction is sent")
+	require.Equal(t, len(ts.TestPagerDutyServer.PagerDutyAlerts()), 0, "No alerts should be sent before the transaction is sent")
 
 	// Send the transaction to drain Alice's account of almost all ETH.
 	_, err = ts.L2Geth.AddL2Block(context.Background(), drainAliceTx)
-	assert.NoError(t, err, "Failed to create L2 block with transaction")
+	require.NoError(t, err, "Failed to create L2 block with transaction")
 
 	// Wait for Pessimism to process the balance change and send a notification to the mocked Slack server.
 	time.Sleep(1 * time.Second)
@@ -94,7 +94,7 @@ func TestBalanceEnforcement(t *testing.T) {
 
 	// Get Bobs's balance.
 	bobAmt, err := ts.L2Geth.L2Client.BalanceAt(context.Background(), bob, nil)
-	assert.NoError(t, err, "Failed to get Alice's balance")
+	require.NoError(t, err, "Failed to get Alice's balance")
 
 	// Create a transaction to send the ETH back to Alice.
 	drainBobTx := types.MustSignNewTx(ts.L2Cfg.Secrets.Bob, signer, &types.DynamicFeeTx{
@@ -110,7 +110,7 @@ func TestBalanceEnforcement(t *testing.T) {
 
 	// Send the transaction to re-disperse the ETH from Bob back to Alice.
 	_, err = ts.L2Geth.AddL2Block(context.Background(), drainBobTx)
-	assert.NoError(t, err, "Failed to create L2 block with transaction")
+	require.NoError(t, err, "Failed to create L2 block with transaction")
 
 	// Wait for Pessimism to process the balance change.
 	time.Sleep(1 * time.Second)
@@ -118,7 +118,7 @@ func TestBalanceEnforcement(t *testing.T) {
 	// Empty the mocked PagerDuty server cache.
 	ts.TestPagerDutyServer.ClearAlerts()
 
-	// Wait to ensure that no new alerts are sent.
+	// Wait to ensure that no new alerts are generated.
 	time.Sleep(1 * time.Second)
 
 	// Ensure that no new alerts were sent.
@@ -152,15 +152,15 @@ func TestContractEvent(t *testing.T) {
 			"args":    []interface{}{updateSig},
 		},
 	}})
-	assert.NoError(t, err, "Error bootstrapping heuristic session")
+	require.NoError(t, err, "Error bootstrapping heuristic session")
 
 	// Get bindings for the L1 system config contract.
 	sysCfg, err := bindings.NewSystemConfig(ts.Cfg.L1Deployments.SystemConfigProxy, ts.L1Client)
-	assert.NoError(t, err, "Error getting system config")
+	require.NoError(t, err, "Error getting system config")
 
 	// Obtain our signer.
 	opts, err := bind.NewKeyedTransactorWithChainID(ts.Cfg.Secrets.SysCfgOwner, ts.Cfg.L1ChainIDBig())
-	assert.NoError(t, err, "Error getting system config owner pk")
+	require.NoError(t, err, "Error getting system config owner pk")
 
 	// Assign arbitrary gas config values.
 	overhead := big.NewInt(10000)
@@ -168,14 +168,14 @@ func TestContractEvent(t *testing.T) {
 
 	// Call setGasConfig method on the L1 system config contract.
 	tx, err := sysCfg.SetGasConfig(opts, overhead, scalar)
-	assert.NoError(t, err, "Error setting gas config")
+	require.NoError(t, err, "Error setting gas config")
 
 	// Wait for the transaction to be canonicalized.
 	txTimeoutDuration := 10 * time.Duration(ts.Cfg.DeployConfig.L1BlockTime) * time.Second
 	receipt, err := e2e.WaitForTransaction(tx.Hash(), ts.L1Client, txTimeoutDuration)
 
-	assert.NoError(t, err, "Error waiting for transaction")
-	assert.Equal(t, receipt.Status, types.ReceiptStatusSuccessful, "transaction failed")
+	require.NoError(t, err, "Error waiting for transaction")
+	require.Equal(t, receipt.Status, types.ReceiptStatusSuccessful, "transaction failed")
 
 	// Wait for Pessimism to process the newly emitted event and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
@@ -190,7 +190,7 @@ func TestContractEvent(t *testing.T) {
 
 	msgs := ts.TestSlackSvr.SlackAlerts()
 
-	assert.Equal(t, len(msgs), 1, "No system contract event alert was sent")
+	require.Equal(t, len(msgs), 1, "No system contract event alert was sent")
 	assert.Contains(t, msgs[0].Text, "contract_event", "System contract event alert was not sent")
 	assert.Contains(t, msgs[0].Text, alertMsg, "System contract event message was not propagated")
 }
@@ -208,16 +208,16 @@ func TestWithdrawalEnforcement(t *testing.T) {
 	defer ts.Close()
 
 	opts, err := bind.NewKeyedTransactorWithChainID(ts.Cfg.Secrets.Alice, ts.Cfg.L2ChainIDBig())
-	assert.NoError(t, err, "Error getting system config owner pk")
+	require.NoError(t, err, "Error getting system config owner pk")
 
 	alertMsg := "disrupting centralized finance"
 
 	// Deploy a dummy L2ToL1 message passer for testing.
 	fakeAddr, tx, _, err := bindings.DeployL2ToL1MessagePasser(opts, ts.L2Client)
-	assert.NoError(t, err, "error deploying dummy message passer on L2")
+	require.NoError(t, err, "error deploying dummy message passer on L2")
 
 	_, err = e2e.WaitForTransaction(tx.Hash(), ts.L2Client, 10*time.Second)
-	assert.NoError(t, err, "error waiting for transaction")
+	require.NoError(t, err, "error waiting for transaction")
 
 	// Setup Pessimism to listen for fraudulent withdrawals
 	// We use two heuristics here; one configured with a dummy L1 message passer
@@ -242,40 +242,40 @@ func TestWithdrawalEnforcement(t *testing.T) {
 			},
 		},
 	})
-	assert.NoError(t, err, "Error bootstrapping heuristic session")
+	require.NoError(t, err, "Error bootstrapping heuristic session")
 
 	optimismPortal, err := bindings.NewOptimismPortal(ts.Cfg.L1Deployments.OptimismPortalProxy, ts.L1Client)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	l2ToL1MessagePasser, err := bindings.NewL2ToL1MessagePasser(predeploys.L2ToL1MessagePasserAddr, ts.L2Client)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	aliceAddr := ts.Cfg.Secrets.Addresses().Alice
 
 	// attach 1 ETH to the withdrawal and random calldata
 	calldata := []byte{byte(1), byte(2), byte(3)}
 	l2Opts, err := bind.NewKeyedTransactorWithChainID(ts.Cfg.Secrets.Alice, ts.Cfg.L2ChainIDBig())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	l2Opts.Value = big.NewInt(params.Ether)
 
 	// Ensure L1 has enough funds for the withdrawal by depositing an equal amount into the OptimismPortal
 	l1Opts, err := bind.NewKeyedTransactorWithChainID(ts.Cfg.Secrets.Alice, ts.Cfg.L1ChainIDBig())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	l1Opts.Value = l2Opts.Value
 	depositTx, err := optimismPortal.Receive(l1Opts)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = wait.ForReceiptOK(context.Background(), ts.L1Client, depositTx.Hash())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Initiate and prove a withdrawal
 	withdrawTx, err := l2ToL1MessagePasser.InitiateWithdrawal(l2Opts, aliceAddr, big.NewInt(100_000), calldata)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	withdrawReceipt, err := wait.ForReceiptOK(context.Background(), ts.L2Client, withdrawTx.Hash())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, proveReceipt := op_e2e.ProveWithdrawal(t, *ts.Cfg, ts.L1Client, ts.Sys.EthInstances["sequencer"], ts.Cfg.Secrets.Alice, withdrawReceipt)
 
 	// Wait for Pessimism to process the withdrawal and send a notification to the mocked Slack server.
-	assert.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
+	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
 		pUUID := ids[0].PUUID
 		height, err := ts.Subsystems.PipelineHeight(pUUID)
 		if err != nil {
@@ -289,7 +289,7 @@ func TestWithdrawalEnforcement(t *testing.T) {
 
 	// Ensure Pessimism has detected what it considers a "faulty" withdrawal
 	alerts := ts.TestSlackSvr.SlackAlerts()
-	assert.Equal(t, 1, len(alerts), "expected 1 alert")
+	require.Equal(t, 1, len(alerts), "expected 1 alert")
 	assert.Contains(t, alerts[0].Text, "withdrawal_enforcement", "expected alert to be for withdrawal_enforcement")
 	assert.Contains(t, alerts[0].Text, fakeAddr.String(), "expected alert to be for dummy L2ToL1MessagePasser")
 	assert.Contains(t, alerts[0].Text, alertMsg, "expected alert to have alert message")
@@ -305,14 +305,14 @@ func TestFaultDetector(t *testing.T) {
 
 	// Generate transactor opts
 	l1Opts, err := bind.NewKeyedTransactorWithChainID(ts.Cfg.Secrets.Proposer, ts.Cfg.L1ChainIDBig())
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	// Generate output oracle bindings
 	outputOracle, err := bindings.NewL2OutputOracleTransactor(ts.Cfg.L1Deployments.L2OutputOracleProxy, ts.L1Client)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	reader, err := bindings.NewL2OutputOracleCaller(ts.Cfg.L1Deployments.L2OutputOracleProxy, ts.L1Client)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	alertMsg := "the fault, dear Brutus, is not in our stars, but in ourselves"
 
@@ -333,8 +333,8 @@ func TestFaultDetector(t *testing.T) {
 		},
 	}})
 
-	assert.Nil(t, err)
-	assert.Len(t, ids, 1)
+	require.Nil(t, err)
+	require.Len(t, ids, 1)
 
 	// Propose a forged L2 output root.
 
@@ -342,13 +342,13 @@ func TestFaultDetector(t *testing.T) {
 	l1Hash := [32]byte{0}
 
 	latestNum, err := reader.NextBlockNumber(&bind.CallOpts{})
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	tx, err := outputOracle.ProposeL2Output(l1Opts, dummyRoot, latestNum, l1Hash, big.NewInt(0))
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	receipt, err := e2e.WaitForTransaction(tx.Hash(), ts.L1Client, txTimeoutDuration)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
 		pUUID := ids[0].PUUID
@@ -361,7 +361,7 @@ func TestFaultDetector(t *testing.T) {
 	}))
 
 	alerts := ts.TestSlackSvr.SlackAlerts()
-	assert.Equal(t, 1, len(alerts), "expected 1 alert")
+	require.Equal(t, 1, len(alerts), "expected 1 alert")
 	assert.Contains(t, alerts[0].Text, "fault_detector", "expected alert to be for fault_detector")
 	assert.Contains(t, alerts[0].Text, alertMsg, "expected alert to have alert message")
 }

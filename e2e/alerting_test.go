@@ -10,9 +10,11 @@ import (
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
+	"github.com/ethereum-optimism/optimism/op-e2e/e2eutils/wait"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestMultiDirectiveRouting ... Tests the E2E flow of a contract event heuristic with high priority alerts all
@@ -24,7 +26,7 @@ func TestMultiDirectiveRouting(t *testing.T) {
 	updateSig := "ConfigUpdate(uint256,uint8,bytes)"
 	alertMsg := "System config gas config updated"
 
-	_, err := ts.App.BootStrap([]*models.SessionRequestParams{{
+	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{{
 		Network:       core.Layer1.String(),
 		PType:         core.Live.String(),
 		HeuristicType: core.ContractEvent.String(),
@@ -32,7 +34,7 @@ func TestMultiDirectiveRouting(t *testing.T) {
 		EndHeight:     nil,
 		AlertingParams: &core.AlertPolicy{
 			Msg: alertMsg,
-			Sev: core.HIGH.String(),
+			Sev: core.HIGH.String(), // The use of HIGH priority should trigger all alert destinations
 		},
 		SessionParams: map[string]interface{}{
 			"address": ts.Cfg.L1Deployments.SystemConfigProxy.String(),
@@ -40,33 +42,46 @@ func TestMultiDirectiveRouting(t *testing.T) {
 		},
 	}})
 
-	assert.NoError(t, err, "Error bootstrapping heuristic session")
+	require.Len(t, ids, 1, "Incorrect number of heuristic sessions created")
+	require.NoError(t, err, "Error bootstrapping heuristic session")
 
 	sysCfg, err := bindings.NewSystemConfig(ts.Cfg.L1Deployments.SystemConfigProxy, ts.L1Client)
-	assert.NoError(t, err, "Error getting system config")
+	require.NoError(t, err, "Error getting system config")
 
 	opts, err := bind.NewKeyedTransactorWithChainID(ts.Cfg.Secrets.SysCfgOwner, ts.Cfg.L1ChainIDBig())
-	assert.NoError(t, err, "Error getting system config owner pk")
+	require.NoError(t, err, "Error getting system config owner pk")
 
 	overhead := big.NewInt(10000)
 	scalar := big.NewInt(1)
 
 	tx, err := sysCfg.SetGasConfig(opts, overhead, scalar)
-	assert.NoError(t, err, "Error setting gas config")
+	require.NoError(t, err, "Error setting gas config")
 
 	txTimeoutDuration := 10 * time.Duration(ts.Cfg.DeployConfig.L1BlockTime) * time.Second
 	receipt, err := e2e.WaitForTransaction(tx.Hash(), ts.L1Client, txTimeoutDuration)
 
-	assert.NoError(t, err, "Error waiting for transaction")
-	assert.Equal(t, receipt.Status, types.ReceiptStatusSuccessful, "transaction failed")
+	require.NoError(t, err, "Error waiting for transaction")
+	require.Equal(t, receipt.Status, types.ReceiptStatusSuccessful, "transaction failed")
 
-	time.Sleep(3 * time.Second)
+	// Wait for Pessimism to process the newly emitted event and send a notification to the mocked Slack
+	// and PagerDuty servers.
+	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
+		pUUID := ids[0].PUUID
+		height, err := ts.Subsystems.PipelineHeight(pUUID)
+		if err != nil {
+			return false, err
+		}
+
+		return height.Uint64() > receipt.BlockNumber.Uint64(), nil
+	}))
+
 	slackPosts := ts.TestSlackSvr.SlackAlerts()
 	pdPosts := ts.TestPagerDutyServer.PagerDutyAlerts()
 
 	// Expect 2 alerts to each destination as alert-routing-cfg.yaml has two slack and two pagerduty destinations
-	assert.Equal(t, 2, len(slackPosts), "Incorrect Number of slack posts sent")
-	assert.Equal(t, 2, len(pdPosts), "Incorrect Number of pagerduty posts sent")
+	require.Equal(t, 2, len(slackPosts), "Incorrect Number of slack posts sent")
+	require.Equal(t, 2, len(pdPosts), "Incorrect Number of pagerduty posts sent")
+
 	assert.Contains(t, slackPosts[0].Text, "contract_event", "System contract event alert was not sent")
 	assert.Contains(t, slackPosts[1].Text, "contract_event", "System contract event alert was not sent")
 	assert.Contains(t, pdPosts[0].Payload.Summary, "contract_event", "System contract event alert was not sent")
@@ -103,11 +118,11 @@ func TestCoolDown(t *testing.T) {
 		},
 	}})
 
-	assert.NoError(t, err, "Failed to bootstrap balance enforcement heuristic session")
+	require.NoError(t, err, "Failed to bootstrap balance enforcement heuristic session")
 
 	// Get Alice's balance.
 	aliceAmt, err := ts.L2Geth.L2Client.BalanceAt(context.Background(), alice, nil)
-	assert.NoError(t, err, "Failed to get Alice's balance")
+	require.NoError(t, err, "Failed to get Alice's balance")
 
 	// Determine the gas cost of the transaction.
 	gasAmt := 1_000_001
@@ -133,7 +148,7 @@ func TestCoolDown(t *testing.T) {
 
 	// Send the transaction to drain Alice's account of almost all ETH.
 	_, err = ts.L2Geth.AddL2Block(context.Background(), drainAliceTx)
-	assert.NoError(t, err, "Failed to create L2 block with transaction")
+	require.NoError(t, err, "Failed to create L2 block with transaction")
 
 	// Wait for Pessimism to process the balance change and send a notification to the mocked Slack server.
 	time.Sleep(2 * time.Second)
@@ -141,7 +156,7 @@ func TestCoolDown(t *testing.T) {
 	// Check that the balance enforcement was triggered using the mocked server cache.
 	posts := ts.TestSlackSvr.SlackAlerts()
 
-	assert.Equal(t, 1, len(posts), "No balance enforcement alert was sent")
+	require.Equal(t, 1, len(posts), "No balance enforcement alert was sent")
 	assert.Contains(t, posts[0].Text, "balance_enforcement", "Balance enforcement alert was not sent")
 	assert.Contains(t, posts[0].Text, alertMsg)
 
