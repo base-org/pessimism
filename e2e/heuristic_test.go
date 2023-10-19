@@ -170,9 +170,8 @@ func TestContractEvent(t *testing.T) {
 	tx, err := sysCfg.SetGasConfig(opts, overhead, scalar)
 	require.NoError(t, err, "Error setting gas config")
 
-	// Wait for the transaction to be canonicalized.
-	txTimeoutDuration := 10 * time.Duration(ts.Cfg.DeployConfig.L1BlockTime) * time.Second
-	receipt, err := e2e.WaitForTransaction(tx.Hash(), ts.L1Client, txTimeoutDuration)
+	// Wait for the L1 transaction to be executed.
+	receipt, err := wait.ForReceipt(context.Background(), ts.L1Client, tx.Hash(), types.ReceiptStatusSuccessful)
 
 	require.NoError(t, err, "Error waiting for transaction")
 	require.Equal(t, receipt.Status, types.ReceiptStatusSuccessful, "transaction failed")
@@ -216,7 +215,7 @@ func TestWithdrawalEnforcement(t *testing.T) {
 	fakeAddr, tx, _, err := bindings.DeployL2ToL1MessagePasser(opts, ts.L2Client)
 	require.NoError(t, err, "error deploying dummy message passer on L2")
 
-	_, err = e2e.WaitForTransaction(tx.Hash(), ts.L2Client, 10*time.Second)
+	_, err = wait.ForReceipt(context.Background(), ts.L2Client, tx.Hash(), types.ReceiptStatusSuccessful)
 	require.NoError(t, err, "error waiting for transaction")
 
 	// Setup Pessimism to listen for fraudulent withdrawals
@@ -301,8 +300,6 @@ func TestFaultDetector(t *testing.T) {
 	ts := e2e.CreateSysTestSuite(t)
 	defer ts.Close()
 
-	txTimeoutDuration := 10 * time.Duration(ts.Cfg.DeployConfig.L1BlockTime) * time.Second
-
 	// Generate transactor opts
 	l1Opts, err := bind.NewKeyedTransactorWithChainID(ts.Cfg.Secrets.Proposer, ts.Cfg.L1ChainIDBig())
 	require.Nil(t, err)
@@ -347,7 +344,7 @@ func TestFaultDetector(t *testing.T) {
 	tx, err := outputOracle.ProposeL2Output(l1Opts, dummyRoot, latestNum, l1Hash, big.NewInt(0))
 	require.Nil(t, err)
 
-	receipt, err := e2e.WaitForTransaction(tx.Hash(), ts.L1Client, txTimeoutDuration)
+	receipt, err := wait.ForReceipt(context.Background(), ts.L1Client, tx.Hash(), types.ReceiptStatusSuccessful)
 	require.Nil(t, err)
 
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {

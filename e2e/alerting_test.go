@@ -57,8 +57,7 @@ func TestMultiDirectiveRouting(t *testing.T) {
 	tx, err := sysCfg.SetGasConfig(opts, overhead, scalar)
 	require.NoError(t, err, "Error setting gas config")
 
-	txTimeoutDuration := 10 * time.Duration(ts.Cfg.DeployConfig.L1BlockTime) * time.Second
-	receipt, err := e2e.WaitForTransaction(tx.Hash(), ts.L1Client, txTimeoutDuration)
+	receipt, err := wait.ForReceipt(context.Background(), ts.L1Client, tx.Hash(), types.ReceiptStatusSuccessful)
 
 	require.NoError(t, err, "Error waiting for transaction")
 	require.Equal(t, receipt.Status, types.ReceiptStatusSuccessful, "transaction failed")
