@@ -1,18 +1,32 @@
-## Download and enter the OP monorepo
-echo "Downloading Optimism monorepo..."
-git clone https://github.com/ethereum-optimism/optimism.git
-cd optimism
-git checkout develop
+## (1) Fetch monorepo binary at specific version used by Pessimism
+VERSION=$(cat go.mod | grep ethereum-optimism/optimism | awk '{print $2}' | sed 's/\/v//g')
+REPO_NAME=optimism-$(echo ${VERSION} | sed 's/v//g')
 
-## Generate devnet allocations and persist them all into .devnet folder
-echo "Initializing monorepo..."
-make install-geth
-git submodule update --init --recursive
-make devnet-allocs
-mv .devnet ../.devnet
-mv packages/contracts-bedrock/deploy-config/devnetL1.json ../.devnet/devnetL1.json
+echo "Downloading ${REPO_NAME} ..."
+wget https://github.com/ethereum-optimism/optimism/archive/refs/tags/${VERSION}.zip
 
-## Clean up
-echo "Cleaning up..."
-cd ../
-rm -rf optimism
+## (2) Unzip and enter the monorepo
+echo "Unzipping..."
+unzip ${VERSION}.zip
+rm -rf ${VERSION}.zip
+
+## (3) Get version string without first 'v'
+VERSION=$(echo ${VERSION} | sed 's/v//g')
+echo "Version: ${VERSION}"
+cd optimism-${VERSION}
+
+## (4) Install monorepo dependencies
+{
+    ## (4.a) Generate devnet allocations and persist them all into .devnet folder
+    echo "Initializing monorepo..." &&
+    make install-geth &&
+    git submodule update --init --recursive &&
+    make devnet-allocs &&
+    mv .devnet ../.devnet &&
+    mv packages/contracts-bedrock/deploy-config/devnetL1.json ../.devnet/devnetL1.json
+} || {
+    ## (4.b) Force cleanup of monorepo 
+    echo "Cleaning up ${REPO_NAME} repo ..." &&
+    cd ../ &&
+    rm -rf ${REPO_NAME}
+}
