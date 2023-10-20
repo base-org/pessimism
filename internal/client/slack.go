@@ -19,6 +19,10 @@ import (
 	"github.com/base-org/pessimism/internal/logging"
 )
 
+const (
+	msgOK = "ok"
+)
+
 type SlackClient interface {
 	AlertClient
 }
@@ -82,7 +86,7 @@ type SlackAPIResponse struct {
 // ToAlertResponse ... Converts a slack API response to an alert API response
 func (a *SlackAPIResponse) ToAlertResponse() *AlertAPIResponse {
 	status := core.SuccessStatus
-	if a.Message != "ok" {
+	if a.Message != msgOK {
 		status = core.FailureStatus
 	}
 
@@ -132,10 +136,10 @@ func (sc slackClient) PostEvent(ctx context.Context, event *AlertEventTrigger) (
 	}
 
 	// 3.c. validate response body
-	if string(bytes) == "ok" {
+	if string(bytes) == msgOK {
 		return &AlertAPIResponse{
 			Status:  core.SuccessStatus,
-			Message: "ok",
+			Message: msgOK,
 		}, nil
 	}
 
