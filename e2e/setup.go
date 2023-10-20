@@ -72,6 +72,14 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 		t.Fatal(err)
 	}
 
+	if len(os.Getenv("ENABLE_ROLLUP_LOGS")) == 0 {
+		t.Log("set env 'ENABLE_ROLLUP_LOGS' to show rollup logs")
+		for name, logger := range nodeCfg.Loggers {
+			t.Logf("discarding logs for %s", name)
+			logger.SetHandler(log.DiscardHandler())
+		}
+	}
+
 	ss := state.NewMemState()
 
 	bundle := &client.Bundle{
