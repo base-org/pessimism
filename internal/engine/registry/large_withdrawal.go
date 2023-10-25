@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"strconv"
 	"time"
 
 	"github.com/base-org/pessimism/internal/client"
@@ -40,10 +41,10 @@ type LargeWithdrawalCfg struct {
 
 // LargeWithdrawHeuristic ... LargeWithdrawal heuristic implementation
 type LargeWithdrawHeuristic struct {
-	eventHash           common.Hash
-	cfg                 *LargeWithdrawalCfg
-	l2tol1MessagePasser *bindings.L2ToL1MessagePasserFilterer
-	l1PortalFilter      *bindings.OptimismPortalFilterer
+	eventHash      common.Hash
+	cfg            *LargeWithdrawalCfg
+	indexerClient  client.IndexerClient
+	l1PortalFilter *bindings.OptimismPortalFilterer
 
 	heuristic.Heuristic
 }
@@ -55,26 +56,15 @@ func (cfg *LargeWithdrawalCfg) Unmarshal(isp *core.SessionParams) error {
 
 // NewLargeWithdrawHeuristic ... Initializer
 func NewLargeWithdrawHeuristic(ctx context.Context, cfg *LargeWithdrawalCfg) (heuristic.Heuristic, error) {
-	l2Client, err := client.FromContext(ctx, core.Layer2)
-	if err != nil {
-		return nil, err
-	}
-
-	l1Client, err := client.FromContext(ctx, core.Layer1)
+	clients, err := client.FromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	withdrawalHash := crypto.Keccak256Hash([]byte(WithdrawalProvenEvent))
+	portalAddr := common.HexToAddress(cfg.L1PortalAddress)
 
-	addr := common.HexToAddress(cfg.L2ToL1Address)
-	addr2 := common.HexToAddress(cfg.L1PortalAddress)
-	l2MessagePasser, err := bindings.NewL2ToL1MessagePasserFilterer(addr, l2Client)
-	if err != nil {
-		return nil, err
-	}
-
-	filter, err := bindings.NewOptimismPortalFilterer(addr2, l1Client)
+	filter, err := bindings.NewOptimismPortalFilterer(portalAddr, clients.L1Client)
 	if err != nil {
 		return nil, err
 	}
@@ -82,9 +72,9 @@ func NewLargeWithdrawHeuristic(ctx context.Context, cfg *LargeWithdrawalCfg) (he
 	return &LargeWithdrawHeuristic{
 		cfg: cfg,
 
-		eventHash:           withdrawalHash,
-		l1PortalFilter:      filter,
-		l2tol1MessagePasser: l2MessagePasser,
+		eventHash:      withdrawalHash,
+		l1PortalFilter: filter,
+		indexerClient:  clients.IndexerClient,
 
 		Heuristic: heuristic.NewBaseHeuristic(core.EventLog),
 	}, nil
@@ -116,25 +106,26 @@ func (wi *LargeWithdrawHeuristic) Assess(td core.TransitData) (*core.Activation,
 		return nil, false, err
 	}
 
-	// 3. Check if the withdrawal exists in the message outbox of the L2ToL1MessagePasser contract
-	iterator, err := wi.l2tol1MessagePasser.FilterMessagePassed(nil,
-		[]*big.Int{}, []common.Address{provenWithdrawal.From}, []common.Address{provenWithdrawal.To})
+	// 3. Get withdrawal metadata from OP Indexer API
+	withdrawals, err := wi.indexerClient.GetAllWithdrawalsByAddress(provenWithdrawal.From)
 	if err != nil {
 		return nil, false, err
 	}
 
-	for iterator.Next() {
-		if iterator.Event.WithdrawalHash == provenWithdrawal.WithdrawalHash { // Found the associated withdrawal on L2
-			// 4. Check if the withdrawal amount is greater than the threshold
-			if iterator.Event.Value.Cmp(wi.cfg.Threshold) == 1 {
-				return &core.Activation{
-					TimeStamp: time.Now(),
-					Message: fmt.Sprintf(largeWithdrawalMsg,
-						wi.cfg.L1PortalAddress, wi.cfg.L2ToL1Address,
-						wi.SUUID(), log.TxHash.Hex(), iterator.Event.Raw.TxHash,
-						iterator.Event.Value),
-				}, true, nil
-			}
+	for _, withdrawal := range withdrawals {
+		asInt, err := strconv.Atoi(withdrawal.Amount)
+		if err != nil {
+			return nil, false, err
+		}
+
+		if asInt > int(wi.cfg.Threshold.Int64()) {
+			return &core.Activation{
+				TimeStamp: time.Now(),
+				Message: fmt.Sprintf(largeWithdrawalMsg,
+					wi.cfg.L1PortalAddress, wi.cfg.L2ToL1Address,
+					wi.SUUID(), log.TxHash.Hex(), withdrawal.TransactionHash,
+					withdrawal.Amount),
+			}, true, nil
 		}
 	}
 

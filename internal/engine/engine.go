@@ -8,6 +8,7 @@ import (
 	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
+	"github.com/ethereum-optimism/optimism/op-service/retry"
 
 	"go.uber.org/zap"
 )
@@ -95,11 +96,23 @@ func (hce *hardCodedEngine) EventLoop(ctx context.Context) {
 			logger.Debug("Heuristic input received",
 				zap.String(logging.SUUIDKey, execInput.h.SUUID().String()))
 
-			// (1) Execute heuristic
+			// (1) Execute heuristic with retry strategy
 			start := time.Now()
-			outcome, activated := hce.Execute(ctx, execInput.hi.Input, execInput.h)
-			metrics.WithContext(ctx).RecordHeuristicRun(execInput.h)
-			metrics.WithContext(ctx).RecordInvExecutionTime(execInput.h, float64(time.Since(start).Nanoseconds()))
+
+			var outcome *core.Activation
+			var activated bool
+
+			retryStrategy := &retry.ExponentialStrategy{Min: 1000, Max: 20_000, MaxJitter: 250}
+			if _, err := retry.Do[interface{}](ctx, 10, retryStrategy, func() (interface{}, error) {
+				outcome, activated = hce.Execute(ctx, execInput.hi.Input, execInput.h)
+				metrics.WithContext(ctx).RecordHeuristicRun(execInput.h)
+				metrics.WithContext(ctx).RecordInvExecutionTime(execInput.h, float64(time.Since(start).Nanoseconds()))
+				// a-ok!
+				return nil, nil
+			}); err != nil {
+				logger.Error("Failed to execute heuristic", zap.Error(err))
+				metrics.WithContext(ctx).RecordAssessmentError(execInput.h)
+			}
 
 			// (2) Send alert if activated
 			if activated {
