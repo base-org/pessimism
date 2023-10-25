@@ -2,11 +2,9 @@ package e2e
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/server"
@@ -21,9 +19,6 @@ import (
 	"github.com/base-org/pessimism/internal/subsystem"
 
 	op_e2e "github.com/ethereum-optimism/optimism/op-e2e"
-	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
 )
@@ -75,6 +70,14 @@ func CreateL2TestSuite(t *testing.T) *L2TestSuite {
 	node, err := op_e2e.NewOpGeth(t, ctx, &nodeCfg)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	if len(os.Getenv("ENABLE_ROLLUP_LOGS")) == 0 {
+		t.Log("set env 'ENABLE_ROLLUP_LOGS' to show rollup logs")
+		for name, logger := range nodeCfg.Loggers {
+			t.Logf("discarding logs for %s", name)
+			logger.SetHandler(log.DiscardHandler())
+		}
 	}
 
 	ss := state.NewMemState()
@@ -165,7 +168,9 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 
 	appCfg := DefaultTestConfig()
 
+	// Use unstructured slack server responses for testing E2E system flows
 	slackServer := NewTestSlackServer("127.0.0.1", 0)
+	slackServer.Unstructured = true
 
 	pagerdutyServer := NewTestPagerDutyServer("127.0.0.1", 0)
 
@@ -184,6 +189,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 		t.Fatal(err)
 	}
 
+	t.Parallel()
 	go pess.ListenForShutdown(kill)
 
 	return &SysTestSuite{
@@ -286,30 +292,5 @@ func DefaultRoutingParams(slackURL core.StringFromEnv) *core.AlertRoutingParams 
 				},
 			},
 		},
-	}
-}
-
-// WaitForTransaction ... Waits for a transaction receipt to be generated or times out
-func WaitForTransaction(hash common.Hash, client *ethclient.Client, timeout time.Duration) (*types.Receipt, error) {
-	timeoutCh := time.After(timeout)
-	ms100 := 100
-
-	ticker := time.NewTicker(time.Duration(ms100) * time.Millisecond)
-	defer ticker.Stop()
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	for {
-		receipt, err := client.TransactionReceipt(ctx, hash)
-		if receipt != nil && err == nil {
-			return receipt, nil
-		} else if err != nil && !errors.Is(err, ethereum.NotFound) {
-			return nil, err
-		}
-
-		select {
-		case <-timeoutCh:
-			return nil, errors.New("timeout")
-		case <-ticker.C:
-		}
 	}
 }
