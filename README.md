@@ -126,6 +126,8 @@ Unit tests can run using the following project level command(s):
 
 Integration tests are written that leverage the existing [op-e2e](https://github.com/ethereum-optimism/optimism/tree/develop/op-e2e) testing framework for spinning up pieces of the bedrock system. Additionally, the [httptest](https://pkg.go.dev/net/http/httptest) library is used to mock downstream alerting services (e.g. Slack's webhook API). These tests live in the project's `/e2e` directory.
 
+Running integration tests requires generating devnet allocation files for compatibility with the Optimism monorepo. The following `scripts/devnet_allocs.sh` can be run to do this generation. If successful, a new `.devnet` directory will be created in the project's root directory.
+
 Integration tests can run using the following project level command(s):
 
 * Using Make: `make e2e-test`

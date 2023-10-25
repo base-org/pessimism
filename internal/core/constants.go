@@ -18,9 +18,7 @@ const (
 	Logger CtxKey = iota
 	Metrics
 	State
-	L1Client
-	L2Client
-	L2Geth
+	Clients
 )
 
 // Network ... Represents the network for which a pipeline's oracle

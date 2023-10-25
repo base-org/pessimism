@@ -16,7 +16,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.19
+        go-version: 1.21
 
     - name: Build App
       run: make build-app
@@ -31,12 +31,16 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.19
+        go-version: 1.21
+
+    - name: Install project dependencies
+      run: | 
+        go mod download
 
     - name: Run Unit Tests
       id: unit
       run: | 
-        go test -coverprofile=coverage.out ./internal/... >> out.txt
+        go test -v -coverprofile=coverage.out ./internal/... 
 
     # - name: Generate Coverage
     #   run: |
@@ -69,8 +73,15 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.19
+        go-version: 1.21
+
+    - name: Install foundry
+      uses: foundry-rs/foundry-toolchain@v1
+
+    - name: Setup devnet Resources
+      id: devnet
+      run: |
+        make devnet-allocs
 
     - name: Run E2E Integration Tests
       run: make e2e-test
-

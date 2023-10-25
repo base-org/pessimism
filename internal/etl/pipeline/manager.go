@@ -5,6 +5,7 @@ package pipeline
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"sync"
 
 	"github.com/base-org/pessimism/internal/core"
@@ -21,6 +22,7 @@ type Manager interface {
 	InferComponent(cc *core.ClientConfig, cUUID core.CUUID, pUUID core.PUUID,
 		register *core.DataRegister) (component.Component, error)
 	GetStateKey(rt core.RegisterType) (*core.StateKey, bool, error)
+	GetPipelineHeight(id core.PUUID) (*big.Int, error)
 	CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, bool, error)
 	RunPipeline(pID core.PUUID) error
 	ActiveCount() int
@@ -277,4 +279,13 @@ func (em *etlManager) GetStateKey(rt core.RegisterType) (*core.StateKey, bool, e
 	}
 
 	return nil, false, nil
+}
+
+func (em *etlManager) GetPipelineHeight(id core.PUUID) (*big.Int, error) {
+	pipeline, err := em.store.GetPipelineFromPUUID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return pipeline.BlockHeight()
 }

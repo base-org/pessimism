@@ -52,8 +52,10 @@ func (s Severity) String() string {
 	switch s {
 	case LOW:
 		return "low"
+
 	case MEDIUM:
 		return "medium"
+
 	case HIGH:
 		return "high"
 
@@ -69,9 +71,11 @@ func (s Severity) String() string {
 func (s Severity) ToPagerDutySev() PagerDutySeverity {
 	switch s {
 	case LOW:
+
 		return Warning
 	case MEDIUM:
 		return Error
+
 	case HIGH:
 		return Critical
 
@@ -108,12 +112,12 @@ type SeverityMap struct {
 
 // AlertClientCfg ... The alert client config
 type AlertClientCfg struct {
-	Slack     map[string]*Config `yaml:"slack"`
-	PagerDuty map[string]*Config `yaml:"pagerduty"`
+	Slack     map[string]*AlertConfig `yaml:"slack"`
+	PagerDuty map[string]*AlertConfig `yaml:"pagerduty"`
 }
 
-// Config ... The config for an alert client
-type Config struct {
+// AlertConfig ... The config for an alert client
+type AlertConfig struct {
 	URL            StringFromEnv `yaml:"url"`
 	Channel        StringFromEnv `yaml:"channel"`
 	IntegrationKey StringFromEnv `yaml:"integration_key"`

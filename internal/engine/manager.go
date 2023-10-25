@@ -5,7 +5,6 @@ package engine
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/heuristic"
@@ -16,6 +15,10 @@ import (
 
 	"go.uber.org/zap"
 )
+
+type Config struct {
+	WorkerCount int
+}
 
 // Manager ... Engine manager interface
 type Manager interface {
@@ -39,8 +42,12 @@ type engineManager struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	etlIngress    chan core.HeuristicInput
-	alertOutgress chan core.Alert
+	// Used to receive heuristic input from ETL subsystem
+	etlIngress chan core.HeuristicInput
+	// Used to send alerts to alerting subsystem
+	alertEgress chan core.Alert
+	// Used to send execution requests to engine worker subscribers
+	workerEgress chan ExecInput
 
 	metrics    metrics.Metricer
 	engine     RiskEngine
@@ -50,20 +57,30 @@ type engineManager struct {
 }
 
 // NewManager ... Initializer
-func NewManager(ctx context.Context, engine RiskEngine, addr AddressingMap,
-	store SessionStore, it registry.HeuristicTable, alertOutgress chan core.Alert) Manager {
+func NewManager(ctx context.Context, cfg *Config, engine RiskEngine, addr AddressingMap,
+	store SessionStore, it registry.HeuristicTable, alertEgress chan core.Alert) Manager {
 	ctx, cancel := context.WithCancel(ctx)
 
 	em := &engineManager{
-		ctx:           ctx,
-		cancel:        cancel,
-		alertOutgress: alertOutgress,
-		etlIngress:    make(chan core.HeuristicInput),
-		engine:        engine,
-		addresser:     addr,
-		store:         store,
-		heuristics:    it,
-		metrics:       metrics.WithContext(ctx),
+		ctx:          ctx,
+		cancel:       cancel,
+		alertEgress:  alertEgress,
+		etlIngress:   make(chan core.HeuristicInput),
+		workerEgress: make(chan ExecInput),
+		engine:       engine,
+		addresser:    addr,
+		store:        store,
+		heuristics:   it,
+		metrics:      metrics.WithContext(ctx),
+	}
+
+	// Start engine worker pool for concurrent heuristic execution
+	// TODO: Add validation checks for worker count
+	for i := 0; i < cfg.WorkerCount; i++ {
+		logging.WithContext(ctx).Debug("Starting engine worker routine", zap.Int("worker", i))
+
+		engine.AddWorkerIngress(em.workerEgress)
+		go engine.EventLoop(ctx)
 	}
 
 	return em
@@ -231,7 +248,7 @@ func (em *engineManager) executeAddressHeuristics(ctx context.Context, data core
 	for _, sUUID := range ids {
 		h, err := em.store.GetInstanceByUUID(sUUID)
 		if err != nil {
-			logger.Error("Could not session by heuristic sUUID",
+			logger.Error("Could not find session by heuristic sUUID",
 				zap.Error(err),
 				zap.String(logging.PUUIDKey, sUUID.String()))
 			continue
@@ -266,31 +283,14 @@ func (em *engineManager) executeNonAddressHeuristics(ctx context.Context, data c
 	}
 }
 
-// executeHeuristic ... Executes a single heuristic using the risk engine
+// executeHeuristic ... Sends heuristic input to engine worker pool for execution
 func (em *engineManager) executeHeuristic(ctx context.Context, data core.HeuristicInput, h heuristic.Heuristic) {
-	logger := logging.WithContext(ctx)
-
-	start := time.Now()
-	// Execute heuristic using risk engine and return alert if activation occurs
-	outcome, activated := em.engine.Execute(ctx, data.Input, h)
-
-	em.metrics.RecordHeuristicRun(h)
-	em.metrics.RecordInvExecutionTime(h, float64(time.Since(start).Nanoseconds()))
-
-	if activated {
-		// Generate & send alert
-		alert := core.Alert{
-			Timestamp: outcome.TimeStamp,
-			SUUID:     h.SUUID(),
-			Content:   outcome.Message,
-			PUUID:     data.PUUID,
-			Ptype:     data.PUUID.PipelineType(),
-		}
-
-		logger.Warn("Heuristic alert",
-			zap.String(logging.SUUIDKey, h.SUUID().String()),
-			zap.String("message", outcome.Message))
-
-		em.alertOutgress <- alert
+	ei := ExecInput{
+		ctx: ctx,
+		hi:  data,
+		h:   h,
 	}
+
+	// Send heuristic input to engine worker pool
+	em.workerEgress <- ei
 }

@@ -27,6 +27,10 @@ type AddressBalanceODef struct {
 	sk         *core.StateKey
 }
 
+func (oracle *AddressBalanceODef) Height() (*big.Int, error) {
+	return oracle.currHeight, nil
+}
+
 // NewAddressBalanceODef ... Initializer for address.balance oracle definition
 func NewAddressBalanceODef(cfg *core.ClientConfig, client client.EthClient,
 	h *big.Int) *AddressBalanceODef {
@@ -40,7 +44,7 @@ func NewAddressBalanceODef(cfg *core.ClientConfig, client client.EthClient,
 // NewAddressBalanceOracle ... Initializer for address.balance oracle component
 func NewAddressBalanceOracle(ctx context.Context, cfg *core.ClientConfig,
 	opts ...component.Option) (component.Component, error) {
-	client, err := client.FromContext(ctx, cfg.Network)
+	client, err := client.FromNetwork(ctx, cfg.Network)
 	if err != nil {
 		return nil, err
 	}

@@ -50,12 +50,7 @@ func (cfg *WithdrawalEnforceCfg) Unmarshal(isp *core.SessionParams) error {
 
 // NewWithdrawalEnforceInv ... Initializer
 func NewWithdrawalEnforceInv(ctx context.Context, cfg *WithdrawalEnforceCfg) (heuristic.Heuristic, error) {
-	l2Client, err := client.FromContext(ctx, core.Layer2)
-	if err != nil {
-		return nil, err
-	}
-
-	l1Client, err := client.FromContext(ctx, core.Layer1)
+	bundle, err := client.FromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -64,12 +59,12 @@ func NewWithdrawalEnforceInv(ctx context.Context, cfg *WithdrawalEnforceCfg) (he
 
 	addr := common.HexToAddress(cfg.L2ToL1Address)
 	addr2 := common.HexToAddress(cfg.L1PortalAddress)
-	l2MessagePasser, err := bindings.NewL2ToL1MessagePasserCaller(addr, l2Client)
+	l2MessagePasser, err := bindings.NewL2ToL1MessagePasserCaller(addr, bundle.L2Client)
 	if err != nil {
 		return nil, err
 	}
 
-	filter, err := bindings.NewOptimismPortalFilterer(addr2, l1Client)
+	filter, err := bindings.NewOptimismPortalFilterer(addr2, bundle.L1Client)
 	if err != nil {
 		return nil, err
 	}

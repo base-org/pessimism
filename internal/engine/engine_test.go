@@ -23,7 +23,7 @@ func createTestSuite(t *testing.T) *testSuite {
 
 	return &testSuite{
 		ctrl:          ctrl,
-		re:            engine.NewHardCodedEngine(),
+		re:            engine.NewHardCodedEngine(make(chan core.Alert)),
 		mockHeuristic: mocks.NewMockHeuristic(ctrl),
 	}
 }

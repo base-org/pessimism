@@ -77,23 +77,23 @@ type HeuristicInput struct {
 	Input TransitData
 }
 
-// EngineInputRelay ... Represents a inter-subsystem
+// ExecInputRelay ... Represents a inter-subsystem
 // relay used to bind final ETL pipeline outputs to risk engine inputs
-type EngineInputRelay struct {
+type ExecInputRelay struct {
 	pUUID   PUUID
 	outChan chan HeuristicInput
 }
 
 // NewEngineRelay ... Initializer
-func NewEngineRelay(pUUID PUUID, outChan chan HeuristicInput) *EngineInputRelay {
-	return &EngineInputRelay{
+func NewEngineRelay(pUUID PUUID, outChan chan HeuristicInput) *ExecInputRelay {
+	return &ExecInputRelay{
 		pUUID:   pUUID,
 		outChan: outChan,
 	}
 }
 
 // RelayTransitData ... Creates heuristic input from transit data to send to risk engine
-func (eir *EngineInputRelay) RelayTransitData(td TransitData) error {
+func (eir *ExecInputRelay) RelayTransitData(td TransitData) error {
 	hi := HeuristicInput{
 		PUUID: eir.pUUID,
 		Input: td,

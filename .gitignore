@@ -4,3 +4,5 @@ config.env
 /.idea
 genesis.json
 alert-routing.yaml
+.devnet
+packages/contracts-bedrock/deploy-config/devnetL1.json

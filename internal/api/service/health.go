@@ -46,9 +46,9 @@ func (svc *PessimismService) CheckHealth() *models.HealthCheck {
 
 func (svc *PessimismService) CheckETHRPCHealth(n core.Network) bool {
 	logger := logging.WithContext(svc.ctx)
-	ethClient, err := client.FromContext(svc.ctx, n)
+	ethClient, err := client.FromNetwork(svc.ctx, n)
 	if err != nil {
-		logger.Error("error getting client from context", zap.Error(err))
+		logger.Error("error getting client bundle from context", zap.Error(err))
 		return false
 	}
 

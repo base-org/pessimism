@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/base-org/pessimism/internal/app"
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/engine/registry"
@@ -42,8 +43,11 @@ func createFdTestSuite(t *testing.T) *fdTestSuite {
 	mockEthClient := mocks.NewMockEthClient(ctrl)
 	mockGethClient := mocks.NewMockGethClient(ctrl)
 
-	ctx = app.InitializeContext(ctx, nil, mockEthClient, mockEthClient,
-		mockGethClient)
+	ctx = app.InitializeContext(ctx, nil, &client.Bundle{
+		L2Client: mockEthClient,
+		L2Geth:   mockGethClient,
+		L1Client: mockEthClient,
+	})
 
 	fd, err := registry.NewFaultDetector(ctx, cfg)
 	assert.Nil(t, err)

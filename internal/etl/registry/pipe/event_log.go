@@ -42,7 +42,7 @@ type EventDefinition struct {
 // NewEventDefinition ... Initializes the event log pipe definition
 func NewEventDefinition(ctx context.Context, n core.Network) (*EventDefinition, error) {
 	// 1. Load dependencies from context
-	client, err := client.FromContext(ctx, n)
+	client, err := client.FromNetwork(ctx, n)
 	if err != nil {
 		return nil, err
 	}
