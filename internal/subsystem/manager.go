@@ -222,11 +222,5 @@ func (m *Manager) etlLimitReached() bool {
 }
 
 func (m *Manager) PipelineHeight(pUUID core.PUUID) (*big.Int, error) {
-	height, err := m.etl.GetPipelineHeight(pUUID)
-	if err != nil {
-		return nil, err
-	}
-
-	logging.NoContext().Info("Returning height for pipeline", zap.String("height", height.String()))
-	return height, nil
+	return m.etl.GetPipelineHeight(pUUID)
 }
