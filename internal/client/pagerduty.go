@@ -154,7 +154,7 @@ func (pdc *pagerdutyClient) PostEvent(ctx context.Context, event *AlertEventTrig
 	resp, err := pdc.client.Do(req)
 	defer func() {
 		if err = resp.Body.Close(); err != nil {
-			logging.WithContext(ctx).Warn("Could not close pagerduty response body",
+			logging.WithContext(ctx).Warn("Could not close PagerDuty response body",
 				zap.Error(err))
 		}
 	}()

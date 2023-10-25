@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// PagerDutySeverity represents the severity of an event
+// PagerDutySeverity ... represents the severity of an event
 type PagerDutySeverity string
 
 const (
