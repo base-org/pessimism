@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	core "github.com/base-org/pessimism/internal/core"
+	heuristic "github.com/base-org/pessimism/internal/engine/heuristic"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -35,13 +36,12 @@ func (m *MockHeuristic) EXPECT() *MockHeuristicMockRecorder {
 }
 
 // Assess mocks base method.
-func (m *MockHeuristic) Assess(arg0 core.TransitData) (*core.Activation, bool, error) {
+func (m *MockHeuristic) Assess(arg0 core.TransitData) (*heuristic.ActivationSet, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Assess", arg0)
-	ret0, _ := ret[0].(*core.Activation)
-	ret1, _ := ret[1].(bool)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
+	ret0, _ := ret[0].(*heuristic.ActivationSet)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Assess indicates an expected call of Assess.

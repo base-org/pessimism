@@ -9,8 +9,12 @@ import (
 	"github.com/base-org/pessimism/e2e"
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/core"
+	api_mods "github.com/ethereum-optimism/optimism/indexer/api/models"
+	"github.com/golang/mock/gomock"
+
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
 	"github.com/ethereum-optimism/optimism/op-bindings/predeploys"
+
 	op_e2e "github.com/ethereum-optimism/optimism/op-e2e"
 	"github.com/ethereum-optimism/optimism/op-e2e/e2eutils/wait"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -194,12 +198,12 @@ func TestContractEvent(t *testing.T) {
 	assert.Contains(t, msgs[0].Text, alertMsg, "System contract event message was not propagated")
 }
 
-// TestWithdrawalEnforcement ... Tests the E2E flow of a withdrawal
+// TestUnsafeWithdrawalDetection ... Tests the E2E flow of a withdrawal
 // / enforcement heuristic session. This test uses two L2ToL1 message passer contracts;
 // one that is configured to be "faulty" and one that is not. The heuristic session
 // should only produce an alert when the faulty L2ToL1 message passer is used given
 // that it's state is empty.
-func TestWithdrawalEnforcement(t *testing.T) {
+func TestUnsafeWithdrawalDetection(t *testing.T) {
 
 	// 1 - Misconfigured testing environment
 	// 2 - Change in chain state that affects the heuristic
@@ -228,7 +232,7 @@ func TestWithdrawalEnforcement(t *testing.T) {
 			// This is the one that should produce an alert
 			Network:       core.Layer1.String(),
 			PType:         core.Live.String(),
-			HeuristicType: core.WithdrawalEnforcement.String(),
+			HeuristicType: core.UnsafeWithdrawal.String(),
 			StartHeight:   nil,
 			EndHeight:     nil,
 			AlertingParams: &core.AlertPolicy{
@@ -271,6 +275,14 @@ func TestWithdrawalEnforcement(t *testing.T) {
 	withdrawReceipt, err := wait.ForReceiptOK(context.Background(), ts.L2Client, withdrawTx.Hash())
 	require.NoError(t, err)
 
+	// Mock the indexer call to return a really high withdrawal amount
+	ts.TestIndexerClient.EXPECT().GetAllWithdrawalsByAddress(gomock.Any()).Return([]api_mods.WithdrawalItem{
+		{
+			TransactionHash: "0x123",
+			Amount:          "11111111111111111111111111111111111111111111111111111111111111111111111",
+		},
+	}, nil).AnyTimes()
+
 	_, proveReceipt := op_e2e.ProveWithdrawal(t, *ts.Cfg, ts.L1Client, ts.Sys.EthInstances["sequencer"], ts.Cfg.Secrets.Alice, withdrawReceipt)
 
 	// Wait for Pessimism to process the withdrawal and send a notification to the mocked Slack server.
@@ -284,11 +296,9 @@ func TestWithdrawalEnforcement(t *testing.T) {
 		return height.Uint64() > proveReceipt.BlockNumber.Uint64(), nil
 	}))
 
-	time.Sleep(time.Second * 10)
-
 	// Ensure Pessimism has detected what it considers a "faulty" withdrawal
 	alerts := ts.TestSlackSvr.SlackAlerts()
-	require.Equal(t, 1, len(alerts), "expected 1 alert")
+	require.Equal(t, 3, len(alerts), "expected 3 alerts")
 	assert.Contains(t, alerts[0].Text, "withdrawal_enforcement", "expected alert to be for withdrawal_enforcement")
 	assert.Contains(t, alerts[0].Text, fakeAddr.String(), "expected alert to be for dummy L2ToL1MessagePasser")
 	assert.Contains(t, alerts[0].Text, alertMsg, "expected alert to have alert message")

@@ -4,6 +4,7 @@ package heuristic
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/base-org/pessimism/internal/core"
 )
@@ -22,7 +23,7 @@ const (
 type Heuristic interface {
 	InputType() core.RegisterType
 	ValidateInput(core.TransitData) error
-	Assess(core.TransitData) (*core.Activation, bool, error)
+	Assess(td core.TransitData) (*ActivationSet, error)
 	SUUID() core.SUUID
 	SetSUUID(core.SUUID)
 }
@@ -63,8 +64,8 @@ func (bi *BaseHeuristic) InputType() core.RegisterType {
 }
 
 // Assess ... Determines if a heuristic activation has occurred; defaults to no-op
-func (bi *BaseHeuristic) Assess(core.TransitData) (*core.Activation, bool, error) {
-	return nil, false, nil
+func (bi *BaseHeuristic) Assess(td core.TransitData) (*ActivationSet, error) {
+	return nil, nil
 }
 
 // SetSUUID ... Sets the heuristic session UUID
@@ -79,4 +80,41 @@ func (bi *BaseHeuristic) ValidateInput(td core.TransitData) error {
 	}
 
 	return nil
+}
+
+// Activation ... Represents an activation event
+type Activation struct {
+	TimeStamp time.Time
+	Message   string
+}
+
+type ActivationSet struct {
+	acts []*Activation
+}
+
+func NewActivationSet() *ActivationSet {
+	return &ActivationSet{
+		acts: make([]*Activation, 0),
+	}
+}
+
+func (as *ActivationSet) Len() int {
+	return len(as.acts)
+}
+
+func (as *ActivationSet) Add(a *Activation) *ActivationSet {
+	as.acts = append(as.acts, a)
+	return as
+}
+
+func (as *ActivationSet) Entries() []*Activation {
+	return as.acts
+}
+
+func (as *ActivationSet) Activated() bool {
+	return as.Len() > 0
+}
+
+func NoActivations() *ActivationSet {
+	return NewActivationSet()
 }

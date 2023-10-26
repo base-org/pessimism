@@ -18,5 +18,7 @@ const (
 )
 
 var (
-	MessagePassedSig = crypto.Keccak256Hash([]byte(MessagePassed))
+	MessagePassedSig    = crypto.Keccak256Hash([]byte(MessagePassed))
+	OutputProposedSig   = crypto.Keccak256Hash([]byte(OutputProposedEvent))
+	WithdrawalProvenSig = crypto.Keccak256Hash([]byte(WithdrawalProvenEvent))
 )
