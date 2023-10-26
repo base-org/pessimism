@@ -90,9 +90,8 @@ func Test_FaultDetector(t *testing.T) {
 					Value: testLog,
 				}
 
-				outcome, pass, err := ts.fd.Assess(td)
-				assert.Nil(t, outcome)
-				assert.False(t, pass)
+				as, err := ts.fd.Assess(td)
+				assert.Nil(t, as)
 				assert.Error(t, err)
 
 			},
@@ -117,10 +116,9 @@ func Test_FaultDetector(t *testing.T) {
 					Value: testLog,
 				}
 
-				outcome, pass, err := ts.fd.Assess(td)
-				assert.Nil(t, outcome)
-				assert.False(t, pass)
+				as, err := ts.fd.Assess(td)
 				assert.Error(t, err)
+				assert.Nil(t, as)
 
 			},
 		},
@@ -153,9 +151,9 @@ func Test_FaultDetector(t *testing.T) {
 					Value: testLog,
 				}
 
-				outcome, pass, err := ts.fd.Assess(td)
-				assert.NotNil(t, outcome)
-				assert.True(t, pass)
+				as, err := ts.fd.Assess(td)
+				assert.NotNil(t, as)
+				assert.True(t, as.Activated())
 				assert.NoError(t, err)
 
 			},

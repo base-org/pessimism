@@ -145,10 +145,8 @@ func (wi *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Act
 	// TODO - Update withdrawal decoding to convert to big.Int instead of string
 	corrWithdrawal := withdrawals[0]
 
-	// 4. Perform invariant analysis using the withdrawal metadata
-
-	// 4.1 Check if the proven withdrawal amount is greater than the OptimismPortal value
-	portalWEI, err := wi.l1Client.BalanceAt(context.Background(), common.HexToAddress(wi.cfg.L1PortalAddress), big.NewInt(int64(log.BlockNumber)))
+	portalWEI, err := wi.l1Client.BalanceAt(context.Background(), common.HexToAddress(wi.cfg.L1PortalAddress),
+		big.NewInt(int64(log.BlockNumber)))
 	if err != nil {
 		return nil, err
 	}
@@ -162,6 +160,7 @@ func (wi *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Act
 		return nil, err
 	}
 
+	// 4. Perform invariant analysis using the withdrawal metadata
 	invariants := []func() (bool, string){
 		// 4.1
 		// Check if the proven withdrawal amount is greater than the OptimismPortal value
@@ -172,7 +171,7 @@ func (wi *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Act
 		// Check if the proven withdrawal amount is greater than 5% of the OptimismPortal value
 		func() (bool, string) {
 			return p_common.PercentOf(withdrawalETH, portalETH).Cmp(big.NewFloat(5)) == 1, `
-			A withdraw was proven that is within 5% of the Optimism Portal balance`
+			A withdraw was proven that is >= 5% of the Optimism Portal balance`
 		},
 		// 4.3
 		// Ensure the proven withdrawal exists in the L2ToL1MessagePasser storage
@@ -184,13 +183,14 @@ func (wi *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Act
 	as := heuristic.NewActivationSet()
 	for _, inv := range invariants {
 		if success, msg := inv(); success {
-			as = as.Add(&heuristic.Activation{
-				TimeStamp: time.Now(),
-				Message: fmt.Sprintf(unsafeWithdrawalMsg, msg,
-					wi.cfg.L1PortalAddress, wi.cfg.L2ToL1Address,
-					wi.SUUID(), log.TxHash.Hex(), corrWithdrawal.TransactionHash,
-					withdrawalWEI),
-			})
+			as = as.Add(
+				&heuristic.Activation{
+					TimeStamp: time.Now(),
+					Message: fmt.Sprintf(unsafeWithdrawalMsg, msg,
+						wi.cfg.L1PortalAddress, wi.cfg.L2ToL1Address,
+						wi.SUUID(), log.TxHash.Hex(), corrWithdrawal.TransactionHash,
+						withdrawalWEI),
+				})
 		}
 	}
 

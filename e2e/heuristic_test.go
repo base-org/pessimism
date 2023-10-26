@@ -296,10 +296,10 @@ func TestUnsafeWithdrawalDetection(t *testing.T) {
 		return height.Uint64() > proveReceipt.BlockNumber.Uint64(), nil
 	}))
 
-	// Ensure Pessimism has detected what it considers a "faulty" withdrawal
+	// Ensure Pessimism has detected what it considers an unsafe withdrawal
 	alerts := ts.TestSlackSvr.SlackAlerts()
 	require.Equal(t, 3, len(alerts), "expected 3 alerts")
-	assert.Contains(t, alerts[0].Text, "withdrawal_enforcement", "expected alert to be for withdrawal_enforcement")
+	assert.Contains(t, alerts[0].Text, "unsafe_withdrawal", "expected alert to be for withdrawal_enforcement")
 	assert.Contains(t, alerts[0].Text, fakeAddr.String(), "expected alert to be for dummy L2ToL1MessagePasser")
 	assert.Contains(t, alerts[0].Text, alertMsg, "expected alert to have alert message")
 }

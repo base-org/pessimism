@@ -41,7 +41,6 @@ type SysTestSuite struct {
 	Close      func()
 
 	// Mocked services
-	ctrl                *gomock.Controller
 	TestSlackSvr        *TestSlackServer
 	TestPagerDutyServer *TestPagerDutyServer
 	TestIndexerClient   *mocks.MockIndexerClient
