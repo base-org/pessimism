@@ -78,6 +78,8 @@ func NewWithdrawalSafetyHeuristic(ctx context.Context, cfg *UnsafeWithdrawalCfg)
 		return nil, err
 	}
 
+	// NOTE - All OP Stack op bindings could be moved to a single object for reuse
+	// across heuristics
 	filter, err := bindings.NewOptimismPortalFilterer(portalAddr, clients.L1Client)
 	if err != nil {
 		return nil, err

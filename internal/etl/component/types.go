@@ -31,7 +31,7 @@ func (as ActivityState) String() string {
 
 // StateChange ... Represents a component state change event
 // that is processed by component management logic to determine
-// proper pipeline states and duplicate pipeline merging opportunities
+// proper pipeline states and where to deduplicate
 type StateChange struct {
 	ID core.CUUID
 

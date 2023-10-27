@@ -98,23 +98,28 @@ func NewActivationSet() *ActivationSet {
 	}
 }
 
+// Len ... Returns the number of activations in the set
 func (as *ActivationSet) Len() int {
 	return len(as.acts)
 }
 
+// Add ... Adds an activation to the set
 func (as *ActivationSet) Add(a *Activation) *ActivationSet {
 	as.acts = append(as.acts, a)
 	return as
 }
 
+// Entries ... Returns the activations in the set
 func (as *ActivationSet) Entries() []*Activation {
 	return as.acts
 }
 
+// Activated ... Returns true if the activation set is not empty
 func (as *ActivationSet) Activated() bool {
 	return as.Len() > 0
 }
 
+// NoActivations ... Returns an empty activation set
 func NoActivations() *ActivationSet {
 	return NewActivationSet()
 }

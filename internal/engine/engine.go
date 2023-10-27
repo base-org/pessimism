@@ -67,7 +67,7 @@ func (hce *hardCodedEngine) Execute(ctx context.Context, data core.TransitData,
 	h heuristic.Heuristic) *heuristic.ActivationSet {
 	logger := logging.WithContext(ctx)
 
-	logger.Debug("Performing heuristic activation",
+	logger.Debug("Performing heuristic assessment",
 		zap.String(logging.SUUIDKey, h.SUUID().String()))
 	activationSet, err := h.Assess(data)
 	if err != nil {
