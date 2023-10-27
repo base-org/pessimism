@@ -102,12 +102,12 @@ func (hce *hardCodedEngine) EventLoop(ctx context.Context) {
 			var actSet *heuristic.ActivationSet
 
 			retryStrategy := &retry.ExponentialStrategy{Min: 1000, Max: 20_000, MaxJitter: 250}
-			if _, err := retry.Do[interface{}](ctx, 10, retryStrategy, func() (interface{}, error) {
+			if _, err := retry.Do[any](ctx, 10, retryStrategy, func() (any, error) {
 				actSet = hce.Execute(ctx, execInput.hi.Input, execInput.h)
 				metrics.WithContext(ctx).RecordHeuristicRun(execInput.h)
 				metrics.WithContext(ctx).RecordInvExecutionTime(execInput.h, float64(time.Since(start).Nanoseconds()))
 				// a-ok!
-				return nil, nil
+				return 0, nil
 			}); err != nil {
 				logger.Error("Failed to execute heuristic", zap.Error(err))
 				metrics.WithContext(ctx).RecordAssessmentError(execInput.h)

@@ -62,3 +62,32 @@ func Test_DLQ(t *testing.T) {
 	assert.Equal(t, len(entries), 4)
 	assert.True(t, dlq.Empty(), true)
 }
+
+// Test_SorensonDice ... Tests Sorenson Dice similarity
+func Test_SorensonDice(t *testing.T) {
+	var tests = []struct {
+		name     string
+		function func(t *testing.T, a, b string, expected float64)
+	}{
+		{
+			name: "Equal Strings",
+			function: func(t *testing.T, a, b string, expected float64) {
+				assert.Equal(t, common.SorensonDice(a, b), expected)
+			},
+		},
+		{
+			name: "Unequal Strings",
+			function: func(t *testing.T, a, b string, expected float64) {
+				assert.Equal(t, common.SorensonDice(a, b), expected)
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.function(t, "0x123", "0x123", 1)
+			test.function(t, "0x123", "0x124", 0.75)
+		})
+	}
+
+}

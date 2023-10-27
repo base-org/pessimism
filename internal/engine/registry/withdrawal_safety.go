@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	largeWithdrawal      = "Large withdrawal has been proven on L1"
+	greaterThanThreshold = "A withdraw was proven that is >= %f of the Optimism Portal balance"
 	uncorrelatedWithdraw = "Withdrawal proven on L1 does not exist in L2ToL1MessagePasser storage"
 	greaterThanPortal    = "Withdrawal amount is greater than the Optimism Portal balance"
 )
@@ -38,6 +38,7 @@ const unsafeWithdrawalMsg = `
 
 // UnsafeWithdrawalCfg  ... Configuration for the balance heuristic
 type UnsafeWithdrawalCfg struct {
+	// % of OptimismPortal balance that is considered a large withdrawal
 	Threshold float64 `json:"threshold"`
 
 	L1PortalAddress string `json:"l1_portal_address"`
@@ -64,7 +65,6 @@ func (cfg *UnsafeWithdrawalCfg) Unmarshal(isp *core.SessionParams) error {
 
 // NewWithdrawalSafetyHeuristic ... Initializer
 func NewWithdrawalSafetyHeuristic(ctx context.Context, cfg *UnsafeWithdrawalCfg) (heuristic.Heuristic, error) {
-
 	// Validate that threshold is on exclusive range (0, 100)
 	if cfg.Threshold >= 100 || cfg.Threshold < 0 {
 		return nil, fmt.Errorf("invalid threshold supplied for withdrawal safety heuristic")
@@ -84,6 +84,9 @@ func NewWithdrawalSafetyHeuristic(ctx context.Context, cfg *UnsafeWithdrawalCfg)
 	}
 
 	l2ToL1MsgPasser, err := bindings.NewL2ToL1MessagePasserCaller(l2ToL1Addr, clients.L2Client)
+	if err != nil {
+		return nil, err
+	}
 
 	return &WithdrawalSafetyHeuristic{
 		ctx: ctx,
@@ -101,20 +104,15 @@ func NewWithdrawalSafetyHeuristic(ctx context.Context, cfg *UnsafeWithdrawalCfg)
 
 // Assess ... Verifies than an L1 WithdrawalProven has a correlating hash
 // to the withdrawal storage of the L2ToL1MessagePasser
+// TODO - Segment this into composite functions
 func (wi *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.ActivationSet, error) {
 	// TODO - Support running from withdrawal initiated or withdrawal proven events
-
-	clients, err := client.FromContext(wi.ctx)
-	if err != nil {
-		return nil, err
-	}
 
 	logging.NoContext().Debug("Checking activation for withdrawal enforcement heuristic",
 		zap.String("data", fmt.Sprintf("%v", td)))
 
-	// 1. Validate and extract data input
-	if td.Type != wi.InputType() {
-		return nil, fmt.Errorf("invalid type supplied")
+	if wi.ValidateInput(td) != nil {
+		return nil, fmt.Errorf("invalid input supplied")
 	}
 
 	if td.Address.String() != wi.cfg.L1PortalAddress {
@@ -133,7 +131,7 @@ func (wi *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Act
 	}
 
 	// 3. Get withdrawal metadata from OP Indexer API
-	withdrawals, err := clients.IndexerClient.GetAllWithdrawalsByAddress(provenWithdrawal.From)
+	withdrawals, err := wi.indexerClient.GetAllWithdrawalsByAddress(provenWithdrawal.From)
 	if err != nil {
 		return nil, err
 	}
@@ -145,41 +143,77 @@ func (wi *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Act
 	// TODO - Update withdrawal decoding to convert to big.Int instead of string
 	corrWithdrawal := withdrawals[0]
 
+	// 4. Fetch the OptimismPortal balance at the time which the withdrawal was proven
 	portalWEI, err := wi.l1Client.BalanceAt(context.Background(), common.HexToAddress(wi.cfg.L1PortalAddress),
 		big.NewInt(int64(log.BlockNumber)))
 	if err != nil {
 		return nil, err
 	}
 
-	portalETH := p_common.WeiToEther(portalWEI)
-
 	withdrawalWEI := big.NewInt(0).SetBytes([]byte(corrWithdrawal.Amount))
-	withdrawalETH := p_common.WeiToEther(withdrawalWEI)
+
 	correlated, err := wi.l2ToL1MsgPasser.SentMessages(nil, provenWithdrawal.WithdrawalHash)
 	if err != nil {
 		return nil, err
 	}
 
-	// 4. Perform invariant analysis using the withdrawal metadata
+	maxAddr := common.HexToAddress("0xffffffffffffffffffffffffffffffffffffffff")
+	minAddr := common.HexToAddress("0x0")
+
+	portalETH := p_common.WeiToEther(portalWEI)
+	withdrawalETH := p_common.WeiToEther(withdrawalWEI)
+
+	// 5. Perform invariant analysis using the fetched withdrawal metadata
 	invariants := []func() (bool, string){
-		// 4.1
+		// 5.1
 		// Check if the proven withdrawal amount is greater than the OptimismPortal value
 		func() (bool, string) {
 			return withdrawalWEI.Cmp(portalWEI) >= 0, greaterThanPortal
 		},
-		// 4.2
-		// Check if the proven withdrawal amount is greater than 5% of the OptimismPortal value
+		// 5.2
+		// Check if the proven withdrawal amount is greater than threshold % of the OptimismPortal value
 		func() (bool, string) {
-			return p_common.PercentOf(withdrawalETH, portalETH).Cmp(big.NewFloat(5)) == 1, `
-			A withdraw was proven that is >= 5% of the Optimism Portal balance`
+			return p_common.PercentOf(withdrawalETH, portalETH).Cmp(big.NewFloat(wi.cfg.Threshold)) == 1,
+				fmt.Sprintf(greaterThanThreshold, wi.cfg.Threshold)
 		},
-		// 4.3
+		// 5.3
 		// Ensure the proven withdrawal exists in the L2ToL1MessagePasser storage
 		func() (bool, string) {
 			return !correlated, uncorrelatedWithdraw
 		},
+		// 5.4
+		// Ensure message_hash != 0x0 (0x0 is the default value for bytes32)
+		func() (bool, string) {
+			if corrWithdrawal.MessageHash == minAddr.String() {
+				return true, "Withdrawal message hash is 0x0000000000000000000000000000000000000000"
+			}
+
+			if corrWithdrawal.MessageHash == maxAddr.String() {
+				return true, "Withdrawal message hash is 0xffffffffffffffffffffffffffffffffffffffff"
+			}
+
+			return false, ""
+		},
+		// 5.5
+		// Ensure that zero address and max address aren't super similar to Sorenson-Dice coefficient
+		func() (bool, string) {
+			c0 := p_common.SorensonDice(corrWithdrawal.MessageHash, minAddr.String())
+			c1 := p_common.SorensonDice(corrWithdrawal.MessageHash, maxAddr.String())
+			threshold := 0.95
+
+			if c0 >= threshold {
+				return true, "Zero address is too similar to message hash"
+			}
+
+			if c1 >= threshold {
+				return true, "Max address is too similar to message hash"
+			}
+
+			return false, ""
+		},
 	}
 
+	// 6. Process activation set from invariant analysis
 	as := heuristic.NewActivationSet()
 	for _, inv := range invariants {
 		if success, msg := inv(); success {

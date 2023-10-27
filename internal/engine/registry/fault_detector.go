@@ -17,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"go.uber.org/zap"
 )
 
@@ -59,8 +58,7 @@ func blockToInfo(b *types.Block) blockInfo {
 
 // faultDetectorInv ... faultDetectorInv implementation
 type faultDetectorInv struct {
-	eventHash common.Hash
-	cfg       *FaultDetectorCfg
+	cfg *FaultDetectorCfg
 
 	l2tol1MessagePasser  common.Address
 	l2OutputOracleFilter *bindings.L2OutputOracleFilterer
@@ -79,7 +77,6 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heu
 		return nil, err
 	}
 
-	outputSig := crypto.Keccak256Hash([]byte(OutputProposedEvent))
 	addr := common.HexToAddress(cfg.L2ToL1Address)
 
 	outputOracle, err := bindings.NewL2OutputOracleFilterer(addr, bundle.L1Client)
@@ -90,7 +87,6 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heu
 	return &faultDetectorInv{
 		cfg: cfg,
 
-		eventHash:            outputSig,
 		l2OutputOracleFilter: outputOracle,
 		l2tol1MessagePasser:  addr,
 		stats:                metrics.WithContext(ctx),

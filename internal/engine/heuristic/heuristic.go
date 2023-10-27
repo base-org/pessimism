@@ -64,8 +64,8 @@ func (bi *BaseHeuristic) InputType() core.RegisterType {
 }
 
 // Assess ... Determines if a heuristic activation has occurred; defaults to no-op
-func (bi *BaseHeuristic) Assess(td core.TransitData) (*ActivationSet, error) {
-	return nil, nil
+func (bi *BaseHeuristic) Assess(_ core.TransitData) (*ActivationSet, error) {
+	return NoActivations(), nil
 }
 
 // SetSUUID ... Sets the heuristic session UUID
