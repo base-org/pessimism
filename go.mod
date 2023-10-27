@@ -3,7 +3,7 @@ module github.com/base-org/pessimism
 go 1.21
 
 require (
-	github.com/ethereum-optimism/optimism v1.1.6-rc.2.0.20231005231252-34f2657719c1
+	github.com/ethereum-optimism/optimism v1.2.0
 	github.com/ethereum/go-ethereum v1.13.1
 	github.com/go-chi/chi v1.5.5
 	github.com/go-chi/render v1.0.3

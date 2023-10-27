@@ -108,6 +108,7 @@ func NewWithdrawalSafetyHeuristic(ctx context.Context, cfg *UnsafeWithdrawalCfg)
 func (wi *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.ActivationSet, error) {
 	// TODO - Support running from withdrawal initiated or withdrawal proven events
 
+	// 1. Validate input
 	logging.NoContext().Debug("Checking activation for withdrawal enforcement heuristic",
 		zap.String("data", fmt.Sprintf("%v", td)))
 
@@ -141,6 +142,7 @@ func (wi *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Act
 	}
 
 	// TODO - Update withdrawal decoding to convert to big.Int instead of string
+	// TODO - Validate that message hash matches the proven withdrawal msg hash
 	corrWithdrawal := withdrawals[0]
 
 	// 4. Fetch the OptimismPortal balance at the time which the withdrawal was proven
@@ -182,14 +184,14 @@ func (wi *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Act
 			return !correlated, uncorrelatedWithdraw
 		},
 		// 5.4
-		// Ensure message_hash != 0x0 (0x0 is the default value for bytes32)
+		// Ensure message_hash != 0x0 and message_hash != 0xf...f
 		func() (bool, string) {
 			if corrWithdrawal.MessageHash == minAddr.String() {
-				return true, "Withdrawal message hash is 0x0000000000000000000000000000000000000000"
+				return true, "Withdrawal message hash is 0x0"
 			}
 
 			if corrWithdrawal.MessageHash == maxAddr.String() {
-				return true, "Withdrawal message hash is 0xffffffffffffffffffffffffffffffffffffffff"
+				return true, "Withdrawal message hash is 0xf...f"
 			}
 
 			return false, ""
