@@ -42,7 +42,7 @@ func NewHeuristicTable() HeuristicTable {
 			InputType:       core.EventLog,
 			Constructor:     constructFaultDetector,
 		},
-		core.UnsafeWithdrawal: {
+		core.WithdrawalSafety: {
 			PrepareValidate: WithdrawHeuristicPrep,
 			Policy:          core.OnlyLayer1,
 			InputType:       core.EventLog,
@@ -91,7 +91,7 @@ func constructFaultDetector(ctx context.Context, isp *core.SessionParams) (heuri
 
 // constructWithdrawalSafety ... Constructs a large withdrawal heuristic instance
 func constructWithdrawalSafety(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
-	cfg := &UnsafeWithdrawalCfg{}
+	cfg := &WithdrawalSafetyCfg{}
 	err := cfg.Unmarshal(isp)
 
 	if err != nil {
@@ -162,6 +162,7 @@ func WithdrawHeuristicPrep(cfg *core.SessionParams) error {
 	}
 
 	cfg.SetNestedArg(WithdrawalProvenEvent)
+	cfg.SetNestedArg(WithdrawalFinalEvent)
 	return nil
 }
 

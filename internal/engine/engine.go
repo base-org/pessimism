@@ -95,7 +95,6 @@ func (hce *hardCodedEngine) EventLoop(ctx context.Context) {
 		case execInput := <-hce.heuristicIn: // Heuristic input received
 			logger.Debug("Heuristic input received",
 				zap.String(logging.SUUIDKey, execInput.h.SUUID().String()))
-
 			// (1) Execute heuristic with retry strategy
 			start := time.Now()
 

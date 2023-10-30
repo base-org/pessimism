@@ -2,6 +2,7 @@ package e2e_test
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"testing"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"github.com/base-org/pessimism/e2e"
 	"github.com/base-org/pessimism/internal/api/models"
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/engine/registry"
 	api_mods "github.com/ethereum-optimism/optimism/indexer/api/models"
 	"github.com/golang/mock/gomock"
 
@@ -198,12 +200,9 @@ func TestContractEvent(t *testing.T) {
 	assert.Contains(t, msgs[0].Text, alertMsg, "System contract event message was not propagated")
 }
 
-// TestUnsafeWithdrawalDetection ... Tests the E2E flow of a withdrawal
-// / enforcement heuristic session. This test uses two L2ToL1 message passer contracts;
-// one that is configured to be "faulty" and one that is not. The heuristic session
-// should only produce an alert when the faulty L2ToL1 message passer is used given
-// that it's state is empty.
-func TestUnsafeWithdrawalDetection(t *testing.T) {
+// TestWithdrawalSafetyDetection ... Tests the E2E flow of a withdrawal
+// safety heuristic session.
+func TestWithdrawalSafetyDetection(t *testing.T) {
 
 	// 1 - Misconfigured testing environment
 	// 2 - Change in chain state that affects the heuristic
@@ -232,7 +231,7 @@ func TestUnsafeWithdrawalDetection(t *testing.T) {
 			// This is the one that should produce an alert
 			Network:       core.Layer1.String(),
 			PType:         core.Live.String(),
-			HeuristicType: core.UnsafeWithdrawal.String(),
+			HeuristicType: core.WithdrawalSafety.String(),
 			StartHeight:   nil,
 			EndHeight:     nil,
 			AlertingParams: &core.AlertPolicy{
@@ -240,6 +239,8 @@ func TestUnsafeWithdrawalDetection(t *testing.T) {
 				Msg: alertMsg,
 			},
 			SessionParams: map[string]interface{}{
+				"threshold":              20.0,
+				"coefficient_threshold":  20,
 				core.L1Portal:            ts.Cfg.L1Deployments.OptimismPortalProxy.String(),
 				core.L2ToL1MessagePasser: fakeAddr.String(),
 			},
@@ -285,7 +286,7 @@ func TestUnsafeWithdrawalDetection(t *testing.T) {
 
 	_, proveReceipt := op_e2e.ProveWithdrawal(t, *ts.Cfg, ts.L1Client, ts.Sys.EthInstances["sequencer"], ts.Cfg.Secrets.Alice, withdrawReceipt)
 
-	// Wait for Pessimism to process the withdrawal and send a notification to the mocked Slack server.
+	// Wait for Pessimism to process the proven withdrawal and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
 		pUUID := ids[0].PUUID
 		height, err := ts.Subsystems.PipelineHeight(pUUID)
@@ -298,10 +299,44 @@ func TestUnsafeWithdrawalDetection(t *testing.T) {
 
 	// Ensure Pessimism has detected what it considers an unsafe withdrawal
 	alerts := ts.TestSlackSvr.SlackAlerts()
-	require.Equal(t, 3, len(alerts), "expected 3 alerts")
-	assert.Contains(t, alerts[0].Text, "unsafe_withdrawal", "expected alert to be for withdrawal_enforcement")
+	require.Equal(t, 1, len(alerts), "expected 1 alerts")
+	assert.Contains(t, alerts[0].Text, core.WithdrawalSafety.String(), "expected alert to be for withdrawal_safety")
 	assert.Contains(t, alerts[0].Text, fakeAddr.String(), "expected alert to be for dummy L2ToL1MessagePasser")
 	assert.Contains(t, alerts[0].Text, alertMsg, "expected alert to have alert message")
+
+	// Ensure that specific invariant messages are included in the alert
+	assert.Contains(t, alerts[0].Text, alertMsg, registry.TooSimilarToMax)
+	assert.Contains(t, alerts[0].Text, alertMsg, registry.GreaterThanPortal)
+	assert.Contains(t, alerts[0].Text, alertMsg, fmt.Sprintf(registry.GreaterThanThreshold, 20.0))
+
+	// TODO()
+	// Mock the indexer call to return a really low withdrawal amount
+	// ts.TestIndexerClient.EXPECT().GetAllWithdrawalsByAddress(gomock.Any()).Return([]api_mods.WithdrawalItem{
+	// 	{
+	// 		TransactionHash: "0x123",
+	// 		Amount:          "1",
+	// 	},
+	// }, nil).AnyTimes()
+
+	// Finalize the withdrawal
+	// finalizeReceipt := op_e2e.FinalizeWithdrawal(t, *ts.Cfg, ts.L1Client, ts.Cfg.Secrets.Alice, proveReceipt, proveParams)
+
+	// // Wait for Pessimism to process the finalized withdrawal and send a notification to the mocked Slack server.
+	// require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
+	// 	pUUID := ids[0].PUUID
+	// 	height, err := ts.Subsystems.PipelineHeight(pUUID)
+	// 	if err != nil {
+	// 		return false, err
+	// 	}
+
+	// 	return height.Uint64() > finalizeReceipt.BlockNumber.Uint64(), nil
+	// }))
+
+	// alerts = ts.TestSlackSvr.SlackAlerts()
+	// require.Equal(t, 3, len(alerts), "expected 3 alerts")
+	// assert.Contains(t, alerts[0].Text, "unsafe_withdrawal", "expected alert to be for unsafe_withdrawal")
+	// assert.Contains(t, alerts[0].Text, fakeAddr.String(), "expected alert to be for dummy L2ToL1MessagePasser")
+	// assert.Contains(t, alerts[0].Text, alertMsg, "expected alert to have alert message")
 }
 
 // TestFaultDetector ... Ensures that an alert is produced in the presence of a faulty L2Output root

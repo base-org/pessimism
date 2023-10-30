@@ -71,7 +71,7 @@ func (pl *pipeline) UUID() core.PUUID {
 }
 
 func (pl *pipeline) BlockHeight() (*big.Int, error) {
-	// We assume that all pipelines 
+	// We assume that all pipelines have an oracle as their last component
 	comp := pl.components[len(pl.components)-1]
 	oracle, ok := comp.(*component.Oracle)
 	if !ok {
