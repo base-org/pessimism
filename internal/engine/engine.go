@@ -76,7 +76,7 @@ func (hce *hardCodedEngine) Execute(ctx context.Context, data core.TransitData,
 		metrics.WithContext(ctx).
 			RecordAssessmentError(h)
 
-		return nil
+		return heuristic.NoActivations()
 	}
 
 	return activationSet
