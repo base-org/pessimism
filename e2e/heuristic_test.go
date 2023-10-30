@@ -309,7 +309,7 @@ func TestWithdrawalSafetyDetection(t *testing.T) {
 	assert.Contains(t, alerts[0].Text, alertMsg, registry.GreaterThanPortal)
 	assert.Contains(t, alerts[0].Text, alertMsg, fmt.Sprintf(registry.GreaterThanThreshold, 20.0))
 
-	// TODO()
+	// TODO(#178) - Feat - Support WithdrawalProven processing in withdrawal_safety heuristic
 	// Mock the indexer call to return a really low withdrawal amount
 	// ts.TestIndexerClient.EXPECT().GetAllWithdrawalsByAddress(gomock.Any()).Return([]api_mods.WithdrawalItem{
 	// 	{
