@@ -50,7 +50,7 @@ func Test_HardCodedEngine(t *testing.T) {
 					Return(core.NilSUUID()).Times(1)
 
 				as := ts.re.Execute(context.Background(), td, ts.mockHeuristic)
-				assert.Nil(t, as)
+				assert.False(t, as.Activated())
 
 			}},
 		{
