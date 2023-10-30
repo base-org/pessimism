@@ -162,7 +162,8 @@ func WithdrawHeuristicPrep(cfg *core.SessionParams) error {
 	}
 
 	cfg.SetNestedArg(WithdrawalProvenEvent)
-	cfg.SetNestedArg(WithdrawalFinalEvent)
+	// TODO(#178) - Feat - Support WithdrawalProven processing in withdrawal_safety heuristic
+	// cfg.SetNestedArg(WithdrawalFinalEvent)
 	return nil
 }
 
