@@ -203,7 +203,7 @@ func (wi *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Act
 		func() (bool, string) {
 			c0 := p_common.SorensonDice(corrWithdrawal.MessageHash, minAddr.String())
 			c1 := p_common.SorensonDice(corrWithdrawal.MessageHash, maxAddr.String())
-			threshold := 0.95
+			threshold := wi.cfg.Threshold
 
 			if c0 >= threshold {
 				return true, "Zero address is too similar to message hash"
