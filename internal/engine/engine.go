@@ -71,7 +71,8 @@ func (hce *hardCodedEngine) Execute(ctx context.Context, data core.TransitData,
 		zap.String(logging.SUUIDKey, h.SUUID().String()))
 	activationSet, err := h.Assess(data)
 	if err != nil {
-		logger.Error("Failed to perform activation option for heuristic", zap.Error(err))
+		logger.Error("Failed to perform activation option for heuristic", zap.Error(err),
+			zap.String("heuristic_type", h.SUUID().PID.HeuristicType().String()))
 
 		metrics.WithContext(ctx).
 			RecordAssessmentError(h)
