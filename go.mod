@@ -16,7 +16,6 @@ require (
 	github.com/urfave/cli v1.22.2
 	go.uber.org/zap v1.25.0
 	golang.org/x/text v0.13.0
-	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -194,6 +193,7 @@ require (
 	golang.org/x/tools v0.13.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gorm.io/driver/postgres v1.5.2 // indirect
 	gorm.io/gorm v1.25.4 // indirect
 	lukechampine.com/blake3 v1.2.1 // indirect
