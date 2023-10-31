@@ -47,7 +47,7 @@ func Test_HardCodedEngine(t *testing.T) {
 					Return(heuristic.NoActivations(), testErr()).Times(1)
 
 				ts.mockHeuristic.EXPECT().SUUID().
-					Return(core.NilSUUID()).Times(1)
+					Return(core.NilSUUID()).Times(2)
 
 				as := ts.re.Execute(context.Background(), td, ts.mockHeuristic)
 				assert.False(t, as.Activated())

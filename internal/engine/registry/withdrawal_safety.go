@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 	"time"
 
@@ -42,9 +43,9 @@ const WithdrawalSafetyMsg = `
 `
 
 type WithdrawMetadata struct {
-	WithdrawalHash common.Hash
-	From           common.Address
-	To             common.Address
+	Hash common.Hash
+	From common.Address
+	To   common.Address
 }
 
 func MetaFromProven(log types.Log, filter *bindings.OptimismPortalFilterer) (*WithdrawMetadata, error) {
@@ -54,9 +55,9 @@ func MetaFromProven(log types.Log, filter *bindings.OptimismPortalFilterer) (*Wi
 	}
 
 	return &WithdrawMetadata{
-		WithdrawalHash: provenWithdrawal.WithdrawalHash,
-		From:           provenWithdrawal.From,
-		To:             provenWithdrawal.To,
+		Hash: provenWithdrawal.WithdrawalHash,
+		From: provenWithdrawal.From,
+		To:   provenWithdrawal.To,
 	}, nil
 }
 
@@ -180,28 +181,37 @@ func (wsh *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Ac
 		return nil, fmt.Errorf("no withdrawals found for address %s", wm.From.String())
 	}
 
-	// TODO - Update withdrawal decoding to convert to big.Int instead of string
-	// TODO - Validate that message hash matches the proven withdrawal msg hash
+	// TODO - Update withdrawal decoding in client to convert to big.Int instead of string
 	corrWithdrawal := withdrawals[0]
 
-	// 4. Fetch the OptimismPortal balance at the time which the withdrawal was proven
+	// TODO - Validate that message hash matches the proven withdrawal msg hash
+	// if corrWithdrawal.TransactionHash != wm.Hash.String() {
+	// 	return nil, fmt.Errorf("withdrawal hash mismatch, expected %s, got %s", wm.Hash.String(),
+	// 		corrWithdrawal.TransactionHash)
+	// }
+
+	// 4. Fetch the OptimismPortal balance at the L1 block height which the withdrawal was proven
 	portalWEI, err := wsh.l1Client.BalanceAt(context.Background(), common.HexToAddress(wsh.cfg.L1PortalAddress),
 		big.NewInt(int64(log.BlockNumber)))
 	if err != nil {
 		return nil, err
 	}
 
-	withdrawalWEI := big.NewInt(0).SetBytes([]byte(corrWithdrawal.Amount))
-
-	correlated, err := wsh.l2ToL1MsgPasser.SentMessages(nil, wm.WithdrawalHash)
+	parsedInt, err := strconv.Atoi(corrWithdrawal.Amount)
 	if err != nil {
 		return nil, err
 	}
 
-	// 5. Load invariant functions
+	withdrawalWEI := big.NewInt(0).SetInt64(int64(parsedInt))
+
+	correlated, err := wsh.l2ToL1MsgPasser.SentMessages(nil, wm.Hash)
+	if err != nil {
+		return nil, err
+	}
+
 	invariants := wsh.GetInvariants(&corrWithdrawal, portalWEI, withdrawalWEI, correlated)
 
-	// 6. Process activation set from invariant analysis
+	// 5. Process activation set messages from invariant analysis
 	msgs := make([]string, 0)
 
 	for _, inv := range invariants {
@@ -214,7 +224,7 @@ func (wsh *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Ac
 		return heuristic.NoActivations(), nil
 	}
 
-	msg := strings.Join(msgs, "\n*")
+	msg := "\n*\t" + strings.Join(msgs, "\n*\t")
 	return heuristic.NewActivationSet().Add(
 		&heuristic.Activation{
 			TimeStamp: time.Now(),
@@ -224,16 +234,16 @@ func (wsh *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Ac
 	), nil
 }
 
-// GetInvariants ... Returns a list of invariants to be checked for the withdrawal safety heuristic
+// GetInvariants ... Returns a list of invariants to be checked for in the assessment
 func (wsh *WithdrawalSafetyHeuristic) GetInvariants(corrWithdrawal *models.WithdrawalItem,
 	portalWEI, withdrawalWEI *big.Int, correlated bool) []func() (bool, string) {
-	maxAddr := common.HexToAddress("0xffffffffffffffffffffffffffffffffffffffff")
-	minAddr := common.HexToAddress("0x0")
+	maxAddr := common.HexToAddress("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+	minAddr := common.HexToAddress("0x0000000000000000000000000000000000000000")
 
-	portalETH := p_common.WeiToEther(portalWEI)
-	withdrawalETH := p_common.WeiToEther(withdrawalWEI)
+	portalAmt := new(big.Float).SetInt(portalWEI)
+	withdrawAmt := new(big.Float).SetInt(withdrawalWEI)
 
-	// Perform invariant analysis using the fetched withdrawal metadata
+	// Run the following invariant functions in order
 	return []func() (bool, string){
 		// A
 		// Check if the proven withdrawal amount is greater than the OptimismPortal value
@@ -243,7 +253,7 @@ func (wsh *WithdrawalSafetyHeuristic) GetInvariants(corrWithdrawal *models.Withd
 		// B
 		// Check if the proven withdrawal amount is greater than threshold % of the OptimismPortal value
 		func() (bool, string) {
-			return p_common.PercentOf(withdrawalETH, portalETH).Cmp(big.NewFloat(wsh.cfg.Threshold)) == 1,
+			return p_common.PercentOf(withdrawAmt, portalAmt).Cmp(big.NewFloat(wsh.cfg.Threshold)) == 1,
 				fmt.Sprintf(GreaterThanThreshold, wsh.cfg.Threshold)
 		},
 		// C

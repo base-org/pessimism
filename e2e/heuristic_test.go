@@ -3,6 +3,7 @@ package e2e_test
 import (
 	"context"
 	"fmt"
+	"math"
 	"math/big"
 	"testing"
 	"time"
@@ -190,7 +191,7 @@ func TestContractEvent(t *testing.T) {
 			return false, err
 		}
 
-		return height.Uint64() > receipt.BlockNumber.Uint64(), nil
+		return height != nil && height.Uint64() > receipt.BlockNumber.Uint64(), nil
 	}))
 
 	msgs := ts.TestSlackSvr.SlackAlerts()
@@ -200,9 +201,10 @@ func TestContractEvent(t *testing.T) {
 	assert.Contains(t, msgs[0].Text, alertMsg, "System contract event message was not propagated")
 }
 
-// TestWithdrawalSafetyDetection ... Tests the E2E flow of a withdrawal
+// func TestWithdrawalSafetyAllInvariants(t *testing.T) {
+// ... Tests the E2E flow of a withdrawal
 // safety heuristic session.
-func TestWithdrawalSafetyDetection(t *testing.T) {
+func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 
 	// 1 - Misconfigured testing environment
 	// 2 - Change in chain state that affects the heuristic
@@ -239,9 +241,10 @@ func TestWithdrawalSafetyDetection(t *testing.T) {
 				Msg: alertMsg,
 			},
 			SessionParams: map[string]interface{}{
-				"threshold":              20.0,
-				"coefficient_threshold":  20,
-				core.L1Portal:            ts.Cfg.L1Deployments.OptimismPortalProxy.String(),
+				"threshold":             20.0,
+				"coefficient_threshold": 20,
+				core.L1Portal:           ts.Cfg.L1Deployments.OptimismPortalProxy.String(),
+				// Use faulty L2ToL1MessagePasser to trigger L2->L1 correlation failure
 				core.L2ToL1MessagePasser: fakeAddr.String(),
 			},
 		},
@@ -256,7 +259,7 @@ func TestWithdrawalSafetyDetection(t *testing.T) {
 	aliceAddr := ts.Cfg.Secrets.Addresses().Alice
 
 	// attach 1 ETH to the withdrawal and random calldata
-	calldata := []byte{byte(1), byte(2), byte(3)}
+	calldata := []byte{byte(6), byte(6), byte(6)}
 	l2Opts, err := bind.NewKeyedTransactorWithChainID(ts.Cfg.Secrets.Alice, ts.Cfg.L2ChainIDBig())
 	require.NoError(t, err)
 	l2Opts.Value = big.NewInt(params.Ether)
@@ -279,8 +282,8 @@ func TestWithdrawalSafetyDetection(t *testing.T) {
 	// Mock the indexer call to return a really high withdrawal amount
 	ts.TestIndexerClient.EXPECT().GetAllWithdrawalsByAddress(gomock.Any()).Return([]api_mods.WithdrawalItem{
 		{
-			TransactionHash: "0x123",
-			Amount:          "11111111111111111111111111111111111111111111111111111111111111111111111",
+			TransactionHash: "0x000",
+			Amount:          big.NewInt(math.MaxInt64).String(),
 		},
 	}, nil).AnyTimes()
 
@@ -294,7 +297,7 @@ func TestWithdrawalSafetyDetection(t *testing.T) {
 			return false, err
 		}
 
-		return height.Uint64() > proveReceipt.BlockNumber.Uint64(), nil
+		return height != nil && height.Uint64() > proveReceipt.BlockNumber.Uint64(), nil
 	}))
 
 	// Ensure Pessimism has detected what it considers an unsafe withdrawal
@@ -337,6 +340,89 @@ func TestWithdrawalSafetyDetection(t *testing.T) {
 	// assert.Contains(t, alerts[0].Text, "unsafe_withdrawal", "expected alert to be for unsafe_withdrawal")
 	// assert.Contains(t, alerts[0].Text, fakeAddr.String(), "expected alert to be for dummy L2ToL1MessagePasser")
 	// assert.Contains(t, alerts[0].Text, alertMsg, "expected alert to have alert message")
+}
+
+func TestWithdrawalSafetyNoInvariants(t *testing.T) {
+
+	ts := e2e.CreateSysTestSuite(t)
+	defer ts.Close()
+
+	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{
+		{
+			// This is the one that should produce an alert
+			Network:       core.Layer1.String(),
+			PType:         core.Live.String(),
+			HeuristicType: core.WithdrawalSafety.String(),
+			StartHeight:   nil,
+			EndHeight:     nil,
+			AlertingParams: &core.AlertPolicy{
+				Sev: core.LOW.String(),
+				Msg: "disrupting centralized finance",
+			},
+			SessionParams: map[string]interface{}{
+				"threshold":              20.0,
+				"coefficient_threshold":  20,
+				core.L1Portal:            ts.Cfg.L1Deployments.OptimismPortalProxy.String(),
+				core.L2ToL1MessagePasser: predeploys.L2ToL1MessagePasserAddr.String(),
+			},
+		},
+	})
+	require.NoError(t, err, "Error bootstrapping heuristic session")
+
+	optimismPortal, err := bindings.NewOptimismPortal(ts.Cfg.L1Deployments.OptimismPortalProxy, ts.L1Client)
+	require.NoError(t, err)
+	l2ToL1MessagePasser, err := bindings.NewL2ToL1MessagePasser(predeploys.L2ToL1MessagePasserAddr, ts.L2Client)
+	require.NoError(t, err)
+
+	aliceAddr := ts.Cfg.Secrets.Addresses().Alice
+
+	// attach 1 ETH to the withdrawal and random calldata
+	calldata := []byte{byte(4), byte(2), byte(0)}
+	l2Opts, err := bind.NewKeyedTransactorWithChainID(ts.Cfg.Secrets.Alice, ts.Cfg.L2ChainIDBig())
+	require.NoError(t, err)
+
+	// Deposit 10000 wei to L2
+	l2Opts.Value = big.NewInt(params.Wei * 10000)
+
+	// Ensure L1 has enough funds for the withdrawal by depositing 1 ETH into the OptimismPortal
+	l1Opts, err := bind.NewKeyedTransactorWithChainID(ts.Cfg.Secrets.Alice, ts.Cfg.L1ChainIDBig())
+	require.NoError(t, err)
+	l1Opts.Value = big.NewInt(params.Ether)
+	depositTx, err := optimismPortal.Receive(l1Opts)
+	require.NoError(t, err)
+	_, err = wait.ForReceiptOK(context.Background(), ts.L1Client, depositTx.Hash())
+	require.NoError(t, err)
+
+	// Initiate and prove a withdrawal
+	withdrawTx, err := l2ToL1MessagePasser.InitiateWithdrawal(l2Opts, aliceAddr, big.NewInt(100_000), calldata)
+	require.NoError(t, err)
+	withdrawReceipt, err := wait.ForReceiptOK(context.Background(), ts.L2Client, withdrawTx.Hash())
+	require.NoError(t, err)
+
+	// Mock the indexer call to return the WEI value of the withdrawal
+	ts.TestIndexerClient.EXPECT().GetAllWithdrawalsByAddress(gomock.Any()).Return([]api_mods.WithdrawalItem{
+		{
+			TransactionHash: withdrawReceipt.TxHash.String(),
+			Amount:          l2Opts.Value.String(),
+		},
+	}, nil).AnyTimes()
+
+	_, proveReceipt := op_e2e.ProveWithdrawal(t, *ts.Cfg, ts.L1Client, ts.Sys.EthInstances["sequencer"], ts.Cfg.Secrets.Alice, withdrawReceipt)
+
+	// Wait for Pessimism to process the proven withdrawal and send a notification to the mocked Slack server.
+	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
+		pUUID := ids[0].PUUID
+		height, err := ts.Subsystems.PipelineHeight(pUUID)
+		if err != nil {
+			return false, err
+		}
+
+		return height != nil && height.Uint64() > proveReceipt.BlockNumber.Uint64(), nil
+	}))
+
+	// Ensure that this withdrawal triggered no alerts
+	alerts := ts.TestSlackSvr.SlackAlerts()
+	require.Equal(t, 0, len(alerts), "expected 0 alerts")
 }
 
 // TestFaultDetector ... Ensures that an alert is produced in the presence of a faulty L2Output root
@@ -399,7 +485,7 @@ func TestFaultDetector(t *testing.T) {
 			return false, err
 		}
 
-		return height.Uint64() > receipt.BlockNumber.Uint64(), nil
+		return height != nil && height.Uint64() > receipt.BlockNumber.Uint64(), nil
 	}))
 
 	alerts := ts.TestSlackSvr.SlackAlerts()
