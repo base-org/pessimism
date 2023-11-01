@@ -94,7 +94,6 @@ func (cfg *WithdrawalSafetyCfg) Unmarshal(isp *core.SessionParams) error {
 
 // NewWithdrawalSafetyHeuristic ... Initializer
 func NewWithdrawalSafetyHeuristic(ctx context.Context, cfg *WithdrawalSafetyCfg) (heuristic.Heuristic, error) {
-
 	portalAddr := common.HexToAddress(cfg.L1PortalAddress)
 	l2ToL1Addr := common.HexToAddress(cfg.L2ToL1Address)
 
