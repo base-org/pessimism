@@ -222,7 +222,6 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 
 	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{
 		{
-			// This is the one that should produce an alert
 			Network:       core.Layer1.String(),
 			PType:         core.Live.String(),
 			HeuristicType: core.WithdrawalSafety.String(),
@@ -233,8 +232,8 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 				Msg: alertMsg,
 			},
 			SessionParams: map[string]interface{}{
-				"threshold":             20.0,
-				"coefficient_threshold": 20,
+				"threshold":             0.20,
+				"coefficient_threshold": 0.20,
 				core.L1Portal:           ts.Cfg.L1Deployments.OptimismPortalProxy.String(),
 				// Use faulty L2ToL1MessagePasser to trigger L2->L1 correlation failure
 				core.L2ToL1MessagePasser: fakeAddr.String(),
@@ -343,7 +342,6 @@ func TestWithdrawalSafetyNoInvariants(t *testing.T) {
 
 	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{
 		{
-			// This is the one that should produce an alert
 			Network:       core.Layer1.String(),
 			PType:         core.Live.String(),
 			HeuristicType: core.WithdrawalSafety.String(),
@@ -354,8 +352,8 @@ func TestWithdrawalSafetyNoInvariants(t *testing.T) {
 				Msg: "disrupting centralized finance",
 			},
 			SessionParams: map[string]interface{}{
-				"threshold":              20.0,
-				"coefficient_threshold":  20,
+				"threshold":              0.20,
+				"coefficient_threshold":  0.20,
 				core.L1Portal:            ts.Cfg.L1Deployments.OptimismPortalProxy.String(),
 				core.L2ToL1MessagePasser: predeploys.L2ToL1MessagePasserAddr.String(),
 			},
