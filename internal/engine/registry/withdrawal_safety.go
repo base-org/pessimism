@@ -94,14 +94,6 @@ func (cfg *WithdrawalSafetyCfg) Unmarshal(isp *core.SessionParams) error {
 
 // NewWithdrawalSafetyHeuristic ... Initializer
 func NewWithdrawalSafetyHeuristic(ctx context.Context, cfg *WithdrawalSafetyCfg) (heuristic.Heuristic, error) {
-	// Validate that thresholds are on exclusive range (0, 1)
-	if cfg.Threshold >= 1 || cfg.Threshold <= 0 {
-		return nil, fmt.Errorf("invalid threshold supplied for withdrawal safety heuristic")
-	}
-
-	if cfg.CoefficientThreshold >= 1 || cfg.CoefficientThreshold <= 0 {
-		return nil, fmt.Errorf("invalid coefficient threshold supplied for withdrawal safety heuristic")
-	}
 
 	portalAddr := common.HexToAddress(cfg.L1PortalAddress)
 	l2ToL1Addr := common.HexToAddress(cfg.L2ToL1Address)
