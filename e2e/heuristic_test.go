@@ -201,13 +201,10 @@ func TestContractEvent(t *testing.T) {
 	assert.Contains(t, msgs[0].Text, alertMsg, "System contract event message was not propagated")
 }
 
-// func TestWithdrawalSafetyAllInvariants(t *testing.T) {
-// ... Tests the E2E flow of a withdrawal
-// safety heuristic session.
+// TestWithdrawalSafetyAllInvariants ... Tests the E2E flow of a withdrawal
+// safety heuristic session. This test ensures that an alert is produced in the event
+// of a highly suspicious withdrawal.
 func TestWithdrawalSafetyAllInvariants(t *testing.T) {
-
-	// 1 - Misconfigured testing environment
-	// 2 - Change in chain state that affects the heuristic
 	ts := e2e.CreateSysTestSuite(t)
 	defer ts.Close()
 
@@ -223,11 +220,6 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 	_, err = wait.ForReceipt(context.Background(), ts.L2Client, tx.Hash(), types.ReceiptStatusSuccessful)
 	require.NoError(t, err, "error waiting for transaction")
 
-	// Setup Pessimism to listen for fraudulent withdrawals
-	// We use two heuristics here; one configured with a dummy L1 message passer
-	// and one configured with the real L2->L1 message passer contract. This allows us to
-	// ensure that an alert is only produced using the faulty message passer since it's state
-	// initiated withdrawal state is empty.
 	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{
 		{
 			// This is the one that should produce an alert
@@ -342,6 +334,8 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 	// assert.Contains(t, alerts[0].Text, alertMsg, "expected alert to have alert message")
 }
 
+// TestWithdrawalSafetyNoInvariants ... Verify that no alerts are produced in the event
+// of a normal tx
 func TestWithdrawalSafetyNoInvariants(t *testing.T) {
 
 	ts := e2e.CreateSysTestSuite(t)

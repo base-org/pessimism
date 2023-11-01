@@ -154,7 +154,8 @@ func (oracle *GethBlockODef) getHeightToProcess(ctx context.Context) *big.Int {
 				oracle.cfg.StartHeight.Int64()))
 			return oracle.cfg.StartHeight
 		}
-		logging.WithContext(ctx).Info("Starting pipeline syncing from latest block", zap.String(logging.CUUIDKey, oracle.cUUID.String()))
+		logging.WithContext(ctx).Info("Starting pipeline syncing from latest block",
+			zap.String(logging.CUUIDKey, oracle.cUUID.String()))
 		return nil
 	}
 	return oracle.currHeight
