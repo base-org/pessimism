@@ -39,7 +39,7 @@ const WithdrawalSafetyMsg = `
 	Session UUID: %s
 	L1 Proving Transaction Hash: %s
 	L2 Initialization Transaction Hash: %s
-	Withdrawal Size: %d
+	Withdrawal Size: %s ETH
 `
 
 type WithdrawMetadata struct {
@@ -79,7 +79,8 @@ type WithdrawalSafetyHeuristic struct {
 	cfg           *WithdrawalSafetyCfg
 	indexerClient client.IndexerClient
 
-	l1Client        client.EthClient
+	l1Client client.EthClient
+	// NOTE - These values can be ingested from the chain config in the future
 	l1PortalFilter  *bindings.OptimismPortalFilterer
 	l2ToL1MsgPasser *bindings.L2ToL1MessagePasserCaller
 
@@ -93,9 +94,13 @@ func (cfg *WithdrawalSafetyCfg) Unmarshal(isp *core.SessionParams) error {
 
 // NewWithdrawalSafetyHeuristic ... Initializer
 func NewWithdrawalSafetyHeuristic(ctx context.Context, cfg *WithdrawalSafetyCfg) (heuristic.Heuristic, error) {
-	// Validate that threshold is on exclusive range (0, 100)
-	if cfg.Threshold >= 100 || cfg.Threshold < 0 {
+	// Validate that thresholds are on exclusive range (0, 1)
+	if cfg.Threshold >= 1 || cfg.Threshold <= 0 {
 		return nil, fmt.Errorf("invalid threshold supplied for withdrawal safety heuristic")
+	}
+
+	if cfg.CoefficientThreshold >= 1 || cfg.CoefficientThreshold <= 0 {
+		return nil, fmt.Errorf("invalid coefficient threshold supplied for withdrawal safety heuristic")
 	}
 
 	portalAddr := common.HexToAddress(cfg.L1PortalAddress)
@@ -136,7 +141,7 @@ func NewWithdrawalSafetyHeuristic(ctx context.Context, cfg *WithdrawalSafetyCfg)
 // to the withdrawal storage of the L2ToL1MessagePasser
 // TODO - Segment this into composite functions
 func (wsh *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.ActivationSet, error) {
-	// TODO - Support running from withdrawal initiated or withdrawal proven events
+	// TODO - Support running from withdrawal finalized events as well
 
 	// 1. Validate input
 	logging.NoContext().Debug("Checking activation for withdrawal enforcement heuristic",
@@ -197,7 +202,7 @@ func (wsh *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Ac
 		return nil, err
 	}
 
-	parsedInt, err := strconv.Atoi(corrWithdrawal.Amount)
+	parsedInt, err := strconv.ParseUint(corrWithdrawal.Amount, 10, 64)
 	if err != nil {
 		return nil, err
 	}
@@ -229,7 +234,7 @@ func (wsh *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Ac
 		&heuristic.Activation{
 			TimeStamp: time.Now(),
 			Message: fmt.Sprintf(WithdrawalSafetyMsg, msg, wsh.cfg.L1PortalAddress, wsh.cfg.L2ToL1Address,
-				wsh.SUUID(), log.TxHash.String(), log.BlockHash.String(), withdrawalWEI),
+				wsh.SUUID(), log.TxHash.String(), corrWithdrawal.TransactionHash, p_common.WeiToEther(withdrawalWEI).String()),
 		},
 	), nil
 }

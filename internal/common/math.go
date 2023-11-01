@@ -9,6 +9,9 @@ func PercentOf(part, total *big.Float) *big.Float {
 	return new(big.Float).Quo(x0, total)
 }
 
+// TODO - Add library to check for risky hash outputs using similarity detection
+// TODO - Move this into an internal computation package
+
 // SorensonDice - calculate the Sorenson-Dice coefficient between two strings.
 func SorensonDice(s1, s2 string) float64 {
 	// https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient
