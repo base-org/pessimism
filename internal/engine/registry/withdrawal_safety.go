@@ -128,9 +128,7 @@ func NewWithdrawalSafetyHeuristic(ctx context.Context, cfg *WithdrawalSafetyCfg)
 	}, nil
 }
 
-// Assess ... Verifies than an L1 WithdrawalProven has a correlating hash
-// to the withdrawal storage of the L2ToL1MessagePasser
-// TODO - Segment this into composite functions
+// Assess ...
 func (wsh *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.ActivationSet, error) {
 	// TODO - Support running from withdrawal finalized events as well
 
@@ -220,7 +218,8 @@ func (wsh *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Ac
 		return heuristic.NoActivations(), nil
 	}
 
-	msg := "\n*\t" + strings.Join(msgs, "\n*\t")
+	msg := "\n*" + strings.Join(msgs[0:len(msgs)-1], "\n *")
+	msg += msgs[len(msgs)-1]
 	return heuristic.NewActivationSet().Add(
 		&heuristic.Activation{
 			TimeStamp: time.Now(),
