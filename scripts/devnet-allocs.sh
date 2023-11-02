@@ -23,9 +23,20 @@ cd optimism-${VERSION}
     make devnet-allocs &&
     mv .devnet ../.devnet &&
     mv packages/contracts-bedrock/deploy-config/devnetL1.json ../.devnet/devnetL1.json
-} || {
+
+    STATUS = $?
+} ; {
     ## (4.b) Force cleanup of monorepo 
-    echo "Cleaning up ${REPO_NAME} repo ..." &&
+    echo "${STATUS} Cleaning up ${REPO_NAME} repo ..." &&
     cd ../ &&
     rm -rf ${REPO_NAME}
+
+    if [ $? -eq 0 ] ; then
+        echo "Successfully cleaned up ${REPO_NAME} repo"
+        exit ${STATUS}
+    else
+        echo "Failed to clean up ${REPO_NAME} repo"
+        exit ${STATUS}
+
+    fi
 }
