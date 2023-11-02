@@ -21,7 +21,7 @@ const (
 	Clients
 )
 
-// Network ... Represents the network for which a pipeline's oracle
+// Network ... Represents the network for which a pipeline's reader
 // is subscribed to.
 type Network uint8
 

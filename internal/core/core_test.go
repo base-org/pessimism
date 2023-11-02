@@ -13,7 +13,7 @@ import (
 func Test_TransitData(t *testing.T) {
 	// Verify construction
 	td := core.NewTransitData(
-		core.GethBlock,
+		core.BlockHeader,
 		nil,
 	)
 
@@ -33,7 +33,7 @@ func Test_EngineRelay(t *testing.T) {
 	outChan := make(chan core.HeuristicInput)
 
 	eir := core.NewEngineRelay(core.NilPUUID(), outChan)
-	dummyTD := core.NewTransitData(core.AccountBalance, nil)
+	dummyTD := core.NewTransitData(core.BlockHeader, nil)
 
 	// Verify relay and wrapping
 

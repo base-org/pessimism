@@ -222,5 +222,5 @@ func (m *Manager) etlLimitReached() bool {
 }
 
 func (m *Manager) PipelineHeight(pUUID core.PUUID) (*big.Int, error) {
-	return m.etl.GetPipelineHeight(pUUID)
+	return m.etl.GetHeightAtPipeline(pUUID)
 }

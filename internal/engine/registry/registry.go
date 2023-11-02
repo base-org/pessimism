@@ -27,7 +27,7 @@ func NewHeuristicTable() HeuristicTable {
 		core.BalanceEnforcement: {
 			PrepareValidate: ValidateAddressing,
 			Policy:          core.BothNetworks,
-			InputType:       core.AccountBalance,
+			InputType:       core.BlockHeader,
 			Constructor:     constructBalanceEnforcement,
 		},
 		core.ContractEvent: {
@@ -66,7 +66,7 @@ func constructEventInv(_ context.Context, isp *core.SessionParams) (heuristic.He
 }
 
 // constructBalanceEnforcement ... Constructs a balance heuristic instance
-func constructBalanceEnforcement(_ context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
+func constructBalanceEnforcement(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
 	cfg := &BalanceInvConfig{}
 
 	err := cfg.Unmarshal(isp)
@@ -74,7 +74,7 @@ func constructBalanceEnforcement(_ context.Context, isp *core.SessionParams) (he
 		return nil, err
 	}
 
-	return NewBalanceHeuristic(cfg)
+	return NewBalanceHeuristic(ctx, cfg)
 }
 
 // constructFaultDetector ... Constructs a fault detector heuristic instance

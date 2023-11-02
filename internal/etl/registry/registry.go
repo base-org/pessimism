@@ -4,8 +4,6 @@ import (
 	"fmt"
 
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/etl/registry/oracle"
-	"github.com/base-org/pessimism/internal/etl/registry/pipe"
 )
 
 const (
@@ -27,36 +25,23 @@ type componentRegistry struct {
 // that contains all extractable ETL data types
 func NewRegistry() Registry {
 	registers := map[core.RegisterType]*core.DataRegister{
-		core.GethBlock: {
-			Addressing:           false,
-			DataType:             core.GethBlock,
-			ComponentType:        core.Oracle,
-			ComponentConstructor: oracle.NewGethBlockOracle,
+		core.BlockHeader: {
+			Addressing:    false,
+			DataType:      core.BlockHeader,
+			ComponentType: core.Reader,
+			Constructor:   NewBlockTraversal,
 
 			Dependencies: noDeps(),
 			Sk:           noState(),
 		},
-		core.AccountBalance: {
-			Addressing:           true,
-			DataType:             core.AccountBalance,
-			ComponentType:        core.Oracle,
-			ComponentConstructor: oracle.NewAddressBalanceOracle,
 
-			Dependencies: noDeps(),
-			Sk: &core.StateKey{
-				Nesting: false,
-				Prefix:  core.AccountBalance,
-				ID:      core.AddressKey,
-				PUUID:   nil,
-			},
-		},
 		core.EventLog: {
-			Addressing:           true,
-			DataType:             core.EventLog,
-			ComponentType:        core.Pipe,
-			ComponentConstructor: pipe.NewEventParserPipe,
+			Addressing:    true,
+			DataType:      core.EventLog,
+			ComponentType: core.Transformer,
+			Constructor:   NewEventParserPipe,
 
-			Dependencies: makeDeps(core.GethBlock),
+			Dependencies: makeDeps(core.BlockHeader),
 			Sk: &core.StateKey{
 				Nesting: true,
 				Prefix:  core.EventLog,

@@ -27,12 +27,12 @@ func Test_Pipeline(t *testing.T) {
 			constructionLogic: func() pipeline.Pipeline {
 				testPipe, _ := mocks.NewDummyPipe(
 					context.Background(),
-					core.GethBlock,
+					core.BlockHeader,
 					core.EventLog)
 
-				testO, _ := mocks.NewDummyOracle(
+				testO, _ := mocks.NewDummyReader(
 					context.Background(),
-					core.GethBlock)
+					core.BlockHeader)
 
 				pl, err := pipeline.NewPipeline(
 					nil,
@@ -48,7 +48,7 @@ func Test_Pipeline(t *testing.T) {
 			testLogic: func(t *testing.T, pl pipeline.Pipeline) {
 
 				assert.Equal(t, pl.Components()[0].OutputType(), core.EventLog)
-				assert.Equal(t, pl.Components()[1].OutputType(), core.GethBlock)
+				assert.Equal(t, pl.Components()[1].OutputType(), core.BlockHeader)
 			},
 		},
 		{
@@ -56,9 +56,9 @@ func Test_Pipeline(t *testing.T) {
 			function: "AddEngineRelay",
 			constructionLogic: func() pipeline.Pipeline {
 
-				testO, _ := mocks.NewDummyOracle(
+				testO, _ := mocks.NewDummyReader(
 					context.Background(),
-					core.GethBlock)
+					core.BlockHeader)
 
 				pl, err := pipeline.NewPipeline(
 					nil,
@@ -83,9 +83,9 @@ func Test_Pipeline(t *testing.T) {
 			function: "RunPipeline",
 			constructionLogic: func() pipeline.Pipeline {
 
-				testO, _ := mocks.NewDummyOracle(
+				testO, _ := mocks.NewDummyReader(
 					context.Background(),
-					core.GethBlock)
+					core.BlockHeader)
 
 				pl, err := pipeline.NewPipeline(
 					nil,

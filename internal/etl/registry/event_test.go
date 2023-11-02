@@ -1,4 +1,4 @@
-package pipe_test
+package registry_test
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/etl/registry/pipe"
 	"github.com/base-org/pessimism/internal/state"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -14,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/base-org/pessimism/internal/etl/component"
+	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/mocks"
 )
 
@@ -42,7 +42,7 @@ func defConstructor(t *testing.T) *testSuite {
 
 	_ = state.InsertUnique(ctx, innerKey, "transfer(address,address,uint256)")
 
-	ed, err := pipe.NewEventDefinition(ctx, core.Layer1)
+	ed, err := registry.NewEventDefinition(ctx, core.Layer1)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -22,12 +22,12 @@ var (
 // getTestPipeLine ... Returns a test pipeline
 func getTestPipeLine(ctx context.Context) pl.Pipeline {
 
-	c1, err := mocks.NewDummyOracle(ctx, core.GethBlock, component.WithCUUID(cID2))
+	c1, err := mocks.NewDummyReader(ctx, core.BlockHeader, component.WithCUUID(cID2))
 	if err != nil {
 		panic(err)
 	}
 
-	c2, err := mocks.NewDummyPipe(ctx, core.GethBlock, core.EventLog, component.WithCUUID(cID1))
+	c2, err := mocks.NewDummyPipe(ctx, core.BlockHeader, core.EventLog, component.WithCUUID(cID1))
 	if err != nil {
 		panic(err)
 	}

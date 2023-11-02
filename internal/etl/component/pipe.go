@@ -36,7 +36,7 @@ func NewPipe(ctx context.Context, pd PipeDefinition, inType core.RegisterType,
 		def:    pd,
 		inType: inType,
 
-		metaData: newMetaData(core.Pipe, outType),
+		metaData: newMetaData(core.Transformer, outType),
 	}
 
 	if err := pipe.createIngress(inType); err != nil {

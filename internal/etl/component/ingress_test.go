@@ -27,7 +27,7 @@ func Test_Add_Remove_Ingress(t *testing.T) {
 
 			testLogic: func(t *testing.T, ih *ingressHandler) {
 
-				err := ih.createIngress(core.GethBlock)
+				err := ih.createIngress(core.BlockHeader)
 				assert.NoError(t, err, "geth.block register should added as an egress")
 
 			},
@@ -38,7 +38,7 @@ func Test_Add_Remove_Ingress(t *testing.T) {
 
 			constructionLogic: func() *ingressHandler {
 				handler := newIngressHandler()
-				if err := handler.createIngress(core.GethBlock); err != nil {
+				if err := handler.createIngress(core.BlockHeader); err != nil {
 					panic(err)
 				}
 
@@ -46,10 +46,10 @@ func Test_Add_Remove_Ingress(t *testing.T) {
 			},
 
 			testLogic: func(t *testing.T, ih *ingressHandler) {
-				err := ih.createIngress(core.GethBlock)
+				err := ih.createIngress(core.BlockHeader)
 
 				assert.Error(t, err, "geth.block register should fail to be added")
-				assert.Equal(t, err.Error(), fmt.Sprintf(ingressAlreadyExistsErr, core.GethBlock.String()))
+				assert.Equal(t, err.Error(), fmt.Sprintf(ingressAlreadyExistsErr, core.BlockHeader.String()))
 
 			},
 		},

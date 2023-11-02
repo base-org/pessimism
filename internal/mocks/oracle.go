@@ -8,30 +8,24 @@ import (
 	"github.com/base-org/pessimism/internal/etl/component"
 )
 
-type mockOracleDefinition struct {
+type mockTraversal struct {
 }
 
-func (md *mockOracleDefinition) ConfigureRoutine(core.PUUID) error {
+func (md *mockTraversal) ConfigureRoutine(core.PUUID) error {
 	return nil
 }
 
-func (md *mockOracleDefinition) BackTestRoutine(_ context.Context, _ chan core.TransitData,
-	_ *big.Int, _ *big.Int) error {
+func (md *mockTraversal) Loop(_ context.Context, _ chan core.TransitData) error {
 	return nil
 }
 
-func (md *mockOracleDefinition) ReadRoutine(_ context.Context, _ chan core.TransitData) error {
-	return nil
-}
-
-func (md *mockOracleDefinition) Height() (*big.Int, error) {
+func (md *mockTraversal) Height() (*big.Int, error) {
 	return big.NewInt(0), nil
 }
 
-// NewDummyOracle ... Takes in a register type that specifies the mocked output type
-// Useful for testing inter-component connectivity and higher level component management abstractions
-func NewDummyOracle(ctx context.Context, ot core.RegisterType, opts ...component.Option) (component.Component, error) {
-	od := &mockOracleDefinition{}
+// NewDummyReader
+func NewDummyReader(ctx context.Context, ot core.RegisterType, opts ...component.Option) (component.Component, error) {
+	mt := &mockTraversal{}
 
-	return component.NewOracle(ctx, ot, od, opts...)
+	return component.NewReader(ctx, ot, mt, opts...)
 }

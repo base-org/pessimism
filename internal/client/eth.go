@@ -2,27 +2,18 @@
 
 package client
 
-/*
-	NOTE
-	eth client docs: https://pkg.go.dev/github.com/ethereum/go-ethereum/ethclient
-	eth api docs: https://geth.ethereum.org/docs/rpc/server
-*/
-
 import (
 	"context"
 	"math/big"
 
+	"github.com/base-org/pessimism/internal/metrics"
+	ix_node "github.com/ethereum-optimism/optimism/indexer/node"
 	"github.com/ethereum/go-ethereum"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-// TODO (#20) : Introduce optional Retry-able EthClient
-
-// EthClient ... Provides interface wrapper for ethClient functions
-// Useful for mocking go-ethereum json rpc client logic
 type EthClient interface {
 	CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error)
 	CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error)
@@ -39,4 +30,10 @@ type EthClient interface {
 // NewEthClient ... Initializer
 func NewEthClient(ctx context.Context, rawURL string) (EthClient, error) {
 	return ethclient.DialContext(ctx, rawURL)
+}
+
+func NewNodeClient(ctx context.Context, rpcURL string) (ix_node.EthClient, error) {
+	stats := metrics.WithContext(ctx)
+
+	return ix_node.DialEthClient(rpcURL, stats)
 }

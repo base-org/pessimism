@@ -27,7 +27,7 @@ func Test_Pipe_Event_Flow(t *testing.T) {
 	outputChan := make(chan core.TransitData)
 
 	// Construct test component
-	testPipe, err := mocks.NewDummyPipe(ctx, core.GethBlock, core.EventLog)
+	testPipe, err := mocks.NewDummyPipe(ctx, core.BlockHeader, core.EventLog)
 	assert.NoError(t, err)
 
 	err = testPipe.AddEgress(testID, outputChan)
@@ -51,7 +51,7 @@ func Test_Pipe_Event_Flow(t *testing.T) {
 
 	inputData := core.TransitData{
 		Timestamp: ts,
-		Type:      core.GethBlock,
+		Type:      core.BlockHeader,
 		Value:     block,
 	}
 	var outputData core.TransitData
@@ -69,7 +69,7 @@ func Test_Pipe_Event_Flow(t *testing.T) {
 
 	}()
 
-	entryChan, err := testPipe.GetIngress(core.GethBlock)
+	entryChan, err := testPipe.GetIngress(core.BlockHeader)
 	assert.NoError(t, err)
 
 	entryChan <- inputData

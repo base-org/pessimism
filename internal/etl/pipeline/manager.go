@@ -22,7 +22,7 @@ type Manager interface {
 	InferComponent(cc *core.ClientConfig, cUUID core.CUUID, pUUID core.PUUID,
 		register *core.DataRegister) (component.Component, error)
 	GetStateKey(rt core.RegisterType) (*core.StateKey, bool, error)
-	GetPipelineHeight(id core.PUUID) (*big.Int, error)
+	GetHeightAtPipeline(id core.PUUID) (*big.Int, error)
 	CreateDataPipeline(cfg *core.PipelineConfig) (core.PUUID, bool, error)
 	RunPipeline(pID core.PUUID) error
 	ActiveCount() int
@@ -243,24 +243,21 @@ func (em *etlManager) InferComponent(cc *core.ClientConfig, cUUID core.CUUID, pU
 	}
 
 	switch register.ComponentType {
-	case core.Oracle:
-		init, success := register.ComponentConstructor.(component.OracleConstructorFunc)
+	case core.Reader:
+		init, success := register.Constructor.(component.OracleConstructorFunc)
 		if !success {
-			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Oracle.String()))
+			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Reader.String()))
 		}
 
 		return init(em.ctx, cc, opts...)
 
-	case core.Pipe:
-		init, success := register.ComponentConstructor.(component.PipeConstructorFunc)
+	case core.Transformer:
+		init, success := register.Constructor.(component.PipeConstructorFunc)
 		if !success {
-			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Pipe.String()))
+			return nil, fmt.Errorf(fmt.Sprintf(couldNotCastErr, core.Reader.String()))
 		}
 
 		return init(em.ctx, cc, opts...)
-
-	case core.Aggregator:
-		return nil, fmt.Errorf(noAggregatorErr)
 
 	default:
 		return nil, fmt.Errorf(unknownCompType, register.ComponentType.String())
@@ -281,7 +278,7 @@ func (em *etlManager) GetStateKey(rt core.RegisterType) (*core.StateKey, bool, e
 	return nil, false, nil
 }
 
-func (em *etlManager) GetPipelineHeight(id core.PUUID) (*big.Int, error) {
+func (em *etlManager) GetHeightAtPipeline(id core.PUUID) (*big.Int, error) {
 	pipeline, err := em.store.GetPipelineFromPUUID(id)
 	if err != nil {
 		return nil, err

@@ -42,7 +42,7 @@ func Test_Manager(t *testing.T) {
 			testLogic: func(t *testing.T, m Manager) {
 				cUUID := core.MakeCUUID(1, 1, 1, 1)
 
-				register, err := registry.NewRegistry().GetRegister(core.GethBlock)
+				register, err := registry.NewRegistry().GetRegister(core.BlockHeader)
 
 				assert.NoError(t, err)
 

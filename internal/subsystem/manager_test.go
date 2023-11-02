@@ -51,7 +51,7 @@ func createTestSuite(t *testing.T) *testSuite {
 func Test_BuildDeployCfg(t *testing.T) {
 	pConfig := &core.PipelineConfig{
 		Network:      core.Layer1,
-		DataType:     core.GethBlock,
+		DataType:     core.BlockHeader,
 		PipelineType: core.Live,
 		ClientConfig: nil,
 	}
@@ -271,7 +271,7 @@ func Test_BuildPipelineCfg(t *testing.T) {
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
 				ts.mockEng.EXPECT().GetInputType(core.BalanceEnforcement).
-					Return(core.AccountBalance, testErr()).
+					Return(core.BlockHeader, testErr()).
 					Times(1)
 
 				return ts
@@ -293,7 +293,7 @@ func Test_BuildPipelineCfg(t *testing.T) {
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
 				ts.mockEng.EXPECT().GetInputType(core.BalanceEnforcement).
-					Return(core.AccountBalance, nil).
+					Return(core.BlockHeader, nil).
 					Times(1)
 
 				return ts
@@ -315,7 +315,7 @@ func Test_BuildPipelineCfg(t *testing.T) {
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
 				ts.mockEng.EXPECT().GetInputType(core.BalanceEnforcement).
-					Return(core.AccountBalance, nil).
+					Return(core.BlockHeader, nil).
 					Times(1)
 
 				return ts

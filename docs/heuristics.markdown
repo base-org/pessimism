@@ -111,7 +111,7 @@ curl --location --request POST 'http://localhost:8080/v0/heuristic' \
 
 **NOTE:** This heuristic requires an active RPC connection to both L1 and L2 networks. Furthermore, the Pessimism implementation of fault-detector assumes that a submitted L2 output on L1 will correspond to a canonical block on L2.
 
-The hardcoded `fault_detector` heuristic scans for active `OutputProposed` events on an L1 Output Oracle contract. Once an event is detected, the heuristic implementation proceeds to reconstruct a local state output for the corresponding L2 block. If there is a mismatch between the L1 output and the local state output, the heuristic alerts.
+The hardcoded `fault_detector` heuristic scans for active `OutputProposed` events on an L1 Output Reader contract. Once an event is detected, the heuristic implementation proceeds to reconstruct a local state output for the corresponding L2 block. If there is a mismatch between the L1 output and the local state output, the heuristic alerts.
 
 ### Parameters
 

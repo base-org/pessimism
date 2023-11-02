@@ -1,4 +1,4 @@
-package pipe
+package registry
 
 import (
 	"context"
@@ -70,7 +70,7 @@ func NewEventParserPipe(ctx context.Context, cfg *core.ClientConfig,
 	}
 
 	// 2. Embed the definition into a generic pipe construction
-	p, err := component.NewPipe(ctx, ed, core.GethBlock, core.EventLog, opts...)
+	p, err := component.NewPipe(ctx, ed, core.BlockHeader, core.EventLog, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -201,13 +201,11 @@ func (ed *EventDefinition) attemptDLQ(ctx context.Context) ([]core.TransitData, 
 // transformFunc ... Gets the events from the block, filters them and
 // returns them if they are in the list of events to monitor
 func (ed *EventDefinition) transformFunc(ctx context.Context, td core.TransitData) ([]core.TransitData, error) {
-	// 1. Convert arbitrary transit data to go-ethereum compatible block type
-	block, success := td.Value.(types.Block)
+	header, success := td.Value.(types.Header)
 	if !success {
-		return []core.TransitData{}, fmt.Errorf("could not convert to block")
+		return []core.TransitData{}, fmt.Errorf("could not convert to header")
 	}
 
-	// 2. Fetch the addresses and events to monitor for
 	logging.NoContext().Debug("Getting addresses",
 		zap.String(logging.PUUIDKey, ed.pUUID.String()))
 
@@ -217,7 +215,7 @@ func (ed *EventDefinition) transformFunc(ctx context.Context, td core.TransitDat
 	}
 
 	topics := ed.getTopics(ctx, addresses, ed.ss)
-	hash := block.Header().Hash()
+	hash := header.Hash()
 
 	// 3. Construct and execute a filter query on the provided block hash
 	// to get the relevant logs

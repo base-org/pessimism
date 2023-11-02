@@ -1,13 +1,16 @@
 package registry
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 )
 
@@ -25,7 +28,9 @@ func (bi *BalanceInvConfig) Unmarshal(isp *core.SessionParams) error {
 
 // BalanceHeuristic ...
 type BalanceHeuristic struct {
-	cfg *BalanceInvConfig
+	ctx    context.Context
+	cfg    *BalanceInvConfig
+	client client.EthClient
 
 	heuristic.Heuristic
 }
@@ -41,10 +46,12 @@ const reportMsg = `
 `
 
 // NewBalanceHeuristic ... Initializer
-func NewBalanceHeuristic(cfg *BalanceInvConfig) (heuristic.Heuristic, error) {
+func NewBalanceHeuristic(ctx context.Context, cfg *BalanceInvConfig) (heuristic.Heuristic, error) {
+
 	return &BalanceHeuristic{
+		ctx:       ctx,
 		cfg:       cfg,
-		Heuristic: heuristic.NewBaseHeuristic(core.AccountBalance),
+		Heuristic: heuristic.NewBaseHeuristic(core.BlockHeader),
 	}, nil
 }
 
@@ -53,28 +60,35 @@ func NewBalanceHeuristic(cfg *BalanceInvConfig) (heuristic.Heuristic, error) {
 func (bi *BalanceHeuristic) Assess(td core.TransitData) (*core.Activation, bool, error) {
 	logging.NoContext().Debug("Checking activation for balance heuristic", zap.String("data", fmt.Sprintf("%v", td)))
 
-	// 1. Validate and extract balance input
-	err := bi.ValidateInput(td)
+	header, ok := td.Value.(types.Header)
+	if !ok {
+		return nil, false, fmt.Errorf(couldNotCastErr, "BlockHeader")
+	}
+
+	client, err := client.FromNetwork(bi.ctx, td.Network)
 	if err != nil {
 		return nil, false, err
 	}
 
-	balance, ok := td.Value.(float64)
-	if !ok {
-		return nil, false, fmt.Errorf(couldNotCastErr, "float64")
+	// See if a tx changed the balance for the address
+	balance, err := client.BalanceAt(context.Background(), td.Address, header.Number)
+	if err != nil {
+		return nil, false, err
 	}
+
+	ethBalance := float64(balance.Int64()) / 1000000000000000000
 
 	activated := false
 
 	// 2. Assess if balance > upper bound
 	if bi.cfg.UpperBound != nil &&
-		*bi.cfg.UpperBound < balance {
+		*bi.cfg.UpperBound < ethBalance {
 		activated = true
 	}
 
 	// 3. Assess if balance < lower bound
 	if bi.cfg.LowerBound != nil &&
-		*bi.cfg.LowerBound > balance {
+		*bi.cfg.LowerBound > ethBalance {
 		activated = true
 	}
 

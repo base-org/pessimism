@@ -4,8 +4,7 @@ package core
 type RegisterType uint8
 
 const (
-	AccountBalance RegisterType = iota + 1
-	GethBlock
+	BlockHeader RegisterType = iota + 1
 	EventLog
 )
 
@@ -13,11 +12,9 @@ const (
 // register enum
 func (rt RegisterType) String() string {
 	switch rt {
-	case AccountBalance:
-		return "account_balance"
 
-	case GethBlock:
-		return "geth_block"
+	case BlockHeader:
+		return "block_header"
 
 	case EventLog:
 		return "event_log"
@@ -32,10 +29,10 @@ type DataRegister struct {
 	Addressing bool
 	Sk         *StateKey
 
-	DataType             RegisterType
-	ComponentType        ComponentType
-	ComponentConstructor interface{}
-	Dependencies         []RegisterType
+	DataType      RegisterType
+	ComponentType ComponentType
+	Constructor   interface{}
+	Dependencies  []RegisterType
 }
 
 // StateKey ... Returns a cloned state key for a data register

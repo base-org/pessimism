@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// ClientConfig ... Configuration passed through to an oracle component constructor
+// ClientConfig ... Configuration passed through to an reader component constructor
 type ClientConfig struct {
 	Network      Network
 	PollInterval time.Duration
@@ -31,12 +31,7 @@ type PipelineConfig struct {
 	ClientConfig *ClientConfig
 }
 
-// Backfill ... Returns true if the oracle is configured to backfill
+// Backfill ... Returns true if the reader is configured to backfill
 func (oc *ClientConfig) Backfill() bool {
 	return oc.StartHeight != nil
-}
-
-// Backtest ... Returns true if the oracle is configured to backtest
-func (oc *ClientConfig) Backtest() bool {
-	return oc.EndHeight != nil
 }

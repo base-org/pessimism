@@ -56,7 +56,7 @@ const (
 )
 
 type (
-	// OracleConstructorFunc ... Type declaration that a registry oracle component constructor must adhere to
+	// OracleConstructorFunc ... Type declaration that a registry reader component constructor must adhere to
 	OracleConstructorFunc = func(context.Context, *core.ClientConfig, ...Option) (Component, error)
 
 	// PipeConstructorFunc ... Type declaration that a registry pipe component constructor must adhere to
@@ -67,8 +67,8 @@ type (
 type OracleType = string
 
 const (
-	// BackTestOracle ... Represents an oracle used for backtesting some heuristic
+	// BackTestOracle ... Represents an reader used for backtesting some heuristic
 	BacktestOracle OracleType = "backtest"
-	// LiveOracle ... Represents an oracle used for powering some live heuristic
+	// LiveOracle ... Represents an reader used for powering some live heuristic
 	LiveOracle OracleType = "live"
 )

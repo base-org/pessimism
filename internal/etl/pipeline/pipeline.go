@@ -72,12 +72,12 @@ func (pl *pipeline) UUID() core.PUUID {
 
 func (pl *pipeline) BlockHeight() (*big.Int, error) {
 	comp := pl.components[len(pl.components)-1]
-	oracle, ok := comp.(*component.Oracle)
+	cr, ok := comp.(*component.ChainReader)
 	if !ok {
-		return nil, fmt.Errorf("could not cast component to oracle")
+		return nil, fmt.Errorf("could not cast component to chain reader")
 	}
 
-	return oracle.Height()
+	return cr.Height()
 }
 
 // AddEngineRelay ... Adds a relay to the pipeline that forces it to send transformed heuristic input

@@ -74,7 +74,7 @@ func Test_EventLoop(t *testing.T) {
 	hi := core.HeuristicInput{
 		PUUID: testPUUID,
 		Input: core.TransitData{
-			Type:    core.AccountBalance,
+			Type:    core.BlockHeader,
 			Address: common.HexToAddress("0x69"),
 			Value:   float64(666),
 		},

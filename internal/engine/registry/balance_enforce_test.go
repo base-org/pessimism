@@ -1,6 +1,7 @@
 package registry_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/base-org/pessimism/internal/core"
@@ -12,7 +13,7 @@ func Test_Balance_Assess(t *testing.T) {
 	upper := float64(5)
 	lower := float64(1)
 
-	bi, err := registry.NewBalanceHeuristic(
+	bi, err := registry.NewBalanceHeuristic(context.Background(),
 		&registry.BalanceInvConfig{
 			Address:    "0x123",
 			UpperBound: &upper,
@@ -23,7 +24,7 @@ func Test_Balance_Assess(t *testing.T) {
 
 	// No activation
 	testData1 := core.TransitData{
-		Type:  core.AccountBalance,
+		Type:  core.BlockHeader,
 		Value: float64(3),
 	}
 
@@ -33,7 +34,7 @@ func Test_Balance_Assess(t *testing.T) {
 
 	// Upper bound activation
 	testData2 := core.TransitData{
-		Type:  core.AccountBalance,
+		Type:  core.BlockHeader,
 		Value: float64(6),
 	}
 
@@ -43,7 +44,7 @@ func Test_Balance_Assess(t *testing.T) {
 
 	// Lower bound activation
 	testData3 := core.TransitData{
-		Type:  core.AccountBalance,
+		Type:  core.BlockHeader,
 		Value: float64(0.1),
 	}
 

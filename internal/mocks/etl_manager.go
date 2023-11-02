@@ -80,19 +80,19 @@ func (mr *EtlManagerMockRecorder) EventLoop() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventLoop", reflect.TypeOf((*EtlManager)(nil).EventLoop))
 }
 
-// GetPipelineHeight mocks base method.
-func (m *EtlManager) GetPipelineHeight(arg0 core.PUUID) (*big.Int, error) {
+// GetHeightAtPipeline mocks base method.
+func (m *EtlManager) GetHeightAtPipeline(arg0 core.PUUID) (*big.Int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPipelineHeight", arg0)
+	ret := m.ctrl.Call(m, "GetHeightAtPipeline", arg0)
 	ret0, _ := ret[0].(*big.Int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetPipelineHeight indicates an expected call of GetPipelineHeight.
-func (mr *EtlManagerMockRecorder) GetPipelineHeight(arg0 interface{}) *gomock.Call {
+// GetHeightAtPipeline indicates an expected call of GetHeightAtPipeline.
+func (mr *EtlManagerMockRecorder) GetHeightAtPipeline(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPipelineHeight", reflect.TypeOf((*EtlManager)(nil).GetPipelineHeight), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHeightAtPipeline", reflect.TypeOf((*EtlManager)(nil).GetHeightAtPipeline), arg0)
 }
 
 // GetStateKey mocks base method.

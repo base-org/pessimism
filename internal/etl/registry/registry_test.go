@@ -41,11 +41,11 @@ func Test_ComponentRegistry(t *testing.T) {
 			constructionLogic: registry.NewRegistry,
 			testLogic: func(t *testing.T, testRegistry registry.Registry) {
 
-				reg, err := testRegistry.GetRegister(core.GethBlock)
+				reg, err := testRegistry.GetRegister(core.BlockHeader)
 
 				assert.NoError(t, err)
 				assert.NotNil(t, reg)
-				assert.Equal(t, reg.DataType, core.GethBlock)
+				assert.Equal(t, reg.DataType, core.BlockHeader)
 			},
 		},
 		{
@@ -61,7 +61,7 @@ func Test_ComponentRegistry(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Len(t, path.Path, 2)
 
-				assert.Equal(t, path.Path[1].DataType, core.GethBlock)
+				assert.Equal(t, path.Path[1].DataType, core.BlockHeader)
 				assert.Equal(t, path.Path[0].DataType, core.EventLog)
 			},
 		},

@@ -16,7 +16,7 @@ A component refers to a graph node within the ETL system. Every component perfor
 Currently, there are three total component types:
 
 1. `Pipe` - Used to perform local arbitrary computations _(e.g. Extracting L1Withdrawal transactions from a block)_
-2. `Oracle` - Used to poll and collect data from some third-party source _(e.g. Querying real-time account balance amounts from an op-geth execution client)_
+2. `Reader` - Used to poll and collect data from some third-party source _(e.g. Querying real-time account balance amounts from an op-geth execution client)_
 3. `Aggregator` - Used to synchronize events between asynchronous data sources _(e.g. Synchronizing L1/L2 blocks to understand real-time changes in bridging TVL)_
 
 ### Inter-Connectivity
@@ -97,20 +97,19 @@ Once input data processing has been completed, the output data is then submitted
 * Generating opcode traces for some EVM transaction
 * Parsing emitted events from a transaction
 
-### Oracle
+### Reader
 
-Oracles are responsible for collecting data from some external third party _(e.g. L1 geth node, L2 rollup node, etc.)_. As of now, oracle's are configurable through the use of a standard `OracleDefinition` interface that allows developers to write arbitrary oracle logic.
+Oracles are responsible for collecting data from some external third party _(e.g. L1 geth node, L2 rollup node, etc.)_. As of now, reader's are configurable through the use of a standard `OracleDefinition` interface that allows developers to write arbitrary reader logic.
 The following key interface functions are supported/enforced:
 
 * `ReadRoutine` - Routine used for reading/polling real-time data for some arbitrarily configured data source
-* `BackTestRoutine` - _Optional_ routine used for sequentially backtesting from some starting to ending block heights.
 
-Unlike other components, `Oracles` actually employ _2 go routines_ to safely operate. This is because the definition routines are run as a separate go routine with a communication channel to the actual `Oracle` event loop. This is visualized below:
+Unlike other components, `Oracles` actually employ _2 go routines_ to safely operate. This is because the definition routines are run as a separate go routine with a communication channel to the actual `Reader` event loop. This is visualized below:
 
 {% raw %}
 <div class="mermaid">
 graph LR;
-    subgraph A[Oracle]
+    subgraph A[Reader]
         B[eventLoop]-->|channel|ODefRoutine;
          B[eventLoop]-->|context|ODefRoutine;
         B-->B;
@@ -185,7 +184,7 @@ A registry submodule is used to store all ETL data register definitions that pro
 
 ## Addressing
 
-Some component's require knowledge of a specific address to properly function. For example, an oracle that polls a geth node for native ETH balance amounts would need knowledge of the address to poll. To support this, the ETL leverages a shared state store between the ETL and Risk Engine subsystems.
+Some component's require knowledge of a specific address to properly function. For example, an reader that polls a geth node for native ETH balance amounts would need knowledge of the address to poll. To support this, the ETL leverages a shared state store between the ETL and Risk Engine subsystems.
 
 Shown below is how the ETL and Risk Engine interact with the shared state store using a `BalanceOracle` component as an example:
 
@@ -210,7 +209,7 @@ graph LR;
         GETH --> |"{4} []balance"|BO
 
         BO("Balance
-        Oracle") --> |"{1} Get(PUUID)"|state
+        Reader") --> |"{1} Get(PUUID)"|state
         BO -."eventLoop()".-> BO
 
         state --> |"{2} []address"|BO
@@ -218,14 +217,14 @@ graph LR;
 </div>
 {% endraw %}
 
-### Geth Block Oracle Register
+### Geth Block Reader Register
 
-A `GethBlock` register refers to a block output extracted from a go-ethereum node. This register is used for creating `Oracle` components that poll and extract block data from a go-ethereum node in real-time.
+A `BlockHeader` register refers to a block output extracted from a go-ethereum node. This register is used for creating `Reader` components that poll and extract block data from a go-ethereum node in real-time.
 
-### Geth Account Balance Oracle Register
+### Geth Account Balance Reader Register
 
-An `AccountBalance` register refers to a native ETH balance output extracted from a go-ethereum node. This register is used for creating `Oracle` components that poll and extract native ETH balance data for some state persisted addresses from a go-ethereum node in real-time.
-Unlike, the `GethBlock` register, this register requires knowledge of an address set that's shared with the risk engine to properly function and is therefore addressable. Because of this, any heuristic that uses this register must also be addressable.
+An `AccountBalance` register refers to a native ETH balance output extracted from a go-ethereum node. This register is used for creating `Reader` components that poll and extract native ETH balance data for some state persisted addresses from a go-ethereum node in real-time.
+Unlike, the `BlockHeader` register, this register requires knowledge of an address set that's shared with the risk engine to properly function and is therefore addressable. Because of this, any heuristic that uses this register must also be addressable.
 
 ## Managed ETL
 

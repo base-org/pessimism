@@ -4,22 +4,19 @@ package core
 type ComponentType uint8
 
 const (
-	Oracle ComponentType = iota + 1
-	Pipe
-	Aggregator
+	Reader ComponentType = iota + 1
+	Transformer
 )
 
 // String ... Converts the component type to a string
 func (ct ComponentType) String() string {
 	switch ct {
-	case Oracle:
-		return "oracle"
+	case Reader:
+		return "reader"
 
-	case Pipe:
-		return "pipe"
+	case Transformer:
+		return "transformer"
 
-	case Aggregator:
-		return "aggregator"
 	}
 
 	return UnknownType

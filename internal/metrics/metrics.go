@@ -8,6 +8,7 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 
@@ -18,6 +19,7 @@ const (
 	metricsNamespace    = "pessimism"
 	SubsystemHeuristics = "heuristics"
 	SubsystemEtl        = "etl"
+	batchMethod         = "batch"
 )
 
 const serverShutdownTimeout = 10 * time.Second
@@ -43,20 +45,24 @@ type Metricer interface {
 	RecordUp()
 	Start()
 	Shutdown(ctx context.Context) error
+	RecordRPCClientRequest(method string) func(err error)
+	RecordRPCClientBatchRequest(b []rpc.BatchElem) func(err error)
 	Document() []DocumentedMetric
 }
 
 type Metrics struct {
-	Up               prometheus.Gauge
-	ActivePipelines  *prometheus.GaugeVec
-	ActiveHeuristics *prometheus.GaugeVec
-	HeuristicRuns    *prometheus.CounterVec
-	AlertsGenerated  *prometheus.CounterVec
-	NodeErrors       *prometheus.CounterVec
-	BlockLatency     *prometheus.GaugeVec
-	PipelineLatency  *prometheus.GaugeVec
-	InvExecutionTime *prometheus.GaugeVec
-	HeuristicErrors  *prometheus.CounterVec
+	Up                              prometheus.Gauge
+	ActivePipelines                 *prometheus.GaugeVec
+	ActiveHeuristics                *prometheus.GaugeVec
+	HeuristicRuns                   *prometheus.CounterVec
+	AlertsGenerated                 *prometheus.CounterVec
+	NodeErrors                      *prometheus.CounterVec
+	BlockLatency                    *prometheus.GaugeVec
+	PipelineLatency                 *prometheus.GaugeVec
+	InvExecutionTime                *prometheus.GaugeVec
+	rpcClientRequestsTotal          *prometheus.CounterVec
+	rpcClientRequestDurationSeconds *prometheus.HistogramVec
+	HeuristicErrors                 *prometheus.CounterVec
 
 	registry *prometheus.Registry
 	factory  Factory
@@ -87,6 +93,23 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 	factory := With(registry)
 
 	stats = &Metrics{
+		rpcClientRequestsTotal: factory.NewCounterVec(prometheus.CounterOpts{
+			Namespace: metricsNamespace,
+			Subsystem: SubsystemEtl,
+			Name:      "requests_total",
+			Help:      "Total RPC requests initiated by the RPC client",
+		}, []string{
+			"method",
+		}),
+		rpcClientRequestDurationSeconds: factory.NewHistogramVec(prometheus.HistogramOpts{
+			Namespace: metricsNamespace,
+			Subsystem: SubsystemEtl,
+			Name:      "request_duration_seconds",
+			Buckets:   []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10},
+			Help:      "Histogram of RPC client request durations",
+		}, []string{
+			"method",
+		}),
 		Up: factory.NewGauge(prometheus.GaugeOpts{
 			Namespace: metricsNamespace,
 			Name:      "up",
@@ -229,6 +252,36 @@ func (m *Metrics) RecordPipelineLatency(pUUID core.PUUID, latency float64) {
 	m.PipelineLatency.WithLabelValues(pUUID.String()).Set(latency)
 }
 
+func (m *Metrics) RecordRPCClientRequest(method string) func(err error) {
+	m.rpcClientRequestsTotal.WithLabelValues(method).Inc()
+	// timer := prometheus.NewTimer(m.rpcClientRequestDurationSeconds.WithLabelValues(method))
+	// return func(err error) {
+	// 	m.recordRPCClientResponse(method, err)
+	// 	timer.ObserveDuration()
+	// }
+
+	return nil
+}
+
+func (m *Metrics) RecordRPCClientBatchRequest(b []rpc.BatchElem) func(err error) {
+	m.rpcClientRequestsTotal.WithLabelValues(batchMethod).Add(float64(len(b)))
+	for _, elem := range b {
+		m.rpcClientRequestsTotal.WithLabelValues(elem.Method).Inc()
+	}
+
+	// timer := prometheus.NewTimer(m.rpcClientRequestDurationSeconds.WithLabelValues(batchMethod))
+	// return func(err error) {
+	// 	m.recordRPCClientResponse(batchMethod, err)
+	// 	timer.ObserveDuration()
+
+	// 	// Record errors for individual requests
+	// 	for _, elem := range b {
+	// 		m.recordRPCClientResponse(elem.Method, elem.Error)
+	// 	}
+	// }
+	return nil
+}
+
 // Shutdown ... Shuts down the metrics server
 func (m *Metrics) Shutdown(ctx context.Context) error {
 	return m.server.Shutdown(ctx)
@@ -255,6 +308,12 @@ func (n *noopMetricer) RecordNodeError(_ core.Network)                          
 func (n *noopMetricer) RecordBlockLatency(_ core.Network, _ float64)                         {}
 func (n *noopMetricer) RecordPipelineLatency(_ core.PUUID, _ float64)                        {}
 func (n *noopMetricer) RecordAssessmentError(_ heuristic.Heuristic)                          {}
+func (n *noopMetricer) RecordRPCClientRequest(method string) func(err error) {
+	return func(err error) {}
+}
+func (n *noopMetricer) RecordRPCClientBatchRequest(b []rpc.BatchElem) func(err error) {
+	return func(err error) {}
+}
 
 func (n *noopMetricer) Shutdown(_ context.Context) error {
 	return nil
