@@ -52,8 +52,5 @@ jobs:
       with:
         go-version: 1.21
 
-    - name: Install foundry
-      uses: foundry-rs/foundry-toolchain@v1
-
     - name: Run E2E Integration Tests
       run: make e2e-test
