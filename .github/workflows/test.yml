@@ -42,29 +42,6 @@ jobs:
       run: | 
         go test -v -coverprofile=coverage.out ./internal/... 
 
-    # - name: Generate Coverage
-    #   run: |
-    #     go tool cover -func=coverage.out | grep total | awk '{print $3}' >> out.txt
-    #     echo "::set-output name=coverage::$(cat out.txt)"
-
-    # - name: Find Coverage Comment
-    #   uses: peter-evans/find-comment@v1
-    #   id: fc
-    #   with:
-    #     issue-number: ${{ github.event.pull_request.number }}
-    #     comment-author: 'github-actions[bot]'
-    #     body-includes: '### Current Test Coverage'
-
-    # - name: Add Coverage Comment
-    #   uses: actions/github-script@v6
-    #   env:
-    #     DATA: ${{ steps.fc.outputs.comment-id }}
-
-    #   with:
-    #     script: | 
-    #       const script = require('./.github/scripts/comment.js')
-    #       await script({github, context, core})
-
   e2e-test:
     runs-on: larger-runner
     steps:
@@ -75,13 +52,8 @@ jobs:
       with:
         go-version: 1.21
 
-    # - name: Install foundry
-    #   uses: foundry-rs/foundry-toolchain@v1
-
-    # - name: Setup devnet Resources
-    #   id: devnet
-    #   run: |
-    #     make devnet-allocs
+    - name: Install foundry
+      uses: foundry-rs/foundry-toolchain@v1
 
     - name: Run E2E Integration Tests
       run: make e2e-test

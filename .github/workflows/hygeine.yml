@@ -25,6 +25,9 @@ jobs:
       - name: Mock diff check
         run: make go-gen-mocks && git diff --exit-code
 
+      - name: Devnet diff check
+        run: make devnet-allocs && git diff --exit-code
+
   golangci:
     # Linting job
     # https://github.com/golangci/golangci-lint-action
