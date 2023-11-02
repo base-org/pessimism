@@ -1,6 +1,14 @@
-package common
+package math
 
-import "math/big"
+import (
+	"math/big"
+
+	"github.com/ethereum/go-ethereum/params"
+)
+
+func WeiToEther(wei *big.Int) *big.Float {
+	return new(big.Float).Quo(new(big.Float).SetInt(wei), big.NewFloat(params.Ether))
+}
 
 // PercentOf - calculate what percent x0 is of x1.
 func PercentOf(part, total *big.Float) *big.Float {

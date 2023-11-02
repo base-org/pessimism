@@ -6,7 +6,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
-	indexer_client "github.com/ethereum-optimism/optimism/indexer/client"
+	ix_client "github.com/ethereum-optimism/optimism/indexer/client"
 	"go.uber.org/zap"
 )
 
@@ -15,15 +15,15 @@ type Config struct {
 	L1RpcEndpoint string
 	L2RpcEndpoint string
 
-	IndexerCfg *indexer_client.Config
+	IndexerCfg *ix_client.Config
 }
 
 // Bundle ... Used to store all client object references
 type Bundle struct {
-	IndexerClient IndexerClient
-	L1Client      EthClient
-	L2Client      EthClient
-	L2Geth        GethClient
+	IxClient IxClient
+	L1Client EthClient
+	L2Client EthClient
+	L2Geth   GethClient
 }
 
 // NewBundle ... Construct a new client bundle
@@ -48,16 +48,16 @@ func NewBundle(ctx context.Context, cfg *Config) (*Bundle, error) {
 		return nil, err
 	}
 
-	indexerClient, err := NewIndexerClient(cfg.IndexerCfg)
+	ixClient, err := NewIndexerClient(cfg.IndexerCfg)
 	if err != nil { // Indexer client is optional so we don't want to fatal
 		logger.Warn("Error creating indexer client", zap.Error(err))
 	}
 
 	return &Bundle{
-		IndexerClient: indexerClient,
-		L1Client:      l1Client,
-		L2Client:      l2Client,
-		L2Geth:        l2Geth,
+		IxClient: ixClient,
+		L1Client: l1Client,
+		L2Client: l2Client,
+		L2Geth:   l2Geth,
 	}, nil
 }
 

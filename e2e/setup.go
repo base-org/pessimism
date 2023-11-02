@@ -163,13 +163,13 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	ss := state.NewMemState()
 
 	ctrl := gomock.NewController(t)
-	indexerClient := mocks.NewMockIndexerClient(ctrl)
+	ixClient := mocks.NewMockIndexerClient(ctrl)
 
 	bundle := &client.Bundle{
-		L1Client:      sys.Clients["l1"],
-		L2Client:      sys.Clients["sequencer"],
-		L2Geth:        gethClient,
-		IndexerClient: indexerClient,
+		L1Client: sys.Clients["l1"],
+		L2Client: sys.Clients["sequencer"],
+		L2Geth:   gethClient,
+		IxClient: ixClient,
 	}
 
 	ctx = app.InitializeContext(ctx, ss, bundle)
@@ -218,7 +218,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 		TestPagerDutyServer: pagerdutyServer,
 		L1Client:            sys.Clients["l1"],
 		L2Client:            sys.Clients["sequencer"],
-		TestIndexerClient:   indexerClient,
+		TestIndexerClient:   ixClient,
 	}
 }
 

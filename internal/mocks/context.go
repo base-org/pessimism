@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	context "context"
+	"context"
 
 	client "github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
@@ -27,9 +27,9 @@ func Context(ctx context.Context, ctrl *gomock.Controller) (context.Context, *Mo
 	ss := state.NewMemState()
 
 	bundle := &client.Bundle{
-		IndexerClient: mockedIndexer,
-		L1Client:      mockedClient,
-		L2Client:      mockedClient,
+		IxClient: mockedIndexer,
+		L1Client: mockedClient,
+		L2Client: mockedClient,
 	}
 
 	// 2. Bind to context

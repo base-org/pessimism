@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	p_common "github.com/base-org/pessimism/internal/common"
+	"github.com/base-org/pessimism/internal/common/math"
 
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
@@ -75,9 +75,9 @@ type WithdrawalSafetyCfg struct {
 
 // WithdrawalSafetyHeuristic ... Withdrawal safety heuristic implementation
 type WithdrawalSafetyHeuristic struct {
-	ctx           context.Context
-	cfg           *WithdrawalSafetyCfg
-	indexerClient client.IndexerClient
+	ctx      context.Context
+	cfg      *WithdrawalSafetyCfg
+	ixClient client.IxClient
 
 	l1Client client.EthClient
 	// NOTE - These values can be ingested from the chain config in the future
@@ -121,8 +121,8 @@ func NewWithdrawalSafetyHeuristic(ctx context.Context, cfg *WithdrawalSafetyCfg)
 		l1PortalFilter:  filter,
 		l2ToL1MsgPasser: l2ToL1MsgPasser,
 
-		indexerClient: clients.IndexerClient,
-		l1Client:      clients.L1Client,
+		ixClient: clients.IxClient,
+		l1Client: clients.L1Client,
 
 		Heuristic: heuristic.NewBaseHeuristic(core.EventLog),
 	}, nil
@@ -166,7 +166,7 @@ func (wsh *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Ac
 	}
 
 	// 3. Get withdrawal metadata from OP Indexer API
-	withdrawals, err := wsh.indexerClient.GetAllWithdrawalsByAddress(wm.From)
+	withdrawals, err := wsh.ixClient.GetAllWithdrawalsByAddress(wm.From)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +224,7 @@ func (wsh *WithdrawalSafetyHeuristic) Assess(td core.TransitData) (*heuristic.Ac
 		&heuristic.Activation{
 			TimeStamp: time.Now(),
 			Message: fmt.Sprintf(WithdrawalSafetyMsg, msg, wsh.cfg.L1PortalAddress, wsh.cfg.L2ToL1Address,
-				wsh.SUUID(), log.TxHash.String(), corrWithdrawal.TransactionHash, p_common.WeiToEther(withdrawalWEI).String()),
+				wsh.SUUID(), log.TxHash.String(), corrWithdrawal.TransactionHash, math.WeiToEther(withdrawalWEI).String()),
 		},
 	), nil
 }
@@ -248,7 +248,7 @@ func (wsh *WithdrawalSafetyHeuristic) GetInvariants(corrWithdrawal *models.Withd
 		// B
 		// Check if the proven withdrawal amount is greater than threshold % of the OptimismPortal value
 		func() (bool, string) {
-			return p_common.PercentOf(withdrawAmt, portalAmt).Cmp(big.NewFloat(wsh.cfg.Threshold)) == 1,
+			return math.PercentOf(withdrawAmt, portalAmt).Cmp(big.NewFloat(wsh.cfg.Threshold*100)) == 1,
 				fmt.Sprintf(GreaterThanThreshold, wsh.cfg.Threshold)
 		},
 		// C
@@ -272,8 +272,8 @@ func (wsh *WithdrawalSafetyHeuristic) GetInvariants(corrWithdrawal *models.Withd
 		// E
 		// Ensure that message isn't super similar to erroneous values using Sorenson-Dice coefficient
 		func() (bool, string) {
-			c0 := p_common.SorensonDice(corrWithdrawal.MessageHash, minAddr.String())
-			c1 := p_common.SorensonDice(corrWithdrawal.MessageHash, maxAddr.String())
+			c0 := math.SorensonDice(corrWithdrawal.MessageHash, minAddr.String())
+			c1 := math.SorensonDice(corrWithdrawal.MessageHash, maxAddr.String())
 			threshold := wsh.cfg.CoefficientThreshold
 
 			if c0 >= threshold {
