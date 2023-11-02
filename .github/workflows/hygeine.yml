@@ -25,6 +25,9 @@ jobs:
       - name: Mock diff check
         run: make go-gen-mocks && git diff --exit-code
 
+  ensure-devnet-allocs:
+    runs-on: ubuntu-latest
+    steps:
       - name: Install foundry
         uses: foundry-rs/foundry-toolchain@v1
 
