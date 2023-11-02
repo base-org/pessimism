@@ -28,6 +28,8 @@ jobs:
   ensure-devnet-allocs:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+
       - name: Install foundry
         uses: foundry-rs/foundry-toolchain@v1
 
