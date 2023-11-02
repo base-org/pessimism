@@ -19,7 +19,6 @@ cd optimism-${VERSION}
 {
     ## (4.a) Generate devnet allocations and persist them all into .devnet folder
     echo "Initializing monorepo..." &&
-    make install-geth &&
     git submodule update --init --recursive &&
     make devnet-allocs &&
     mv .devnet ../.devnet &&
