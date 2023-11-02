@@ -12,7 +12,7 @@ import (
 type MockSuite struct {
 	Ctrl        *gomock.Controller
 	Bundle      *client.Bundle
-	MockIndexer *MockIndexerClient
+	MockIndexer *MockIxClient
 	MockL1      *MockEthClient
 	MockL2      *MockEthClient
 	SS          state.Store
@@ -22,7 +22,7 @@ type MockSuite struct {
 func Context(ctx context.Context, ctrl *gomock.Controller) (context.Context, *MockSuite) {
 	// 1. Construct mocked bundle
 	mockedClient := NewMockEthClient(ctrl)
-	mockedIndexer := NewMockIndexerClient(ctrl)
+	mockedIndexer := NewMockIxClient(ctrl)
 
 	ss := state.NewMemState()
 

@@ -1,4 +1,4 @@
-//go:generate mockgen -package mocks --destination ../mocks/indexer_client.go . IndexerClient
+//go:generate mockgen -package mocks --destination ../mocks/indexer_client.go . IxClient
 
 package client
 
