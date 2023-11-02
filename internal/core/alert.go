@@ -67,6 +67,26 @@ func (s Severity) String() string {
 	}
 }
 
+// Symbol ... Converts a severity to a symbol
+func (s Severity) Symbol() string {
+	switch s {
+	case LOW:
+		return ":warning:"
+
+	case MEDIUM:
+		return ":warning:"
+
+	case HIGH:
+		return ":rotating_light:"
+
+	case UNKNOWN:
+		return ":question:"
+
+	default:
+		return ":question:"
+	}
+}
+
 // ToPagerDutySev ... Converts a severity to a pagerduty severity. See docs/alert-routing.md for more on this
 func (s Severity) ToPagerDutySev() PagerDutySeverity {
 	switch s {

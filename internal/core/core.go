@@ -180,12 +180,6 @@ func (sp *SessionParams) NestedArgs() []any {
 	return args
 }
 
-// Activation ... Represents an activation event
-type Activation struct {
-	TimeStamp time.Time
-	Message   string
-}
-
 // Subsystem ... Represents a subsystem
 type Subsystem interface {
 	EventLoop() error

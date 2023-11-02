@@ -292,10 +292,5 @@ func (em *etlManager) GetPipelineHeight(id core.PUUID) (*big.Int, error) {
 		return nil, err
 	}
 
-	// If the pipeline is not running, return 0
-	if height == nil {
-		return big.NewInt(0), nil
-	}
-
 	return height, nil
 }

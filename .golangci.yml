@@ -62,11 +62,11 @@ linters-settings:
         # Default: true
         skipRecvDeref: false
 
-  gomnd:
-    # List of function regex patterns to exclude from analysis.
-    # Default: []
-    ignored-functions:
-      -
+  # gomnd:
+  #   # List of function regex patterns to exclude from analysis.
+  #   # Default: []
+  #   ignored-functions:
+  #     - 
   gomodguard:
     blocked:
       # List of blocked modules.
@@ -144,7 +144,7 @@ linters:
     - gocritic # provides diagnostics that check for bugs, performance and style issues
     - gocyclo # computes and checks the cyclomatic complexity of functions
     - goimports # in addition to fixing imports, goimports also formats your code in the same style as gofmt
-    - gomnd # detects magic numbers
+    # - gomnd # detects magic numbers
     - gomodguard # allow and block lists linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations
     - goprintffuncname # checks that printf-like functions are named with f at the end
     - gosec # inspects source code for security problems
@@ -207,6 +207,7 @@ issues:
       linters:
         - gocritic
         - unparam
+
     - path: "_test\\.go"
       linters:
         - gocognit

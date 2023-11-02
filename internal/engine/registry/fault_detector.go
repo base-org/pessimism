@@ -17,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/rlp"
 
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"go.uber.org/zap"
 )
 
@@ -59,8 +58,7 @@ func blockToInfo(b *types.Block) blockInfo {
 
 // faultDetectorInv ... faultDetectorInv implementation
 type faultDetectorInv struct {
-	eventHash common.Hash
-	cfg       *FaultDetectorCfg
+	cfg *FaultDetectorCfg
 
 	l2tol1MessagePasser  common.Address
 	l2OutputOracleFilter *bindings.L2OutputOracleFilterer
@@ -79,7 +77,6 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heu
 		return nil, err
 	}
 
-	outputSig := crypto.Keccak256Hash([]byte(OutputProposedEvent))
 	addr := common.HexToAddress(cfg.L2ToL1Address)
 
 	outputOracle, err := bindings.NewL2OutputOracleFilterer(addr, bundle.L1Client)
@@ -90,7 +87,6 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heu
 	return &faultDetectorInv{
 		cfg: cfg,
 
-		eventHash:            outputSig,
 		l2OutputOracleFilter: outputOracle,
 		l2tol1MessagePasser:  addr,
 		stats:                metrics.WithContext(ctx),
@@ -103,37 +99,37 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heu
 }
 
 // Assess ... Performs the fault detection heuristic logic
-func (fd *faultDetectorInv) Assess(td core.TransitData) (*core.Activation, bool, error) {
+func (fd *faultDetectorInv) Assess(td core.TransitData) (*heuristic.ActivationSet, error) {
 	logging.NoContext().Debug("Checking activation for fault detector heuristic",
 		zap.String("data", fmt.Sprintf("%v", td)))
 
 	// 1. Validate and extract data input
 	err := fd.ValidateInput(td)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	if td.Address.String() != fd.cfg.L2OutputOracle {
-		return nil, false, fmt.Errorf(invalidAddrErr, td.Address.String(), fd.cfg.L2OutputOracle)
+		return nil, fmt.Errorf(invalidAddrErr, td.Address.String(), fd.cfg.L2OutputOracle)
 	}
 
 	log, success := td.Value.(types.Log)
 	if !success {
-		return nil, false, fmt.Errorf(couldNotCastErr, "types.Log")
+		return nil, fmt.Errorf(couldNotCastErr, "types.Log")
 	}
 
 	// 2. Convert raw log to structured output proposal type
 	output, err := fd.l2OutputOracleFilter.ParseOutputProposed(log)
 	if err != nil {
 		fd.stats.RecordNodeError(core.Layer1)
-		return nil, false, err
+		return nil, err
 	}
 
 	// 3. Fetch the L2 block with the corresponding block height of the state output
 	outputBlock, err := fd.l2Client.BlockByNumber(context.Background(), output.L2BlockNumber)
 	if err != nil {
 		fd.stats.RecordNodeError(core.Layer2)
-		return nil, false, err
+		return nil, err
 	}
 
 	// 4. Fetch the withdrawal state root of the L2ToL1MessagePasser contract on L2
@@ -141,25 +137,25 @@ func (fd *faultDetectorInv) Assess(td core.TransitData) (*core.Activation, bool,
 		fd.l2tol1MessagePasser, []string{}, output.L2BlockNumber)
 	if err != nil {
 		fd.stats.RecordNodeError(core.Layer2)
-		return nil, false, err
+		return nil, err
 	}
 
 	// 5. Compute the expected state root of the L2 block using the roll-up node software
 	asInfo := blockToInfo(outputBlock)
 	expectedStateRoot, err := rollup.ComputeL2OutputRootV0(asInfo, proofResp.StorageHash)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	actualStateRoot := output.OutputRoot
 
 	// 6. Compare the expected state root with the actual state root; if they are not equal, then activate
 	if expectedStateRoot != actualStateRoot {
-		return &core.Activation{
+		return heuristic.NewActivationSet().Add(&heuristic.Activation{
 			TimeStamp: time.Now(),
 			Message:   fmt.Sprintf(faultDetectMsg, fd.cfg.L2OutputOracle, fd.cfg.L2ToL1Address, fd.SUUID(), log.TxHash),
-		}, true, nil
+		}), nil
 	}
 
-	return nil, false, nil
+	return heuristic.NoActivations(), nil
 }

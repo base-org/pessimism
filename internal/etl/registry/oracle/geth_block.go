@@ -119,7 +119,6 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 				continue
 			}
 
-			// TODO - Add support for database persistence
 			componentChan <- core.TransitData{
 				OriginTS:  time.Now(),
 				Timestamp: time.Now(),
@@ -150,13 +149,13 @@ func (oracle *GethBlockODef) BackTestRoutine(ctx context.Context, componentChan 
 //	Start Height and End Height is inclusive in fetching blocks.
 func (oracle *GethBlockODef) getHeightToProcess(ctx context.Context) *big.Int {
 	if oracle.currHeight == nil {
-		logging.WithContext(ctx).Info("Current Height is nil, looking for starting height")
 		if oracle.cfg.StartHeight != nil {
-			logging.WithContext(ctx).Info("StartHeight found to be: %d, using that value.", zap.Int64("StartHeight",
+			logging.WithContext(ctx).Info("Using provided starting height for poller processing", zap.Int64("StartHeight",
 				oracle.cfg.StartHeight.Int64()))
 			return oracle.cfg.StartHeight
 		}
-		logging.WithContext(ctx).Info("Starting Height is nil, using latest block as starting point.")
+		logging.WithContext(ctx).Info("Starting pipeline syncing from latest block",
+			zap.String(logging.CUUIDKey, oracle.cUUID.String()))
 		return nil
 	}
 	return oracle.currHeight
@@ -262,8 +261,7 @@ func (oracle *GethBlockODef) ReadRoutine(ctx context.Context, componentChan chan
 			if height != nil {
 				height.Add(height, big.NewInt(1))
 			} else {
-				height = &big.Int{}
-				height.Add(headerAsserted.Number, big.NewInt(1))
+				height = new(big.Int).Add(headerAsserted.Number, big.NewInt(1))
 			}
 
 			logging.NoContext().Debug("New height", zap.Int("Height", int(height.Int64())),

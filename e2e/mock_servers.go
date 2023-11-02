@@ -147,9 +147,6 @@ func (svr *TestSlackServer) mockSlackPost(w http.ResponseWriter, r *http.Request
 	}
 
 	svr.Payloads = append(svr.Payloads, alert)
-	// Randomly return different API payload responses
-	// This ensures that the client implementation can handle different
-	// slack workspace types
 	w.WriteHeader(http.StatusOK)
 	if svr.Unstructured {
 		_, _ = w.Write([]byte(`ok`))

@@ -15,7 +15,7 @@ import (
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/subsystem"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	indexer_client "github.com/ethereum-optimism/optimism/indexer/client"
 
@@ -25,8 +25,8 @@ import (
 
 // TrueEnvVal ... Represents the encoded string value for true (ie. 1)
 const (
-	trueEnvVal           = "1"
-	maxEngineWorkerCount = 6
+	trueEnvVal               = "1"
+	defaultEngineWorkerCount = 6
 )
 
 // Config ... Application level configuration defined by `FilePath` value
@@ -70,7 +70,7 @@ func NewConfig(fileName core.FilePath) *Config {
 		},
 
 		EngineConfig: &engine.Config{
-			WorkerCount: getEnvIntWithDefault("ENGINE_WORKER_COUNT", maxEngineWorkerCount),
+			WorkerCount: getEnvIntWithDefault("ENGINE_WORKER_COUNT", defaultEngineWorkerCount),
 		},
 
 		MetricsConfig: &metrics.Config{

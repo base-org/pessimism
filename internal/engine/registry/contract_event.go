@@ -3,6 +3,7 @@ package registry
 import (
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/heuristic"
@@ -59,20 +60,20 @@ func NewEventHeuristic(cfg *EventInvConfig) heuristic.Heuristic {
 
 // Assess ... Checks if the balance is within the bounds
 // specified in the config
-func (ei *EventHeuristic) Assess(td core.TransitData) (*core.Activation, bool, error) {
+func (ei *EventHeuristic) Assess(td core.TransitData) (*heuristic.ActivationSet, error) {
 	// 1. Validate and extract the log event from the transit data
 	err := ei.ValidateInput(td)
 	if err != nil {
-		return nil, false, err
+		return nil, err
 	}
 
 	if td.Address != common.HexToAddress(ei.cfg.Address) {
-		return nil, false, fmt.Errorf(invalidAddrErr, ei.cfg.Address, td.Address.String())
+		return nil, fmt.Errorf(invalidAddrErr, ei.cfg.Address, td.Address.String())
 	}
 
 	log, success := td.Value.(types.Log)
 	if !success {
-		return nil, false, fmt.Errorf(couldNotCastErr, "types.Log")
+		return nil, fmt.Errorf(couldNotCastErr, "types.Log")
 	}
 
 	// 2. Check if the log event signature is in the list of signatures
@@ -87,10 +88,11 @@ func (ei *EventHeuristic) Assess(td core.TransitData) (*core.Activation, bool, e
 	}
 
 	if !activated {
-		return nil, false, nil
+		return heuristic.NoActivations(), nil
 	}
 
-	return &core.Activation{
-		Message: fmt.Sprintf(eventReportMsg, ei.cfg.ContractName, log.Address, log.TxHash.Hex(), sigHit),
-	}, true, nil
+	return heuristic.NewActivationSet().Add(&heuristic.Activation{
+		TimeStamp: time.Now(),
+		Message:   fmt.Sprintf(eventReportMsg, ei.cfg.ContractName, log.Address, log.TxHash.Hex(), sigHit),
+	}), nil
 }

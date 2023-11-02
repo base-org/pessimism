@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/base-org/pessimism/internal/client"
-	pess_common "github.com/base-org/pessimism/internal/common"
+	"github.com/base-org/pessimism/internal/common/math"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/logging"
@@ -107,7 +107,7 @@ func (oracle *AddressBalanceODef) ReadRoutine(ctx context.Context, componentChan
 				// Convert wei to ether
 				// NOTE - There is a possibility of precision loss here
 				// TODO (#58) : Verify precision loss
-				ethBalance, _ := pess_common.WeiToEther(weiBalance).Float64()
+				ethBalance, _ := math.WeiToEther(weiBalance).Float64()
 
 				// Send parsed float64 balance value to downstream component channel
 				componentChan <- core.NewTransitData(core.AccountBalance, ethBalance,

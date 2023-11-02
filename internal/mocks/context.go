@@ -1,7 +1,7 @@
 package mocks
 
 import (
-	context "context"
+	"context"
 
 	client "github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
@@ -10,20 +10,24 @@ import (
 )
 
 type MockSuite struct {
-	Ctrl   *gomock.Controller
-	Bundle *client.Bundle
-	MockL1 *MockEthClient
-	MockL2 *MockEthClient
-	SS     state.Store
+	Ctrl        *gomock.Controller
+	Bundle      *client.Bundle
+	MockIndexer *MockIxClient
+	MockL1      *MockEthClient
+	MockL2      *MockEthClient
+	SS          state.Store
 }
 
 // Context ... Creates a context with mocked clients
 func Context(ctx context.Context, ctrl *gomock.Controller) (context.Context, *MockSuite) {
 	// 1. Construct mocked bundle
 	mockedClient := NewMockEthClient(ctrl)
+	mockedIndexer := NewMockIxClient(ctrl)
+
 	ss := state.NewMemState()
 
 	bundle := &client.Bundle{
+		IxClient: mockedIndexer,
 		L1Client: mockedClient,
 		L2Client: mockedClient,
 	}
@@ -34,11 +38,12 @@ func Context(ctx context.Context, ctrl *gomock.Controller) (context.Context, *Mo
 
 	// 3. Generate mock suite
 	mockSuite := &MockSuite{
-		Ctrl:   ctrl,
-		Bundle: bundle,
-		MockL1: mockedClient,
-		MockL2: mockedClient,
-		SS:     ss,
+		Ctrl:        ctrl,
+		Bundle:      bundle,
+		MockIndexer: mockedIndexer,
+		MockL1:      mockedClient,
+		MockL2:      mockedClient,
+		SS:          ss,
 	}
 
 	return ctx, mockSuite
