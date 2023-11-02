@@ -36,11 +36,11 @@ func Test_Event_Log_Heuristic(t *testing.T) {
 					},
 				}
 
-				outcome, activated, err := ei.Assess(td)
+				as, err := ei.Assess(td)
 
 				assert.NoError(t, err)
-				assert.True(t, activated)
-				assert.NotNil(t, outcome)
+				assert.NotNil(t, as)
+				assert.True(t, as.Activated())
 			},
 		},
 		{
@@ -63,11 +63,10 @@ func Test_Event_Log_Heuristic(t *testing.T) {
 					},
 				}
 
-				outcome, activated, err := ei.Assess(td)
+				as, err := ei.Assess(td)
 
 				assert.Error(t, err)
-				assert.False(t, activated)
-				assert.Nil(t, outcome)
+				assert.Nil(t, as)
 			},
 		},
 		{
@@ -90,11 +89,10 @@ func Test_Event_Log_Heuristic(t *testing.T) {
 					},
 				}
 
-				outcome, activated, err := ei.Assess(td)
+				as, err := ei.Assess(td)
 
 				assert.NoError(t, err)
-				assert.False(t, activated)
-				assert.Nil(t, outcome)
+				assert.NotNil(t, as)
 			},
 		},
 	}

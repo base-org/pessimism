@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// PagerDutySeverity represents the severity of an event
+// PagerDutySeverity ... represents the severity of an event
 type PagerDutySeverity string
 
 const (
@@ -64,6 +64,26 @@ func (s Severity) String() string {
 
 	default:
 		return UnknownType
+	}
+}
+
+// Symbol ... Converts a severity to a symbol
+func (s Severity) Symbol() string {
+	switch s {
+	case LOW:
+		return ":warning:"
+
+	case MEDIUM:
+		return ":warning:"
+
+	case HIGH:
+		return ":rotating_light:"
+
+	case UNKNOWN:
+		return ":question:"
+
+	default:
+		return ":question:"
 	}
 }
 

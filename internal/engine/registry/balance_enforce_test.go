@@ -27,9 +27,9 @@ func Test_Balance_Assess(t *testing.T) {
 		Value: float64(3),
 	}
 
-	_, activated, err := bi.Assess(testData1)
+	as, err := bi.Assess(testData1)
 	assert.NoError(t, err)
-	assert.False(t, activated)
+	assert.False(t, as.Activated())
 
 	// Upper bound activation
 	testData2 := core.TransitData{
@@ -37,9 +37,9 @@ func Test_Balance_Assess(t *testing.T) {
 		Value: float64(6),
 	}
 
-	_, activated, err = bi.Assess(testData2)
+	as, err = bi.Assess(testData2)
 	assert.NoError(t, err)
-	assert.True(t, activated)
+	assert.True(t, as.Activated())
 
 	// Lower bound activation
 	testData3 := core.TransitData{
@@ -47,7 +47,7 @@ func Test_Balance_Assess(t *testing.T) {
 		Value: float64(0.1),
 	}
 
-	_, activated, err = bi.Assess(testData3)
+	as, err = bi.Assess(testData3)
 	assert.NoError(t, err)
-	assert.True(t, activated)
+	assert.True(t, as.Activated())
 }

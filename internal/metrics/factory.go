@@ -12,6 +12,7 @@ const (
 	CounterType   = "counter"
 )
 
+// Factory ... Interface for creating prometheus metrics
 type Factory interface {
 	NewCounter(opts prometheus.CounterOpts) prometheus.Counter
 	NewCounterVec(opts prometheus.CounterOpts, labelNames []string) *prometheus.CounterVec
@@ -24,6 +25,7 @@ type Factory interface {
 	Document() []DocumentedMetric
 }
 
+// DocumentedMetric ... Struct for documenting metrics
 type DocumentedMetric struct {
 	Type   string   `json:"type"`
 	Name   string   `json:"name"`
@@ -31,6 +33,7 @@ type DocumentedMetric struct {
 	Labels []string `json:"labels"`
 }
 
+// documentor ... Factory implementation that documents metrics
 type documentor struct {
 	metrics []DocumentedMetric
 	factory promauto.Factory

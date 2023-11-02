@@ -287,5 +287,10 @@ func (em *etlManager) GetPipelineHeight(id core.PUUID) (*big.Int, error) {
 		return nil, err
 	}
 
-	return pipeline.BlockHeight()
+	height, err := pipeline.BlockHeight()
+	if err != nil {
+		return nil, err
+	}
+
+	return height, nil
 }

@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -18,14 +19,17 @@ import (
 	"github.com/base-org/pessimism/internal/logging"
 )
 
+const (
+	msgOK = "ok"
+)
+
 type SlackClient interface {
 	AlertClient
 }
 
 type SlackConfig struct {
-	Channel  string
-	URL      string
-	Priority string
+	Channel string
+	URL     string
 }
 
 // slackClient ... Slack client
@@ -82,7 +86,7 @@ type SlackAPIResponse struct {
 // ToAlertResponse ... Converts a slack API response to an alert API response
 func (a *SlackAPIResponse) ToAlertResponse() *AlertAPIResponse {
 	status := core.SuccessStatus
-	if a.Message != "ok" {
+	if a.Message != msgOK {
 		status = core.FailureStatus
 	}
 
@@ -120,15 +124,29 @@ func (sc slackClient) PostEvent(ctx context.Context, event *AlertEventTrigger) (
 		}
 	}()
 
-	// 3. read and unmarshal response
+	// 3.a. read and validate response
 	bytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
+	// 3.b. validate status code
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("slack API returned bad status code %d", resp.StatusCode)
+	}
+
+	// 3.c. validate response body
+	if string(bytes) == msgOK {
+		return &AlertAPIResponse{
+			Status:  core.SuccessStatus,
+			Message: msgOK,
+		}, nil
+	}
+
+	// 4 convert response to alert response
 	var apiResp *SlackAPIResponse
-	if err := json.Unmarshal(bytes, &apiResp); err != nil {
-		return nil, err
+	if err = json.Unmarshal(bytes, &apiResp); err != nil {
+		return nil, fmt.Errorf("could not unmarshal slack response: %w", err)
 	}
 
 	return apiResp.ToAlertResponse(), nil

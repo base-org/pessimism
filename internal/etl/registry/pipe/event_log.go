@@ -9,6 +9,7 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/state"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -155,11 +156,19 @@ func (ed *EventDefinition) Transform(ctx context.Context, td core.TransitData) (
 	// and add a data input to the DLQ if it fails for reprocessing next block
 	tds2, err := ed.transformFunc(ctx, td)
 	if err != nil {
-		err2 := ed.dlq.Add(&td)
-		if err2 != nil {
-			logging.WithContext(ctx).Error(err2.Error())
+		if ed.dlq.Full() {
+			// NOTE ... If the DLQ is full, then we pop the oldest entry
+			// to make room for the new entry
+			lostVal, _ := ed.dlq.Pop()
+			logger.Warn("DLQ is full, popping oldest entry",
+				zap.String(logging.PUUIDKey, ed.pUUID.String()),
+				zap.Any("lost_value", lostVal))
+
+			metrics.WithContext(ctx).
+				IncMissedBlock(ed.pUUID)
 		}
 
+		_ = ed.dlq.Add(&td)
 		logging.WithContext(ctx).Error("Failed to process block data",
 			zap.Int("dlq_size", ed.dlq.Size()))
 

@@ -71,10 +71,10 @@ func (graph *cGraph) GetComponent(cUIID core.CUUID) (component.Component, error)
 /*
 NOTE - There is no check to ensure that a cyclic edge is being added, meaning
 	a caller could create an edge between B->A assuming edge A->B already exists.
-	This would contradict the acyclic assumption of a DAG but is fortunatetly
-	cirumnavigated since all components declare entrypoint register dependencies,
+	This would contradict the acyclic assumption of a DAG but is fortunately
+	circumnavigated since all components declare entrypoint register dependencies,
 	meaning that component could only be susceptible to bipartite connectivity
-	in the circumstance where a component declares inversal input->output of an
+	in the circumstance where a component declares inverse input->output of an
 	existing component.
 */
 

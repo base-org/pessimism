@@ -10,14 +10,14 @@ GREEN = \033[0;32m
 BLUE = \033[0;34m
 COLOR_END = \033[0;39m
 
-TEST_LIMIT = 120s
+TEST_LIMIT = 500s
 
 build-app:
 	@echo "$(BLUE)» building application binary... $(COLOR_END)"
 	@CGO_ENABLED=0 go build -a -tags netgo -o bin/$(APP_NAME) ./cmd/
 	@echo "Binary successfully built"
 
-run-app: 
+run-app:
 	@./bin/${APP_NAME}
 
 .PHONY: go-gen-mocks

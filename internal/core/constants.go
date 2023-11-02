@@ -89,8 +89,8 @@ type HeuristicType uint8
 const (
 	BalanceEnforcement HeuristicType = iota + 1
 	ContractEvent
-	WithdrawalEnforcement
 	FaultDetector
+	WithdrawalSafety
 )
 
 // String ... Converts a heuristic type to a string
@@ -102,11 +102,11 @@ func (it HeuristicType) String() string {
 	case ContractEvent:
 		return "contract_event"
 
-	case WithdrawalEnforcement:
-		return "withdrawal_enforcement"
-
 	case FaultDetector:
 		return "fault_detector"
+
+	case WithdrawalSafety:
+		return "withdrawal_safety"
 
 	default:
 		return "unknown"
@@ -122,11 +122,11 @@ func StringToHeuristicType(stringType string) HeuristicType {
 	case "contract_event":
 		return ContractEvent
 
-	case "withdrawal_enforcement":
-		return WithdrawalEnforcement
-
 	case "fault_detector":
 		return FaultDetector
+
+	case "withdrawal_safety":
+		return WithdrawalSafety
 
 	default:
 		return HeuristicType(0)
