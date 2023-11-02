@@ -20,6 +20,7 @@ cd optimism-${VERSION}
     ## (4.a) Generate devnet allocations and persist them all into .devnet folder
     echo "Initializing monorepo..." &&
     git submodule update --init --recursive &&
+    make install-geth &&
     make devnet-allocs &&
     mv .devnet ../.devnet &&
     mv packages/contracts-bedrock/deploy-config/devnetL1.json ../.devnet/devnetL1.json
