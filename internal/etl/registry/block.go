@@ -19,7 +19,7 @@ const (
 	notFoundMsg = "not found"
 )
 
-type BlockTraversal struct {
+type HeaderTraversal struct {
 	n     core.Network
 	cUUID core.CUUID
 	pUUID core.PUUID
@@ -31,7 +31,7 @@ type BlockTraversal struct {
 	stats metrics.Metricer
 }
 
-func NewBlockTraversal(ctx context.Context, cfg *core.ClientConfig,
+func NewHeaderTraversal(ctx context.Context, cfg *core.ClientConfig,
 	opts ...component.Option) (component.Component, error) {
 	clients, err := client.FromContext(ctx)
 	if err != nil {
@@ -56,7 +56,7 @@ func NewBlockTraversal(ctx context.Context, cfg *core.ClientConfig,
 	// TODO - Support network confirmation counts
 	ht := ix_node.NewHeaderTraversal(node, startHeader, big.NewInt(0))
 
-	bt := &BlockTraversal{
+	bt := &HeaderTraversal{
 		n:            cfg.Network,
 		client:       node,
 		traversal:    ht,
@@ -73,11 +73,11 @@ func NewBlockTraversal(ctx context.Context, cfg *core.ClientConfig,
 	return reader, nil
 }
 
-func (bt *BlockTraversal) Height() (*big.Int, error) {
+func (bt *HeaderTraversal) Height() (*big.Int, error) {
 	return bt.traversal.LastHeader().Number, nil
 }
 
-func (bt *BlockTraversal) Backfill(start, end *big.Int, consumer chan core.TransitData) error {
+func (bt *HeaderTraversal) Backfill(start, end *big.Int, consumer chan core.TransitData) error {
 	for i := start; i.Cmp(end) < 0; i.Add(i, big.NewInt(batchSize)) {
 		end := big.NewInt(0).Add(i, big.NewInt(batchSize))
 
@@ -99,7 +99,7 @@ func (bt *BlockTraversal) Backfill(start, end *big.Int, consumer chan core.Trans
 }
 
 // Loop ...
-func (bt *BlockTraversal) Loop(ctx context.Context, consumer chan core.TransitData) error {
+func (bt *HeaderTraversal) Loop(ctx context.Context, consumer chan core.TransitData) error {
 	ticker := time.NewTicker(1 * time.Second)
 
 	recent, err := bt.client.BlockHeaderByNumber(nil)

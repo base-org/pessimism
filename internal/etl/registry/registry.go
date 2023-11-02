@@ -29,7 +29,7 @@ func NewRegistry() Registry {
 			Addressing:    false,
 			DataType:      core.BlockHeader,
 			ComponentType: core.Reader,
-			Constructor:   NewBlockTraversal,
+			Constructor:   NewHeaderTraversal,
 
 			Dependencies: noDeps(),
 			Sk:           noState(),
