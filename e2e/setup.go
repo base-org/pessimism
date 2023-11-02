@@ -43,7 +43,7 @@ type SysTestSuite struct {
 	// Mocked services
 	TestSlackSvr        *TestSlackServer
 	TestPagerDutyServer *TestPagerDutyServer
-	TestIndexerClient   *mocks.MockIndexerClient
+	TestIxClient        *mocks.MockIxClient
 
 	// Clients
 	L1Client *ethclient.Client
@@ -163,7 +163,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	ss := state.NewMemState()
 
 	ctrl := gomock.NewController(t)
-	ixClient := mocks.NewMockIndexerClient(ctrl)
+	ixClient := mocks.NewMockIxClient(ctrl)
 
 	bundle := &client.Bundle{
 		L1Client: sys.Clients["l1"],
@@ -218,7 +218,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 		TestPagerDutyServer: pagerdutyServer,
 		L1Client:            sys.Clients["l1"],
 		L2Client:            sys.Clients["sequencer"],
-		TestIndexerClient:   ixClient,
+		TestIxClient:        ixClient,
 	}
 }
 

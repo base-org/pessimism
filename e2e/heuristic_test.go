@@ -271,7 +271,7 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 	require.NoError(t, err)
 
 	// Mock the indexer call to return a really high withdrawal amount
-	ts.TestIndexerClient.EXPECT().GetAllWithdrawalsByAddress(gomock.Any()).Return([]api_mods.WithdrawalItem{
+	ts.TestIxClient.EXPECT().GetAllWithdrawalsByAddress(gomock.Any()).Return([]api_mods.WithdrawalItem{
 		{
 			TransactionHash: "0x000",
 			Amount:          big.NewInt(math.MaxInt64).String(),
@@ -305,7 +305,7 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 
 	// TODO(#178) - Feat - Support WithdrawalProven processing in withdrawal_safety heuristic
 	// Mock the indexer call to return a really low withdrawal amount
-	// ts.TestIndexerClient.EXPECT().GetAllWithdrawalsByAddress(gomock.Any()).Return([]api_mods.WithdrawalItem{
+	// ts.TestIxClient.EXPECT().GetAllWithdrawalsByAddress(gomock.Any()).Return([]api_mods.WithdrawalItem{
 	// 	{
 	// 		TransactionHash: "0x123",
 	// 		Amount:          "1",
@@ -392,7 +392,7 @@ func TestWithdrawalSafetyNoInvariants(t *testing.T) {
 	require.NoError(t, err)
 
 	// Mock the indexer call to return the WEI value of the withdrawal
-	ts.TestIndexerClient.EXPECT().GetAllWithdrawalsByAddress(gomock.Any()).Return([]api_mods.WithdrawalItem{
+	ts.TestIxClient.EXPECT().GetAllWithdrawalsByAddress(gomock.Any()).Return([]api_mods.WithdrawalItem{
 		{
 			TransactionHash: withdrawReceipt.TxHash.String(),
 			Amount:          l2Opts.Value.String(),
