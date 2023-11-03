@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/base-org/pessimism/internal/common/math"
+
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/logging"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"go.uber.org/zap"
 )
@@ -71,12 +74,12 @@ func (bi *BalanceHeuristic) Assess(td core.TransitData) (*heuristic.ActivationSe
 	}
 
 	// See if a tx changed the balance for the address
-	balance, err := client.BalanceAt(context.Background(), td.Address, header.Number)
+	balance, err := client.BalanceAt(bi.ctx, common.HexToAddress(bi.cfg.Address), header.Number)
 	if err != nil {
 		return nil, err
 	}
 
-	ethBalance := float64(balance.Int64()) / 1000000000000000000
+	ethBalance, _ := math.WeiToEther(balance).Float64()
 
 	activated := false
 

@@ -96,7 +96,7 @@ func (hce *hardCodedEngine) EventLoop(ctx context.Context) {
 		case execInput := <-hce.heuristicIn: // Heuristic input received
 			logger.Debug("Heuristic input received",
 				zap.String(logging.SUUIDKey, execInput.h.SUUID().String()))
-			// (1) Execute heuristic with retry strategy
+
 			start := time.Now()
 
 			var actSet *heuristic.ActivationSet
@@ -105,7 +105,6 @@ func (hce *hardCodedEngine) EventLoop(ctx context.Context) {
 			if _, err := retry.Do[any](ctx, 10, retryStrategy, func() (any, error) {
 				actSet = hce.Execute(ctx, execInput.hi.Input, execInput.h)
 				metrics.WithContext(ctx).RecordHeuristicRun(execInput.h)
-				metrics.WithContext(ctx).RecordInvExecutionTime(execInput.h, float64(time.Since(start).Nanoseconds()))
 				// a-ok!
 				return 0, nil
 			}); err != nil {
@@ -113,7 +112,7 @@ func (hce *hardCodedEngine) EventLoop(ctx context.Context) {
 				metrics.WithContext(ctx).RecordAssessmentError(execInput.h)
 			}
 
-			// (2) Send alerts for respective activations
+			metrics.WithContext(ctx).RecordInvExecutionTime(execInput.h, float64(time.Since(start).Nanoseconds()))
 			if actSet.Activated() {
 				for _, act := range actSet.Entries() {
 					alert := core.Alert{

@@ -8,9 +8,11 @@ import (
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/etl/component"
+	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	ix_node "github.com/ethereum-optimism/optimism/indexer/node"
 	"github.com/ethereum/go-ethereum/core/types"
+	"go.uber.org/zap"
 )
 
 const (
@@ -54,34 +56,33 @@ func NewHeaderTraversal(ctx context.Context, cfg *core.ClientConfig,
 	}
 
 	// TODO - Support network confirmation counts
-	ht := ix_node.NewHeaderTraversal(node, startHeader, big.NewInt(0))
 
-	bt := &HeaderTraversal{
+	ht := &HeaderTraversal{
 		n:            cfg.Network,
 		client:       node,
-		traversal:    ht,
+		traversal:    ix_node.NewHeaderTraversal(node, startHeader, big.NewInt(0)),
 		pollInterval: time.Duration(cfg.PollInterval) * time.Millisecond,
 	}
 
-	reader, err := component.NewReader(ctx, core.BlockHeader, bt, opts...)
+	reader, err := component.NewReader(ctx, core.BlockHeader, ht, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	bt.cUUID = reader.UUID()
-	bt.pUUID = reader.PUUID()
+	ht.cUUID = reader.UUID()
+	ht.pUUID = reader.PUUID()
 	return reader, nil
 }
 
-func (bt *HeaderTraversal) Height() (*big.Int, error) {
-	return bt.traversal.LastHeader().Number, nil
+func (ht *HeaderTraversal) Height() (*big.Int, error) {
+	return ht.traversal.LastHeader().Number, nil
 }
 
-func (bt *HeaderTraversal) Backfill(start, end *big.Int, consumer chan core.TransitData) error {
+func (ht *HeaderTraversal) Backfill(start, end *big.Int, consumer chan core.TransitData) error {
 	for i := start; i.Cmp(end) < 0; i.Add(i, big.NewInt(batchSize)) {
 		end := big.NewInt(0).Add(i, big.NewInt(batchSize))
 
-		headers, err := bt.client.BlockHeadersByRange(i, end)
+		headers, err := ht.client.BlockHeadersByRange(i, end)
 		if err != nil {
 			return err
 		}
@@ -99,40 +100,40 @@ func (bt *HeaderTraversal) Backfill(start, end *big.Int, consumer chan core.Tran
 }
 
 // Loop ...
-func (bt *HeaderTraversal) Loop(ctx context.Context, consumer chan core.TransitData) error {
+func (ht *HeaderTraversal) Loop(ctx context.Context, consumer chan core.TransitData) error {
 	ticker := time.NewTicker(1 * time.Second)
 
-	recent, err := bt.client.BlockHeaderByNumber(nil)
+	recent, err := ht.client.BlockHeaderByNumber(nil)
 	if err != nil {
-		return err
+		logging.NoContext().Error("Failed to get latest header", zap.Error(err))
 	}
 
 	// backfill if provided starting header
-	if bt.traversal.LastHeader() != nil {
+	if ht.traversal.LastHeader() != nil {
 
-		bt.Backfill(bt.traversal.LastHeader().Number, recent.Number, consumer)
+		ht.Backfill(ht.traversal.LastHeader().Number, recent.Number, consumer)
 	} else {
-		bt.traversal = ix_node.NewHeaderTraversal(bt.client, recent, big.NewInt(0))
+		ht.traversal = ix_node.NewHeaderTraversal(ht.client, recent, big.NewInt(0))
 	}
 
 	for {
 		select {
 		case <-ticker.C:
 
-			header, err := bt.client.BlockHeaderByNumber(nil)
+			header, err := ht.client.BlockHeaderByNumber(nil)
 			if err != nil {
 				return err
 			}
 
-			if header.Number.Cmp(bt.traversal.LastHeader().Number) > 0 {
-				headers, err := bt.traversal.NextFinalizedHeaders(batchSize)
+			if header.Number.Cmp(ht.traversal.LastHeader().Number) > 0 {
+				headers, err := ht.traversal.NextFinalizedHeaders(batchSize)
 				if err != nil {
 					return err
 				}
 
 				for _, header := range headers {
 					consumer <- core.TransitData{
-						Network:   bt.n,
+						Network:   ht.n,
 						Timestamp: time.Now(),
 						Type:      core.BlockHeader,
 						Value:     header,
@@ -144,5 +145,4 @@ func (bt *HeaderTraversal) Loop(ctx context.Context, consumer chan core.TransitD
 			return nil
 		}
 	}
-
 }

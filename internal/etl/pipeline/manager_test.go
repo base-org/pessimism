@@ -67,7 +67,9 @@ func Test_Manager(t *testing.T) {
 				reg := registry.NewRegistry()
 				ctrl := gomock.NewController(t)
 
-				ctx, _ := mocks.Context(context.Background(), ctrl)
+				ctx, ms := mocks.Context(context.Background(), ctrl)
+
+				ms.MockL1Node.EXPECT().BlockHeaderByNumber(gomock.Any()).Return(nil, fmt.Errorf("keep going")).AnyTimes()
 
 				ctx = context.WithValue(ctx, core.State, state.NewMemState())
 

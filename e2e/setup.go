@@ -17,9 +17,9 @@ import (
 	"github.com/base-org/pessimism/internal/metrics"
 	"github.com/base-org/pessimism/internal/mocks"
 	"github.com/base-org/pessimism/internal/state"
-	"github.com/golang/mock/gomock"
-
 	"github.com/base-org/pessimism/internal/subsystem"
+	ix_node "github.com/ethereum-optimism/optimism/indexer/node"
+	"github.com/golang/mock/gomock"
 
 	op_e2e "github.com/ethereum-optimism/optimism/op-e2e"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -65,73 +65,6 @@ type L2TestSuite struct {
 	TestPagerDutyServer *TestPagerDutyServer
 }
 
-// CreateSysTestSuite ... Creates a new L2Geth test suite
-func CreateL2TestSuite(t *testing.T) *L2TestSuite {
-	ctx := context.Background()
-	nodeCfg := op_e2e.DefaultSystemConfig(t)
-	logging.New(core.Development)
-
-	node, err := op_e2e.NewOpGeth(t, ctx, &nodeCfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(os.Getenv("ENABLE_ROLLUP_LOGS")) == 0 {
-		t.Log("set env 'ENABLE_ROLLUP_LOGS' to show rollup logs")
-		for name, logger := range nodeCfg.Loggers {
-			t.Logf("discarding logs for %s", name)
-			logger.SetHandler(log.DiscardHandler())
-		}
-	}
-
-	ss := state.NewMemState()
-
-	bundle := &client.Bundle{
-		L1Client: node.L2Client,
-		L2Client: node.L2Client,
-	}
-	ctx = app.InitializeContext(ctx, ss, bundle)
-
-	appCfg := DefaultTestConfig()
-
-	slackServer := NewTestSlackServer("127.0.0.1", 0)
-
-	pagerdutyServer := NewTestPagerDutyServer("127.0.0.1", 0)
-
-	slackURL := fmt.Sprintf("http://127.0.0.1:%d", slackServer.Port)
-	pagerdutyURL := fmt.Sprintf("http://127.0.0.1:%d", pagerdutyServer.Port)
-
-	appCfg.AlertConfig.PagerdutyAlertEventsURL = pagerdutyURL
-	appCfg.AlertConfig.RoutingParams = DefaultRoutingParams(core.StringFromEnv(slackURL))
-
-	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if err := pess.Start(); err != nil {
-		t.Fatal(err)
-	}
-
-	go pess.ListenForShutdown(kill)
-
-	return &L2TestSuite{
-		t:      t,
-		L2Geth: node,
-		L2Cfg:  &nodeCfg,
-		App:    pess,
-		Close: func() {
-			kill()
-			node.Close()
-			slackServer.Close()
-			pagerdutyServer.Close()
-		},
-		AppCfg:              appCfg,
-		TestSlackSvr:        slackServer,
-		TestPagerDutyServer: pagerdutyServer,
-	}
-}
-
 // CreateSysTestSuite ... Creates a new SysTestSuite
 func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	t.Log("Creating system test suite")
@@ -165,7 +98,19 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	ctrl := gomock.NewController(t)
 	ixClient := mocks.NewMockIxClient(ctrl)
 
+	l2NodeClient, err := ix_node.DialEthClient(sys.EthInstances["sequencer"].HTTPEndpoint(), metrics.NoopMetrics)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	l1NodeClient, err := ix_node.DialEthClient(sys.EthInstances["l1"].HTTPEndpoint(), metrics.NoopMetrics)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	bundle := &client.Bundle{
+		L1Node:   l1NodeClient,
+		L2Node:   l2NodeClient,
 		L1Client: sys.Clients["l1"],
 		L2Client: sys.Clients["sequencer"],
 		L2Geth:   gethClient,

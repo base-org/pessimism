@@ -71,7 +71,7 @@ func TestEventLogPipe(t *testing.T) {
 				suite.mockSuite.MockL1.EXPECT().FilterLogs(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("unknown block"))
 
 				_, err := suite.def.Transform(suite.ctx, core.TransitData{
-					Value: *types.NewBlockWithHeader(&types.Header{})})
+					Value: types.Header{}})
 				assert.Error(t, err)
 			},
 		},
@@ -86,7 +86,7 @@ func TestEventLogPipe(t *testing.T) {
 				suite.mockSuite.MockL1.EXPECT().FilterLogs(gomock.Any(), gomock.Any()).Return(nil, nil)
 
 				tds, err := suite.def.Transform(suite.ctx, core.TransitData{
-					Value: *types.NewBlockWithHeader(&types.Header{}),
+					Value: types.Header{},
 				})
 				assert.NoError(t, err)
 				assert.Empty(t, tds)
@@ -106,7 +106,7 @@ func TestEventLogPipe(t *testing.T) {
 					Return(nil, fmt.Errorf("unknown block"))
 
 				tds, err := suite.def.Transform(suite.ctx, core.TransitData{
-					Value: *types.NewBlockWithHeader(&types.Header{}),
+					Value: types.Header{},
 				})
 				assert.Error(t, err)
 				assert.Empty(t, tds)
@@ -129,7 +129,7 @@ func TestEventLogPipe(t *testing.T) {
 					Return([]types.Log{log2}, nil)
 
 				tds, err = suite.def.Transform(suite.ctx, core.TransitData{
-					Value: *types.NewBlockWithHeader(&types.Header{}),
+					Value: types.Header{},
 				})
 
 				assert.NoError(t, err)

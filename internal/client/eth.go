@@ -1,4 +1,4 @@
-//go:generate mockgen -package mocks --destination ../mocks/eth_client.go . EthClient
+//go:generate mockgen -package mocks --destination ../mocks/eth_client.go . EthClient,NodeClient
 
 package client
 
@@ -27,12 +27,23 @@ type EthClient interface {
 		ch chan<- types.Log) (ethereum.Subscription, error)
 }
 
+type NodeClient interface {
+	BlockHeaderByNumber(*big.Int) (*types.Header, error)
+	BlockHeaderByHash(common.Hash) (*types.Header, error)
+	BlockHeadersByRange(*big.Int, *big.Int) ([]types.Header, error)
+
+	TxByHash(common.Hash) (*types.Transaction, error)
+
+	StorageHash(common.Address, *big.Int) (common.Hash, error)
+	FilterLogs(ethereum.FilterQuery) ([]types.Log, error)
+}
+
 // NewEthClient ... Initializer
 func NewEthClient(ctx context.Context, rawURL string) (EthClient, error) {
 	return ethclient.DialContext(ctx, rawURL)
 }
 
-func NewNodeClient(ctx context.Context, rpcURL string) (ix_node.EthClient, error) {
+func NewNodeClient(ctx context.Context, rpcURL string) (NodeClient, error) {
 	stats := metrics.WithContext(ctx)
 
 	return ix_node.DialEthClient(rpcURL, stats)
