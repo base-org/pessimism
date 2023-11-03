@@ -5,7 +5,7 @@ VERSION=$(cat go.mod | grep ethereum-optimism/optimism | awk '{print $2}' | sed 
 REPO_NAME=optimism-$(echo ${VERSION} | sed 's/v//g')
 
 echo "Downloading ${REPO_NAME} ..."
-wget https://github.com/ethereum-optimism/optimism/archive/refs/tags/${VERSION}.zip
+git clone https://github.com/ethereum-optimism/optimism.git ${REPO_NAME}
 
 ## (2) Unzip and enter the monorepo
 echo "Unzipping..."
@@ -15,22 +15,20 @@ rm -rf ${VERSION}.zip
 ## (3) Get version string without first 'v'
 VERSION=$(echo ${VERSION} | sed 's/v//g')
 echo "Version: ${VERSION}"
-cd optimism-${VERSION}
+cd ${REPO_NAME}
+git checkout ${VERSION}
 
 ## (4) Install monorepo dependencies
-## (4.a) Generate devnet allocations and persist them all into .devnet folder
 echo "Initializing monorepo..."
-git submodule init &&
-git submodule update &&
-git submodule foreach 'git fetch origin; git checkout $(git rev-parse --abbrev-ref HEAD); git reset --hard origin/$(git rev-parse --abbrev-ref HEAD); git submodule update --recursive; git clean -dfx' &&
 make install-geth &&
+git submodule update --init --recursive &&
 make devnet-allocs &&
 mv .devnet ../.devnet &&
 mv packages/contracts-bedrock/deploy-config/devnetL1.json ../.devnet/devnetL1.json
 
 STATUS=$?
 
-## (4.b) Force cleanup of monorepo 
+## (5) Force cleanup of monorepo 
 echo "${STATUS} Cleaning up ${REPO_NAME} repo ..." &&
 cd ../ &&
 rm -rf ${REPO_NAME}
