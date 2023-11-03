@@ -15,7 +15,10 @@ import (
 	"github.com/base-org/pessimism/internal/engine"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
+	"github.com/base-org/pessimism/internal/mocks"
 	"github.com/base-org/pessimism/internal/state"
+	"github.com/golang/mock/gomock"
+
 	"github.com/base-org/pessimism/internal/subsystem"
 
 	op_e2e "github.com/ethereum-optimism/optimism/op-e2e"
@@ -37,9 +40,10 @@ type SysTestSuite struct {
 	Subsystems *subsystem.Manager
 	Close      func()
 
-	// Mock servers
+	// Mocked services
 	TestSlackSvr        *TestSlackServer
 	TestPagerDutyServer *TestPagerDutyServer
+	TestIxClient        *mocks.MockIxClient
 
 	// Clients
 	L1Client *ethclient.Client
@@ -158,10 +162,14 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 
 	ss := state.NewMemState()
 
+	ctrl := gomock.NewController(t)
+	ixClient := mocks.NewMockIxClient(ctrl)
+
 	bundle := &client.Bundle{
 		L1Client: sys.Clients["l1"],
 		L2Client: sys.Clients["sequencer"],
 		L2Geth:   gethClient,
+		IxClient: ixClient,
 	}
 
 	ctx = app.InitializeContext(ctx, ss, bundle)
@@ -198,6 +206,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 		Cfg: &cfg,
 		App: pess,
 		Close: func() {
+			ctrl.Finish()
 			kill()
 			sys.Close()
 			slackServer.Close()
@@ -209,6 +218,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 		TestPagerDutyServer: pagerdutyServer,
 		L1Client:            sys.Clients["l1"],
 		L2Client:            sys.Clients["sequencer"],
+		TestIxClient:        ixClient,
 	}
 }
 

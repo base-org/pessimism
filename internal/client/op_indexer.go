@@ -1,4 +1,4 @@
-//go:generate mockgen -package mocks --destination ../mocks/indexer_client.go . IndexerClient
+//go:generate mockgen -package mocks --destination ../mocks/indexer_client.go . IxClient
 
 package client
 
@@ -8,11 +8,11 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-type IndexerClient interface {
+type IxClient interface {
 	GetAllWithdrawalsByAddress(common.Address) ([]models.WithdrawalItem, error)
 }
 
 // NewIndexerClient ... Construct a new indexer client
-func NewIndexerClient(cfg *client.Config, opts ...client.Option) (IndexerClient, error) {
+func NewIndexerClient(cfg *client.Config, opts ...client.Option) (IxClient, error) {
 	return client.NewClient(cfg, opts...)
 }

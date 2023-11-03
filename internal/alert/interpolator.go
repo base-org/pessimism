@@ -16,19 +16,17 @@ const (
 
 	// slackMsgFmt ... Slack message format
 	SlackMsgFmt = `
-	⚠️🚨%s Severity Pessimism Alert: %s 🚨⚠️
+	*%s %s*
 
-	_Heuristic activation conditions met_
-
-	_Network:_ %s
-	_Session UUID:_ %s
+	Network: %s
+	Severity: %s
+	Session UUID: %s
 
 	*Assessment Content:* 
 	%s	
 
 	*Message:*
 	%s
-
 	`
 )
 
@@ -58,9 +56,10 @@ func NewInterpolator() Interpolator {
 // InterpolateSlackMessage ... Interpolates a slack message with the given heuristic session UUID and message
 func (*interpolator) InterpolateSlackMessage(sev core.Severity, sUUID core.SUUID, content string, msg string) string {
 	return fmt.Sprintf(SlackMsgFmt,
-		cases.Title(language.English).String(sev.String()),
+		sev.Symbol(),
 		sUUID.PID.HeuristicType().String(),
 		sUUID.PID.Network(),
+		cases.Title(language.English).String(sev.String()),
 		sUUID.String(),
 		fmt.Sprintf(CodeBlockFmt, content),
 		msg)

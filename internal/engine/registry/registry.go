@@ -42,11 +42,11 @@ func NewHeuristicTable() HeuristicTable {
 			InputType:       core.EventLog,
 			Constructor:     constructFaultDetector,
 		},
-		core.WithdrawalEnforcement: {
-			PrepareValidate: WithdrawEnforcePrepare,
+		core.WithdrawalSafety: {
+			PrepareValidate: WithdrawHeuristicPrep,
 			Policy:          core.OnlyLayer1,
 			InputType:       core.EventLog,
-			Constructor:     constructWithdrawalEnforce,
+			Constructor:     constructWithdrawalSafety,
 		},
 	}
 
@@ -89,16 +89,25 @@ func constructFaultDetector(ctx context.Context, isp *core.SessionParams) (heuri
 	return NewFaultDetector(ctx, cfg)
 }
 
-// constructWithdrawalEnforce ... Constructs a withdrawal enforcement heuristic instance
-func constructWithdrawalEnforce(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
-	cfg := &WithdrawalEnforceCfg{}
+// constructWithdrawalSafety ... Constructs a large withdrawal heuristic instance
+func constructWithdrawalSafety(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
+	cfg := &WithdrawalSafetyCfg{}
 	err := cfg.Unmarshal(isp)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return NewWithdrawalEnforceInv(ctx, cfg)
+	// Validate that thresholds are on exclusive range (0, 1)
+	if cfg.Threshold >= 1 || cfg.Threshold <= 0 {
+		return nil, fmt.Errorf("invalid threshold supplied for withdrawal safety heuristic")
+	}
+
+	if cfg.CoefficientThreshold >= 1 || cfg.CoefficientThreshold <= 0 {
+		return nil, fmt.Errorf("invalid coefficient threshold supplied for withdrawal safety heuristic")
+	}
+
+	return NewWithdrawalSafetyHeuristic(ctx, cfg)
 }
 
 // ValidateEventTracking ... Ensures that an address and nested args exist in the session params
@@ -137,11 +146,11 @@ func ValidateNoTopicsExist(cfg *core.SessionParams) error {
 	return nil
 }
 
-// WithdrawEnforcePrepare ... Ensures that the l2 to l1 message passer exists
+// WithdrawHeuristicPrep ... Ensures that the l2 to l1 message passer exists
 // and performs a "hack" operation to set the address key as the l2tol1MessagePasser
 // address for upstream ETL components (ie. event log) to know which L1 address to
 // query for events
-func WithdrawEnforcePrepare(cfg *core.SessionParams) error {
+func WithdrawHeuristicPrep(cfg *core.SessionParams) error {
 	l1Portal, err := cfg.Value(core.L1Portal)
 	if err != nil {
 		return err
@@ -162,6 +171,8 @@ func WithdrawEnforcePrepare(cfg *core.SessionParams) error {
 	}
 
 	cfg.SetNestedArg(WithdrawalProvenEvent)
+	// TODO(#178) - Feat - Support WithdrawalProven processing in withdrawal_safety heuristic
+	// cfg.SetNestedArg(WithdrawalFinalEvent)
 	return nil
 }
 

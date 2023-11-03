@@ -21,12 +21,12 @@ type Config struct {
 
 // Bundle ... Used to store all client object references
 type Bundle struct {
-	IndexerClient IndexerClient
-	L1Client      EthClient
-	L1Node        ix_node.EthClient
-	L2Node        ix_node.EthClient
-	L2Client      EthClient
-	L2Geth        GethClient
+	IxClient IxClient
+	L1Client EthClient
+	L1Node   ix_node.EthClient
+	L2Node   ix_node.EthClient
+	L2Client EthClient
+	L2Geth   GethClient
 }
 
 // NewBundle ... Construct a new client bundle
@@ -63,18 +63,18 @@ func NewBundle(ctx context.Context, cfg *Config) (*Bundle, error) {
 		return nil, err
 	}
 
-	indexerClient, err := NewIndexerClient(cfg.IndexerCfg)
+	ixClient, err := NewIndexerClient(cfg.IndexerCfg)
 	if err != nil { // Indexer client is optional so we don't want to fatal
 		logger.Warn("Error creating indexer client", zap.Error(err))
 	}
 
 	return &Bundle{
-		IndexerClient: indexerClient,
-		L1Client:      l1Client,
-		L1Node:        l1NodeClient,
-		L2Client:      l2Client,
-		L2Node:        l2NodeClient,
-		L2Geth:        l2Geth,
+		L1Client: l1Client,
+		L1Node:   l1NodeClient,
+		L2Client: l2Client,
+		L2Node:   l2NodeClient,
+		IxClient: ixClient,
+		L2Geth:   l2Geth,
 	}, nil
 }
 

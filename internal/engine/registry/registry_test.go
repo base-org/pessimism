@@ -34,22 +34,22 @@ func Test_EventPreprocess(t *testing.T) {
 	assert.Nil(t, err, "no error should occur when nested args are provided")
 }
 
-func Test_WithdrawEnforcePreprocess(t *testing.T) {
+func TestUnsafeWithdrawPrepare(t *testing.T) {
 	isp := core.NewSessionParams()
 
-	err := registry.WithdrawEnforcePrepare(isp)
+	err := registry.WithdrawHeuristicPrep(isp)
 	assert.Error(t, err, "failure should occur when no l1_portal is provided")
 
 	isp.SetValue(core.L1Portal, "0x69")
-	err = registry.WithdrawEnforcePrepare(isp)
+	err = registry.WithdrawHeuristicPrep(isp)
 	assert.Error(t, err, "failure should occur when no l2tol1 passer is provided")
 
 	isp.SetValue(core.L2ToL1MessagePasser, "0x666")
-	err = registry.WithdrawEnforcePrepare(isp)
+	err = registry.WithdrawHeuristicPrep(isp)
 	assert.NoError(t, err)
 
 	isp.SetNestedArg("transfer(address,address,uint256)")
-	err = registry.WithdrawEnforcePrepare(isp)
+	err = registry.WithdrawHeuristicPrep(isp)
 	assert.Error(t, err, "failure should when nested args are provided")
 
 }

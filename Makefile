@@ -17,7 +17,7 @@ build-app:
 	@CGO_ENABLED=0 go build -a -tags netgo -o bin/$(APP_NAME) ./cmd/
 	@echo "Binary successfully built"
 
-run-app: 
+run-app:
 	@./bin/${APP_NAME}
 
 .PHONY: go-gen-mocks

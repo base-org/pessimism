@@ -71,7 +71,7 @@ func TestMultiDirectiveRouting(t *testing.T) {
 			return false, err
 		}
 
-		return height.Uint64() > receipt.BlockNumber.Uint64(), nil
+		return height != nil && height.Uint64() > receipt.BlockNumber.Uint64(), nil
 	}))
 
 	slackPosts := ts.TestSlackSvr.SlackAlerts()

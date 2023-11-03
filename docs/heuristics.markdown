@@ -74,11 +74,16 @@ curl --location --request POST 'http://localhost:8080/v0/heuristic' \
 }'
 ```
 
-## Withdrawal Enforcement
+## Withdrawal Safety
 
-**NOTE:** This heuristic requires an active RPC connection to both L1 and L2 networks.
+**NOTE:** This heuristic currently requires an active RPC connection to both L1/L2 networks as well as synced OP Indexer instance. Eventually withdrawal safety will be extended to run for `WithdrawalFinalized` and `MessagePassed` events. Using `MessagePassed` wouldn't require using an active OP Indexer instance since the event is emitted on the L2ToL1MessagePasser contract and doesn't have to be correlated from an L1 event.
 
-The hardcoded `withdrawal_enforcement` heuristic scans for active `WithdrawalProven` events on an L1Portal contract. Once an event is detected, the heuristic proceeds to scan for the corresponding `withdrawlHash` event on the L2ToL1MesagePasser contract's internal state. If the `withdrawlHash` is not found, the heuristic alerts to slack.
+The hardcoded `withdrawal_safety` heuristic runs a suite of security invariants upon detection of a withdraw event. The invariants ran are as follows:
+1. The L1 withdrawal proven hash is present in the L2ToL1MessagePasser contract's internal state
+2. The withdraw amount isn't greater than the `OptimismPortal` contract's balance
+3. The withdraw amount isn't within `x%` of the `OptimismPortal` contract's balance
+4. The withdraw message hash is a valid L2 message hash
+
 
 ### Parameters
 
@@ -97,7 +102,7 @@ curl --location --request POST 'http://localhost:8080/v0/heuristic' \
  "params": {
   "network": "layer1",
   "pipeline_type": "live",
-  "type": "withdrawal_enforcement",
+  "type": "withdrawal_safety",
   "start_height":  null,
   "alert_destination": "slack",
     "heuristic_params": {

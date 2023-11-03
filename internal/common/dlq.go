@@ -66,3 +66,8 @@ func (d *DLQ[E]) Empty() bool {
 func (d *DLQ[E]) Size() int {
 	return len(d.dlq)
 }
+
+// Full ... Checks if the DLQ is full
+func (d *DLQ[E]) Full() bool {
+	return len(d.dlq) >= d.size
+}
