@@ -100,7 +100,6 @@ func (b *Bundle) NodeClient(n core.Network) (ix_node.EthClient, error) {
 	default:
 		return nil, fmt.Errorf("invalid network supplied")
 	}
-
 }
 
 // FromNetwork ... Retrieves an eth client from the context

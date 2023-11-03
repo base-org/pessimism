@@ -50,21 +50,6 @@ type SysTestSuite struct {
 	L2Client *ethclient.Client
 }
 
-// L2TestSuite ... Stores all the information needed to run an e2e L2Geth test
-type L2TestSuite struct {
-	t *testing.T
-
-	L2Geth *op_e2e.OpGeth
-	L2Cfg  *op_e2e.SystemConfig
-
-	App    *app.Application
-	AppCfg *config.Config
-	Close  func()
-
-	TestSlackSvr        *TestSlackServer
-	TestPagerDutyServer *TestPagerDutyServer
-}
-
 // CreateSysTestSuite ... Creates a new SysTestSuite
 func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 	t.Log("Creating system test suite")

@@ -16,9 +16,8 @@ import (
 )
 
 const (
+	// This could be configurable in the future
 	batchSize = 100
-
-	notFoundMsg = "not found"
 )
 
 type HeaderTraversal struct {
@@ -61,7 +60,7 @@ func NewHeaderTraversal(ctx context.Context, cfg *core.ClientConfig,
 		n:            cfg.Network,
 		client:       node,
 		traversal:    ix_node.NewHeaderTraversal(node, startHeader, big.NewInt(0)),
-		pollInterval: time.Duration(cfg.PollInterval) * time.Millisecond,
+		pollInterval: cfg.PollInterval * time.Millisecond,
 	}
 
 	reader, err := component.NewReader(ctx, core.BlockHeader, ht, opts...)
@@ -110,8 +109,10 @@ func (ht *HeaderTraversal) Loop(ctx context.Context, consumer chan core.TransitD
 
 	// backfill if provided starting header
 	if ht.traversal.LastHeader() != nil {
-
-		ht.Backfill(ht.traversal.LastHeader().Number, recent.Number, consumer)
+		err = ht.Backfill(ht.traversal.LastHeader().Number, recent.Number, consumer)
+		if err != nil {
+			return err
+		}
 	} else {
 		ht.traversal = ix_node.NewHeaderTraversal(ht.client, recent, big.NewInt(0))
 	}

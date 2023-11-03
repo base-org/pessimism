@@ -12,7 +12,6 @@ const (
 // register enum
 func (rt RegisterType) String() string {
 	switch rt {
-
 	case BlockHeader:
 		return "block_header"
 

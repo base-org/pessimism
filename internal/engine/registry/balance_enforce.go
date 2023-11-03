@@ -31,9 +31,8 @@ func (bi *BalanceInvConfig) Unmarshal(isp *core.SessionParams) error {
 
 // BalanceHeuristic ...
 type BalanceHeuristic struct {
-	ctx    context.Context
-	cfg    *BalanceInvConfig
-	client client.EthClient
+	ctx context.Context
+	cfg *BalanceInvConfig
 
 	heuristic.Heuristic
 }
@@ -50,7 +49,6 @@ const reportMsg = `
 
 // NewBalanceHeuristic ... Initializer
 func NewBalanceHeuristic(ctx context.Context, cfg *BalanceInvConfig) (heuristic.Heuristic, error) {
-
 	return &BalanceHeuristic{
 		ctx:       ctx,
 		cfg:       cfg,

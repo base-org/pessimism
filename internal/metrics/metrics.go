@@ -325,10 +325,10 @@ func (n *noopMetricer) RecordNodeError(_ core.Network)                          
 func (n *noopMetricer) RecordBlockLatency(_ core.Network, _ float64)                         {}
 func (n *noopMetricer) RecordPipelineLatency(_ core.PUUID, _ float64)                        {}
 func (n *noopMetricer) RecordAssessmentError(_ heuristic.Heuristic)                          {}
-func (n *noopMetricer) RecordRPCClientRequest(method string) func(err error) {
+func (n *noopMetricer) RecordRPCClientRequest(_ string) func(err error) {
 	return func(err error) {}
 }
-func (n *noopMetricer) RecordRPCClientBatchRequest(b []rpc.BatchElem) func(err error) {
+func (n *noopMetricer) RecordRPCClientBatchRequest(_ []rpc.BatchElem) func(err error) {
 	return func(err error) {}
 }
 

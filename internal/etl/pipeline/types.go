@@ -41,6 +41,4 @@ const (
 	emptyPipelineError = "pipeline must contain at least one component"
 	// Manager error constants
 	unknownCompType = "unknown component type %s provided"
-
-	noAggregatorErr = "aggregator component has yet to be implemented"
 )

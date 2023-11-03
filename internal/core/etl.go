@@ -16,7 +16,6 @@ func (ct ComponentType) String() string {
 
 	case Transformer:
 		return "transformer"
-
 	}
 
 	return UnknownType
