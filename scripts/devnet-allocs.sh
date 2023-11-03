@@ -23,7 +23,7 @@ echo "Initializing monorepo..."
 make install-geth &&
 git submodule update --init --recursive &&
 make devnet-allocs &&
-mv .devnet ../.devnet &&
+mv .devnet ../. &&
 mv packages/contracts-bedrock/deploy-config/devnetL1.json ../.devnet/devnetL1.json
 
 STATUS=$?
