@@ -12,7 +12,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/base-org/pessimism/internal/etl/component"
+	"github.com/base-org/pessimism/internal/etl/process"
 	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/mocks"
 )
@@ -20,7 +20,7 @@ import (
 // testSuite ... Test suite for the event log pipe
 type testSuite struct {
 	ctx       context.Context
-	def       component.PipeDefinition
+	def       process.Subscription
 	mockSuite *mocks.MockSuite
 }
 
@@ -57,8 +57,8 @@ func defConstructor(t *testing.T) *testSuite {
 	}
 }
 
-// TestEventLogPipe ... Tests the event log pipe
-func TestEventLogPipe(t *testing.T) {
+// TestLogPipe ... Tests the event log pipe
+func TestLogPipe(t *testing.T) {
 	var tests = []struct {
 		name        string
 		constructor func(t *testing.T) *testSuite
@@ -70,7 +70,7 @@ func TestEventLogPipe(t *testing.T) {
 			runner: func(t *testing.T, suite *testSuite) {
 				suite.mockSuite.MockL1.EXPECT().FilterLogs(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("unknown block"))
 
-				_, err := suite.def.Transform(suite.ctx, core.TransitData{
+				_, err := suite.def.Transform(suite.ctx, core.Event{
 					Value: types.Header{}})
 				assert.Error(t, err)
 			},
@@ -85,7 +85,7 @@ func TestEventLogPipe(t *testing.T) {
 			runner: func(t *testing.T, suite *testSuite) {
 				suite.mockSuite.MockL1.EXPECT().FilterLogs(gomock.Any(), gomock.Any()).Return(nil, nil)
 
-				tds, err := suite.def.Transform(suite.ctx, core.TransitData{
+				tds, err := suite.def.Transform(suite.ctx, core.Event{
 					Value: types.Header{},
 				})
 				assert.NoError(t, err)
@@ -105,7 +105,7 @@ func TestEventLogPipe(t *testing.T) {
 					FilterLogs(gomock.Any(), gomock.Any()).
 					Return(nil, fmt.Errorf("unknown block"))
 
-				tds, err := suite.def.Transform(suite.ctx, core.TransitData{
+				tds, err := suite.def.Transform(suite.ctx, core.Event{
 					Value: types.Header{},
 				})
 				assert.Error(t, err)
@@ -128,7 +128,7 @@ func TestEventLogPipe(t *testing.T) {
 					FilterLogs(gomock.Any(), gomock.Any()).
 					Return([]types.Log{log2}, nil)
 
-				tds, err = suite.def.Transform(suite.ctx, core.TransitData{
+				tds, err = suite.def.Transform(suite.ctx, core.Event{
 					Value: types.Header{},
 				})
 

@@ -41,35 +41,36 @@ func Test_HardCodedEngine(t *testing.T) {
 		{
 			name: "Activation Failure From Error",
 			test: func(t *testing.T, ts *testSuite) {
-				td := core.TransitData{}
+				e := core.Event{}
 
-				ts.mockHeuristic.EXPECT().Assess(td).
+				ts.mockHeuristic.EXPECT().Assess(e).
 					Return(heuristic.NoActivations(), testErr()).Times(1)
 
 				ts.mockHeuristic.EXPECT().SUUID().
-					Return(core.NilSUUID()).Times(2)
+					Return(core.UUID{}).Times(2)
 
-				as := ts.re.Execute(context.Background(), td, ts.mockHeuristic)
-				assert.False(t, as.Activated())
-
+				as, err := ts.re.Execute(context.Background(), e, ts.mockHeuristic)
+				assert.Nil(t, as)
+				assert.NotNil(t, err)
 			}},
 		{
 			name: "Successful Activation",
 			test: func(t *testing.T, ts *testSuite) {
-				td := core.TransitData{}
+				e := core.Event{}
 
 				expectedOut := heuristic.NewActivationSet().Add(
 					&heuristic.Activation{
 						Message: "20 inch blade on the Impala",
 					})
 
-				ts.mockHeuristic.EXPECT().Assess(td).
+				ts.mockHeuristic.EXPECT().Assess(e).
 					Return(expectedOut, nil).Times(1)
 
 				ts.mockHeuristic.EXPECT().SUUID().
-					Return(core.NilSUUID()).Times(1)
+					Return(core.UUID{}).Times(1)
 
-				as := ts.re.Execute(context.Background(), td, ts.mockHeuristic)
+				as, err := ts.re.Execute(context.Background(), e, ts.mockHeuristic)
+				assert.Nil(t, err)
 				assert.NotNil(t, as)
 				assert.True(t, as.Activated())
 				assert.Equal(t, expectedOut, as)

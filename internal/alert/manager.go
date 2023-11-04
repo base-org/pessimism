@@ -16,7 +16,7 @@ import (
 
 // Manager ... Interface for alert manager
 type Manager interface {
-	AddSession(core.SUUID, *core.AlertPolicy) error
+	AddSession(core.UUID, *core.AlertPolicy) error
 	Transit() chan core.Alert
 
 	core.Subsystem
@@ -70,7 +70,7 @@ func NewManager(ctx context.Context, cfg *Config, cm RoutingDirectory) Manager {
 }
 
 // AddSession ... Adds a heuristic session to the alert manager store
-func (am *alertManager) AddSession(sUUID core.SUUID, policy *core.AlertPolicy) error {
+func (am *alertManager) AddSession(sUUID core.UUID, policy *core.AlertPolicy) error {
 	return am.store.AddAlertPolicy(sUUID, policy)
 }
 
@@ -90,7 +90,7 @@ func (am *alertManager) handleSlackPost(alert core.Alert, policy *core.AlertPoli
 
 	// Create event trigger
 	event := &client.AlertEventTrigger{
-		Message:  am.interpolator.InterpolateSlackMessage(alert.Criticality, alert.SUUID, alert.Content, policy.Msg),
+		Message:  am.interpolator.InterpolateSlackMessage(alert.Criticality, alert.HeuristicID, alert.Content, policy.Msg),
 		Severity: alert.Criticality,
 	}
 
@@ -120,8 +120,8 @@ func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
 	}
 
 	event := &client.AlertEventTrigger{
-		Message:  am.interpolator.InterpolatePagerDutyMessage(alert.SUUID, alert.Content),
-		DedupKey: alert.PUUID,
+		Message:  am.interpolator.InterpolatePagerDutyMessage(alert.HeuristicID, alert.Content),
+		DedupKey: alert.PathID,
 		Severity: alert.Criticality,
 	}
 
@@ -164,28 +164,28 @@ func (am *alertManager) EventLoop() error {
 		case alert := <-am.alertTransit: // Upstream alert
 
 			// 1. Fetch alert policy
-			policy, err := am.store.GetAlertPolicy(alert.SUUID)
+			policy, err := am.store.GetAlertPolicy(alert.HeuristicID)
 			if err != nil {
 				am.logger.Error("Could not determine alerting destination", zap.Error(err))
 				continue
 			}
 
 			// 2. Check if alert is in cool down
-			if policy.HasCoolDown() && am.cdHandler.IsCoolDown(alert.SUUID) {
+			if policy.HasCoolDown() && am.cdHandler.IsCoolDown(alert.HeuristicID) {
 				am.logger.Debug("Alert is in cool down",
-					zap.String(logging.SUUIDKey, alert.SUUID.String()))
+					zap.String(logging.UUID, alert.HeuristicID.String()))
 				continue
 			}
 
 			// 3. Log & propagate alert
 			am.logger.Info("received alert",
-				zap.String(logging.SUUIDKey, alert.SUUID.String()))
+				zap.String(logging.UUID, alert.HeuristicID.String()))
 
 			am.HandleAlert(alert, policy)
 
 			// 4. Add alert to cool down if applicable
 			if policy.HasCoolDown() {
-				am.cdHandler.Add(alert.SUUID, time.Duration(policy.CoolDown)*time.Second)
+				am.cdHandler.Add(alert.HeuristicID, time.Duration(policy.CoolDown)*time.Second)
 			}
 		}
 	}

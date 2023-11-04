@@ -52,21 +52,21 @@ func NewBalanceHeuristic(ctx context.Context, cfg *BalanceInvConfig) (heuristic.
 	return &BalanceHeuristic{
 		ctx:       ctx,
 		cfg:       cfg,
-		Heuristic: heuristic.NewBaseHeuristic(core.BlockHeader),
+		Heuristic: heuristic.New(core.BlockHeader),
 	}, nil
 }
 
 // Assess ... Checks if the balance is within the bounds
 // specified in the config
-func (bi *BalanceHeuristic) Assess(td core.TransitData) (*heuristic.ActivationSet, error) {
-	logging.NoContext().Debug("Checking activation for balance heuristic", zap.String("data", fmt.Sprintf("%v", td)))
+func (bi *BalanceHeuristic) Assess(e core.Event) (*heuristic.ActivationSet, error) {
+	logging.NoContext().Debug("Checking activation for balance heuristic", zap.String("data", fmt.Sprintf("%v", e)))
 
-	header, ok := td.Value.(types.Header)
+	header, ok := e.Value.(types.Header)
 	if !ok {
 		return nil, fmt.Errorf(couldNotCastErr, "BlockHeader")
 	}
 
-	client, err := client.FromNetwork(bi.ctx, td.Network)
+	client, err := client.FromNetwork(bi.ctx, e.Network)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (bi *BalanceHeuristic) Assess(td core.TransitData) (*heuristic.ActivationSe
 			lower = "-∞"
 		}
 
-		msg := fmt.Sprintf(reportMsg, balance, upper, lower, bi.SUUID(), bi.cfg.Address)
+		msg := fmt.Sprintf(reportMsg, balance, upper, lower, bi.ID(), bi.cfg.Address)
 
 		return heuristic.NewActivationSet().Add(
 			&heuristic.Activation{

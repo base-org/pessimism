@@ -18,7 +18,7 @@ type AlertClient interface {
 type AlertEventTrigger struct {
 	Message  string
 	Severity core.Severity
-	DedupKey core.PUUID
+	DedupKey core.PathID
 }
 
 // AlertAPIResponse ... A standardized response for alert clients

@@ -65,8 +65,8 @@ func TestMultiDirectiveRouting(t *testing.T) {
 	// Wait for Pessimism to process the newly emitted event and send a notification to the mocked Slack
 	// and PagerDuty servers.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
-		pUUID := ids[0].PUUID
-		height, err := ts.Subsystems.PipelineHeight(pUUID)
+		PathID := ids[0].PathID
+		height, err := ts.Subsystems.PipelineHeight(PathID)
 		if err != nil {
 			return false, err
 		}
@@ -152,8 +152,8 @@ func TestCoolDown(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
-		pUUID := ids[0].PUUID
-		height, err := ts.Subsystems.PipelineHeight(pUUID)
+		PathID := ids[0].PathID
+		height, err := ts.Subsystems.PipelineHeight(PathID)
 		if err != nil {
 			return false, err
 		}

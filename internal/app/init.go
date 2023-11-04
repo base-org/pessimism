@@ -12,7 +12,7 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine"
 	e_registry "github.com/base-org/pessimism/internal/engine/registry"
-	"github.com/base-org/pessimism/internal/etl/pipeline"
+	"github.com/base-org/pessimism/internal/etl"
 	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
@@ -77,20 +77,21 @@ func InitializeAlerting(ctx context.Context, cfg *config.Config) (alert.Manager,
 }
 
 // InitializeETL ... Performs dependency injection to build etl struct
-func InitializeETL(ctx context.Context, transit chan core.HeuristicInput) pipeline.Manager {
+func InitializeETL(ctx context.Context, transit chan core.HeuristicInput) etl.Manager {
 	compRegistry := registry.NewRegistry()
-	analyzer := pipeline.NewAnalyzer(compRegistry)
-	store := pipeline.NewEtlStore()
-	dag := pipeline.NewComponentGraph()
+	analyzer := etl.NewAnalyzer(compRegistry)
+	store := etl.NewEtlStore()
+	dag := etl.NewGraph()
 
-	return pipeline.NewManager(ctx, analyzer, compRegistry, store, dag, transit)
+	return etl.NewManager(ctx, analyzer, compRegistry, store, dag, transit)
 }
 
 // InitializeEngine ... Performs dependency injection to build engine struct
 func InitializeEngine(ctx context.Context, cfg *config.Config, transit chan core.Alert) engine.Manager {
 	store := engine.NewSessionStore()
-	am := engine.NewAddressingMap()
+	am := engine.NewAddressMap()
 	re := engine.NewHardCodedEngine(transit)
+
 	it := e_registry.NewHeuristicTable()
 
 	return engine.NewManager(ctx, cfg.EngineConfig, re, am, store, it, transit)

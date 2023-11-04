@@ -51,10 +51,10 @@ func (mr *EtlManagerMockRecorder) ActiveCount() *gomock.Call {
 }
 
 // CreateDataPipeline mocks base method.
-func (m *EtlManager) CreateDataPipeline(arg0 *core.PipelineConfig) (core.PUUID, bool, error) {
+func (m *EtlManager) CreateDataPipeline(arg0 *core.PathConfig) (core.PathID, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateDataPipeline", arg0)
-	ret0, _ := ret[0].(core.PUUID)
+	ret0, _ := ret[0].(core.PathID)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
 	return ret0, ret1, ret2
@@ -81,7 +81,7 @@ func (mr *EtlManagerMockRecorder) EventLoop() *gomock.Call {
 }
 
 // GetHeightAtPipeline mocks base method.
-func (m *EtlManager) GetHeightAtPipeline(arg0 core.PUUID) (*big.Int, error) {
+func (m *EtlManager) GetHeightAtPipeline(arg0 core.PathID) (*big.Int, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHeightAtPipeline", arg0)
 	ret0, _ := ret[0].(*big.Int)
@@ -96,7 +96,7 @@ func (mr *EtlManagerMockRecorder) GetHeightAtPipeline(arg0 interface{}) *gomock.
 }
 
 // GetStateKey mocks base method.
-func (m *EtlManager) GetStateKey(arg0 core.RegisterType) (*core.StateKey, bool, error) {
+func (m *EtlManager) GetStateKey(arg0 core.TopicType) (*core.StateKey, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetStateKey", arg0)
 	ret0, _ := ret[0].(*core.StateKey)
@@ -111,23 +111,23 @@ func (mr *EtlManagerMockRecorder) GetStateKey(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStateKey", reflect.TypeOf((*EtlManager)(nil).GetStateKey), arg0)
 }
 
-// InferComponent mocks base method.
-func (m *EtlManager) InferComponent(arg0 *core.ClientConfig, arg1 core.CUUID, arg2 core.PUUID, arg3 *core.DataRegister) (component.Component, error) {
+// CreateProcess mocks base method.
+func (m *EtlManager) CreateProcess(arg0 *core.ClientConfig, arg1 core.ProcessID, arg2 core.PathID, arg3 *core.DataRegister) (component.Process, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InferComponent", arg0, arg1, arg2, arg3)
-	ret0, _ := ret[0].(component.Component)
+	ret := m.ctrl.Call(m, "CreateProcess", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(component.Process)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// InferComponent indicates an expected call of InferComponent.
-func (mr *EtlManagerMockRecorder) InferComponent(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+// CreateProcess indicates an expected call of CreateProcess.
+func (mr *EtlManagerMockRecorder) CreateProcess(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InferComponent", reflect.TypeOf((*EtlManager)(nil).InferComponent), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateProcess", reflect.TypeOf((*EtlManager)(nil).CreateProcess), arg0, arg1, arg2, arg3)
 }
 
 // RunPipeline mocks base method.
-func (m *EtlManager) RunPipeline(arg0 core.PUUID) error {
+func (m *EtlManager) RunPipeline(arg0 core.PathID) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RunPipeline", arg0)
 	ret0, _ := ret[0].(error)

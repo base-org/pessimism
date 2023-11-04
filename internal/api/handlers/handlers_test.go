@@ -11,7 +11,7 @@ import (
 	"github.com/golang/mock/gomock"
 )
 
-func testSUUID1() core.SUUID {
+func testSUUID1() core.UUID {
 	return core.MakeSUUID(1, 1, 1)
 }
 

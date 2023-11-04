@@ -32,8 +32,8 @@ type ExecInput struct {
 // RiskEngine ... Execution engine interface
 type RiskEngine interface {
 	Type() Type
-	Execute(context.Context, core.TransitData,
-		heuristic.Heuristic) *heuristic.ActivationSet
+	Execute(ctx context.Context, data core.Event,
+		h heuristic.Heuristic) (*heuristic.ActivationSet, error)
 	AddWorkerIngress(chan ExecInput)
 	EventLoop(context.Context)
 }
@@ -63,24 +63,24 @@ func (hce *hardCodedEngine) AddWorkerIngress(ingress chan ExecInput) {
 }
 
 // Execute ... Executes the heuristic
-func (hce *hardCodedEngine) Execute(ctx context.Context, data core.TransitData,
-	h heuristic.Heuristic) *heuristic.ActivationSet {
+func (hce *hardCodedEngine) Execute(ctx context.Context, data core.Event,
+	h heuristic.Heuristic) (*heuristic.ActivationSet, error) {
 	logger := logging.WithContext(ctx)
 
 	logger.Debug("Performing heuristic assessment",
-		zap.String(logging.SUUIDKey, h.SUUID().String()))
-	activationSet, err := h.Assess(data)
+		zap.String(logging.UUID, h.ID().ShortString()))
+	as, err := h.Assess(data)
 	if err != nil {
 		logger.Error("Failed to perform activation option for heuristic", zap.Error(err),
-			zap.String("heuristic_type", h.SUUID().PID.HeuristicType().String()))
+			zap.String("heuristic_type", h.TopicType().String()))
 
 		metrics.WithContext(ctx).
 			RecordAssessmentError(h)
 
-		return heuristic.NoActivations()
+		return nil, err
 	}
 
-	return activationSet
+	return as, nil
 }
 
 // EventLoop ... Event loop for the risk engine
@@ -95,36 +95,34 @@ func (hce *hardCodedEngine) EventLoop(ctx context.Context) {
 
 		case execInput := <-hce.heuristicIn: // Heuristic input received
 			logger.Debug("Heuristic input received",
-				zap.String(logging.SUUIDKey, execInput.h.SUUID().String()))
+				zap.String(logging.UUID, execInput.h.ID().ShortString()))
 
 			start := time.Now()
 
-			var actSet *heuristic.ActivationSet
-
-			retryStrategy := &retry.ExponentialStrategy{Min: 1000, Max: 20_000, MaxJitter: 250}
-			if _, err := retry.Do[any](ctx, 10, retryStrategy, func() (any, error) {
-				actSet = hce.Execute(ctx, execInput.hi.Input, execInput.h)
+			as, err := retry.Do[*heuristic.ActivationSet](ctx, 10, core.RetryStrategy(), func() (*heuristic.ActivationSet, error) {
 				metrics.WithContext(ctx).RecordHeuristicRun(execInput.h)
-				// a-ok!
-				return 0, nil
-			}); err != nil {
+				return hce.Execute(ctx, execInput.hi.Input, execInput.h)
+			})
+
+			if err != nil {
 				logger.Error("Failed to execute heuristic", zap.Error(err))
 				metrics.WithContext(ctx).RecordAssessmentError(execInput.h)
 			}
 
 			metrics.WithContext(ctx).RecordInvExecutionTime(execInput.h, float64(time.Since(start).Nanoseconds()))
-			if actSet.Activated() {
-				for _, act := range actSet.Entries() {
+			if as.Activated() {
+				for _, act := range as.Entries() {
 					alert := core.Alert{
-						Timestamp: act.TimeStamp,
-						SUUID:     execInput.h.SUUID(),
-						Content:   act.Message,
-						PUUID:     execInput.hi.PUUID,
-						Ptype:     execInput.hi.PUUID.PipelineType(),
+						Timestamp:   act.TimeStamp,
+						HeuristicID: execInput.h.ID(),
+						Content:     act.Message,
+						PathID:      execInput.hi.PathID,
+						PathType:    execInput.hi.PathID.PathType(),
 					}
 
 					logger.Warn("Heuristic alert",
-						zap.String(logging.SUUIDKey, execInput.h.SUUID().String()),
+						zap.String(logging.UUID, execInput.h.ID().ShortString()),
+						zap.String("heuristic_type", execInput.hi.PathID.String()),
 						zap.String("message", act.Message))
 
 					hce.alertEgress <- alert

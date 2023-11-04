@@ -20,14 +20,14 @@ func Test_ComponentRegistry(t *testing.T) {
 	}{
 		{
 			name:        "Fetch Failure",
-			function:    "GetRegister",
+			function:    "GetDataTopic",
 			description: "When trying to get an invalid register, an error should be returned",
 
 			constructionLogic: registry.NewRegistry,
 			testLogic: func(t *testing.T, testRegistry registry.Registry) {
 
-				invalidType := core.RegisterType(255)
-				register, err := testRegistry.GetRegister(invalidType)
+				invalidType := core.TopicType(255)
+				register, err := testRegistry.GetDataTopic(invalidType)
 
 				assert.Error(t, err)
 				assert.Nil(t, register)
@@ -35,13 +35,13 @@ func Test_ComponentRegistry(t *testing.T) {
 		},
 		{
 			name:        "Fetch Success",
-			function:    "GetRegister",
+			function:    "GetDataTopic",
 			description: "When trying to get a register provided a valid register type, a register should be returned",
 
 			constructionLogic: registry.NewRegistry,
 			testLogic: func(t *testing.T, testRegistry registry.Registry) {
 
-				reg, err := testRegistry.GetRegister(core.BlockHeader)
+				reg, err := testRegistry.GetDataTopic(core.BlockHeader)
 
 				assert.NoError(t, err)
 				assert.NotNil(t, reg)
@@ -50,19 +50,19 @@ func Test_ComponentRegistry(t *testing.T) {
 		},
 		{
 			name:        "Fetch Dependency Path Success",
-			function:    "GetRegister",
+			function:    "GetDataTopic",
 			description: "When trying to get a register dependency path provided a valid register type, a path should be returned",
 
 			constructionLogic: registry.NewRegistry,
 			testLogic: func(t *testing.T, testRegistry registry.Registry) {
 
-				path, err := testRegistry.GetDependencyPath(core.EventLog)
+				path, err := testRegistry.GetDependencyPath(core.Log)
 
 				assert.NoError(t, err)
 				assert.Len(t, path.Path, 2)
 
 				assert.Equal(t, path.Path[1].DataType, core.BlockHeader)
-				assert.Equal(t, path.Path[0].DataType, core.EventLog)
+				assert.Equal(t, path.Path[0].DataType, core.Log)
 			},
 		},
 	}

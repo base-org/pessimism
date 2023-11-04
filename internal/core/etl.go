@@ -1,37 +1,37 @@
 package core
 
-// ComponentType ... Denotes the ETL component type
-type ComponentType uint8
+// ProcessType ... Denotes the ETL component type
+type ProcessType uint8
 
 const (
-	Reader ComponentType = iota + 1
-	Transformer
+	Read ProcessType = iota + 1
+	Subscribe
 )
 
 // String ... Converts the component type to a string
-func (ct ComponentType) String() string {
+func (ct ProcessType) String() string {
 	switch ct {
-	case Reader:
+	case Read:
 		return "reader"
 
-	case Transformer:
-		return "transformer"
+	case Subscribe:
+		return "subscriber"
 	}
 
 	return UnknownType
 }
 
-// PipelineType ...
-type PipelineType uint8
+// PathType ...
+type PathType uint8
 
 const (
-	Backtest PipelineType = iota + 1
+	Backtest PathType = iota + 1
 	Live
 	MockTest
 )
 
-// StringToPipelineType ... Converts a string to a pipeline type
-func StringToPipelineType(stringType string) PipelineType {
+// StringToPathType ... Converts a string to a pipeline type
+func StringToPathType(stringType string) PathType {
 	switch stringType {
 	case "backtest":
 		return Backtest
@@ -43,11 +43,11 @@ func StringToPipelineType(stringType string) PipelineType {
 		return MockTest
 	}
 
-	return PipelineType(0)
+	return PathType(0)
 }
 
 // String ... Converts the pipeline type to a string
-func (pt PipelineType) String() string {
+func (pt PathType) String() string {
 	switch pt {
 	case Backtest:
 		return "backtest"

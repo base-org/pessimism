@@ -67,7 +67,7 @@ func Test_ProcessHeuristicRequest(t *testing.T) {
 
 				ts.mockSvc.EXPECT().
 					ProcessHeuristicRequest(gomock.Any()).
-					Return(core.NilSUUID(), testError1()).
+					Return(core.UUID{}, testError1()).
 					Times(1)
 
 				return ts

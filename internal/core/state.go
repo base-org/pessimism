@@ -4,28 +4,24 @@ import (
 	"fmt"
 )
 
-// StateKey ... Represents a key in the state store
 type StateKey struct {
 	Nesting bool
-	Prefix  RegisterType
+	Prefix  TopicType
 	ID      string
 
-	PUUID *PUUID
+	PathID *PathID
 }
 
-// Clone ... Returns a copy of the state key
 func (sk *StateKey) Clone() *StateKey {
 	return &StateKey{
 		Nesting: sk.Nesting,
 		Prefix:  sk.Prefix,
 		ID:      sk.ID,
-		PUUID:   sk.PUUID,
+		PathID:  sk.PathID,
 	}
 }
 
-// MakeStateKey ... Builds a minimal state key using
-// a prefix and key
-func MakeStateKey(pre RegisterType, id string, nest bool) *StateKey {
+func MakeStateKey(pre TopicType, id string, nest bool) *StateKey {
 	return &StateKey{
 		Nesting: nest,
 		Prefix:  pre,
@@ -33,30 +29,25 @@ func MakeStateKey(pre RegisterType, id string, nest bool) *StateKey {
 	}
 }
 
-// IsNested ... Indicates whether the state key is nested
-// NOTE - This is used to determine if the state key maps
-// to a value slice of state keys in the state store (ie. nested)
 func (sk *StateKey) IsNested() bool {
 	return sk.Nesting
 }
 
-// SetPUUID ... Adds a pipeline UUID to the state key prefix
-func (sk *StateKey) SetPUUID(pUUID PUUID) error {
-	if sk.PUUID != nil {
-		return fmt.Errorf("state key already has a pipeline UUID %s", sk.PUUID.String())
+func (sk *StateKey) SetPathID(PathID PathID) error {
+	if sk.PathID != nil {
+		return fmt.Errorf("state key already has a pipeline UUID %s", sk.PathID.String())
 	}
 
-	sk.PUUID = &pUUID
+	sk.PathID = &PathID
 	return nil
 }
 
-// String ... Returns a string representation of the state key
 func (sk StateKey) String() string {
-	pUUID := ""
+	PathID := ""
 
-	if sk.PUUID != nil {
-		pUUID = sk.PUUID.String()
+	if sk.PathID != nil {
+		PathID = sk.PathID.String()
 	}
 
-	return fmt.Sprintf("%s-%s-%s", pUUID, sk.Prefix, sk.ID)
+	return fmt.Sprintf("%s-%s-%s", PathID, sk.Prefix, sk.ID)
 }

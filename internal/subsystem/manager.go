@@ -14,7 +14,7 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine"
 	"github.com/base-org/pessimism/internal/engine/heuristic"
-	"github.com/base-org/pessimism/internal/etl/pipeline"
+	"github.com/base-org/pessimism/internal/etl"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	"go.uber.org/zap"
@@ -42,9 +42,9 @@ func (cfg *Config) GetPollInterval(n core.Network) (time.Duration, error) {
 }
 
 type Subsystem interface {
-	BuildDeployCfg(pConfig *core.PipelineConfig, sConfig *core.SessionConfig) (*heuristic.DeployConfig, error)
-	BuildPipelineCfg(params *models.SessionRequestParams) (*core.PipelineConfig, error)
-	RunSession(cfg *heuristic.DeployConfig) (core.SUUID, error)
+	BuildDeployCfg(pConfig *core.PathConfig, sConfig *core.SessionConfig) (*heuristic.DeployConfig, error)
+	BuildPipelineCfg(params *models.SessionRequestParams) (*core.PathConfig, error)
+	RunHeuristic(cfg *heuristic.DeployConfig) (core.UUID, error)
 	// Orchestration
 	StartEventRoutines(ctx context.Context)
 	Shutdown() error
@@ -55,7 +55,7 @@ type Manager struct {
 	cfg *Config
 	ctx context.Context
 
-	etl   pipeline.Manager
+	etl   etl.Manager
 	eng   engine.Manager
 	alert alert.Manager
 	stats metrics.Metricer
@@ -64,7 +64,7 @@ type Manager struct {
 }
 
 // NewManager ... Initializer for the subsystem manager
-func NewManager(ctx context.Context, cfg *Config, etl pipeline.Manager, eng engine.Manager,
+func NewManager(ctx context.Context, cfg *Config, etl etl.Manager, eng engine.Manager,
 	a alert.Manager,
 ) *Manager {
 	return &Manager{
@@ -127,7 +127,7 @@ func (m *Manager) StartEventRoutines(ctx context.Context) {
 }
 
 // BuildDeployCfg ... Builds a deploy config provided a pipeline & session config
-func (m *Manager) BuildDeployCfg(pConfig *core.PipelineConfig,
+func (m *Manager) BuildDeployCfg(pConfig *core.PathConfig,
 	sConfig *core.SessionConfig) (*heuristic.DeployConfig, error) {
 	// 1. Fetch state key using risk engine input register type
 	sk, stateful, err := m.etl.GetStateKey(pConfig.DataType)
@@ -136,17 +136,17 @@ func (m *Manager) BuildDeployCfg(pConfig *core.PipelineConfig,
 	}
 
 	// 2. Create data pipeline
-	pUUID, reuse, err := m.etl.CreateDataPipeline(pConfig)
+	PathID, reuse, err := m.etl.CreateProcessPath(pConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	logging.WithContext(m.ctx).
-		Info("Created etl pipeline", zap.String(logging.PUUIDKey, pUUID.String()))
+		Info("Created etl pipeline", zap.String(logging.PathIDKey, PathID.String()))
 
 	// 3. Create a deploy config
 	return &heuristic.DeployConfig{
-		PUUID:          pUUID,
+		PathID:         PathID,
 		Reuse:          reuse,
 		HeuristicType:  sConfig.Type,
 		Params:         sConfig.Params,
@@ -157,42 +157,42 @@ func (m *Manager) BuildDeployCfg(pConfig *core.PipelineConfig,
 	}, nil
 }
 
-// RunSession ... Runs a heuristic session
-func (m *Manager) RunSession(cfg *heuristic.DeployConfig) (core.SUUID, error) {
+// RunHeuristic ... Runs a heuristic session
+func (m *Manager) RunHeuristic(cfg *heuristic.DeployConfig) (core.UUID, error) {
 	// 1. Verify that pipeline constraints are met
 	// NOTE - Consider introducing a config validation step or module
 	if !cfg.Reuse && m.etlLimitReached() {
-		return core.NilSUUID(), fmt.Errorf(maxPipelineErr, m.cfg.MaxPipelineCount)
+		return core.UUID{}, fmt.Errorf(maxPipelineErr, m.cfg.MaxPipelineCount)
 	}
 
 	// 2. Deploy heuristic session to risk engine
-	sUUID, err := m.eng.DeployHeuristicSession(cfg)
+	id, err := m.eng.DeployHeuristic(cfg)
 	if err != nil {
-		return core.NilSUUID(), err
+		return core.UUID{}, err
 	}
 	logging.WithContext(m.ctx).
-		Info("Deployed heuristic session to risk engine", zap.String(logging.SUUIDKey, sUUID.String()))
+		Info("Deployed heuristic session to risk engine", zap.String(logging.UUID, id.ShortString()))
 
 	// 3. Add session to alert manager
-	err = m.alert.AddSession(sUUID, cfg.AlertingPolicy)
+	err = m.alert.AddSession(id, cfg.AlertingPolicy)
 	if err != nil {
-		return core.NilSUUID(), err
+		return core.UUID{}, err
 	}
 
 	// 4. Run pipeline if not reused
 	if cfg.Reuse {
-		return sUUID, nil
+		return id, nil
 	}
 
-	if err = m.etl.RunPipeline(cfg.PUUID); err != nil { // Spin-up pipeline components
-		return core.NilSUUID(), err
+	if err = m.etl.StartPath(cfg.PathID); err != nil { // Spin-up pipeline components
+		return core.UUID{}, err
 	}
 
-	return sUUID, nil
+	return id, nil
 }
 
 // BuildPipelineCfg ... Builds a pipeline config provided a set of heuristic request params
-func (m *Manager) BuildPipelineCfg(params *models.SessionRequestParams) (*core.PipelineConfig, error) {
+func (m *Manager) BuildPipelineCfg(params *models.SessionRequestParams) (*core.PathConfig, error) {
 	inType, err := m.eng.GetInputType(params.Heuristic())
 	if err != nil {
 		return nil, err
@@ -203,10 +203,10 @@ func (m *Manager) BuildPipelineCfg(params *models.SessionRequestParams) (*core.P
 		return nil, err
 	}
 
-	return &core.PipelineConfig{
-		Network:      params.NetworkType(),
-		DataType:     inType,
-		PipelineType: params.PipelineType(),
+	return &core.PathConfig{
+		Network:  params.NetworkType(),
+		DataType: inType,
+		PathType: params.PathType(),
 		ClientConfig: &core.ClientConfig{
 			Network:      params.NetworkType(),
 			PollInterval: pollInterval,
@@ -221,6 +221,6 @@ func (m *Manager) etlLimitReached() bool {
 	return m.etl.ActiveCount() >= m.cfg.MaxPipelineCount
 }
 
-func (m *Manager) PipelineHeight(pUUID core.PUUID) (*big.Int, error) {
-	return m.etl.GetHeightAtPipeline(pUUID)
+func (m *Manager) PipelineHeight(PathID core.PathID) (*big.Int, error) {
+	return m.etl.GetHeightAtPath(PathID)
 }

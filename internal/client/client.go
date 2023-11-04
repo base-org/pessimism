@@ -24,8 +24,8 @@ type Bundle struct {
 	IxClient IxClient
 	L1Client EthClient
 	L1Node   ix_node.EthClient
-	L2Node   ix_node.EthClient
 	L2Client EthClient
+	L2Node   ix_node.EthClient
 	L2Geth   GethClient
 }
 

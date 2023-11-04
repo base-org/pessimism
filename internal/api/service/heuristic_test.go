@@ -88,7 +88,7 @@ func Test_RunHeuristicSession(t *testing.T) {
 				actualSUUID, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
 
 				assert.Error(t, err)
-				assert.Equal(t, core.NilSUUID(), actualSUUID)
+				assert.Equal(t, core.UUID{}, actualSUUID)
 			},
 		},
 		{
@@ -114,7 +114,7 @@ func Test_RunHeuristicSession(t *testing.T) {
 				actualSUUID, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
 
 				assert.Error(t, err)
-				assert.Equal(t, core.NilSUUID(), actualSUUID)
+				assert.Equal(t, core.UUID{}, actualSUUID)
 			},
 		},
 		{
@@ -134,7 +134,7 @@ func Test_RunHeuristicSession(t *testing.T) {
 
 				ts.mockSub.EXPECT().
 					RunSession(testCfg).
-					Return(core.NilSUUID(), testErr()).
+					Return(core.UUID{}, testErr()).
 					Times(1)
 
 				return ts
@@ -145,7 +145,7 @@ func Test_RunHeuristicSession(t *testing.T) {
 				actualSUUID, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
 
 				assert.Error(t, err)
-				assert.Equal(t, core.NilSUUID(), actualSUUID)
+				assert.Equal(t, core.UUID{}, actualSUUID)
 			},
 		},
 	}

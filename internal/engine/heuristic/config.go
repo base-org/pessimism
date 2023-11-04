@@ -8,7 +8,7 @@ type DeployConfig struct {
 	StateKey *core.StateKey
 
 	Network core.Network
-	PUUID   core.PUUID
+	PathID  core.PathID
 	Reuse   bool
 
 	HeuristicType core.HeuristicType

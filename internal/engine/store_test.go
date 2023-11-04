@@ -13,7 +13,7 @@ import (
 func TestSessionStore(t *testing.T) {
 	sUUID1 := core.MakeSUUID(core.Layer1, core.Live, core.HeuristicType(0))
 	sUUID2 := core.MakeSUUID(core.Layer2, core.Live, core.HeuristicType(0))
-	pUUID1 := core.NilPUUID()
+	PathID1 := core.PathID{}
 
 	var tests = []struct {
 		name        string
@@ -26,10 +26,10 @@ func TestSessionStore(t *testing.T) {
 			constructor: func() engine.SessionStore {
 				ss := engine.NewSessionStore()
 
-				h := heuristic.NewBaseHeuristic(core.RegisterType(0))
+				h := heuristic.New(core.TopicType(0))
 				h.SetSUUID(sUUID1)
 
-				_ = ss.AddSession(sUUID1, pUUID1, h)
+				_ = ss.AddSession(sUUID1, PathID1, h)
 
 				return ss
 			},
@@ -40,9 +40,9 @@ func TestSessionStore(t *testing.T) {
 				assert.Equal(t, h.SUUID(), sUUID1)
 
 				// Ensure that pipeline UUIDs are retrievable
-				sUUIDs, err := ss.GetSUUIDsByPUUID(pUUID1)
+				sUUIDs, err := ss.GetSUUIDsByPathID(PathID1)
 				assert.NoError(t, err)
-				assert.Equal(t, sUUIDs, []core.SUUID{sUUID1})
+				assert.Equal(t, sUUIDs, []core.UUID{sUUID1})
 			},
 		},
 		{
@@ -50,15 +50,15 @@ func TestSessionStore(t *testing.T) {
 			constructor: func() engine.SessionStore {
 				ss := engine.NewSessionStore()
 
-				h := heuristic.NewBaseHeuristic(core.RegisterType(0))
+				h := heuristic.New(core.TopicType(0))
 				h.SetSUUID(sUUID1)
 
-				_ = ss.AddSession(sUUID1, pUUID1, h)
+				_ = ss.AddSession(sUUID1, PathID1, h)
 
-				h2 := heuristic.NewBaseHeuristic(core.RegisterType(0))
+				h2 := heuristic.New(core.TopicType(0))
 				h2.SetSUUID(sUUID2)
 
-				_ = ss.AddSession(sUUID2, pUUID1, h2)
+				_ = ss.AddSession(sUUID2, PathID1, h2)
 
 				return ss
 			},
@@ -74,12 +74,12 @@ func TestSessionStore(t *testing.T) {
 				assert.Equal(t, h2.SUUID(), sUUID2)
 
 				// Ensure that pipeline UUIDs are retrievable
-				sUUIDs, err := ss.GetSUUIDsByPUUID(pUUID1)
+				sUUIDs, err := ss.GetSUUIDsByPathID(PathID1)
 				assert.NoError(t, err)
-				assert.Equal(t, sUUIDs, []core.SUUID{sUUID1, sUUID2})
+				assert.Equal(t, sUUIDs, []core.UUID{sUUID1, sUUID2})
 
 				// Ensure that both heuristics are retrievable at once
-				hs, err := ss.GetInstancesByUUIDs([]core.SUUID{sUUID1, sUUID2})
+				hs, err := ss.GetInstancesByUUIDs([]core.UUID{sUUID1, sUUID2})
 				assert.NoError(t, err)
 				assert.Equal(t, hs, []heuristic.Heuristic{h, h2})
 			},
@@ -89,10 +89,10 @@ func TestSessionStore(t *testing.T) {
 			constructor: func() engine.SessionStore {
 				ss := engine.NewSessionStore()
 
-				h := heuristic.NewBaseHeuristic(core.RegisterType(0))
+				h := heuristic.New(core.TopicType(0))
 				h.SetSUUID(sUUID1)
 
-				_ = ss.AddSession(sUUID1, pUUID1, h)
+				_ = ss.AddSession(sUUID1, PathID1, h)
 				return ss
 			},
 			testFunc: func(t *testing.T, ss engine.SessionStore) {
@@ -102,9 +102,9 @@ func TestSessionStore(t *testing.T) {
 				assert.Equal(t, h.SUUID(), sUUID1)
 
 				// Ensure that pipeline UUIDs are retrievable
-				sUUIDs, err := ss.GetSUUIDsByPUUID(pUUID1)
+				sUUIDs, err := ss.GetSUUIDsByPathID(PathID1)
 				assert.NoError(t, err)
-				assert.Equal(t, sUUIDs, []core.SUUID{sUUID1})
+				assert.Equal(t, sUUIDs, []core.UUID{sUUID1})
 			},
 		},
 		{
@@ -112,8 +112,8 @@ func TestSessionStore(t *testing.T) {
 			constructor: func() engine.SessionStore {
 				ss := engine.NewSessionStore()
 
-				h := heuristic.NewBaseHeuristic(core.RegisterType(0))
-				_ = ss.AddSession(sUUID1, pUUID1, h)
+				h := heuristic.New(core.TopicType(0))
+				_ = ss.AddSession(sUUID1, PathID1, h)
 
 				return ss
 			},
@@ -128,14 +128,14 @@ func TestSessionStore(t *testing.T) {
 			constructor: func() engine.SessionStore {
 				ss := engine.NewSessionStore()
 
-				h := heuristic.NewBaseHeuristic(core.RegisterType(0))
-				_ = ss.AddSession(sUUID1, pUUID1, h)
+				h := heuristic.New(core.TopicType(0))
+				_ = ss.AddSession(sUUID1, PathID1, h)
 
 				return ss
 			},
 			testFunc: func(t *testing.T, ss engine.SessionStore) {
 				// Ensure that only one suuid can exist in the store
-				err := ss.AddSession(sUUID1, pUUID1, heuristic.NewBaseHeuristic(core.RegisterType(0)))
+				err := ss.AddSession(sUUID1, PathID1, heuristic.New(core.TopicType(0)))
 				assert.Error(t, err)
 			},
 		},

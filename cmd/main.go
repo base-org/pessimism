@@ -95,7 +95,7 @@ func RunPessimism(_ *cli.Context) error {
 			return err
 		}
 
-		logger.Info("Received bootstrapped session UUIDs", zap.Any(logging.SUUIDKey, ids))
+		logger.Info("Received bootstrapped session UUIDs", zap.Any(logging.Session, ids))
 
 		logger.Debug("Application state successfully bootstrapped")
 	}

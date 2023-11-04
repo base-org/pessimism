@@ -49,10 +49,10 @@ func createTestSuite(t *testing.T) *testSuite {
 }
 
 func Test_BuildDeployCfg(t *testing.T) {
-	pConfig := &core.PipelineConfig{
+	pConfig := &core.PathConfig{
 		Network:      core.Layer1,
 		DataType:     core.BlockHeader,
-		PipelineType: core.Live,
+		PathType:     core.Live,
 		ClientConfig: nil,
 	}
 
@@ -95,7 +95,7 @@ func Test_BuildDeployCfg(t *testing.T) {
 					Times(1)
 
 				ts.mockEtl.EXPECT().CreateDataPipeline(gomock.Any()).
-					Return(core.NilPUUID(), false, testErr()).
+					Return(core.PathID{}, false, testErr()).
 					Times(1)
 
 				return ts
@@ -122,7 +122,7 @@ func Test_RunSession(t *testing.T) {
 		Stateful: false,
 		StateKey: nil,
 		Network:  core.Layer1,
-		PUUID:    core.NilPUUID(),
+		PathID:   core.PathID{},
 		Reuse:    false,
 
 		HeuristicType: core.BalanceEnforcement,
@@ -145,7 +145,7 @@ func Test_RunSession(t *testing.T) {
 					Times(1)
 
 				ts.mockEng.EXPECT().DeployHeuristicSession(testCfg).
-					Return(core.NilSUUID(), testErr()).
+					Return(core.UUID{}, testErr()).
 					Times(1)
 
 				return ts
@@ -153,7 +153,7 @@ func Test_RunSession(t *testing.T) {
 			testLogic: func(t *testing.T, ts *testSuite) {
 				actualSUUID, err := ts.subsys.RunSession(testCfg)
 				assert.Error(t, err)
-				assert.Equal(t, core.NilSUUID(), actualSUUID)
+				assert.Equal(t, core.UUID{}, actualSUUID)
 			},
 		},
 		{
@@ -177,7 +177,7 @@ func Test_RunSession(t *testing.T) {
 			testLogic: func(t *testing.T, ts *testSuite) {
 				actualSUUID, err := ts.subsys.RunSession(testCfg)
 				assert.Error(t, err)
-				assert.Equal(t, core.NilSUUID(), actualSUUID)
+				assert.Equal(t, core.UUID{}, actualSUUID)
 			},
 		},
 		{
@@ -197,7 +197,7 @@ func Test_RunSession(t *testing.T) {
 					Return(nil).
 					Times(1)
 
-				ts.mockEtl.EXPECT().RunPipeline(testCfg.PUUID).
+				ts.mockEtl.EXPECT().RunPipeline(testCfg.PathID).
 					Return(nil).
 					Times(1)
 
@@ -246,7 +246,7 @@ func Test_RunSession(t *testing.T) {
 				testCfg.Reuse = false
 				actualSUUID, err := ts.subsys.RunSession(testCfg)
 				assert.Error(t, err)
-				assert.Equal(t, core.NilSUUID(), actualSUUID)
+				assert.Equal(t, core.UUID{}, actualSUUID)
 			},
 		},
 	}
@@ -332,7 +332,7 @@ func Test_BuildPipelineCfg(t *testing.T) {
 				assert.NotNil(t, cfg)
 
 				assert.Equal(t, core.Layer1, cfg.Network)
-				assert.Equal(t, core.Live, cfg.PipelineType)
+				assert.Equal(t, core.Live, cfg.PathType)
 			},
 		},
 	}

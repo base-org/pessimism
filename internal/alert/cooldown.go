@@ -8,25 +8,25 @@ import (
 
 // CoolDownHandler ... Interface for the cool down handler
 type CoolDownHandler interface {
-	Add(suuid core.SUUID, coolDownTime time.Duration)
+	Add(suuid core.UUID, coolDownTime time.Duration)
 	Update()
-	IsCoolDown(suuid core.SUUID) bool
+	IsCoolDown(suuid core.UUID) bool
 }
 
 // coolDownHandler ... Implementation of CoolDownHandler
 type coolDownHandler struct {
-	sessions map[core.SUUID]time.Time
+	sessions map[core.UUID]time.Time
 }
 
 // NewCoolDownHandler ... Initializer
 func NewCoolDownHandler() CoolDownHandler {
 	return &coolDownHandler{
-		sessions: make(map[core.SUUID]time.Time),
+		sessions: make(map[core.UUID]time.Time),
 	}
 }
 
 // Add ... Adds a session to the cool down handler
-func (cdh *coolDownHandler) Add(sUUID core.SUUID, coolDownTime time.Duration) {
+func (cdh *coolDownHandler) Add(sUUID core.UUID, coolDownTime time.Duration) {
 	cdh.sessions[sUUID] = time.Now().Add(coolDownTime)
 }
 
@@ -40,7 +40,7 @@ func (cdh *coolDownHandler) Update() {
 }
 
 // IsCoolDown ... Checks if the session is in cool down
-func (cdh *coolDownHandler) IsCoolDown(sUUID core.SUUID) bool {
+func (cdh *coolDownHandler) IsCoolDown(sUUID core.UUID) bool {
 	if t, ok := cdh.sessions[sUUID]; ok {
 		return t.After(time.Now())
 	}

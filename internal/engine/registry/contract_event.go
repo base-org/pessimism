@@ -54,24 +54,24 @@ func NewEventHeuristic(cfg *EventInvConfig) heuristic.Heuristic {
 		cfg:  cfg,
 		sigs: sigs,
 
-		Heuristic: heuristic.NewBaseHeuristic(core.EventLog),
+		Heuristic: heuristic.New(core.Log),
 	}
 }
 
 // Assess ... Checks if the balance is within the bounds
 // specified in the config
-func (ei *EventHeuristic) Assess(td core.TransitData) (*heuristic.ActivationSet, error) {
+func (ei *EventHeuristic) Assess(e core.Event) (*heuristic.ActivationSet, error) {
 	// 1. Validate and extract the log event from the transit data
-	err := ei.ValidateInput(td)
+	err := ei.Validate(e)
 	if err != nil {
 		return nil, err
 	}
 
-	if td.Address != common.HexToAddress(ei.cfg.Address) {
-		return nil, fmt.Errorf(invalidAddrErr, ei.cfg.Address, td.Address.String())
+	if e.Address != common.HexToAddress(ei.cfg.Address) {
+		return nil, fmt.Errorf(invalidAddrErr, ei.cfg.Address, e.Address.String())
 	}
 
-	log, success := td.Value.(types.Log)
+	log, success := e.Value.(types.Log)
 	if !success {
 		return nil, fmt.Errorf(couldNotCastErr, "types.Log")
 	}

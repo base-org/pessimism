@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_EventLoop(t *testing.T) {
+func TestEventLoop(t *testing.T) {
 
 	cfg := &config.Config{
 		AlertConfig: &alert.Config{
@@ -55,14 +55,14 @@ func Test_EventLoop(t *testing.T) {
 
 				alert := core.Alert{
 					Criticality: core.LOW,
-					SUUID:       core.NilSUUID(),
+					HeuristicID: core.UUID{},
 				}
 				policy := &core.AlertPolicy{
 					Sev: core.LOW.String(),
 					Msg: "test",
 				}
 
-				err := am.AddSession(core.NilSUUID(), policy)
+				err := am.AddSession(core.UUID{}, policy)
 				assert.Nil(t, err)
 
 				for _, cli := range cm.GetSlackClients(core.LOW) {
@@ -78,10 +78,10 @@ func Test_EventLoop(t *testing.T) {
 
 				ingress <- alert
 				time.Sleep(1 * time.Second)
-				testid := core.MakeSUUID(1, 1, 1)
+				id := core.NewUUID()
 				alert = core.Alert{
 					Criticality: core.UNKNOWN,
-					SUUID:       testid,
+					HeuristicID: id,
 				}
 				ingress <- alert
 				time.Sleep(1 * time.Second)
@@ -109,14 +109,14 @@ func Test_EventLoop(t *testing.T) {
 
 				alert := core.Alert{
 					Criticality: core.MEDIUM,
-					SUUID:       core.NilSUUID(),
+					HeuristicID: core.UUID{},
 				}
 				policy := &core.AlertPolicy{
 					Sev: core.MEDIUM.String(),
 					Msg: "test",
 				}
 
-				err := am.AddSession(core.NilSUUID(), policy)
+				err := am.AddSession(core.UUID{}, policy)
 				assert.Nil(t, err)
 
 				for _, cli := range cm.GetPagerDutyClients(core.MEDIUM) {
@@ -132,10 +132,10 @@ func Test_EventLoop(t *testing.T) {
 
 				ingress <- alert
 				time.Sleep(1 * time.Second)
-				testid := core.MakeSUUID(1, 1, 1)
+				id := core.UUID{}
 				alert = core.Alert{
 					Criticality: core.UNKNOWN,
-					SUUID:       testid,
+					HeuristicID: id,
 				}
 				ingress <- alert
 				time.Sleep(1 * time.Second)
@@ -164,13 +164,13 @@ func Test_EventLoop(t *testing.T) {
 
 				alert := core.Alert{
 					Criticality: core.HIGH,
-					SUUID:       core.NilSUUID(),
+					HeuristicID: core.UUID{},
 				}
 				policy := &core.AlertPolicy{
 					Sev: core.HIGH.String(),
 					Msg: "test",
 				}
-				err := am.AddSession(core.NilSUUID(), policy)
+				err := am.AddSession(core.UUID{}, policy)
 				assert.Nil(t, err)
 
 				for _, cli := range cm.GetPagerDutyClients(core.HIGH) {
@@ -195,10 +195,10 @@ func Test_EventLoop(t *testing.T) {
 				}
 				ingress <- alert
 				time.Sleep(1 * time.Second)
-				testid := core.MakeSUUID(1, 1, 1)
+				id := core.UUID{}
 				alert = core.Alert{
 					Criticality: core.UNKNOWN,
-					SUUID:       testid,
+					HeuristicID: id,
 				}
 				ingress <- alert
 				time.Sleep(1 * time.Second)

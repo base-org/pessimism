@@ -7,7 +7,7 @@ import (
 
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/etl/component"
+	"github.com/base-org/pessimism/internal/etl/process"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
 	ix_node "github.com/ethereum-optimism/optimism/indexer/node"
@@ -21,9 +21,9 @@ const (
 )
 
 type HeaderTraversal struct {
-	n     core.Network
-	cUUID core.CUUID
-	pUUID core.PUUID
+	n      core.Network
+	id     core.ProcessID
+	pathID core.PathID
 
 	client       ix_node.EthClient
 	traversal    *ix_node.HeaderTraversal
@@ -33,7 +33,7 @@ type HeaderTraversal struct {
 }
 
 func NewHeaderTraversal(ctx context.Context, cfg *core.ClientConfig,
-	opts ...component.Option) (component.Component, error) {
+	opts ...process.Option) (process.Process, error) {
 	clients, err := client.FromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -60,24 +60,25 @@ func NewHeaderTraversal(ctx context.Context, cfg *core.ClientConfig,
 		n:            cfg.Network,
 		client:       node,
 		traversal:    ix_node.NewHeaderTraversal(node, startHeader, big.NewInt(0)),
-		pollInterval: cfg.PollInterval * time.Millisecond,
+		pollInterval: cfg.PollInterval,
 	}
 
-	reader, err := component.NewReader(ctx, core.BlockHeader, ht, opts...)
+	reader, err := process.NewReader(ctx, core.BlockHeader, ht, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	ht.cUUID = reader.UUID()
-	ht.pUUID = reader.PUUID()
+	ht.id = reader.ID()
+	ht.pathID = reader.PathID()
 	return reader, nil
 }
 
+// Height ... Current block height
 func (ht *HeaderTraversal) Height() (*big.Int, error) {
 	return ht.traversal.LastHeader().Number, nil
 }
 
-func (ht *HeaderTraversal) Backfill(start, end *big.Int, consumer chan core.TransitData) error {
+func (ht *HeaderTraversal) Backfill(start, end *big.Int, consumer chan core.Event) error {
 	for i := start; i.Cmp(end) < 0; i.Add(i, big.NewInt(batchSize)) {
 		end := big.NewInt(0).Add(i, big.NewInt(batchSize))
 
@@ -87,7 +88,7 @@ func (ht *HeaderTraversal) Backfill(start, end *big.Int, consumer chan core.Tran
 		}
 
 		for _, header := range headers {
-			consumer <- core.TransitData{
+			consumer <- core.Event{
 				Timestamp: time.Now(),
 				Type:      core.BlockHeader,
 				Value:     header,
@@ -99,12 +100,12 @@ func (ht *HeaderTraversal) Backfill(start, end *big.Int, consumer chan core.Tran
 }
 
 // Loop ...
-func (ht *HeaderTraversal) Loop(ctx context.Context, consumer chan core.TransitData) error {
+func (ht *HeaderTraversal) Loop(ctx context.Context, consumer chan core.Event) error {
 	ticker := time.NewTicker(1 * time.Second)
 
 	recent, err := ht.client.BlockHeaderByNumber(nil)
 	if err != nil {
-		logging.NoContext().Error("Failed to get latest header", zap.Error(err))
+		logging.WithContext(ctx).Error("Failed to get latest header", zap.Error(err))
 	}
 
 	// backfill if provided starting header
@@ -133,7 +134,7 @@ func (ht *HeaderTraversal) Loop(ctx context.Context, consumer chan core.TransitD
 				}
 
 				for _, header := range headers {
-					consumer <- core.TransitData{
+					consumer <- core.Event{
 						Network:   ht.n,
 						Timestamp: time.Now(),
 						Type:      core.BlockHeader,

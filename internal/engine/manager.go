@@ -22,11 +22,11 @@ type Config struct {
 
 // Manager ... Engine manager interface
 type Manager interface {
-	GetInputType(ht core.HeuristicType) (core.RegisterType, error)
+	GetInputType(ht core.HeuristicType) (core.TopicType, error)
 	Transit() chan core.HeuristicInput
 
-	DeleteHeuristicSession(core.SUUID) (core.SUUID, error)
-	DeployHeuristicSession(cfg *heuristic.DeployConfig) (core.SUUID, error)
+	DeleteHeuristicSession(core.UUID) (core.UUID, error)
+	DeployHeuristic(cfg *heuristic.DeployConfig) (core.UUID, error)
 
 	core.Subsystem
 }
@@ -51,13 +51,13 @@ type engineManager struct {
 
 	metrics    metrics.Metricer
 	engine     RiskEngine
-	addresser  AddressingMap
+	addressing *AddressMap
 	store      SessionStore
 	heuristics registry.HeuristicTable
 }
 
 // NewManager ... Initializer
-func NewManager(ctx context.Context, cfg *Config, engine RiskEngine, addr AddressingMap,
+func NewManager(ctx context.Context, cfg *Config, engine RiskEngine, addr *AddressMap,
 	store SessionStore, it registry.HeuristicTable, alertEgress chan core.Alert) Manager {
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -68,7 +68,7 @@ func NewManager(ctx context.Context, cfg *Config, engine RiskEngine, addr Addres
 		etlIngress:   make(chan core.HeuristicInput),
 		workerEgress: make(chan ExecInput),
 		engine:       engine,
-		addresser:    addr,
+		addressing:   addr,
 		store:        store,
 		heuristics:   it,
 		metrics:      metrics.WithContext(ctx),
@@ -92,18 +92,15 @@ func (em *engineManager) Transit() chan core.HeuristicInput {
 }
 
 // DeleteHeuristicSession ... Deletes a heuristic session
-func (em *engineManager) DeleteHeuristicSession(_ core.SUUID) (core.SUUID, error) {
-	return core.NilSUUID(), nil
+func (em *engineManager) DeleteHeuristicSession(_ core.UUID) (core.UUID, error) {
+	return core.UUID{}, nil
 }
 
-// updateSharedState ... Updates the shared state store
-// with contextual information about the heuristic session
-// to the ETL (e.g. address, events)
 func (em *engineManager) updateSharedState(params *core.SessionParams,
-	sk *core.StateKey, pUUID core.PUUID) error {
-	err := sk.SetPUUID(pUUID)
-	// PUUID already exists in key but is different than the one we want
-	if err != nil && sk.PUUID != &pUUID {
+	sk *core.StateKey, PathID core.PathID) error {
+	err := sk.SetPathID(PathID)
+	// PathID already exists in key but is different than the one we want
+	if err != nil && sk.PathID != &PathID {
 		return err
 	}
 
@@ -125,7 +122,7 @@ func (em *engineManager) updateSharedState(params *core.SessionParams,
 				Nesting: false,
 				Prefix:  sk.Prefix,
 				ID:      params.Address().String(),
-				PUUID:   &pUUID,
+				PathID:  &PathID,
 			}
 
 			err = state.InsertUnique(em.ctx, innerKey, argStr)
@@ -136,57 +133,53 @@ func (em *engineManager) updateSharedState(params *core.SessionParams,
 	}
 
 	logging.WithContext(em.ctx).Debug("Setting to state store",
-		zap.String(logging.PUUIDKey, pUUID.String()),
+		zap.String(logging.PathIDKey, PathID.String()),
 		zap.String(logging.AddrKey, params.Address().String()))
 
 	return nil
 }
 
-// DeployHeuristicSession ... Deploys a heuristic session to be processed by the engine
-func (em *engineManager) DeployHeuristicSession(cfg *heuristic.DeployConfig) (core.SUUID, error) {
+func (em *engineManager) DeployHeuristic(cfg *heuristic.DeployConfig) (core.UUID, error) {
 	reg, exists := em.heuristics[cfg.HeuristicType]
 	if !exists {
-		return core.NilSUUID(), fmt.Errorf("heuristic type %s not found", cfg.HeuristicType)
+		return core.UUID{}, fmt.Errorf("heuristic type %s not found", cfg.HeuristicType)
 	}
 
-	if reg.PrepareValidate != nil { // Prepare & validate the heuristic params for stateful consumption
+	if reg.PrepareValidate != nil {
 		err := reg.PrepareValidate(cfg.Params)
 		if err != nil {
-			return core.NilSUUID(), err
+			return core.UUID{}, err
 		}
 	}
 
-	// Build heuristic instance using constructor function from register definition
+	// Build heuristic instance using constructor functions from data topic definitions
 	h, err := reg.Constructor(em.ctx, cfg.Params)
 	if err != nil {
-		return core.NilSUUID(), err
+		return core.UUID{}, err
 	}
 
-	// Generate session UUID and set it to the heuristic
-	sUUID := core.MakeSUUID(cfg.Network, cfg.PUUID.PipelineType(), cfg.HeuristicType)
-	h.SetSUUID(sUUID)
-
-	err = em.store.AddSession(sUUID, cfg.PUUID, h)
+	id := core.NewUUID()
+	err = em.store.AddSession(id, cfg.PathID, h)
 	if err != nil {
-		return core.NilSUUID(), err
+		return core.UUID{}, err
 	}
 
 	// Shared subsystem state management
 	if cfg.Stateful {
-		err = em.addresser.Insert(cfg.Params.Address(), cfg.PUUID, sUUID)
+		err = em.addressing.Insert(cfg.Params.Address(), cfg.PathID, id)
 		if err != nil {
-			return core.NilSUUID(), err
+			return core.UUID{}, err
 		}
 
-		err = em.updateSharedState(cfg.Params, cfg.StateKey, cfg.PUUID)
+		err = em.updateSharedState(cfg.Params, cfg.StateKey, cfg.PathID)
 		if err != nil {
-			return core.NilSUUID(), err
+			return core.UUID{}, err
 		}
 	}
 
-	em.metrics.IncActiveHeuristics(cfg.HeuristicType, cfg.Network, cfg.PUUID.PipelineType())
+	em.metrics.IncActiveHeuristics(cfg.HeuristicType, cfg.Network, cfg.PathID.PathType())
 
-	return sUUID, nil
+	return id, nil
 }
 
 // EventLoop ... Event loop for the engine manager
@@ -209,7 +202,7 @@ func (em *engineManager) EventLoop() error {
 }
 
 // GetInputType ... Returns the register input type for the heuristic type
-func (em *engineManager) GetInputType(ht core.HeuristicType) (core.RegisterType, error) {
+func (em *engineManager) GetInputType(ht core.HeuristicType) (core.TopicType, error) {
 	val, exists := em.heuristics[ht]
 	if !exists {
 		return 0, fmt.Errorf("heuristic type %s not found", ht)
@@ -224,24 +217,22 @@ func (em *engineManager) Shutdown() error {
 	return nil
 }
 
-// executeHeuristics ... Executes all heuristics associated with the input etl pipeline
 func (em *engineManager) executeHeuristics(ctx context.Context, data core.HeuristicInput) {
-	if data.Input.Addressed() { // Address based heuristic
+	if data.Input.Addressed() {
 		em.executeAddressHeuristics(ctx, data)
-	} else { // Non Address based heuristic
+	} else {
 		em.executeNonAddressHeuristics(ctx, data)
 	}
 }
 
-// executeAddressHeuristics ... Executes all address specific heuristics associated with the input etl pipeline
 func (em *engineManager) executeAddressHeuristics(ctx context.Context, data core.HeuristicInput) {
 	logger := logging.WithContext(ctx)
 
-	ids, err := em.addresser.GetSUUIDsByPair(data.Input.Address, data.PUUID)
+	ids, err := em.addressing.Get(data.Input.Address, data.PathID)
 	if err != nil {
 		logger.Error("Could not fetch heuristics by address:pipeline",
 			zap.Error(err),
-			zap.String(logging.PUUIDKey, data.PUUID.String()))
+			zap.String(logging.PathIDKey, data.PathID.String()))
 		return
 	}
 
@@ -250,7 +241,7 @@ func (em *engineManager) executeAddressHeuristics(ctx context.Context, data core
 		if err != nil {
 			logger.Error("Could not find session by heuristic sUUID",
 				zap.Error(err),
-				zap.String(logging.PUUIDKey, sUUID.String()))
+				zap.String(logging.PathIDKey, sUUID.String()))
 			continue
 		}
 
@@ -258,24 +249,21 @@ func (em *engineManager) executeAddressHeuristics(ctx context.Context, data core
 	}
 }
 
-// executeNonAddressHeuristics ... Executes all non address specific heuristics associated with the input etl pipeline
 func (em *engineManager) executeNonAddressHeuristics(ctx context.Context, data core.HeuristicInput) {
 	logger := logging.WithContext(ctx)
 
-	// Fetch all session UUIDs associated with the pipeline
-	sUUIDs, err := em.store.GetSUUIDsByPUUID(data.PUUID)
+	ids, err := em.store.GetUUIDsByPathID(data.PathID)
 	if err != nil {
 		logger.Error("Could not fetch heuristics for pipeline",
 			zap.Error(err),
-			zap.String(logging.PUUIDKey, data.PUUID.String()))
+			zap.String(logging.PathIDKey, data.PathID.String()))
 	}
 
-	// Fetch all heuristics for a slice of SUUIDs
-	heuristics, err := em.store.GetInstancesByUUIDs(sUUIDs)
+	heuristics, err := em.store.GetInstancesByUUIDs(ids)
 	if err != nil {
 		logger.Error("Could not fetch heuristics for pipeline",
 			zap.Error(err),
-			zap.String(logging.PUUIDKey, data.PUUID.String()))
+			zap.String(logging.PathIDKey, data.PathID.String()))
 	}
 
 	for _, h := range heuristics { // Execute all heuristics associated with the pipeline

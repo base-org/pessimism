@@ -66,7 +66,7 @@ All components have a UUID that stores critical identification data. Component I
 
 Component UUID's constitute of both a randomly generated `UUID` and a deterministic `PID`. This is done to ensure uniqueness of each component instance while also ensuring collision based properties so that components can be reused when viable.
 
-A `ComponentPID` is encoded using the following four byte sequence:
+A `ProcIdentifier` is encoded using the following four byte sequence:
 
 ```
             0        1        2        3        4
@@ -178,7 +178,7 @@ This should be extendable to any number of heterogenous data sources.
 A registry submodule is used to store all ETL data register definitions that provide the blueprint for a unique ETL component type. A register definition consists of:
 
 * `DataType` - The output data type of the component node. This is used for data serialization/deserialization by both the ETL and Risk Engine subsystems.
-* `ComponentType` - The type of component being invoked (_e.g. Oracle_).
+* `ProcessType` - The type of component being invoked (_e.g. Oracle_).
 * `ComponentConstructor` - Constructor function used to create unique component instances. All components must implement the `Component` interface.
 * `Dependencies` - Ordered slice of data register dependencies that are necessary for the component to operate. For example, a component that requires a geth block would have a dependency list of `[geth.block]`. This dependency list is used to ensure that the ETL can properly construct a component graph that satisfies all component dependencies.
 
@@ -197,8 +197,8 @@ graph LR;
 
     subgraph EM["Engine Subsystem"]
 
-        SessionHander --> |"Set(PUUID, address)"|state
-        SessionHander --> |"Delete(PUUID, address)"|state
+        SessionHander --> |"Set(PathID, address)"|state
+        SessionHander --> |"Delete(PathID, address)"|state
     end
 
     subgraph ETL["ETL Subsystem"]
@@ -209,7 +209,7 @@ graph LR;
         GETH --> |"{4} []balance"|BO
 
         BO("Balance
-        Reader") --> |"{1} Get(PUUID)"|state
+        Reader") --> |"{1} Get(PathID)"|state
         BO -."eventLoop()".-> BO
 
         state --> |"{2} []address"|BO
@@ -279,9 +279,9 @@ A live pipeline is a pipeline that is actively running and performing ETL operat
 **Backtest**
 A backtest pipeline is a pipeline that is used to sequentially backtest some component sequence from some starting to ending block height. For example, a backtest pipeline could be used to backtest a _balance_enforcement_ heuristic between L1 block heights `0` to `1000`.
 
-### Pipeline UUID (PUUID)
+### Pipeline UUID (PathID)
 
-All pipelines have a PUUID that stores critical identification data. Pipeline UUIDs are used by higher order abstractions to:
+All pipelines have a PathID that stores critical identification data. Pipeline UUIDs are used by higher order abstractions to:
 
 * Route heuristic inputs between the ETL and Risk Engine
 * Understand when pipeline collisions between `PIDs` occur

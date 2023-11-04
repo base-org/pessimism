@@ -17,7 +17,7 @@ type HeuristicTable map[core.HeuristicType]*InvRegister
 type InvRegister struct {
 	PrepareValidate func(*core.SessionParams) error
 	Policy          core.ChainSubscription
-	InputType       core.RegisterType
+	InputType       core.TopicType
 	Constructor     func(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error)
 }
 
@@ -31,21 +31,21 @@ func NewHeuristicTable() HeuristicTable {
 			Constructor:     constructBalanceEnforcement,
 		},
 		core.ContractEvent: {
-			PrepareValidate: ValidateEventTracking,
+			PrepareValidate: ValidateTracking,
 			Policy:          core.BothNetworks,
-			InputType:       core.EventLog,
+			InputType:       core.Log,
 			Constructor:     constructEventInv,
 		},
 		core.FaultDetector: {
 			PrepareValidate: FaultDetectionPrepare,
 			Policy:          core.OnlyLayer1,
-			InputType:       core.EventLog,
+			InputType:       core.Log,
 			Constructor:     constructFaultDetector,
 		},
 		core.WithdrawalSafety: {
 			PrepareValidate: WithdrawHeuristicPrep,
 			Policy:          core.OnlyLayer1,
-			InputType:       core.EventLog,
+			InputType:       core.Log,
 			Constructor:     constructWithdrawalSafety,
 		},
 	}
@@ -110,8 +110,8 @@ func constructWithdrawalSafety(ctx context.Context, isp *core.SessionParams) (he
 	return NewWithdrawalSafetyHeuristic(ctx, cfg)
 }
 
-// ValidateEventTracking ... Ensures that an address and nested args exist in the session params
-func ValidateEventTracking(cfg *core.SessionParams) error {
+// ValidateTracking ... Ensures that an address and nested args exist in the session params
+func ValidateTracking(cfg *core.SessionParams) error {
 	err := ValidateAddressing(cfg)
 	if err != nil {
 		return err

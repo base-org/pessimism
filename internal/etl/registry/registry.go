@@ -10,61 +10,52 @@ const (
 	noEntryErr = "could not find entry in registry for encoded register type %s"
 )
 
-// Registry ... Interface for registry
-type Registry interface {
-	GetDependencyPath(rt core.RegisterType) (core.RegisterDependencyPath, error)
-	GetRegister(rt core.RegisterType) (*core.DataRegister, error)
+type Registry struct {
+	topics map[core.TopicType]*core.DataTopic
 }
 
-// componentRegistry ... Registry implementation
-type componentRegistry struct {
-	registers map[core.RegisterType]*core.DataRegister
-}
-
-// NewRegistry ... Instantiates a new hardcoded registry
-// that contains all extractable ETL data types
 func NewRegistry() Registry {
-	registers := map[core.RegisterType]*core.DataRegister{
+	topics := map[core.TopicType]*core.DataTopic{
 		core.BlockHeader: {
-			Addressing:    false,
-			DataType:      core.BlockHeader,
-			ComponentType: core.Reader,
-			Constructor:   NewHeaderTraversal,
+			Addressing:  false,
+			DataType:    core.BlockHeader,
+			ProcessType: core.Read,
+			Constructor: NewHeaderTraversal,
 
 			Dependencies: noDeps(),
 			Sk:           noState(),
 		},
 
-		core.EventLog: {
-			Addressing:    true,
-			DataType:      core.EventLog,
-			ComponentType: core.Transformer,
-			Constructor:   NewEventParserPipe,
+		core.Log: {
+			Addressing:  true,
+			DataType:    core.Log,
+			ProcessType: core.Subscribe,
+			Constructor: NewLogSubscriber,
 
 			Dependencies: makeDeps(core.BlockHeader),
 			Sk: &core.StateKey{
 				Nesting: true,
-				Prefix:  core.EventLog,
+				Prefix:  core.Log,
 				ID:      core.AddressKey,
-				PUUID:   nil,
+				PathID:  nil,
 			},
 		},
 	}
 
-	return &componentRegistry{registers}
+	return Registry{topics}
 }
 
 // makeDeps ... Makes dependency slice
-func makeDeps(types ...core.RegisterType) []core.RegisterType {
-	deps := make([]core.RegisterType, len(types))
+func makeDeps(types ...core.TopicType) []core.TopicType {
+	deps := make([]core.TopicType, len(types))
 	copy(deps, types)
 
 	return deps
 }
 
 // noDeps ... Returns empty dependency slice
-func noDeps() []core.RegisterType {
-	return []core.RegisterType{}
+func noDeps() []core.TopicType {
+	return []core.TopicType{}
 }
 
 // noState ... Returns empty state key, indicating no state dependencies
@@ -74,33 +65,33 @@ func noState() *core.StateKey {
 }
 
 // GetDependencyPath ... Returns in-order slice of ETL pipeline path
-func (cr *componentRegistry) GetDependencyPath(rt core.RegisterType) (core.RegisterDependencyPath, error) {
-	destRegister, err := cr.GetRegister(rt)
+func (cr *Registry) GetDependencyPath(rt core.TopicType) (core.RegisterDependencyPath, error) {
+	destRegister, err := cr.GetDataTopic(rt)
 	if err != nil {
 		return core.RegisterDependencyPath{}, err
 	}
 
-	registers := make([]*core.DataRegister, len(destRegister.Dependencies)+1)
+	topics := make([]*core.DataTopic, len(destRegister.Dependencies)+1)
 
-	registers[0] = destRegister
+	topics[0] = destRegister
 
 	for i, depType := range destRegister.Dependencies {
-		depRegister, err := cr.GetRegister(depType)
+		depRegister, err := cr.GetDataTopic(depType)
 		if err != nil {
 			return core.RegisterDependencyPath{}, err
 		}
 
-		registers[i+1] = depRegister
+		topics[i+1] = depRegister
 	}
 
-	return core.RegisterDependencyPath{Path: registers}, nil
+	return core.RegisterDependencyPath{Path: topics}, nil
 }
 
-// GetRegister ... Returns a data register provided an enum type
-func (cr *componentRegistry) GetRegister(rt core.RegisterType) (*core.DataRegister, error) {
-	if _, exists := cr.registers[rt]; !exists {
+// GetDataTopic ... Returns a data register provided an enum type
+func (cr *Registry) GetDataTopic(rt core.TopicType) (*core.DataTopic, error) {
+	if _, exists := cr.topics[rt]; !exists {
 		return nil, fmt.Errorf(noEntryErr, rt)
 	}
 
-	return cr.registers[rt], nil
+	return cr.topics[rt], nil
 }

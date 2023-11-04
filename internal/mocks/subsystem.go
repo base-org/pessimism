@@ -38,7 +38,7 @@ func (m *SubManager) EXPECT() *SubManagerMockRecorder {
 }
 
 // BuildDeployCfg mocks base method.
-func (m *SubManager) BuildDeployCfg(arg0 *core.PipelineConfig, arg1 *core.SessionConfig) (*heuristic.DeployConfig, error) {
+func (m *SubManager) BuildDeployCfg(arg0 *core.PathConfig, arg1 *core.SessionConfig) (*heuristic.DeployConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BuildDeployCfg", arg0, arg1)
 	ret0, _ := ret[0].(*heuristic.DeployConfig)
@@ -53,10 +53,10 @@ func (mr *SubManagerMockRecorder) BuildDeployCfg(arg0, arg1 interface{}) *gomock
 }
 
 // BuildPipelineCfg mocks base method.
-func (m *SubManager) BuildPipelineCfg(arg0 *models.SessionRequestParams) (*core.PipelineConfig, error) {
+func (m *SubManager) BuildPipelineCfg(arg0 *models.SessionRequestParams) (*core.PathConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BuildPipelineCfg", arg0)
-	ret0, _ := ret[0].(*core.PipelineConfig)
+	ret0, _ := ret[0].(*core.PathConfig)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -68,10 +68,10 @@ func (mr *SubManagerMockRecorder) BuildPipelineCfg(arg0 interface{}) *gomock.Cal
 }
 
 // RunSession mocks base method.
-func (m *SubManager) RunSession(arg0 *heuristic.DeployConfig) (core.SUUID, error) {
+func (m *SubManager) RunSession(arg0 *heuristic.DeployConfig) (core.UUID, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RunSession", arg0)
-	ret0, _ := ret[0].(core.SUUID)
+	ret0, _ := ret[0].(core.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

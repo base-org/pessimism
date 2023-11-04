@@ -36,7 +36,7 @@ func (m *MockHeuristic) EXPECT() *MockHeuristicMockRecorder {
 }
 
 // Assess mocks base method.
-func (m *MockHeuristic) Assess(arg0 core.TransitData) (*heuristic.ActivationSet, error) {
+func (m *MockHeuristic) Assess(arg0 core.Event) (*heuristic.ActivationSet, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Assess", arg0)
 	ret0, _ := ret[0].(*heuristic.ActivationSet)
@@ -51,10 +51,10 @@ func (mr *MockHeuristicMockRecorder) Assess(arg0 interface{}) *gomock.Call {
 }
 
 // InputType mocks base method.
-func (m *MockHeuristic) InputType() core.RegisterType {
+func (m *MockHeuristic) InputType() core.TopicType {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InputType")
-	ret0, _ := ret[0].(core.RegisterType)
+	ret0, _ := ret[0].(core.TopicType)
 	return ret0
 }
 
@@ -65,10 +65,10 @@ func (mr *MockHeuristicMockRecorder) InputType() *gomock.Call {
 }
 
 // SUUID mocks base method.
-func (m *MockHeuristic) SUUID() core.SUUID {
+func (m *MockHeuristic) SUUID() core.UUID {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SUUID")
-	ret0, _ := ret[0].(core.SUUID)
+	ret0, _ := ret[0].(core.UUID)
 	return ret0
 }
 
@@ -79,7 +79,7 @@ func (mr *MockHeuristicMockRecorder) SUUID() *gomock.Call {
 }
 
 // SetSUUID mocks base method.
-func (m *MockHeuristic) SetSUUID(arg0 core.SUUID) {
+func (m *MockHeuristic) SetSUUID(arg0 core.UUID) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetSUUID", arg0)
 }
@@ -90,16 +90,16 @@ func (mr *MockHeuristicMockRecorder) SetSUUID(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSUUID", reflect.TypeOf((*MockHeuristic)(nil).SetSUUID), arg0)
 }
 
-// ValidateInput mocks base method.
-func (m *MockHeuristic) ValidateInput(arg0 core.TransitData) error {
+// Validate mocks base method.
+func (m *MockHeuristic) Validate(arg0 core.Event) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidateInput", arg0)
+	ret := m.ctrl.Call(m, "Validate", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// ValidateInput indicates an expected call of ValidateInput.
-func (mr *MockHeuristicMockRecorder) ValidateInput(arg0 interface{}) *gomock.Call {
+// Validate indicates an expected call of Validate.
+func (mr *MockHeuristicMockRecorder) Validate(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidateInput", reflect.TypeOf((*MockHeuristic)(nil).ValidateInput), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Validate", reflect.TypeOf((*MockHeuristic)(nil).Validate), arg0)
 }

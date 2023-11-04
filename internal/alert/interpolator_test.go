@@ -9,13 +9,13 @@ import (
 )
 
 func Test_InterpolatePagerDutyMessage(t *testing.T) {
-	sUUID := core.NilSUUID()
+	id := core.UUID{}
 
 	msg := "Test alert"
 
 	expected := "\n\tHeuristic Triggered: unknown\n\tNetwork: unknown\n\tAssessment: \n\tTest alert\n\t"
 
-	actual := alert.NewInterpolator().InterpolatePagerDutyMessage(sUUID, msg)
+	actual := alert.NewInterpolator().InterpolatePagerDutyMessage(id, msg)
 
 	assert.Equal(t, expected, actual, "should be equal")
 }

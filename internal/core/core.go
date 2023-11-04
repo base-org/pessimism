@@ -12,91 +12,83 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// TransitOption ... Option used to initialize transit data
-type TransitOption = func(*TransitData)
+// RelayOption ... Option used to initialize transit data
+type RelayOption = func(*Event)
 
 // WithAddress ... Injects address to transit data
-func WithAddress(address common.Address) TransitOption {
-	return func(td *TransitData) {
-		td.Address = address
+func WithAddress(address common.Address) RelayOption {
+	return func(e *Event) {
+		e.Address = address
 	}
 }
 
 // WithOriginTS ... Injects origin timestamp to transit data
-func WithOriginTS(t time.Time) TransitOption {
-	return func(td *TransitData) {
-		td.OriginTS = t
+func WithOriginTS(t time.Time) RelayOption {
+	return func(e *Event) {
+		e.OriginTS = t
 	}
 }
 
-// TransitData ... Standardized type used for data inter-communication
-// between all ETL components and Risk Engine
-type TransitData struct {
+type Event struct {
 	OriginTS  time.Time
 	Timestamp time.Time
 
 	Network Network
-	Type    RegisterType
+	Type    TopicType
 
 	Address common.Address
 	Value   any
 }
 
-// NewTransitData ... Initializes transit data with supplied options
-// NOTE - transit data is used as a standard data representation
-// for communication between all ETL components and the risk engine
-func NewTransitData(rt RegisterType, val any, opts ...TransitOption) TransitData {
-	td := TransitData{
+func NewEvent(rt TopicType, val any, opts ...RelayOption) Event {
+	e := Event{
 		Timestamp: time.Now(),
 		Type:      rt,
 		Value:     val,
 	}
 
 	for _, opt := range opts { // Apply options
-		opt(&td)
+		opt(&e)
 	}
 
-	return td
+	return e
 }
 
-// Addressed ... Indicates whether the transit data has an
-// associated address field
-func (td *TransitData) Addressed() bool {
-	return td.Address != common.Address{0}
+// Addressed ... Indicates whether the event is addressed
+func (e *Event) Addressed() bool {
+	return e.Address != common.Address{0}
 }
 
 // NewTransitChannel ... Builds new transit channel
-func NewTransitChannel() chan TransitData {
-	return make(chan TransitData)
+func NewTransitChannel() chan Event {
+	return make(chan Event)
 }
 
-// HeuristicInput ... Standardized type used to supply
-// the Risk Engine
 type HeuristicInput struct {
-	PUUID PUUID
-	Input TransitData
+	PathID PathID
+	Input  Event
 }
 
 // ExecInputRelay ... Represents a inter-subsystem
 // relay used to bind final ETL pipeline outputs to risk engine inputs
 type ExecInputRelay struct {
-	pUUID   PUUID
+	PathID  PathID
 	outChan chan HeuristicInput
 }
 
 // NewEngineRelay ... Initializer
-func NewEngineRelay(pUUID PUUID, outChan chan HeuristicInput) *ExecInputRelay {
+func NewEngineRelay(PathID PathID, outChan chan HeuristicInput) *ExecInputRelay {
 	return &ExecInputRelay{
-		pUUID:   pUUID,
+		PathID:  PathID,
 		outChan: outChan,
 	}
 }
 
-// RelayTransitData ... Creates heuristic input from transit data to send to risk engine
-func (eir *ExecInputRelay) RelayTransitData(td TransitData) error {
+// RelayEvent ... Creates heuristic input from transit data to send to risk engine
+func (eir *ExecInputRelay) RelayEvent(e Event) error {
 	hi := HeuristicInput{
-		PUUID: eir.pUUID,
-		Input: td,
+		PathID: eir.PathID,
+		Input:  e,
 	}
 
 	eir.outChan <- hi

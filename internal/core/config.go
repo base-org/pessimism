@@ -3,7 +3,13 @@ package core
 import (
 	"math/big"
 	"time"
+
+	"github.com/ethereum-optimism/optimism/op-service/retry"
 )
+
+func RetryStrategy() *retry.ExponentialStrategy {
+	return &retry.ExponentialStrategy{Min: 1000, Max: 20_000, MaxJitter: 250}
+}
 
 // ClientConfig ... Configuration passed through to an reader component constructor
 type ClientConfig struct {
@@ -17,17 +23,17 @@ type ClientConfig struct {
 // SessionConfig ... Configuration passed through to a session constructor
 type SessionConfig struct {
 	Network     Network
-	PT          PipelineType
+	PT          PathType
 	AlertPolicy *AlertPolicy
 	Type        HeuristicType
 	Params      *SessionParams
 }
 
-// PipelineConfig ... Configuration passed through to a pipeline constructor
-type PipelineConfig struct {
+// PathConfig ... Configuration passed through to a pipeline constructor
+type PathConfig struct {
 	Network      Network
-	DataType     RegisterType
-	PipelineType PipelineType
+	DataType     TopicType
+	PathType     PathType
 	ClientConfig *ClientConfig
 }
 

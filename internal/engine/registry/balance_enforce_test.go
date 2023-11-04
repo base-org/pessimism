@@ -32,7 +32,7 @@ func Test_Balance_Assess(t *testing.T) {
 
 	num := big.NewInt(1)
 	// No activation
-	testData1 := core.TransitData{
+	testData1 := core.Event{
 		Network: core.Layer1,
 		Type:    core.BlockHeader,
 		Value: types.Header{
@@ -48,7 +48,7 @@ func Test_Balance_Assess(t *testing.T) {
 
 	// Upper bound activation
 	num = num.Add(num, big.NewInt(1))
-	testData2 := core.TransitData{
+	testData2 := core.Event{
 		Network: core.Layer1,
 		Type:    core.BlockHeader,
 		Value: types.Header{
@@ -65,7 +65,7 @@ func Test_Balance_Assess(t *testing.T) {
 
 	num = num.Add(num, big.NewInt(1))
 	// Lower bound activation
-	testData3 := core.TransitData{
+	testData3 := core.Event{
 		Network: core.Layer1,
 		Type:    core.BlockHeader,
 		Value: types.Header{
