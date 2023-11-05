@@ -79,7 +79,7 @@ func (a *Application) BootStrap(sessions []*BootSession) ([]core.SessionID, erro
 	ids := make([]core.SessionID, 0, len(sessions))
 
 	for _, session := range sessions {
-		pConfig, err := a.Subsystems.BuildPipelineCfg(session)
+		pConfig, err := a.Subsystems.BuildPathCfg(session)
 		if err != nil {
 			return nil, err
 		}

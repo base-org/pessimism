@@ -30,22 +30,22 @@ func Test_Graph(t *testing.T) {
 		{
 			name:        "Successful Process Node Insertion",
 			function:    "AddProcess",
-			description: "When a component is added to the graph, it should persist within the graph's edge mapping",
+			description: "When a process is added to the graph, it should persist within the graph's edge mapping",
 
 			constructionLogic: etl.NewGraph,
 			testLogic: func(t *testing.T, g *etl.Graph) {
 				cUUID := core.MakeProcessID(69, 69, 69, 69)
 
-				component, err := mocks.NewSubscriber(context.Background(), core.BlockHeader, core.BlockHeader)
+				process, err := mocks.NewSubscriber(context.Background(), core.BlockHeader, core.BlockHeader)
 				assert.NoError(t, err)
 
-				err = g.Add(cUUID, component)
+				err = g.Add(cUUID, process)
 				assert.NoError(t, err, "Process addition should resolve to Nil")
 
 				actualProcess, err := g.GetProcess(cUUID)
 				assert.NoError(t, err, "Process retrieval should resolve to Nil")
 
-				assert.Equal(t, component, actualProcess)
+				assert.Equal(t, process, actualProcess)
 
 				edges := g.Edges()
 
@@ -58,7 +58,7 @@ func Test_Graph(t *testing.T) {
 		{
 			name:        "Failed Cyclic Edge Addition",
 			function:    "addEdge",
-			description: "When an edge between two components already exists (A->B), then an inverted edge (B->A) should not be possible",
+			description: "When an edge between two processs already exists (A->B), then an inverted edge (B->A) should not be possible",
 
 			constructionLogic: func() *etl.Graph {
 				g := etl.NewGraph()
@@ -97,7 +97,7 @@ func Test_Graph(t *testing.T) {
 		{
 			name:        "Failed Duplicate Edge Addition",
 			function:    "AddEdge",
-			description: "When a unique edge exists between two components (A->B), a new edge should not be possible",
+			description: "When a unique edge exists between two processs (A->B), a new edge should not be possible",
 
 			constructionLogic: func() *etl.Graph {
 				g := etl.NewGraph()
@@ -136,7 +136,7 @@ func Test_Graph(t *testing.T) {
 		{
 			name:        "Successful Edge Addition",
 			function:    "AddEdge",
-			description: "When two components are inserted, an edge should be possible between them",
+			description: "When two processs are inserted, an edge should be possible between them",
 
 			constructionLogic: func() *etl.Graph {
 				g := etl.NewGraph()

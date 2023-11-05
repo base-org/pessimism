@@ -37,8 +37,8 @@ type Config struct {
 type Metricer interface {
 	IncMissedBlock(PathType core.PathID)
 	IncActiveHeuristics(ht core.HeuristicType, network core.Network, PathType core.PathType)
-	IncActivePipelines(PathType core.PathType, network core.Network)
-	DecActivePipelines(PathType core.PathType, network core.Network)
+	IncActivePaths(PathType core.PathType, network core.Network)
+	DecActivePaths(PathType core.PathType, network core.Network)
 	RecordBlockLatency(network core.Network, latency float64)
 	RecordHeuristicRun(heuristic heuristic.Heuristic)
 	RecordAlertGenerated(alert core.Alert, dest core.AlertDestination, clientName string)
@@ -59,14 +59,14 @@ type Metrics struct {
 	rpcClientRequestsTotal          *prometheus.CounterVec
 	rpcClientRequestDurationSeconds *prometheus.HistogramVec
 	Up                              prometheus.Gauge
-	ActivePipelines                 *prometheus.GaugeVec
+	ActivePaths                     *prometheus.GaugeVec
 	ActiveHeuristics                *prometheus.GaugeVec
 	HeuristicRuns                   *prometheus.CounterVec
 	AlertsGenerated                 *prometheus.CounterVec
 	NodeErrors                      *prometheus.CounterVec
 	MissedBlocks                    *prometheus.CounterVec
 	BlockLatency                    *prometheus.GaugeVec
-	PipelineLatency                 *prometheus.GaugeVec
+	PathLatency                     *prometheus.GaugeVec
 	InvExecutionTime                *prometheus.GaugeVec
 	HeuristicErrors                 *prometheus.CounterVec
 
@@ -126,14 +126,14 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 			Help:      "Number of active heuristics",
 			Namespace: metricsNamespace,
 			Subsystem: SubsystemHeuristics,
-		}, []string{"heuristic", "network", "pipeline"}),
+		}, []string{"heuristic", "network", "path"}),
 
-		ActivePipelines: factory.NewGaugeVec(prometheus.GaugeOpts{
-			Name:      "active_pipelines",
-			Help:      "Number of active pipelines",
+		ActivePaths: factory.NewGaugeVec(prometheus.GaugeOpts{
+			Name:      "active_paths",
+			Help:      "Number of active paths",
 			Namespace: metricsNamespace,
 			Subsystem: SubsystemEtl,
-		}, []string{"pipeline", "network"}),
+		}, []string{"path", "network"}),
 
 		HeuristicRuns: factory.NewCounterVec(prometheus.CounterOpts{
 			Name:      "heuristic_runs_total",
@@ -146,7 +146,7 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 			Name:      "alerts_generated_total",
 			Help:      "Number of total alerts generated for a given heuristic",
 			Namespace: metricsNamespace,
-		}, []string{"network", "heuristic", "pipeline", "severity", "destination", "client_name"}),
+		}, []string{"network", "heuristic", "path", "severity", "destination", "client_name"}),
 
 		NodeErrors: factory.NewCounterVec(prometheus.CounterOpts{
 			Name:      "node_errors_total",
@@ -159,9 +159,9 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 			Namespace: metricsNamespace,
 		}, []string{"network"}),
 
-		PipelineLatency: factory.NewGaugeVec(prometheus.GaugeOpts{
-			Name:      "pipeline_latency",
-			Help:      "Millisecond latency of pipeline processing",
+		PathLatency: factory.NewGaugeVec(prometheus.GaugeOpts{
+			Name:      "path_latency",
+			Help:      "Millisecond latency of path processing",
 			Namespace: metricsNamespace,
 		}, []string{"PathType"}),
 		InvExecutionTime: factory.NewGaugeVec(prometheus.GaugeOpts{
@@ -227,14 +227,14 @@ func (m *Metrics) IncActiveHeuristics(ht core.HeuristicType, n core.Network,
 	m.ActiveHeuristics.WithLabelValues(ht.String(), n.String(), pt.String()).Inc()
 }
 
-// IncActivePipelines ... Increments the number of active pipelines
-func (m *Metrics) IncActivePipelines(pt core.PathType, n core.Network) {
-	m.ActivePipelines.WithLabelValues(pt.String(), n.String()).Inc()
+// IncActivePaths ... Increments the number of active paths
+func (m *Metrics) IncActivePaths(pt core.PathType, n core.Network) {
+	m.ActivePaths.WithLabelValues(pt.String(), n.String()).Inc()
 }
 
-// DecActivePipelines ... Decrements the number of active pipelines
-func (m *Metrics) DecActivePipelines(pt core.PathType, n core.Network) {
-	m.ActivePipelines.WithLabelValues(pt.String(), n.String()).Dec()
+// DecActivePaths ... Decrements the number of active paths
+func (m *Metrics) DecActivePaths(pt core.PathType, n core.Network) {
+	m.ActivePaths.WithLabelValues(pt.String(), n.String()).Dec()
 }
 
 // RecordHeuristicRun ... Records that a given heuristic has been run
@@ -263,9 +263,9 @@ func (m *Metrics) RecordBlockLatency(n core.Network, latency float64) {
 	m.BlockLatency.WithLabelValues(n.String()).Set(latency)
 }
 
-// RecordPathLatency ... Records the latency of pipeline processing
+// RecordPathLatency ... Records the latency of path processing
 func (m *Metrics) RecordPathLatency(id core.PathID, latency float64) {
-	m.PipelineLatency.WithLabelValues(id.String()).Set(latency)
+	m.PathLatency.WithLabelValues(id.String()).Set(latency)
 }
 
 func (m *Metrics) RecordRPCClientRequest(method string) func(err error) {
@@ -317,8 +317,8 @@ func (n *noopMetricer) RecordUp()                    {}
 func (n *noopMetricer) IncActiveHeuristics(_ core.HeuristicType, _ core.Network, _ core.PathType) {
 }
 func (n *noopMetricer) RecordInvExecutionTime(_ heuristic.Heuristic, _ float64)              {}
-func (n *noopMetricer) IncActivePipelines(_ core.PathType, _ core.Network)                   {}
-func (n *noopMetricer) DecActivePipelines(_ core.PathType, _ core.Network)                   {}
+func (n *noopMetricer) IncActivePaths(_ core.PathType, _ core.Network)                       {}
+func (n *noopMetricer) DecActivePaths(_ core.PathType, _ core.Network)                       {}
 func (n *noopMetricer) RecordHeuristicRun(_ heuristic.Heuristic)                             {}
 func (n *noopMetricer) RecordAlertGenerated(_ core.Alert, _ core.AlertDestination, _ string) {}
 func (n *noopMetricer) RecordNodeError(_ core.Network)                                       {}

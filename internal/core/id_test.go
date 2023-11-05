@@ -20,7 +20,7 @@ func TestProcessID(t *testing.T) {
 	assert.Equal(t, expectedStr, actualStr)
 }
 
-func TestPipelineID(t *testing.T) {
+func TestPathID(t *testing.T) {
 	expected := core.PathIdentifier([9]byte{1, 1, 1, 1, 1, 1, 1, 1, 1})
 	actual := core.MakePathID(1,
 		core.MakeProcessID(1, 1, 1, 1),

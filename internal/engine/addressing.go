@@ -37,7 +37,7 @@ func (am *AddressMap) Insert(addr common.Address, id core.PathID, uuid core.UUID
 		return nil
 	}
 
-	// 2. Check if pipeline UUID exists; create entry & return if not
+	// 2. Check if path UUID exists; create entry & return if not
 	if _, found := am.m[addr][id]; !found {
 		am.m[addr][id] = []core.UUID{uuid}
 		return nil

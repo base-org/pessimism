@@ -35,7 +35,7 @@ func (sk *StateKey) IsNested() bool {
 
 func (sk *StateKey) SetPathID(id PathID) error {
 	if sk.PathID != nil {
-		return fmt.Errorf("state key already has a pipeline UUID %s", sk.PathID.String())
+		return fmt.Errorf("state key already has a path UUID %s", sk.PathID.String())
 	}
 
 	sk.PathID = &id

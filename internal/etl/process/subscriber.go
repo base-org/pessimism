@@ -99,7 +99,7 @@ func (sub *Subscriber) EventLoop() error {
 
 		// Manager is telling us to shutdown
 		case <-sub.close:
-			logger.Debug("Received component shutdown signal",
+			logger.Debug("Process shutdown signal",
 				zap.String("ID", sub.id.String()))
 
 			// p.emitStateChange(Terminated)

@@ -11,10 +11,10 @@ type Entry struct {
 	p  Path
 }
 
-// etlStore ... Stores critical pipeline information
+// etlStore ... Stores critical path information
 //
 //	paths - Mapping used for storing all existing paths
-//	procToPath - Mapping used for storing all component-->[]PID entries
+//	procToPath - Mapping used for storing all process-->[]PID entries
 type EtlStore struct {
 	paths      map[core.PathIdentifier][]Entry
 	procToPath map[core.ProcessID][]core.PathID
@@ -74,7 +74,7 @@ func (store *EtlStore) GetPathIDs(cID core.ProcessID) ([]core.PathID, error) {
 	return pIDs, nil
 }
 
-// getPipelineByPID ... Returns pipeline store provided some PID
+// getPathByPID ... Returns path store provided some PID
 func (store *EtlStore) GetPathByID(id core.PathID) (Path, error) {
 	if _, found := store.paths[id.ID]; !found {
 		return nil, fmt.Errorf(pIDNotFoundErr, id.String())

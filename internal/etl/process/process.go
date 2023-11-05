@@ -12,10 +12,10 @@ const (
 
 type Process interface {
 	/*
-		NOTE - Storing the PathID assumes that one component
-		can only be a part of one pipeline at a time. This could be
-		problematic if we want to have a component be a part of multiple
-		pipelines at once. In that case, we would need to store a slice
+		NOTE - Storing the PathID assumes that one process
+		can only be a part of one path at a time. This could be
+		problematic if we want to have a process be a part of multiple
+		paths at once. In that case, we would need to store a slice
 		of PathIDs instead.
 	*/
 	Close() error

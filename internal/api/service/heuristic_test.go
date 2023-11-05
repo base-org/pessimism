@@ -45,7 +45,7 @@ func Test_RunHeuristicSession(t *testing.T) {
 				ts := createTestSuite(ctrl)
 
 				ts.mockSub.EXPECT().
-					BuildPipelineCfg(&defaultBody.Params).
+					BuildPathCfg(&defaultBody.Params).
 					Return(nil, nil).
 					Times(1)
 
@@ -71,12 +71,12 @@ func Test_RunHeuristicSession(t *testing.T) {
 			},
 		},
 		{
-			name: "Failure when building pipeline config",
+			name: "Failure when building path config",
 			constructionLogic: func() *testSuite {
 				ts := createTestSuite(ctrl)
 
 				ts.mockSub.EXPECT().
-					BuildPipelineCfg(&defaultBody.Params).
+					BuildPathCfg(&defaultBody.Params).
 					Return(nil, testErr()).
 					Times(1)
 				return ts
@@ -96,7 +96,7 @@ func Test_RunHeuristicSession(t *testing.T) {
 				ts := createTestSuite(ctrl)
 
 				ts.mockSub.EXPECT().
-					BuildPipelineCfg(&defaultBody.Params).
+					BuildPathCfg(&defaultBody.Params).
 					Return(nil, nil).
 					Times(1)
 
@@ -122,7 +122,7 @@ func Test_RunHeuristicSession(t *testing.T) {
 				ts := createTestSuite(ctrl)
 
 				ts.mockSub.EXPECT().
-					BuildPipelineCfg(&defaultBody.Params).
+					BuildPathCfg(&defaultBody.Params).
 					Return(nil, nil).
 					Times(1)
 

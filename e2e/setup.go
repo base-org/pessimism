@@ -156,7 +156,7 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 func DefaultTestConfig() *config.Config {
 	l1PollInterval := 900
 	l2PollInterval := 300
-	maxPipelines := 10
+	maxPaths := 10
 	workerCount := 4
 
 	return &config.Config{
@@ -179,9 +179,9 @@ func DefaultTestConfig() *config.Config {
 			Port: 0,
 		},
 		SystemConfig: &subsystem.Config{
-			MaxPipelineCount: maxPipelines,
-			L2PollInterval:   l2PollInterval,
-			L1PollInterval:   l1PollInterval,
+			MaxPathCount:   maxPaths,
+			L2PollInterval: l2PollInterval,
+			L1PollInterval: l1PollInterval,
 		},
 	}
 }

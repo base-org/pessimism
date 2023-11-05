@@ -1,6 +1,6 @@
 package core
 
-// ProcessType ... Denotes the ETL component type
+// ProcessType ... Denotes the ETL process type
 type ProcessType uint8
 
 const (
@@ -8,7 +8,7 @@ const (
 	Subscribe
 )
 
-// String ... Converts the component type to a string
+// String ... Converts the process type to a string
 func (ct ProcessType) String() string {
 	switch ct {
 	case Read:
@@ -28,7 +28,7 @@ const (
 	Live PathType = iota + 1
 )
 
-// StringToPathType ... Converts a string to a pipeline type
+// StringToPathType ... Converts a string to a path type
 func StringToPathType(stringType string) PathType {
 	switch stringType {
 
@@ -40,7 +40,7 @@ func StringToPathType(stringType string) PathType {
 	return PathType(0)
 }
 
-// String ... Converts the pipeline type to a string
+// String ... Converts the path type to a string
 func (pt PathType) String() string {
 	switch pt {
 

@@ -70,7 +70,7 @@ type HeuristicInput struct {
 }
 
 // ExecInputRelay ... Represents a inter-subsystem
-// relay used to bind final ETL pipeline outputs to risk engine inputs
+// relay used to bind final ETL path outputs to risk engine inputs
 type ExecInputRelay struct {
 	PathID  PathID
 	outChan chan HeuristicInput

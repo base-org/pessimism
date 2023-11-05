@@ -67,7 +67,7 @@ To use the template, run the following command(s):
    docker run -p 8080:8080 -p 7300:7300 --env-file=config.env -it -v ${PWD}/genesis.json:/app/genesis.json ghcr.io/base-org/pessimism:latest
    ```
 
-**Note**: If you want to bootstrap the application and run specific heuristics/pipelines upon start, update config.env `BOOTSTRAP_PATH` value to the location of your genesis.json file then run
+**Note**: If you want to bootstrap the application and run specific heuristics/paths upon start, update config.env `BOOTSTRAP_PATH` value to the location of your genesis.json file then run
 
 ### Building and Running New Images
 

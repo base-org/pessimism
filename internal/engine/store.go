@@ -55,7 +55,7 @@ func (ss *sessionStore) GetUUIDsByPathID(PathID core.PathID) ([]core.UUID, error
 	if sessionIDs, found := ss.idMap[PathID]; found {
 		return sessionIDs, nil
 	}
-	return nil, fmt.Errorf("pipeline UUID doesn't exists in store heuristic mapping")
+	return nil, fmt.Errorf("path UUID doesn't exists in store heuristic mapping")
 }
 
 func (ss *sessionStore) AddSession(sUUID core.UUID,

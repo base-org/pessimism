@@ -81,15 +81,15 @@ func (etl *etl) CreateProcessPath(cfg *core.PathConfig) (core.PathID, bool, erro
 
 	id := depPath.GeneratePathID(cfg.PathType, cfg.Network)
 
-	components, err := etl.topicPath(cfg, id, depPath)
+	processs, err := etl.topicPath(cfg, id, depPath)
 	if err != nil {
 		return core.PathID{}, false, err
 	}
 
-	logger.Debug("Constructing pipeline",
+	logger.Debug("Constructing path",
 		zap.String(logging.Path, id.String()))
 
-	path, err := NewPath(cfg, id, components)
+	path, err := NewPath(cfg, id, processs)
 	if err != nil {
 		return core.PathID{}, false, err
 	}
@@ -104,12 +104,12 @@ func (etl *etl) CreateProcessPath(cfg *core.PathConfig) (core.PathID, bool, erro
 		return mergeID, true, nil
 	}
 
-	// Bind communication route between pipeline and risk engine
+	// Bind communication route between path and risk engine
 	if err := path.AddEngineRelay(etl.egress); err != nil {
 		return core.PathID{}, false, err
 	}
 
-	// Add pipeline object to the store
+	// Add path object to the store
 	etl.store.AddPath(id, path)
 
 	return id, false, nil
@@ -128,12 +128,12 @@ func (etl *etl) Run(id core.PathID) error {
 		return err
 	}
 
-	logging.WithContext(etl.ctx).Info("Running pipeline",
+	logging.WithContext(etl.ctx).Info("Running path",
 		zap.String(logging.Path, id.String()))
 
 	// 3. Run processes
 	path.Run(&etl.wg)
-	etl.metrics.IncActivePipelines(id.PathType(), id.NetworkType())
+	etl.metrics.IncActivePaths(id.PathType(), id.NetworkType())
 	return nil
 }
 
@@ -148,29 +148,29 @@ func (etl *etl) EventLoop() error {
 	}
 }
 
-// Shutdown ... Shuts down all pipelines
+// Shutdown ... Shuts down all paths
 func (etl *etl) Shutdown() error {
 	etl.cancel()
 	logger := logging.WithContext(etl.ctx)
 
 	for _, p := range etl.store.Paths() {
-		logger.Info("Shutting down pipeline",
+		logger.Info("Shutting down path",
 			zap.String(logging.Path, p.UUID().String()))
 
 		if err := p.Close(); err != nil {
-			logger.Error("Failed to close pipeline",
+			logger.Error("Failed to close path",
 				zap.String(logging.Path, p.UUID().String()))
 			return err
 		}
-		etl.metrics.DecActivePipelines(p.UUID().PathType(), p.UUID().NetworkType())
+		etl.metrics.DecActivePaths(p.UUID().PathType(), p.UUID().NetworkType())
 	}
-	logger.Debug("Waiting for all component routines to end")
+	logger.Debug("Waiting for all process routines to end")
 	etl.wg.Wait()
 
 	return nil
 }
 
-// ActiveCount ... Returns the number of active pipelines
+// ActiveCount ... Returns the number of active paths
 func (etl *etl) ActiveCount() int {
 	return etl.store.ActiveCount()
 }
@@ -193,7 +193,7 @@ func (etl *etl) topicPath(cfg *core.PathConfig, PathID core.PathID,
 	return processes, nil
 }
 
-// getMergePath ... Returns a pipeline UUID if a merging opportunity exists
+// getMergePath ... Returns a path UUID if a merging opportunity exists
 func (etl *etl) getMergePath(id core.PathID, path Path) (core.PathID, error) {
 	paths := etl.store.GetExistingPaths(id)
 
@@ -214,7 +214,7 @@ func (etl *etl) getMergePath(id core.PathID, path Path) (core.PathID, error) {
 
 func (etl *etl) CreateProcess(cc *core.ClientConfig, cUUID core.ProcessID, PathID core.PathID,
 	dt *core.DataTopic) (process.Process, error) {
-	logging.WithContext(etl.ctx).Debug("constructing component",
+	logging.WithContext(etl.ctx).Debug("constructing process",
 		zap.String("type", dt.ProcessType.String()),
 		zap.String("register_type", dt.DataType.String()))
 
@@ -222,8 +222,8 @@ func (etl *etl) CreateProcess(cc *core.ClientConfig, cUUID core.ProcessID, PathI
 	opts := []process.Option{process.WithID(cUUID), process.WithPathID(PathID)}
 
 	if dt.Stateful() {
-		// Propagate state key to component so that it can be used
-		// by the component's definition logic
+		// Propagate state key to process so that it can be used
+		// by the process's definition logic
 		sk := dt.StateKey()
 		err := sk.SetPathID(PathID)
 		if err != nil {

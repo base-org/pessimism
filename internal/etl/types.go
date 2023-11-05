@@ -29,16 +29,16 @@ func (as ActivityState) String() string {
 
 const (
 	// EtlStore error constants
-	couldNotCastErr = "could not cast component initializer function to %s constructor type"
-	pIDNotFoundErr  = "could not find pipeline ID for %s"
-	uuidNotFoundErr = "could not find matching UUID for pipeline entry"
+	couldNotCastErr = "could not cast process initializer function to %s constructor type"
+	pIDNotFoundErr  = "could not find path ID for %s"
+	uuidNotFoundErr = "could not find matching UUID for path entry"
 
 	// ProcessGraph error constants
-	cUUIDNotFoundErr = "component with ID %s does not exist within component graph"
-	procExistsErr    = "process with ID %s already exists in component graph"
-	edgeExistsErr    = "edge already exists from (%s) to (%s) in component graph"
+	cUUIDNotFoundErr = "process with ID %s does not exist within dag"
+	procExistsErr    = "process with ID %s already exists in dag"
+	edgeExistsErr    = "edge already exists from (%s) to (%s) in dag"
 
-	emptyPipelineError = "pipeline must contain at least one component"
+	emptyPathError = "path must contain at least one process"
 	// Manager error constants
-	unknownCompType = "unknown component type %s provided"
+	unknownCompType = "unknown process type %s provided"
 )

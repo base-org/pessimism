@@ -17,7 +17,7 @@ import (
 	"github.com/base-org/pessimism/internal/mocks"
 )
 
-// testSuite ... Test suite for the event log pipe
+// testSuite ... Test suite for the event log subscription
 type testSuite struct {
 	ctx       context.Context
 	def       process.Subscription
@@ -57,8 +57,8 @@ func defConstructor(t *testing.T) *testSuite {
 	}
 }
 
-// TestLogPipe ... Tests the event log pipe
-func TestLogPipe(t *testing.T) {
+// TestLogSubscription ... Tests the event log subscription
+func TestLogSubscription(t *testing.T) {
 	var tests = []struct {
 		name        string
 		constructor func(t *testing.T) *testSuite

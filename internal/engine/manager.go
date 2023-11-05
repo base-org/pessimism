@@ -33,8 +33,8 @@ type Manager interface {
 
 /*
 	NOTE - Manager will need to understand
-	when pipeline changes occur that require remapping
-	heuristic sessions to other pipelines
+	when path changes occur that require remapping
+	heuristic sessions to other paths
 */
 
 // engineManager ... Engine management abstraction
@@ -232,7 +232,7 @@ func (em *engineManager) executeAddressHeuristics(ctx context.Context, data core
 
 	ids, err := em.addressing.Get(data.Input.Address, data.PathID)
 	if err != nil {
-		logger.Error("Could not fetch heuristics by address:pipeline",
+		logger.Error("Could not fetch heuristics by address:path",
 			zap.Error(err),
 			zap.String(logging.Path, data.PathID.String()))
 		return
@@ -256,19 +256,19 @@ func (em *engineManager) executeNonAddressHeuristics(ctx context.Context, data c
 
 	ids, err := em.store.GetUUIDsByPathID(data.PathID)
 	if err != nil {
-		logger.Error("Could not fetch heuristics for pipeline",
+		logger.Error("Could not fetch heuristics for path",
 			zap.Error(err),
 			zap.String(logging.Path, data.PathID.String()))
 	}
 
 	heuristics, err := em.store.GetInstancesByUUIDs(ids)
 	if err != nil {
-		logger.Error("Could not fetch heuristics for pipeline",
+		logger.Error("Could not fetch heuristics for path",
 			zap.Error(err),
 			zap.String(logging.Path, data.PathID.String()))
 	}
 
-	for _, h := range heuristics { // Execute all heuristics associated with the pipeline
+	for _, h := range heuristics { // Execute all heuristics associated with the path
 		em.executeHeuristic(ctx, data, h)
 	}
 }

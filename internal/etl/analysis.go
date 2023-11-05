@@ -5,10 +5,10 @@ import (
 	"github.com/base-org/pessimism/internal/etl/registry"
 )
 
-// Analyzer ... Interface for analyzing pipelines
+// Analyzer ... Interface for analyzing paths
 type Analyzer interface {
 	Mergable(p1 Path, p2 Path) bool
-	// MergePipelines(ctx context.Context, p1 Pipeline, p2 Pipeline) (Pipeline, error)
+	// MergePaths(ctx context.Context, p1 Path, p2 Path) (Path, error)
 }
 
 // analyzer ... Implementation of Analyzer
@@ -23,30 +23,30 @@ func NewAnalyzer(r *registry.Registry) Analyzer {
 	}
 }
 
-// Mergable ... Returns true if pipelines can be merged or deduped
+// Mergable ... Returns true if paths can be merged or deduped
 func (a *analyzer) Mergable(path1 Path, path2 Path) bool {
-	// Invalid if pipelines are not the same length
+	// Invalid if paths are not the same length
 	if len(path1.Processes()) != len(path2.Processes()) {
 		return false
 	}
 
-	// Invalid if pipelines are not live
+	// Invalid if paths are not live
 	if path1.Config().PathType != core.Live ||
 		path2.Config().PathType != core.Live {
 		return false
 	}
 
-	// Invalid if either pipeline requires a backfill
-	// NOTE - This is a temporary solution to prevent live backfills on two pipelines
+	// Invalid if either path requires a backfill
+	// NOTE - This is a temporary solution to prevent live backfills on two paths
 	// from being merged.
-	// In the future, this should only check the current state of each pipeline
+	// In the future, this should only check the current state of each path
 	// to ensure that the backfill has been completed for both.
 	if path1.Config().ClientConfig.Backfill() ||
 		path2.Config().ClientConfig.Backfill() {
 		return false
 	}
 
-	// Invalid if pipelines do not share the same PID
+	// Invalid if paths do not share the same PID
 	if path1.UUID().ID != path2.UUID().ID {
 		return false
 	}
@@ -56,8 +56,8 @@ func (a *analyzer) Mergable(path1 Path, path2 Path) bool {
 
 // NOTE - This is intentionally commented out for now as its not in-use.
 
-// // MergePipelines ... Merges two pipelines into one (p1 --merge-> p2)
-// func (a *analyzer) MergePipelines(ctx context.Context, p1 Pipeline, p2 Pipeline) (Pipeline, error) {
+// // MergePaths ... Merges two paths into one (p1 --merge-> p2)
+// func (a *analyzer) MergePaths(ctx context.Context, p1 Path, p2 Path) (Path, error) {
 // 	for i, compi := range p1.Processs() {
 // 		compj := p2.Processs()[i]
 

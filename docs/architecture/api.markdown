@@ -22,7 +22,7 @@ The API can be customly configured using environment variables stored in a `conf
 
 ### Processs
 
-The Pessimism API is broken down into the following constituent components:
+The Pessimism API is broken down into the following constituent processs:
 
 - `handlers`: The handlers package contains the HTTP handlers for the API. Each handler is responsible for handling a specific endpoint and is responsible for parsing the request, calling the appropriate service method, and renders a response.
 - `service`: The service package contains the business logic for the API. The service is responsible for handling calls to the core Pessimism subsystems and is responsible for validating incoming requests.

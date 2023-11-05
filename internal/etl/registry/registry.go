@@ -64,7 +64,7 @@ func noState() *core.StateKey {
 	return nil
 }
 
-// TopicPath ... Returns in-order slice of ETL pipeline path
+// TopicPath ... Returns in-order slice of ETL path path
 func (r *Registry) TopicPath(tt core.TopicType) (core.TopicPath, error) {
 	topic, err := r.GetDataTopic(tt)
 	if err != nil {

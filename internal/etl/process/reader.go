@@ -14,7 +14,7 @@ import (
 
 // Routine ...
 type Routine interface {
-	Loop(ctx context.Context, componentChan chan core.Event) error
+	Loop(ctx context.Context, processChan chan core.Event) error
 	Height() (*big.Int, error)
 }
 

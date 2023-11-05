@@ -38,7 +38,7 @@ func TestSessionStore(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, h.ID(), id1)
 
-				// Ensure that pipeline UUIDs are retrievable
+				// Ensure that path UUIDs are retrievable
 				ids, err := ss.GetUUIDsByPathID(core.PathID{})
 				assert.NoError(t, err)
 				assert.Equal(t, ids, []core.UUID{id1})
@@ -72,7 +72,7 @@ func TestSessionStore(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, h2.ID(), id2)
 
-				// Ensure that pipeline UUIDs are retrievable
+				// Ensure that path UUIDs are retrievable
 				ids, err := ss.GetUUIDsByPathID(core.PathID{})
 				assert.NoError(t, err)
 				assert.Equal(t, ids, []core.UUID{id1, id2})
@@ -100,7 +100,7 @@ func TestSessionStore(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Equal(t, h.ID(), id1)
 
-				// Ensure that pipeline UUIDs are retrievable
+				// Ensure that path UUIDs are retrievable
 				ids, err := ss.GetUUIDsByPathID(core.PathID{})
 				assert.NoError(t, err)
 				assert.Equal(t, ids, []core.UUID{id1})

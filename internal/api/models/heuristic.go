@@ -81,7 +81,7 @@ func (hrp *SessionRequestParams) AlertPolicy() *core.AlertPolicy {
 	return hrp.AlertingParams
 }
 
-// NewPathCfg ... Generates a pipeline config using the request params
+// NewPathCfg ... Generates a path config using the request params
 func (hrp *SessionRequestParams) NewPathCfg(pollInterval time.Duration,
 	regType core.TopicType) *core.PathConfig {
 	return &core.PathConfig{

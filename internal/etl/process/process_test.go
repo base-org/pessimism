@@ -29,7 +29,7 @@ func Test_State(t *testing.T) {
 			testLogic: func(t *testing.T, s *State) {
 
 				go func() {
-					// Simulate a component ending itself
+					// Simulate a process ending itself
 					s.emit(Terminated)
 
 				}()

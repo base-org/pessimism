@@ -17,7 +17,7 @@ func (svc *PessimismService) ProcessHeuristicRequest(ir *models.SessionRequestBo
 
 // RunHeuristicSession ... Runs a heuristic session provided
 func (svc *PessimismService) RunHeuristicSession(params *models.SessionRequestParams) (core.UUID, error) {
-	pConfig, err := svc.m.BuildPipelineCfg(params)
+	pConfig, err := svc.m.BuildPathCfg(params)
 	if err != nil {
 		return core.UUID{}, err
 	}

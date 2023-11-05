@@ -22,9 +22,9 @@ import (
 
 // Config ... Used to store necessary API service config values
 type Config struct {
-	MaxPipelineCount int
-	L1PollInterval   int
-	L2PollInterval   int
+	MaxPathCount   int
+	L1PollInterval int
+	L2PollInterval int
 }
 
 // GetPollInterval ... Returns config poll-interval for network type
@@ -43,7 +43,7 @@ func (cfg *Config) GetPollInterval(n core.Network) (time.Duration, error) {
 
 type Subsystem interface {
 	BuildDeployCfg(pConfig *core.PathConfig, sConfig *core.SessionConfig) (*heuristic.DeployConfig, error)
-	BuildPipelineCfg(params *models.SessionRequestParams) (*core.PathConfig, error)
+	BuildPathCfg(params *models.SessionRequestParams) (*core.PathConfig, error)
 	RunHeuristic(cfg *heuristic.DeployConfig) (core.UUID, error)
 	// Orchestration
 	StartEventRoutines(ctx context.Context)
@@ -126,7 +126,7 @@ func (m *Manager) StartEventRoutines(ctx context.Context) {
 	}()
 }
 
-// BuildDeployCfg ... Builds a deploy config provided a pipeline & session config
+// BuildDeployCfg ... Builds a deploy config provided a path & session config
 func (m *Manager) BuildDeployCfg(pConfig *core.PathConfig,
 	sConfig *core.SessionConfig) (*heuristic.DeployConfig, error) {
 	// 1. Fetch state key using risk engine input register type
@@ -135,14 +135,14 @@ func (m *Manager) BuildDeployCfg(pConfig *core.PathConfig,
 		return nil, err
 	}
 
-	// 2. Create data pipeline
+	// 2. Create data path
 	PathID, reuse, err := m.etl.CreateProcessPath(pConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	logging.WithContext(m.ctx).
-		Info("Created etl pipeline", zap.String(logging.Path, PathID.String()))
+		Info("Created etl path", zap.String(logging.Path, PathID.String()))
 
 	// 3. Create a deploy config
 	return &heuristic.DeployConfig{
@@ -162,7 +162,7 @@ func (m *Manager) RunHeuristic(cfg *heuristic.DeployConfig) (core.UUID, error) {
 	// 1. Verify that path constraints are met
 	// NOTE - Consider introducing a config validation step or module
 	if !cfg.Reuse && m.etlLimitReached() {
-		return core.UUID{}, fmt.Errorf(maxPathErr, m.cfg.MaxPipelineCount)
+		return core.UUID{}, fmt.Errorf(maxPathErr, m.cfg.MaxPathCount)
 	}
 
 	// 2. Deploy heuristic session to risk engine
@@ -179,20 +179,20 @@ func (m *Manager) RunHeuristic(cfg *heuristic.DeployConfig) (core.UUID, error) {
 		return core.UUID{}, err
 	}
 
-	// 4. Run pipeline if not reused
+	// 4. Run path if not reused
 	if cfg.Reuse {
 		return id, nil
 	}
 
-	if err = m.etl.Run(cfg.PathID); err != nil { // Spin-up pipeline components
+	if err = m.etl.Run(cfg.PathID); err != nil { // Spin-up path processes
 		return core.UUID{}, err
 	}
 
 	return id, nil
 }
 
-// BuildPipelineCfg ... Builds a pipeline config provided a set of heuristic request params
-func (m *Manager) BuildPipelineCfg(params *models.SessionRequestParams) (*core.PathConfig, error) {
+// BuildPathCfg ... Builds a path config provided a set of heuristic request params
+func (m *Manager) BuildPathCfg(params *models.SessionRequestParams) (*core.PathConfig, error) {
 	inType, err := m.eng.GetInputType(params.Heuristic())
 	if err != nil {
 		return nil, err
@@ -216,11 +216,11 @@ func (m *Manager) BuildPipelineCfg(params *models.SessionRequestParams) (*core.P
 	}, nil
 }
 
-// etlLimitReached ... Returns true if the ETL pipeline count is at or above the max
+// etlLimitReached ... Returns true if the ETL path count is at or above the max
 func (m *Manager) etlLimitReached() bool {
-	return m.etl.ActiveCount() >= m.cfg.MaxPipelineCount
+	return m.etl.ActiveCount() >= m.cfg.MaxPathCount
 }
 
-func (m *Manager) PipelineHeight(PathID core.PathID) (*big.Int, error) {
+func (m *Manager) PathHeight(PathID core.PathID) (*big.Int, error) {
 	return m.etl.GetBlockHeight(PathID)
 }

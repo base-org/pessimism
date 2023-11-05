@@ -36,7 +36,7 @@ type path struct {
 // NewPath ... Initializer
 func NewPath(cfg *core.PathConfig, PathID core.PathID, procs []process.Process) (Path, error) {
 	if len(procs) == 0 {
-		return nil, fmt.Errorf(emptyPipelineError)
+		return nil, fmt.Errorf(emptyPathError)
 	}
 
 	p := &path{
@@ -66,11 +66,11 @@ func (p *path) UUID() core.PathID {
 }
 
 func (p *path) BlockHeight() (*big.Int, error) {
-	// We assume that all paths have an oracle as their last component
+	// We assume that all paths have an oracle as their last process
 	comp := p.processes[len(p.processes)-1]
 	cr, ok := comp.(*process.ChainReader)
 	if !ok {
-		return nil, fmt.Errorf("could not cast component to chain reader")
+		return nil, fmt.Errorf("could not cast process to chain reader")
 	}
 
 	return cr.Height()
@@ -121,7 +121,7 @@ func (p *path) Close() error {
 	for _, p := range p.processes {
 		if p.ActivityState() != process.Terminated {
 			logging.NoContext().
-				Debug("Shutting down path component",
+				Debug("Shutting down path process",
 					zap.String(logging.Process, p.ID().String()),
 					zap.String(logging.Path, p.ID().String()))
 

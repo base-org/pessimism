@@ -65,7 +65,7 @@ func TestMultiDirectiveRouting(t *testing.T) {
 	// and PagerDuty servers.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
 		PathID := ids[0].PathID
-		height, err := ts.Subsystems.PipelineHeight(PathID)
+		height, err := ts.Subsystems.PathHeight(PathID)
 		if err != nil {
 			return false, err
 		}
@@ -151,7 +151,7 @@ func TestCoolDown(t *testing.T) {
 
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
 		PathID := ids[0].PathID
-		height, err := ts.Subsystems.PipelineHeight(PathID)
+		height, err := ts.Subsystems.PathHeight(PathID)
 		if err != nil {
 			return false, err
 		}

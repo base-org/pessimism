@@ -34,7 +34,7 @@ func createTestSuite(t *testing.T) *testSuite {
 	engMock := mocks.NewEngineManager(ctrl)
 	alrtMock := mocks.NewAlertManager(ctrl)
 	cfg := &subsystem.Config{
-		MaxPipelineCount: 10,
+		MaxPathCount: 10,
 	}
 
 	sys := subsystem.NewManager(context.Background(), cfg, etlMock, engMock, alrtMock)
@@ -86,7 +86,7 @@ func TestBuildDeployCfg(t *testing.T) {
 			},
 		},
 		{
-			name: "Failure when creating data pipeline",
+			name: "Failure when creating data path",
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
 
@@ -232,7 +232,7 @@ func TestRunHeuristic(t *testing.T) {
 			},
 		},
 		{
-			name: "Failure when active pipeline count is reached",
+			name: "Failure when active path count is reached",
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
 
@@ -259,7 +259,7 @@ func TestRunHeuristic(t *testing.T) {
 	}
 }
 
-func TestBuildPipelineCfg(t *testing.T) {
+func TestBuildPathCfg(t *testing.T) {
 
 	var tests = []struct {
 		name        string
@@ -282,7 +282,7 @@ func TestBuildPipelineCfg(t *testing.T) {
 					HeuristicType: core.BalanceEnforcement.String(),
 				}
 
-				cfg, err := ts.sys.BuildPipelineCfg(testParams)
+				cfg, err := ts.sys.BuildPathCfg(testParams)
 				assert.Error(t, err)
 				assert.Nil(t, cfg)
 			},
@@ -303,7 +303,7 @@ func TestBuildPipelineCfg(t *testing.T) {
 					HeuristicType: core.BalanceEnforcement.String(),
 				}
 
-				cfg, err := ts.sys.BuildPipelineCfg(testParams)
+				cfg, err := ts.sys.BuildPathCfg(testParams)
 				assert.Error(t, err)
 				assert.Nil(t, cfg)
 			},
@@ -324,7 +324,7 @@ func TestBuildPipelineCfg(t *testing.T) {
 					HeuristicType: core.BalanceEnforcement.String(),
 				}
 
-				cfg, err := ts.sys.BuildPipelineCfg(testParams)
+				cfg, err := ts.sys.BuildPathCfg(testParams)
 				assert.NoError(t, err)
 				assert.NotNil(t, cfg)
 

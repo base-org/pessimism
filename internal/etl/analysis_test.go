@@ -20,14 +20,14 @@ func Test_Mergable(t *testing.T) {
 		testLogic   func(t *testing.T, a etl.Analyzer)
 	}{
 		{
-			name:        "Successful Pipeline Merge",
-			description: "Mergable function should return true if pipelines are mergable",
+			name:        "Successful Path Merge",
+			description: "Mergable function should return true if paths are mergable",
 			construct: func() etl.Analyzer {
 				r := registry.New()
 				return etl.NewAnalyzer(r)
 			},
 			testLogic: func(t *testing.T, a etl.Analyzer) {
-				// Setup test pipelines
+				// Setup test paths
 				mockOracle, err := mocks.NewReader(context.Background(), core.BlockHeader)
 				assert.NoError(t, err)
 
@@ -50,14 +50,14 @@ func Test_Mergable(t *testing.T) {
 			},
 		},
 		{
-			name:        "Failure Pipeline Merge",
+			name:        "Failure Path Merge",
 			description: "Mergable function should return false when PID's do not match",
 			construct: func() etl.Analyzer {
 				r := registry.New()
 				return etl.NewAnalyzer(r)
 			},
 			testLogic: func(t *testing.T, a etl.Analyzer) {
-				// Setup test pipelines
+				// Setup test paths
 				mockOracle, err := mocks.NewReader(context.Background(), core.BlockHeader)
 				assert.NoError(t, err)
 

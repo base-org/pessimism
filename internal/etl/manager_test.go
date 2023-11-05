@@ -24,9 +24,8 @@ func TestETL(t *testing.T) {
 		testLogic         func(t *testing.T, m ETL)
 	}{
 		{
-			name:        "Success - Subscription Process",
-			function:    "CreateProcess",
-			description: "CreateProcess function should generate pipe component instance provided valid params",
+			name:     "Success - Subscription Process",
+			function: "CreateProcess",
 
 			constructionLogic: func() ETL {
 				r := registry.New()
@@ -92,15 +91,15 @@ func TestETL(t *testing.T) {
 				assert.False(t, reuse)
 				assert.NotEqual(t, id1, core.PathID{})
 
-				// Now create a new pipeline with the same config
-				// & ensure that the previous pipeline is reused
+				// Now create a new path with the same config
+				// & ensure that the previous path is reused
 
 				id2, reuse, err := etl.CreateProcessPath(pCfg)
 				assert.NoError(t, err)
 				assert.True(t, reuse)
 				assert.Equal(t, id1, id2)
 
-				// Now run the pipeline
+				// Now run the path
 				err = etl.Run(id1)
 				assert.NoError(t, err)
 
@@ -116,8 +115,8 @@ func TestETL(t *testing.T) {
 
 	for i, tc := range tests {
 		t.Run(fmt.Sprintf("%d-%s-%s", i, tc.function, tc.name), func(t *testing.T) {
-			testPipeline := tc.constructionLogic()
-			tc.testLogic(t, testPipeline)
+			testPath := tc.constructionLogic()
+			tc.testLogic(t, testPath)
 		})
 
 	}

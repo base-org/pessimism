@@ -58,7 +58,7 @@ A `SessionPID` is encoded using the following 3 byte array sequence:
 ```
             0           1           2           3
             |-----------|-----------|-----------|
-               network    pipeline    heuristic
+               network    path    heuristic
                 type        type        type
 ```
 

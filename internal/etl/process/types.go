@@ -39,9 +39,9 @@ type StateChange struct {
 
 const (
 	engineRelayExists = "engine egress already exists"
-	subExistsErr      = "%s egress key already exists within component router mapping"
-	subNotFound       = "no subscription process key %s exists"
-	noSubErr          = "received transit request with 0 out channels to write to"
+	subExistsErr      = "%s subscriber already exists"
+	subNotFound       = "no subscriber with key %s exists"
+	noSubErr          = "no subscribers to notify"
 
 	relayErr = "received relay error: %s"
 )

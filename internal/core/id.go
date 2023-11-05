@@ -39,7 +39,7 @@ func (id UUID) ShortString() string {
 type ProcIdentifier [4]byte
 
 // Represents a non-deterministic ID that's assigned to
-// every uniquely constructed ETL component
+// every uniquely constructed ETL process
 type ProcessID struct {
 	ID   ProcIdentifier
 	UUID UUID
@@ -82,7 +82,7 @@ func MakeProcessID(pt PathType, ct ProcessType, tt TopicType, n Network) Process
 	}
 }
 
-// MakePathID ... Constructs a pipeline PID sequence & random UUID
+// MakePathID ... Constructs a path PID sequence & random UUID
 func MakePathID(pt PathType, proc1, proc2 ProcessID) PathID {
 	id1, id2 := proc1.ID, proc2.ID
 
@@ -104,7 +104,7 @@ func MakePathID(pt PathType, proc1, proc2 ProcessID) PathID {
 	}
 }
 
-// String ... Returns string representation of a component PID
+// String ... Returns string representation of a process PID
 func (pid ProcIdentifier) String() string {
 	return fmt.Sprintf("%s:%s:%s:%s",
 		Network(pid[0]).String(),

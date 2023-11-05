@@ -80,7 +80,7 @@ func TestPath(t *testing.T) {
 		},
 		{
 			name:     "Successful Run",
-			function: "RunPipeline",
+			function: "RunPath",
 			constructionLogic: func() etl.Path {
 
 				testO, _ := mocks.NewReader(
@@ -99,12 +99,12 @@ func TestPath(t *testing.T) {
 				return pl
 			},
 			testLogic: func(t *testing.T, pl etl.Path) {
-				assert.Equal(t, pl.State(), etl.INACTIVE, "Pipeline should be inactive")
+				assert.Equal(t, pl.State(), etl.INACTIVE, "Path should be inactive")
 
 				wg := &sync.WaitGroup{}
 				pl.Run(wg)
 
-				assert.Equal(t, pl.State(), etl.ACTIVE, "Pipeline should be active")
+				assert.Equal(t, pl.State(), etl.ACTIVE, "Path should be active")
 			},
 		},
 	}

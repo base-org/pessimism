@@ -95,7 +95,7 @@ func TestBalanceEnforcement(t *testing.T) {
 	// Wait for Pessimism to process the balance change and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
 		id := ids[0].PathID
-		height, err := ts.Subsystems.PipelineHeight(id)
+		height, err := ts.Subsystems.PathHeight(id)
 		if err != nil {
 			return false, err
 		}
@@ -136,7 +136,7 @@ func TestBalanceEnforcement(t *testing.T) {
 	// Wait for Pessimism to process the balance change and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
 		id := ids[0].PathID
-		height, err := ts.Subsystems.PipelineHeight(id)
+		height, err := ts.Subsystems.PathHeight(id)
 		if err != nil {
 			return false, err
 		}
@@ -207,7 +207,7 @@ func TestContractEvent(t *testing.T) {
 	// Wait for Pessimism to process the newly emitted event and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
 		id := ids[0].PathID
-		height, err := ts.Subsystems.PipelineHeight(id)
+		height, err := ts.Subsystems.PathHeight(id)
 		if err != nil {
 			return false, err
 		}
@@ -303,7 +303,7 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 	// Wait for Pessimism to process the proven withdrawal and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
 		id := ids[0].PathID
-		height, err := ts.Subsystems.PipelineHeight(id)
+		height, err := ts.Subsystems.PathHeight(id)
 		if err != nil {
 			return false, err
 		}
@@ -338,7 +338,7 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 	// // Wait for Pessimism to process the finalized withdrawal and send a notification to the mocked Slack server.
 	// require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
 	// 	id := ids[0].PathID
-	// 	height, err := ts.Subsystems.PipelineHeight(id)
+	// 	height, err := ts.Subsystems.PathHeight(id)
 	// 	if err != nil {
 	// 		return false, err
 	// 	}
@@ -423,7 +423,7 @@ func TestWithdrawalSafetyNoInvariants(t *testing.T) {
 	// Wait for Pessimism to process the proven withdrawal and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
 		id := ids[0].PathID
-		height, err := ts.Subsystems.PipelineHeight(id)
+		height, err := ts.Subsystems.PathHeight(id)
 		if err != nil {
 			return false, err
 		}
@@ -490,7 +490,7 @@ func TestFaultDetector(t *testing.T) {
 
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
 		id := ids[0].PathID
-		height, err := ts.Subsystems.PipelineHeight(id)
+		height, err := ts.Subsystems.PathHeight(id)
 		if err != nil {
 			return false, err
 		}

@@ -21,12 +21,12 @@ func TestSubscription(t *testing.T) {
 
 	ts := time.Date(1969, time.April, 1, 4, 20, 0, 0, time.Local)
 
-	// Setup component dependencies
+	// Setup process dependencies
 	id := core.MakeProcessID(6, 9, 6, 9)
 
 	topics := make(chan core.Event)
 
-	// Construct test component
+	// Construct test process
 	path, err := mocks.NewSubscriber(ctx, core.BlockHeader, core.Log)
 	assert.NoError(t, err)
 
@@ -40,7 +40,6 @@ func TestSubscription(t *testing.T) {
 	err = rlp.DecodeBytes(blockEnc, &block)
 	assert.NoError(t, err)
 
-	// Start component event loop on separate go routine
 	go func() {
 		if err := path.EventLoop(); err != nil {
 			log.Printf("Got error from path event loop %s", err.Error())
@@ -74,7 +73,7 @@ func TestSubscription(t *testing.T) {
 
 	relay <- e
 
-	// Wait for pipe to transform block data into a transaction slice
+	// Wait for subscription to transform block data into a transaction slice
 	wg.Wait()
 
 	assert.NotNil(t, outputData)

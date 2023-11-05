@@ -52,19 +52,19 @@ func (mr *SubManagerMockRecorder) BuildDeployCfg(arg0, arg1 interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildDeployCfg", reflect.TypeOf((*SubManager)(nil).BuildDeployCfg), arg0, arg1)
 }
 
-// BuildPipelineCfg mocks base method.
-func (m *SubManager) BuildPipelineCfg(arg0 *models.SessionRequestParams) (*core.PathConfig, error) {
+// BuildPathCfg mocks base method.
+func (m *SubManager) BuildPathCfg(arg0 *models.SessionRequestParams) (*core.PathConfig, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BuildPipelineCfg", arg0)
+	ret := m.ctrl.Call(m, "BuildPathCfg", arg0)
 	ret0, _ := ret[0].(*core.PathConfig)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// BuildPipelineCfg indicates an expected call of BuildPipelineCfg.
-func (mr *SubManagerMockRecorder) BuildPipelineCfg(arg0 interface{}) *gomock.Call {
+// BuildPathCfg indicates an expected call of BuildPathCfg.
+func (mr *SubManagerMockRecorder) BuildPathCfg(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildPipelineCfg", reflect.TypeOf((*SubManager)(nil).BuildPipelineCfg), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildPathCfg", reflect.TypeOf((*SubManager)(nil).BuildPathCfg), arg0)
 }
 
 // RunHeuristic mocks base method.

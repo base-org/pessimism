@@ -134,7 +134,7 @@ type stringJSONEncoder struct {
 }
 
 // NewStringJSONEncoder returns an encoder that encodes the JSON log dict as a string
-// so the log processing pipeline can correctly process logs with nested JSON.
+// so the log processing path can correctly process logs with nested JSON.
 func NewStringJSONEncoder(cfg zapcore.EncoderConfig) (zapcore.Encoder, error) {
 	return newStringJSONEncoder(cfg), nil
 }
