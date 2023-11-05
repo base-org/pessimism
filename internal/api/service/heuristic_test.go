@@ -16,7 +16,7 @@ func testErr() error {
 }
 
 func Test_RunHeuristicSession(t *testing.T) {
-	testSUUID := core.MakeSUUID(1, 1, 1)
+	id := core.UUID{}
 
 	ctrl := gomock.NewController(t)
 
@@ -26,7 +26,6 @@ func Test_RunHeuristicSession(t *testing.T) {
 		Method: "run",
 		Params: models.SessionRequestParams{
 			Network:       "layer1",
-			PType:         "live",
 			HeuristicType: "contract_event",
 			StartHeight:   nil,
 			EndHeight:     nil,
@@ -56,8 +55,8 @@ func Test_RunHeuristicSession(t *testing.T) {
 					Times(1)
 
 				ts.mockSub.EXPECT().
-					RunSession(testCfg).
-					Return(testSUUID, nil).
+					RunHeuristic(testCfg).
+					Return(id, nil).
 					Times(1)
 
 				return ts
@@ -68,7 +67,7 @@ func Test_RunHeuristicSession(t *testing.T) {
 				actualSUUID, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
 
 				assert.NoError(t, err)
-				assert.Equal(t, testSUUID, actualSUUID)
+				assert.Equal(t, id, actualSUUID)
 			},
 		},
 		{
@@ -133,7 +132,7 @@ func Test_RunHeuristicSession(t *testing.T) {
 					Times(1)
 
 				ts.mockSub.EXPECT().
-					RunSession(testCfg).
+					RunHeuristic(testCfg).
 					Return(core.UUID{}, testErr()).
 					Times(1)
 

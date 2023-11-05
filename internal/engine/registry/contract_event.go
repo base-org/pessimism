@@ -54,7 +54,7 @@ func NewEventHeuristic(cfg *EventInvConfig) heuristic.Heuristic {
 		cfg:  cfg,
 		sigs: sigs,
 
-		Heuristic: heuristic.New(core.Log),
+		Heuristic: heuristic.New(core.Log, core.ContractEvent),
 	}
 }
 

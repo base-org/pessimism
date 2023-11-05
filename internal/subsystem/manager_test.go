@@ -19,36 +19,36 @@ func testErr() error {
 }
 
 type testSuite struct {
-	subsys *subsystem.Manager
+	sys *subsystem.Manager
 
-	mockEtl  *mocks.EtlManager
-	mockEng  *mocks.EngineManager
-	mockAlrt *mocks.AlertManager
-	mockCtrl *gomock.Controller
+	mockETL   *mocks.MockETL
+	mockENG   *mocks.EngineManager
+	mockAlert *mocks.AlertManager
+	mockCtrl  *gomock.Controller
 }
 
 func createTestSuite(t *testing.T) *testSuite {
 	ctrl := gomock.NewController(t)
 
-	etlMock := mocks.NewEtlManager(ctrl)
+	etlMock := mocks.NewMockETL(ctrl)
 	engMock := mocks.NewEngineManager(ctrl)
 	alrtMock := mocks.NewAlertManager(ctrl)
 	cfg := &subsystem.Config{
 		MaxPipelineCount: 10,
 	}
 
-	subsys := subsystem.NewManager(context.Background(), cfg, etlMock, engMock, alrtMock)
+	sys := subsystem.NewManager(context.Background(), cfg, etlMock, engMock, alrtMock)
 
 	return &testSuite{
-		subsys:   subsys,
-		mockEtl:  etlMock,
-		mockEng:  engMock,
-		mockAlrt: alrtMock,
-		mockCtrl: ctrl,
+		sys:       sys,
+		mockETL:   etlMock,
+		mockENG:   engMock,
+		mockAlert: alrtMock,
+		mockCtrl:  ctrl,
 	}
 }
 
-func Test_BuildDeployCfg(t *testing.T) {
+func TestBuildDeployCfg(t *testing.T) {
 	pConfig := &core.PathConfig{
 		Network:      core.Layer1,
 		DataType:     core.BlockHeader,
@@ -73,14 +73,14 @@ func Test_BuildDeployCfg(t *testing.T) {
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
 
-				ts.mockEtl.EXPECT().GetStateKey(pConfig.DataType).
+				ts.mockETL.EXPECT().GetStateKey(pConfig.DataType).
 					Return(nil, false, testErr()).
 					Times(1)
 
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				actualCfg, err := ts.subsys.BuildDeployCfg(pConfig, sConfig)
+				actualCfg, err := ts.sys.BuildDeployCfg(pConfig, sConfig)
 				assert.Error(t, err)
 				assert.Nil(t, actualCfg)
 			},
@@ -90,18 +90,18 @@ func Test_BuildDeployCfg(t *testing.T) {
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
 
-				ts.mockEtl.EXPECT().GetStateKey(pConfig.DataType).
+				ts.mockETL.EXPECT().GetStateKey(pConfig.DataType).
 					Return(nil, false, nil).
 					Times(1)
 
-				ts.mockEtl.EXPECT().CreateDataPipeline(gomock.Any()).
+				ts.mockETL.EXPECT().CreateProcessPath(gomock.Any()).
 					Return(core.PathID{}, false, testErr()).
 					Times(1)
 
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				actualCfg, err := ts.subsys.BuildDeployCfg(pConfig, sConfig)
+				actualCfg, err := ts.sys.BuildDeployCfg(pConfig, sConfig)
 				assert.Error(t, err)
 				assert.Nil(t, actualCfg)
 			},
@@ -116,8 +116,8 @@ func Test_BuildDeployCfg(t *testing.T) {
 	}
 }
 
-func Test_RunSession(t *testing.T) {
-	testSUUID := core.MakeSUUID(1, 1, 1)
+func TestRunHeuristic(t *testing.T) {
+	id := core.NewUUID()
 	testCfg := &heuristic.DeployConfig{
 		Stateful: false,
 		StateKey: nil,
@@ -140,18 +140,18 @@ func Test_RunSession(t *testing.T) {
 			name: "Failure when deploying heuristic session",
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
-				ts.mockEtl.EXPECT().
+				ts.mockETL.EXPECT().
 					ActiveCount().Return(1).
 					Times(1)
 
-				ts.mockEng.EXPECT().DeployHeuristicSession(testCfg).
+				ts.mockENG.EXPECT().DeployHeuristic(testCfg).
 					Return(core.UUID{}, testErr()).
 					Times(1)
 
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				actualSUUID, err := ts.subsys.RunSession(testCfg)
+				actualSUUID, err := ts.sys.RunHeuristic(testCfg)
 				assert.Error(t, err)
 				assert.Equal(t, core.UUID{}, actualSUUID)
 			},
@@ -160,22 +160,22 @@ func Test_RunSession(t *testing.T) {
 			name: "Failure when adding heuristic session to alerting system",
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
-				ts.mockEtl.EXPECT().
+				ts.mockETL.EXPECT().
 					ActiveCount().Return(1).
 					Times(1)
 
-				ts.mockEng.EXPECT().DeployHeuristicSession(testCfg).
-					Return(testSUUID, nil).
+				ts.mockENG.EXPECT().DeployHeuristic(testCfg).
+					Return(id, nil).
 					Times(1)
 
-				ts.mockAlrt.EXPECT().AddSession(testSUUID, testCfg.AlertingPolicy).
+				ts.mockAlert.EXPECT().AddSession(id, testCfg.AlertingPolicy).
 					Return(testErr()).
 					Times(1)
 
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				actualSUUID, err := ts.subsys.RunSession(testCfg)
+				actualSUUID, err := ts.sys.RunHeuristic(testCfg)
 				assert.Error(t, err)
 				assert.Equal(t, core.UUID{}, actualSUUID)
 			},
@@ -185,28 +185,28 @@ func Test_RunSession(t *testing.T) {
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
 
-				ts.mockEtl.EXPECT().
+				ts.mockETL.EXPECT().
 					ActiveCount().Return(1).
 					Times(1)
 
-				ts.mockEng.EXPECT().DeployHeuristicSession(testCfg).
-					Return(testSUUID, nil).
+				ts.mockENG.EXPECT().DeployHeuristic(testCfg).
+					Return(id, nil).
 					Times(1)
 
-				ts.mockAlrt.EXPECT().AddSession(testSUUID, testCfg.AlertingPolicy).
+				ts.mockAlert.EXPECT().AddSession(id, testCfg.AlertingPolicy).
 					Return(nil).
 					Times(1)
 
-				ts.mockEtl.EXPECT().RunPipeline(testCfg.PathID).
+				ts.mockETL.EXPECT().Run(testCfg.PathID).
 					Return(nil).
 					Times(1)
 
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				actualSUUID, err := ts.subsys.RunSession(testCfg)
+				actualSUUID, err := ts.sys.RunHeuristic(testCfg)
 				assert.NoError(t, err)
-				assert.Equal(t, testSUUID, actualSUUID)
+				assert.Equal(t, id, actualSUUID)
 			},
 		},
 		{
@@ -214,11 +214,11 @@ func Test_RunSession(t *testing.T) {
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
 
-				ts.mockEng.EXPECT().DeployHeuristicSession(testCfg).
-					Return(testSUUID, nil).
+				ts.mockENG.EXPECT().DeployHeuristic(testCfg).
+					Return(id, nil).
 					Times(1)
 
-				ts.mockAlrt.EXPECT().AddSession(testSUUID, testCfg.AlertingPolicy).
+				ts.mockAlert.EXPECT().AddSession(id, testCfg.AlertingPolicy).
 					Return(nil).
 					Times(1)
 
@@ -226,9 +226,9 @@ func Test_RunSession(t *testing.T) {
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testCfg.Reuse = true
-				actualSUUID, err := ts.subsys.RunSession(testCfg)
+				actualSUUID, err := ts.sys.RunHeuristic(testCfg)
 				assert.NoError(t, err)
-				assert.Equal(t, testSUUID, actualSUUID)
+				assert.Equal(t, id, actualSUUID)
 			},
 		},
 		{
@@ -236,7 +236,7 @@ func Test_RunSession(t *testing.T) {
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
 
-				ts.mockEtl.EXPECT().
+				ts.mockETL.EXPECT().
 					ActiveCount().Return(10).
 					Times(1)
 
@@ -244,7 +244,7 @@ func Test_RunSession(t *testing.T) {
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testCfg.Reuse = false
-				actualSUUID, err := ts.subsys.RunSession(testCfg)
+				actualSUUID, err := ts.sys.RunHeuristic(testCfg)
 				assert.Error(t, err)
 				assert.Equal(t, core.UUID{}, actualSUUID)
 			},
@@ -259,7 +259,7 @@ func Test_RunSession(t *testing.T) {
 	}
 }
 
-func Test_BuildPipelineCfg(t *testing.T) {
+func TestBuildPipelineCfg(t *testing.T) {
 
 	var tests = []struct {
 		name        string
@@ -270,7 +270,7 @@ func Test_BuildPipelineCfg(t *testing.T) {
 			name: "Failure when getting input type",
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
-				ts.mockEng.EXPECT().GetInputType(core.BalanceEnforcement).
+				ts.mockENG.EXPECT().GetInputType(core.BalanceEnforcement).
 					Return(core.BlockHeader, testErr()).
 					Times(1)
 
@@ -279,11 +279,10 @@ func Test_BuildPipelineCfg(t *testing.T) {
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testParams := &models.SessionRequestParams{
 					Network:       core.Layer1.String(),
-					PType:         core.Live.String(),
 					HeuristicType: core.BalanceEnforcement.String(),
 				}
 
-				cfg, err := ts.subsys.BuildPipelineCfg(testParams)
+				cfg, err := ts.sys.BuildPipelineCfg(testParams)
 				assert.Error(t, err)
 				assert.Nil(t, cfg)
 			},
@@ -292,7 +291,7 @@ func Test_BuildPipelineCfg(t *testing.T) {
 			name: "Failure when getting poll interval for invalid network",
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
-				ts.mockEng.EXPECT().GetInputType(core.BalanceEnforcement).
+				ts.mockENG.EXPECT().GetInputType(core.BalanceEnforcement).
 					Return(core.BlockHeader, nil).
 					Times(1)
 
@@ -301,11 +300,10 @@ func Test_BuildPipelineCfg(t *testing.T) {
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testParams := &models.SessionRequestParams{
 					Network:       "layer0",
-					PType:         core.Live.String(),
 					HeuristicType: core.BalanceEnforcement.String(),
 				}
 
-				cfg, err := ts.subsys.BuildPipelineCfg(testParams)
+				cfg, err := ts.sys.BuildPipelineCfg(testParams)
 				assert.Error(t, err)
 				assert.Nil(t, cfg)
 			},
@@ -314,7 +312,7 @@ func Test_BuildPipelineCfg(t *testing.T) {
 			name: "Success with valid params",
 			constructor: func(t *testing.T) *testSuite {
 				ts := createTestSuite(t)
-				ts.mockEng.EXPECT().GetInputType(core.BalanceEnforcement).
+				ts.mockENG.EXPECT().GetInputType(core.BalanceEnforcement).
 					Return(core.BlockHeader, nil).
 					Times(1)
 
@@ -323,11 +321,10 @@ func Test_BuildPipelineCfg(t *testing.T) {
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testParams := &models.SessionRequestParams{
 					Network:       core.Layer1.String(),
-					PType:         core.Live.String(),
 					HeuristicType: core.BalanceEnforcement.String(),
 				}
 
-				cfg, err := ts.subsys.BuildPipelineCfg(testParams)
+				cfg, err := ts.sys.BuildPipelineCfg(testParams)
 				assert.NoError(t, err)
 				assert.NotNil(t, cfg)
 

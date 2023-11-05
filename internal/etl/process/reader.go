@@ -56,13 +56,14 @@ func (cr *ChainReader) Height() (*big.Int, error) {
 }
 
 func (cr *ChainReader) Close() error {
+	cr.close <- killSig
 	cr.wg.Wait()
 	return nil
 }
 
 // EventLoop ...
 func (cr *ChainReader) EventLoop() error {
-	// TODO(#24) - Add Internal Component Activity State Tracking
+	// TODO(#24) - Add Internal Process Activity State Tracking
 
 	logger := logging.WithContext(cr.ctx)
 
@@ -91,7 +92,7 @@ func (cr *ChainReader) EventLoop() error {
 				zap.String("event", event.Type.String()))
 
 			if err := cr.subscribers.Publish(event); err != nil {
-				logger.Error(relayErr, zap.String("ID", cr.id.String()))
+				logger.Error(relayErr, zap.String(logging.Session, cr.id.String()))
 			}
 
 			if cr.subscribers.None() {

@@ -20,7 +20,7 @@ The API can be customly configured using environment variables stored in a `conf
 - `SERVER_READ_TIMEOUT`: The read timeout second duration for the server (eg. `10`)
 - `SERVER_WRITE_TIMEOUT`: The write timeout second duration for the server (eg. `10`)
 
-### Components
+### Processs
 
 The Pessimism API is broken down into the following constituent components:
 

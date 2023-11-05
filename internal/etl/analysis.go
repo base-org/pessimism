@@ -13,13 +13,13 @@ type Analyzer interface {
 
 // analyzer ... Implementation of Analyzer
 type analyzer struct {
-	dRegistry registry.Registry
+	r *registry.Registry
 }
 
 // NewAnalyzer ... Initializer
-func NewAnalyzer(dRegistry registry.Registry) Analyzer {
+func NewAnalyzer(r *registry.Registry) Analyzer {
 	return &analyzer{
-		dRegistry: dRegistry,
+		r: r,
 	}
 }
 
@@ -58,16 +58,16 @@ func (a *analyzer) Mergable(path1 Path, path2 Path) bool {
 
 // // MergePipelines ... Merges two pipelines into one (p1 --merge-> p2)
 // func (a *analyzer) MergePipelines(ctx context.Context, p1 Pipeline, p2 Pipeline) (Pipeline, error) {
-// 	for i, compi := range p1.Components() {
-// 		compj := p2.Components()[i]
+// 	for i, compi := range p1.Processs() {
+// 		compj := p2.Processs()[i]
 
-// 		reg, err := a.dRegistry.GetDataTopic(compi.OutputType())
+// 		reg, err := a.r.GetDataTopic(compi.OutputType())
 // 		if err != nil {
 // 			return nil, err
 // 		}
 
 // 		if reg.Stateful() { // Merge state items from compi into compj
-// 			err = a.mergeComponentState(ctx, compi, compj, p1.UUID(), p2.UUID())
+// 			err = a.mergeProcessState(ctx, compi, compj, p1.UUID(), p2.UUID())
 // 			if err != nil {
 // 				return nil, err
 // 			}
@@ -76,8 +76,8 @@ func (a *analyzer) Mergable(path1 Path, path2 Path) bool {
 // 	return p2, nil
 // }
 
-// // mergeComponentState ... Merges state items from p2 into p1
-// func (a *analyzer) mergeComponentState(ctx context.Context, compi, compj component.Process,
+// // mergeProcessState ... Merges state items from p2 into p1
+// func (a *analyzer) mergeProcessState(ctx context.Context, compi, compj processProcess,
 // 	p1, p2 core.PathID) error {
 // 	ss, err := state.FromContext(ctx)
 // 	if err != nil {
@@ -107,7 +107,7 @@ func (a *analyzer) Mergable(path1 Path, path2 Path) bool {
 // }
 
 // // MergeNestedStateKeys ... Merges nested state keys from p1 into p2
-// func (a *analyzer) MergeNestedStateKeys(ctx context.Context, c1, c2 component.Process,
+// func (a *analyzer) MergeNestedStateKeys(ctx context.Context, c1, c2 processProcess,
 // 	p1, p2 core.PathID, ss state.Store) error {
 // 	items, err := ss.GetSlice(ctx, c1.StateKey())
 // 	if err != nil {

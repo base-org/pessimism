@@ -77,13 +77,13 @@ func InitializeAlerting(ctx context.Context, cfg *config.Config) (alert.Manager,
 }
 
 // InitializeETL ... Performs dependency injection to build etl struct
-func InitializeETL(ctx context.Context, transit chan core.HeuristicInput) etl.Manager {
-	compRegistry := registry.NewRegistry()
-	analyzer := etl.NewAnalyzer(compRegistry)
+func InitializeETL(ctx context.Context, transit chan core.HeuristicInput) etl.ETL {
+	r := registry.New()
+	analyzer := etl.NewAnalyzer(r)
 	store := etl.NewEtlStore()
 	dag := etl.NewGraph()
 
-	return etl.NewManager(ctx, analyzer, compRegistry, store, dag, transit)
+	return etl.New(ctx, analyzer, r, store, dag, transit)
 }
 
 // InitializeEngine ... Performs dependency injection to build engine struct
@@ -99,7 +99,7 @@ func InitializeEngine(ctx context.Context, cfg *config.Config, transit chan core
 
 // NewPessimismApp ... Performs dependency injection to build app struct
 func NewPessimismApp(ctx context.Context, cfg *config.Config) (*Application, func(), error) {
-	mSvr, mShutDown, err := InitializeMetrics(ctx, cfg)
+	stats, close, err := InitializeMetrics(ctx, cfg)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -121,11 +121,11 @@ func NewPessimismApp(ctx context.Context, cfg *config.Config) (*Application, fun
 
 	appShutDown := func() {
 		shutDown()
-		mShutDown()
+		close()
 		if err := m.Shutdown(); err != nil {
 			logging.WithContext(ctx).Error("error shutting down subsystems", zap.Error(err))
 		}
 	}
 
-	return New(ctx, cfg, m, svr, mSvr), appShutDown, nil
+	return New(ctx, cfg, m, svr, stats), appShutDown, nil
 }

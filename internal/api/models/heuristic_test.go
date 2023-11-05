@@ -16,7 +16,6 @@ func Test_SessionRequestParams(t *testing.T) {
 			"test": "test",
 		},
 		Network:       core.Layer1.String(),
-		PType:         core.Live.String(),
 		HeuristicType: core.BalanceEnforcement.String(),
 	}
 
@@ -30,16 +29,12 @@ func Test_SessionRequestParams(t *testing.T) {
 	n := irp.NetworkType()
 	assert.Equal(t, n, core.Layer1)
 
-	// Ensure that pipeline type is set correctly
-	pt := irp.PathType()
-	assert.Equal(t, pt, core.Live)
-
 	// Ensure that heuristic type is set correctly
 	it := irp.Heuristic()
 	assert.Equal(t, it, core.BalanceEnforcement)
 
-	// Ensure that the pipeline config is set correctly
-	pConfig := irp.GeneratePipelineConfig(0, 0)
+	// Ensure that the path config is set correctly
+	pConfig := irp.NewPathCfg(0, 0)
 	assert.Equal(t, pConfig.Network, core.Layer1)
 	assert.Equal(t, pConfig.PathType, core.Live)
 

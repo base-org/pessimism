@@ -66,7 +66,7 @@ func (p *path) UUID() core.PathID {
 }
 
 func (p *path) BlockHeight() (*big.Int, error) {
-	// We assume that all pipelines have an oracle as their last component
+	// We assume that all paths have an oracle as their last component
 	comp := p.processes[len(p.processes)-1]
 	cr, ok := comp.(*process.ChainReader)
 	if !ok {
@@ -76,55 +76,54 @@ func (p *path) BlockHeight() (*big.Int, error) {
 	return cr.Height()
 }
 
-// AddEngineRelay ... Adds a relay to the pipeline that forces it to send transformed heuristic input
+// AddEngineRelay ... Adds a relay to the path that forces it to send transformed heuristic input
 // to a risk engine
 func (p *path) AddEngineRelay(engineChan chan core.HeuristicInput) error {
 	lastProcess := p.processes[0]
 	eir := core.NewEngineRelay(p.id, engineChan)
 
-	logging.NoContext().Debug("Adding engine relay to pipeline",
+	logging.NoContext().Debug("Adding engine relay to path",
 		zap.String(logging.Process, lastProcess.ID().String()),
-		zap.String(logging.PathIDKey, p.id.String()))
+		zap.String(logging.Path, p.id.String()))
 
 	return lastProcess.AddEngineRelay(eir)
 }
 
-// Run  ... Spawns and manages component event loops
-// for some pipeline
-func (p *path) Run(wg *sync.WaitGroup) {
-	for _, comp := range p.processes {
+// Run  ... Spawns process event loops
+func (path *path) Run(wg *sync.WaitGroup) {
+	for _, p := range path.processes {
 		wg.Add(1)
 
-		go func(c process.Process, wg *sync.WaitGroup) {
+		go func(p process.Process, wg *sync.WaitGroup) {
 			defer wg.Done()
 
 			logging.NoContext().
-				Debug("Attempting to start component event loop",
-					zap.String(logging.Process, c.ID().String()),
-					zap.String(logging.PathIDKey, p.id.String()))
+				Debug("Starting process",
+					zap.String(logging.Process, p.ID().String()),
+					zap.String(logging.Path, p.ID().String()))
 
-			if err := c.EventLoop(); err != nil {
-				// NOTE - Consider killing the entire pipeline if one component fails
+			if err := p.EventLoop(); err != nil {
+				// NOTE - Consider killing the entire path if one process fails
 				// Otherwise dangling processes will be left in a running state
 				logging.NoContext().Error("Obtained error from event loop", zap.Error(err),
-					zap.String(logging.Process, c.ID().String()),
-					zap.String(logging.PathIDKey, p.id.String()))
-				p.state = CRASHED
+					zap.String(logging.Process, p.ID().String()),
+					zap.String(logging.Path, p.ID().String()))
+				path.state = CRASHED
 			}
-		}(comp, wg)
+		}(p, wg)
 	}
 
-	p.state = ACTIVE
+	path.state = ACTIVE
 }
 
-// Close ... Closes all processes in the pipeline
+// Close ... Closes all processes in the path
 func (p *path) Close() error {
 	for _, p := range p.processes {
 		if p.ActivityState() != process.Terminated {
 			logging.NoContext().
-				Debug("Shutting down pipeline component",
+				Debug("Shutting down path component",
 					zap.String(logging.Process, p.ID().String()),
-					zap.String(logging.PathIDKey, p.ID().String()))
+					zap.String(logging.Path, p.ID().String()))
 
 			if err := p.Close(); err != nil {
 				return err

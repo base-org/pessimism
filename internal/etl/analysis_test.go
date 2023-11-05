@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/etl/component"
-	"github.com/base-org/pessimism/internal/etl/pipeline"
+	"github.com/base-org/pessimism/internal/etl"
+	"github.com/base-org/pessimism/internal/etl/process"
 	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/mocks"
 	"github.com/stretchr/testify/assert"
@@ -14,38 +14,36 @@ import (
 
 func Test_Mergable(t *testing.T) {
 	var tests = []struct {
-		name            string
-		function        string
-		description     string
-		testConstructor func() pipeline.Analyzer
-		testLogic       func(t *testing.T, a pipeline.Analyzer)
+		name        string
+		description string
+		construct   func() etl.Analyzer
+		testLogic   func(t *testing.T, a etl.Analyzer)
 	}{
 		{
 			name:        "Successful Pipeline Merge",
-			function:    "Mergable",
 			description: "Mergable function should return true if pipelines are mergable",
-			testConstructor: func() pipeline.Analyzer {
-				dRegistry := registry.NewRegistry()
-				return pipeline.NewAnalyzer(dRegistry)
+			construct: func() etl.Analyzer {
+				r := registry.New()
+				return etl.NewAnalyzer(r)
 			},
-			testLogic: func(t *testing.T, a pipeline.Analyzer) {
+			testLogic: func(t *testing.T, a etl.Analyzer) {
 				// Setup test pipelines
 				mockOracle, err := mocks.NewReader(context.Background(), core.BlockHeader)
 				assert.NoError(t, err)
 
-				comps := []component.Process{mockOracle}
-				testPathID := core.MakePathID(0, core.MakeProcessID(core.Live, 0, 0, 0), core.MakeProcessID(core.Live, 0, 0, 0))
-				testPathID2 := core.MakePathID(0, core.MakeProcessID(core.Live, 0, 0, 0), core.MakeProcessID(core.Live, 0, 0, 0))
+				processes := []process.Process{mockOracle}
+				id1 := core.MakePathID(0, core.MakeProcessID(core.Live, 0, 0, 0), core.MakeProcessID(core.Live, 0, 0, 0))
+				id2 := core.MakePathID(0, core.MakeProcessID(core.Live, 0, 0, 0), core.MakeProcessID(core.Live, 0, 0, 0))
 
 				testCfg := &core.PathConfig{
 					PathType:     core.Live,
 					ClientConfig: &core.ClientConfig{},
 				}
 
-				p1, err := pipeline.NewPath(testCfg, testPathID, comps)
+				p1, err := etl.NewPath(testCfg, id1, processes)
 				assert.NoError(t, err)
 
-				p2, err := pipeline.NewPath(testCfg, testPathID2, comps)
+				p2, err := etl.NewPath(testCfg, id2, processes)
 				assert.NoError(t, err)
 
 				assert.True(t, a.Mergable(p1, p2))
@@ -53,30 +51,29 @@ func Test_Mergable(t *testing.T) {
 		},
 		{
 			name:        "Failure Pipeline Merge",
-			function:    "Mergable",
 			description: "Mergable function should return false when PID's do not match",
-			testConstructor: func() pipeline.Analyzer {
-				dRegistry := registry.NewRegistry()
-				return pipeline.NewAnalyzer(dRegistry)
+			construct: func() etl.Analyzer {
+				r := registry.New()
+				return etl.NewAnalyzer(r)
 			},
-			testLogic: func(t *testing.T, a pipeline.Analyzer) {
+			testLogic: func(t *testing.T, a etl.Analyzer) {
 				// Setup test pipelines
 				mockOracle, err := mocks.NewReader(context.Background(), core.BlockHeader)
 				assert.NoError(t, err)
 
-				comps := []component.Process{mockOracle}
-				testPathID := core.MakePathID(0, core.MakeProcessID(core.Backtest, 0, 0, 0), core.MakeProcessID(core.Live, 0, 0, 0))
-				testPathID2 := core.MakePathID(0, core.MakeProcessID(core.Live, 0, 0, 0), core.MakeProcessID(core.Live, 0, 0, 0))
+				processes := []process.Process{mockOracle}
+				id1 := core.MakePathID(0, core.MakeProcessID(core.Live, 0, 0, 0), core.MakeProcessID(core.Live, 0, 0, 0))
+				id2 := core.MakePathID(0, core.MakeProcessID(core.Live, 0, 0, 0), core.MakeProcessID(core.Live, 0, 0, 0))
 
 				testCfg := &core.PathConfig{
 					PathType:     core.Live,
 					ClientConfig: &core.ClientConfig{},
 				}
 
-				p1, err := pipeline.NewPath(testCfg, testPathID, comps)
+				p1, err := etl.NewPath(testCfg, id1, processes)
 				assert.NoError(t, err)
 
-				p2, err := pipeline.NewPath(testCfg, testPathID2, comps)
+				p2, err := etl.NewPath(testCfg, id2, processes)
 				assert.NoError(t, err)
 
 				assert.False(t, a.Mergable(p1, p2))
@@ -86,7 +83,7 @@ func Test_Mergable(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			a := test.testConstructor()
+			a := test.construct()
 			test.testLogic(t, a)
 		})
 	}

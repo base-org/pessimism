@@ -77,9 +77,9 @@ type ExecInputRelay struct {
 }
 
 // NewEngineRelay ... Initializer
-func NewEngineRelay(PathID PathID, outChan chan HeuristicInput) *ExecInputRelay {
+func NewEngineRelay(id PathID, outChan chan HeuristicInput) *ExecInputRelay {
 	return &ExecInputRelay{
-		PathID:  PathID,
+		PathID:  id,
 		outChan: outChan,
 	}
 }

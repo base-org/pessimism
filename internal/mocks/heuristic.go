@@ -50,44 +50,58 @@ func (mr *MockHeuristicMockRecorder) Assess(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Assess", reflect.TypeOf((*MockHeuristic)(nil).Assess), arg0)
 }
 
-// InputType mocks base method.
-func (m *MockHeuristic) InputType() core.TopicType {
+// ID mocks base method.
+func (m *MockHeuristic) ID() core.UUID {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InputType")
-	ret0, _ := ret[0].(core.TopicType)
-	return ret0
-}
-
-// InputType indicates an expected call of InputType.
-func (mr *MockHeuristicMockRecorder) InputType() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InputType", reflect.TypeOf((*MockHeuristic)(nil).InputType))
-}
-
-// SUUID mocks base method.
-func (m *MockHeuristic) SUUID() core.UUID {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SUUID")
+	ret := m.ctrl.Call(m, "ID")
 	ret0, _ := ret[0].(core.UUID)
 	return ret0
 }
 
-// SUUID indicates an expected call of SUUID.
-func (mr *MockHeuristicMockRecorder) SUUID() *gomock.Call {
+// ID indicates an expected call of ID.
+func (mr *MockHeuristicMockRecorder) ID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SUUID", reflect.TypeOf((*MockHeuristic)(nil).SUUID))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockHeuristic)(nil).ID))
 }
 
-// SetSUUID mocks base method.
-func (m *MockHeuristic) SetSUUID(arg0 core.UUID) {
+// SetID mocks base method.
+func (m *MockHeuristic) SetID(arg0 core.UUID) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetSUUID", arg0)
+	m.ctrl.Call(m, "SetID", arg0)
 }
 
-// SetSUUID indicates an expected call of SetSUUID.
-func (mr *MockHeuristicMockRecorder) SetSUUID(arg0 interface{}) *gomock.Call {
+// SetID indicates an expected call of SetID.
+func (mr *MockHeuristicMockRecorder) SetID(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSUUID", reflect.TypeOf((*MockHeuristic)(nil).SetSUUID), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetID", reflect.TypeOf((*MockHeuristic)(nil).SetID), arg0)
+}
+
+// TopicType mocks base method.
+func (m *MockHeuristic) TopicType() core.TopicType {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TopicType")
+	ret0, _ := ret[0].(core.TopicType)
+	return ret0
+}
+
+// TopicType indicates an expected call of TopicType.
+func (mr *MockHeuristicMockRecorder) TopicType() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TopicType", reflect.TypeOf((*MockHeuristic)(nil).TopicType))
+}
+
+// Type mocks base method.
+func (m *MockHeuristic) Type() core.HeuristicType {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Type")
+	ret0, _ := ret[0].(core.HeuristicType)
+	return ret0
+}
+
+// Type indicates an expected call of Type.
+func (mr *MockHeuristicMockRecorder) Type() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Type", reflect.TypeOf((*MockHeuristic)(nil).Type))
 }
 
 // Validate mocks base method.

@@ -26,10 +26,10 @@ const (
 const (
 	AddrKey LogKey = "address"
 
-	Process   LogKey = "process_id"
-	PathIDKey LogKey = "path_id"
-	UUID      LogKey = "uuid"
-	Session   LogKey = "session_id"
+	Process LogKey = "process_id"
+	Path    LogKey = "path_id"
+	UUID    LogKey = "uuid"
+	Session LogKey = "session_id"
 )
 
 // NOTE - Logger is set to Nop as default to avoid redundant testing

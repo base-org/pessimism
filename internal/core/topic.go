@@ -38,11 +38,11 @@ func (dt *DataTopic) Stateful() bool {
 }
 
 // Represents an inclusive acyclic sequential path of data register dependencies
-type RegisterDependencyPath struct {
+type TopicPath struct {
 	Path []*DataTopic
 }
 
-func (rdp RegisterDependencyPath) GeneratePathID(pt PathType, n Network) PathID {
+func (rdp TopicPath) GeneratePathID(pt PathType, n Network) PathID {
 	proc1, proc2 := rdp.Path[0], rdp.Path[len(rdp.Path)-1]
 	id1 := MakeProcessID(pt, proc1.ProcessType, proc1.DataType, n)
 	id2 := MakeProcessID(pt, proc2.ProcessType, proc2.DataType, n)

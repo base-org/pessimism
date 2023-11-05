@@ -1,4 +1,4 @@
-//go:generate mockgen -package mocks --destination ../../mocks/alert_client.go . AlertClient
+//go:generate mockgen -package mocks --destination ../mocks/alert_client.go . AlertClient
 
 package client
 

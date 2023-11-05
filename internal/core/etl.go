@@ -25,22 +25,16 @@ func (ct ProcessType) String() string {
 type PathType uint8
 
 const (
-	Backtest PathType = iota + 1
-	Live
-	MockTest
+	Live PathType = iota + 1
 )
 
 // StringToPathType ... Converts a string to a pipeline type
 func StringToPathType(stringType string) PathType {
 	switch stringType {
-	case "backtest":
-		return Backtest
 
 	case "live":
 		return Live
 
-	case "mocktest":
-		return MockTest
 	}
 
 	return PathType(0)
@@ -49,14 +43,10 @@ func StringToPathType(stringType string) PathType {
 // String ... Converts the pipeline type to a string
 func (pt PathType) String() string {
 	switch pt {
-	case Backtest:
-		return "backtest"
 
 	case Live:
 		return "live"
 
-	case MockTest:
-		return "mocktest"
 	}
 
 	return UnknownType

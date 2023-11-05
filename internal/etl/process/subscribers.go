@@ -48,12 +48,12 @@ func (s *subscribers) PublishBatch(dataSlice []core.Event) error {
 	return nil
 }
 
-func (s *subscribers) AddSubscriber(id core.ProcessID, outChan chan core.Event) error {
+func (s *subscribers) AddSubscriber(id core.ProcessID, topic chan core.Event) error {
 	if _, found := s.subs[id.ID]; found {
 		return fmt.Errorf(subExistsErr, id.String())
 	}
 
-	s.subs[id.ID] = outChan
+	s.subs[id.ID] = topic
 	return nil
 }
 

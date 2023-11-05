@@ -42,7 +42,6 @@ const (
 // SessionRequestParams ... Request params for heuristic operation
 type SessionRequestParams struct {
 	Network       string `json:"network"`
-	PType         string `json:"pipeline_type"`
 	HeuristicType string `json:"type"`
 
 	StartHeight *big.Int `json:"start_height"`
@@ -73,11 +72,6 @@ func (hrp *SessionRequestParams) NetworkType() core.Network {
 	return core.StringToNetwork(hrp.Network)
 }
 
-// PathType ... Returns the pipeline type
-func (hrp *SessionRequestParams) PathType() core.PathType {
-	return core.StringToPathType(hrp.PType)
-}
-
 // Heuristic ... Returns the heuristic type
 func (hrp *SessionRequestParams) Heuristic() core.HeuristicType {
 	return core.StringToHeuristicType(hrp.HeuristicType)
@@ -87,13 +81,13 @@ func (hrp *SessionRequestParams) AlertPolicy() *core.AlertPolicy {
 	return hrp.AlertingParams
 }
 
-// GeneratePipelineConfig ... Generates a pipeline config using the request params
-func (hrp *SessionRequestParams) GeneratePipelineConfig(pollInterval time.Duration,
+// NewPathCfg ... Generates a pipeline config using the request params
+func (hrp *SessionRequestParams) NewPathCfg(pollInterval time.Duration,
 	regType core.TopicType) *core.PathConfig {
 	return &core.PathConfig{
 		Network:  hrp.NetworkType(),
 		DataType: regType,
-		PathType: hrp.PathType(),
+		PathType: core.Live,
 		ClientConfig: &core.ClientConfig{
 			Network:      hrp.NetworkType(),
 			PollInterval: pollInterval,
@@ -109,7 +103,7 @@ func (hrp *SessionRequestParams) SessionConfig() *core.SessionConfig {
 		AlertPolicy: hrp.AlertPolicy(),
 		Type:        hrp.Heuristic(),
 		Params:      hrp.Params(),
-		PT:          hrp.PathType(),
+		PT:          core.Live,
 	}
 }
 

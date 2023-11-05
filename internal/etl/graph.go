@@ -56,32 +56,32 @@ NOTE - There is no check to ensure that a cyclic edge is being added, meaning
 */
 
 // Adds subscription or edge between two preconstructed constructed process nodes
-func (graph *Graph) Subscribe(id1, id2 core.ProcessID) error {
-	node1, found := graph.edgeMap[id1]
+func (graph *Graph) Subscribe(from, to core.ProcessID) error {
+	fromNode, found := graph.edgeMap[from]
 	if !found {
-		return fmt.Errorf(cUUIDNotFoundErr, id1.String())
+		return fmt.Errorf(cUUIDNotFoundErr, from.String())
 	}
 
-	node2, found := graph.edgeMap[id2]
+	toNode, found := graph.edgeMap[to]
 	if !found {
-		return fmt.Errorf(cUUIDNotFoundErr, id2.String())
+		return fmt.Errorf(cUUIDNotFoundErr, to.String())
 	}
 
-	if _, exists := node1.edges[node2.p.ID()]; exists {
-		return fmt.Errorf(edgeExistsErr, id1.String(), id2.String())
+	if _, exists := fromNode.edges[toNode.p.ID()]; exists {
+		return fmt.Errorf(edgeExistsErr, from.String(), to.String())
 	}
 
-	relay, err := node2.p.GetRelay(node1.outType)
+	relay, err := toNode.p.GetRelay(fromNode.outType)
 	if err != nil {
 		return err
 	}
 
-	if err := node1.p.AddSubscriber(id2, relay); err != nil {
+	if err := fromNode.p.AddSubscriber(to, relay); err != nil {
 		return err
 	}
 
 	// Update edge mapping with new link
-	graph.edgeMap[id1].edges[id2] = nil
+	graph.edgeMap[from].edges[to] = nil
 
 	return nil
 }
@@ -118,7 +118,7 @@ func (graph *Graph) AddMany(processes []process.Process) error {
 
 	// Add edges between processes
 	for i := 1; i < len(processes); i++ {
-		err := graph.Add(processes[i].ID(), processes[i-1])
+		err := graph.Subscribe(processes[i].ID(), processes[i-1].ID())
 		if err != nil {
 			return err
 		}
@@ -126,7 +126,6 @@ func (graph *Graph) AddMany(processes []process.Process) error {
 	return nil
 }
 
-// Edges ...  Returns a representation of all graph edges between process UUIDs
 func (graph *Graph) Edges() map[core.ProcessID][]core.ProcessID {
 	uuidMap := make(map[core.ProcessID][]core.ProcessID, len(graph.edgeMap))
 

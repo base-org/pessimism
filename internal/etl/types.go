@@ -33,7 +33,7 @@ const (
 	pIDNotFoundErr  = "could not find pipeline ID for %s"
 	uuidNotFoundErr = "could not find matching UUID for pipeline entry"
 
-	// ComponentGraph error constants
+	// ProcessGraph error constants
 	cUUIDNotFoundErr = "component with ID %s does not exist within component graph"
 	procExistsErr    = "process with ID %s already exists in component graph"
 	edgeExistsErr    = "edge already exists from (%s) to (%s) in component graph"

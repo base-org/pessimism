@@ -133,33 +133,35 @@ func (em *engineManager) updateSharedState(params *core.SessionParams,
 	}
 
 	logging.WithContext(em.ctx).Debug("Setting to state store",
-		zap.String(logging.PathIDKey, PathID.String()),
+		zap.String(logging.Path, PathID.String()),
 		zap.String(logging.AddrKey, params.Address().String()))
 
 	return nil
 }
 
 func (em *engineManager) DeployHeuristic(cfg *heuristic.DeployConfig) (core.UUID, error) {
-	reg, exists := em.heuristics[cfg.HeuristicType]
+	h, exists := em.heuristics[cfg.HeuristicType]
 	if !exists {
 		return core.UUID{}, fmt.Errorf("heuristic type %s not found", cfg.HeuristicType)
 	}
 
-	if reg.PrepareValidate != nil {
-		err := reg.PrepareValidate(cfg.Params)
+	if h.PrepareValidate != nil {
+		err := h.PrepareValidate(cfg.Params)
 		if err != nil {
 			return core.UUID{}, err
 		}
 	}
 
+	id := core.NewUUID()
 	// Build heuristic instance using constructor functions from data topic definitions
-	h, err := reg.Constructor(em.ctx, cfg.Params)
+	instance, err := h.Constructor(em.ctx, cfg.Params)
 	if err != nil {
 		return core.UUID{}, err
 	}
 
-	id := core.NewUUID()
-	err = em.store.AddSession(id, cfg.PathID, h)
+	instance.SetID(id)
+
+	err = em.store.AddSession(id, cfg.PathID, instance)
 	if err != nil {
 		return core.UUID{}, err
 	}
@@ -232,7 +234,7 @@ func (em *engineManager) executeAddressHeuristics(ctx context.Context, data core
 	if err != nil {
 		logger.Error("Could not fetch heuristics by address:pipeline",
 			zap.Error(err),
-			zap.String(logging.PathIDKey, data.PathID.String()))
+			zap.String(logging.Path, data.PathID.String()))
 		return
 	}
 
@@ -241,7 +243,7 @@ func (em *engineManager) executeAddressHeuristics(ctx context.Context, data core
 		if err != nil {
 			logger.Error("Could not find session by heuristic sUUID",
 				zap.Error(err),
-				zap.String(logging.PathIDKey, sUUID.String()))
+				zap.String(logging.Path, sUUID.String()))
 			continue
 		}
 
@@ -256,14 +258,14 @@ func (em *engineManager) executeNonAddressHeuristics(ctx context.Context, data c
 	if err != nil {
 		logger.Error("Could not fetch heuristics for pipeline",
 			zap.Error(err),
-			zap.String(logging.PathIDKey, data.PathID.String()))
+			zap.String(logging.Path, data.PathID.String()))
 	}
 
 	heuristics, err := em.store.GetInstancesByUUIDs(ids)
 	if err != nil {
 		logger.Error("Could not fetch heuristics for pipeline",
 			zap.Error(err),
-			zap.String(logging.PathIDKey, data.PathID.String()))
+			zap.String(logging.Path, data.PathID.String()))
 	}
 
 	for _, h := range heuristics { // Execute all heuristics associated with the pipeline

@@ -88,7 +88,6 @@ An example of this is shown below:
 ```json
     {
       "network": "layer1",
-      "pipeline_type": "live",
       "type": "balance_enforcement",
       "start_height": null,
       "alerting_params": {

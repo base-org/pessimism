@@ -28,7 +28,6 @@ func TestMultiDirectiveRouting(t *testing.T) {
 
 	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{{
 		Network:       core.Layer1.String(),
-		PType:         core.Live.String(),
 		HeuristicType: core.ContractEvent.String(),
 		StartHeight:   nil,
 		EndHeight:     nil,
@@ -101,7 +100,6 @@ func TestCoolDown(t *testing.T) {
 	// Deploy a balance enforcement heuristic session for Alice using a cooldown.
 	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{{
 		Network:       core.Layer2.String(),
-		PType:         core.Live.String(),
 		HeuristicType: core.BalanceEnforcement.String(),
 		StartHeight:   nil,
 		EndHeight:     nil,

@@ -137,6 +137,10 @@ func (id PathIdentifier) String() string {
 	return fmt.Sprintf("%s::%s::%s", pt, first, last)
 }
 
+func (id PathID) Network() Network {
+	return Network(id.ID[1])
+}
+
 func (id PathID) String() string {
 	return id.UUID.ShortString()
 }

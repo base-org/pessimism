@@ -21,16 +21,15 @@ import (
 
 // LogSubscription ...
 type LogSubscription struct {
-	client client.EthClient
-
 	PathID core.PathID
-	ss     state.Store
+	SK     *core.StateKey
 
-	SK *core.StateKey
+	client client.EthClient
+	ss     state.Store
 }
 
-// logSub ...
-func logSub(ctx context.Context, n core.Network) (*LogSubscription, error) {
+// NewLogSubscript ...
+func NewLogSubscript(ctx context.Context, n core.Network) (*LogSubscription, error) {
 	client, err := client.FromNetwork(ctx, n)
 	if err != nil {
 		return nil, err
@@ -41,43 +40,36 @@ func logSub(ctx context.Context, n core.Network) (*LogSubscription, error) {
 		return nil, err
 	}
 
-	lspt := &LogSubscription{
+	sub := &LogSubscription{
 		client: client,
 		ss:     ss,
 	}
-	return lspt, nil
+	return sub, nil
 }
 
 // NewLogSubscriber ... Initializer
 func NewLogSubscriber(ctx context.Context, cfg *core.ClientConfig,
 	opts ...process.Option) (process.Process, error) {
-	// 1. Construct the pipe definition
-	s, err := logSub(ctx, cfg.Network)
+	s, err := NewLogSubscript(ctx, cfg.Network)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Embed the definition into a generic pipe construction
 	p, err := process.NewSubscriber(ctx, s, core.BlockHeader, core.Log, opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. Set the post component construction fields on the definition
-	// There's likely a more extensible way to construct this definition fields
-	// given that they're used by component implementations across the ETL
 	s.SK = p.StateKey().Clone()
 	s.PathID = p.PathID()
 	return p, nil
 }
 
-// getEventsToMonitor ... Gets the smart contract events to monitor from the state store
+// Fetch smart contract events to monitor
 func (sub *LogSubscription) getTopics(ctx context.Context,
 	addresses []string, ss state.Store) [][]common.Hash {
 	sigs := make([]common.Hash, 0)
 
-	// 1. Iterate over addresses and construct nested state keys
-	// to lookup the associated events to monitor
 	for _, address := range addresses {
 		innerKey := &core.StateKey{
 			Nesting: false,
@@ -86,17 +78,14 @@ func (sub *LogSubscription) getTopics(ctx context.Context,
 			PathID:  sub.SK.PathID,
 		}
 
-		// 1.1 Attempt to fetch the events to monitor from the state store
-		// and continue if there is an error
 		events, err := ss.GetSlice(ctx, innerKey)
 		if err != nil {
 			logging.WithContext(ctx).Error("Failed to get events to monitor",
-				zap.String(logging.PathIDKey, sub.PathID.String()),
+				zap.String(logging.Path, sub.PathID.String()),
 				zap.Error(err))
 			continue
 		}
 
-		// 1.2 Compute signatures for the function declaration strings
 		for _, event := range events {
 			sigs = append(sigs, crypto.Keccak256Hash([]byte(event)))
 		}
@@ -111,26 +100,26 @@ func (sub *LogSubscription) getTopics(ctx context.Context,
 
 func (sub LogSubscription) Run(ctx context.Context, e core.Event) ([]core.Event, error) {
 	logger := logging.WithContext(ctx)
-	tds, err := sub.transformFunc(ctx, e)
+	events, err := sub.transformEvents(ctx, e)
 	if err != nil {
 		logger.Error("Failed to process block data",
-			zap.String(logging.PathIDKey, sub.PathID.String()),
+			zap.String(logging.Path, sub.PathID.String()),
 			zap.Error(err))
 
 		return nil, err
 	}
 
-	return tds, nil
+	return events, nil
 }
 
-func (sub *LogSubscription) transformFunc(ctx context.Context, e core.Event) ([]core.Event, error) {
+func (sub *LogSubscription) transformEvents(ctx context.Context, e core.Event) ([]core.Event, error) {
 	header, success := e.Value.(types.Header)
 	if !success {
 		return []core.Event{}, fmt.Errorf("could not convert to header")
 	}
 
 	logging.NoContext().Debug("Getting addresses",
-		zap.String(logging.PathIDKey, sub.PathID.String()))
+		zap.String(logging.Path, sub.PathID.String()))
 
 	addresses, err := sub.ss.GetSlice(ctx, sub.SK)
 	if err != nil {

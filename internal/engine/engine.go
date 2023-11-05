@@ -93,36 +93,39 @@ func (hce *hardCodedEngine) EventLoop(ctx context.Context) {
 			logger.Info("Risk engine event loop cancelled")
 			return
 
-		case execInput := <-hce.heuristicIn: // Heuristic input received
+		case args := <-hce.heuristicIn: // Heuristic input received
 			logger.Debug("Heuristic input received",
-				zap.String(logging.UUID, execInput.h.ID().ShortString()))
+				zap.String(logging.UUID, args.h.ID().ShortString()))
 
 			start := time.Now()
 
-			as, err := retry.Do[*heuristic.ActivationSet](ctx, 10, core.RetryStrategy(), func() (*heuristic.ActivationSet, error) {
-				metrics.WithContext(ctx).RecordHeuristicRun(execInput.h)
-				return hce.Execute(ctx, execInput.hi.Input, execInput.h)
-			})
+			as, err := retry.Do[*heuristic.ActivationSet](ctx, 10, core.RetryStrategy(),
+				func() (*heuristic.ActivationSet, error) {
+					metrics.WithContext(ctx).RecordHeuristicRun(args.h)
+					return hce.Execute(ctx, args.hi.Input, args.h)
+				})
 
 			if err != nil {
 				logger.Error("Failed to execute heuristic", zap.Error(err))
-				metrics.WithContext(ctx).RecordAssessmentError(execInput.h)
+				metrics.WithContext(ctx).RecordAssessmentError(args.h)
 			}
 
-			metrics.WithContext(ctx).RecordInvExecutionTime(execInput.h, float64(time.Since(start).Nanoseconds()))
+			metrics.WithContext(ctx).RecordInvExecutionTime(args.h, float64(time.Since(start).Nanoseconds()))
 			if as.Activated() {
 				for _, act := range as.Entries() {
 					alert := core.Alert{
 						Timestamp:   act.TimeStamp,
-						HeuristicID: execInput.h.ID(),
+						HeuristicID: args.h.ID(),
+						HT:          args.h.Type(),
 						Content:     act.Message,
-						PathID:      execInput.hi.PathID,
-						PathType:    execInput.hi.PathID.PathType(),
+						PathID:      args.hi.PathID,
+						PathType:    args.hi.PathID.PathType(),
+						Net:         args.hi.PathID.Network(),
 					}
 
 					logger.Warn("Heuristic alert",
-						zap.String(logging.UUID, execInput.h.ID().ShortString()),
-						zap.String("heuristic_type", execInput.hi.PathID.String()),
+						zap.String(logging.UUID, args.h.ID().ShortString()),
+						zap.String("heuristic_type", args.hi.PathID.String()),
 						zap.String("message", act.Message))
 
 					hce.alertEgress <- alert

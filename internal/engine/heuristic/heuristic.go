@@ -16,13 +16,14 @@ const (
 	// HardCoded ... Hard coded execution type (ie native application code)
 	HardCoded ExecutionType = iota
 
-	invalidInTypeErr = "invalid input type provided for heuristic. expected %s, got %s"
+	invalidTopicErr = "invalid input type provided for heuristic. expected %s, got %s"
 )
 
 type Heuristic interface {
 	TopicType() core.TopicType
 	Validate(core.Event) error
 	Assess(e core.Event) (*ActivationSet, error)
+	Type() core.HeuristicType
 	ID() core.UUID
 	SetID(core.UUID)
 }
@@ -30,14 +31,16 @@ type Heuristic interface {
 type BaseHeuristicOpt = func(bh *BaseHeuristic) *BaseHeuristic
 
 type BaseHeuristic struct {
-	id     core.UUID
-	inType core.TopicType
+	ht    core.HeuristicType
+	id    core.UUID
+	topic core.TopicType
 }
 
-func New(inType core.TopicType,
+func New(topic core.TopicType, t core.HeuristicType,
 	opts ...BaseHeuristicOpt) Heuristic {
 	bi := &BaseHeuristic{
-		inType: inType,
+		ht:    t,
+		topic: topic,
 	}
 
 	for _, opt := range opts {
@@ -47,12 +50,16 @@ func New(inType core.TopicType,
 	return bi
 }
 
+func (bi *BaseHeuristic) Type() core.HeuristicType {
+	return bi.ht
+}
+
 func (bi *BaseHeuristic) ID() core.UUID {
 	return bi.id
 }
 
 func (bi *BaseHeuristic) TopicType() core.TopicType {
-	return bi.inType
+	return bi.topic
 }
 
 func (bi *BaseHeuristic) Assess(_ core.Event) (*ActivationSet, error) {
@@ -65,7 +72,7 @@ func (bi *BaseHeuristic) SetID(id core.UUID) {
 
 func (bi *BaseHeuristic) Validate(e core.Event) error {
 	if e.Type != bi.TopicType() {
-		return fmt.Errorf(invalidInTypeErr, bi.TopicType(), e.Type)
+		return fmt.Errorf(invalidTopicErr, bi.TopicType(), e.Type)
 	}
 
 	return nil

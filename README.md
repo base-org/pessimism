@@ -143,7 +143,6 @@ A bootstrap config file is used to define the initial state of the pessimism ser
 [
     {
         "network": "layer1",
-        "pipeline_type": "live",
         "type": "contract_event", 
         "start_height": null,
         "alerting_params": {
@@ -157,7 +156,6 @@ A bootstrap config file is used to define the initial state of the pessimism ser
     },
     {
         "network": "layer1",
-        "pipeline_type": "live",
         "type": "balance_enforcement", 
         "start_height": null,
         "alerting_params": {

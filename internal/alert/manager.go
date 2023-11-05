@@ -36,7 +36,7 @@ type alertManager struct {
 	cfg    *Config
 
 	store        Store
-	interpolator Interpolator
+	interpolator *Interpolator
 	cdHandler    CoolDownHandler
 	cm           RoutingDirectory
 
@@ -59,7 +59,7 @@ func NewManager(ctx context.Context, cfg *Config, cm RoutingDirectory) Manager {
 		cm:        cm,
 
 		cancel:       cancel,
-		interpolator: NewInterpolator(),
+		interpolator: new(Interpolator),
 		store:        NewStore(),
 		alertTransit: make(chan core.Alert),
 		metrics:      metrics.WithContext(ctx),
@@ -82,7 +82,7 @@ func (am *alertManager) Transit() chan core.Alert {
 
 // handleSlackPost ... Handles posting an alert to slack channels
 func (am *alertManager) handleSlackPost(alert core.Alert, policy *core.AlertPolicy) error {
-	slackClients := am.cm.GetSlackClients(alert.Criticality)
+	slackClients := am.cm.GetSlackClients(alert.Sev)
 	if slackClients == nil {
 		am.logger.Warn("No slack clients defined for criticality", zap.Any("alert", alert))
 		return nil
@@ -90,8 +90,8 @@ func (am *alertManager) handleSlackPost(alert core.Alert, policy *core.AlertPoli
 
 	// Create event trigger
 	event := &client.AlertEventTrigger{
-		Message:  am.interpolator.InterpolateSlackMessage(alert.Criticality, alert.HeuristicID, alert.Content, policy.Msg),
-		Severity: alert.Criticality,
+		Message:  am.interpolator.SlackMessage(alert, policy.Msg),
+		Severity: alert.Sev,
 	}
 
 	for _, sc := range slackClients {
@@ -112,7 +112,7 @@ func (am *alertManager) handleSlackPost(alert core.Alert, policy *core.AlertPoli
 
 // handlePagerDutyPost ... Handles posting an alert to pagerduty
 func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
-	pdClients := am.cm.GetPagerDutyClients(alert.Criticality)
+	pdClients := am.cm.GetPagerDutyClients(alert.Sev)
 
 	if pdClients == nil {
 		am.logger.Warn("No pagerduty clients defined for criticality", zap.Any("alert", alert))
@@ -120,9 +120,9 @@ func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
 	}
 
 	event := &client.AlertEventTrigger{
-		Message:  am.interpolator.InterpolatePagerDutyMessage(alert.HeuristicID, alert.Content),
+		Message:  am.interpolator.PagerDutyMessage(alert),
 		DedupKey: alert.PathID,
-		Severity: alert.Criticality,
+		Severity: alert.Sev,
 	}
 
 	for _, pdc := range pdClients {
@@ -193,7 +193,7 @@ func (am *alertManager) EventLoop() error {
 
 // HandleAlert ... Handles the alert propagation logic
 func (am *alertManager) HandleAlert(alert core.Alert, policy *core.AlertPolicy) {
-	alert.Criticality = policy.Severity()
+	alert.Sev = policy.Severity()
 
 	if err := am.handleSlackPost(alert, policy); err != nil {
 		am.logger.Error("could not post to slack", zap.Error(err))

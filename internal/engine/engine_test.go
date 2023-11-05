@@ -46,7 +46,7 @@ func Test_HardCodedEngine(t *testing.T) {
 				ts.mockHeuristic.EXPECT().Assess(e).
 					Return(heuristic.NoActivations(), testErr()).Times(1)
 
-				ts.mockHeuristic.EXPECT().SUUID().
+				ts.mockHeuristic.EXPECT().ID().
 					Return(core.UUID{}).Times(2)
 
 				as, err := ts.re.Execute(context.Background(), e, ts.mockHeuristic)
@@ -66,7 +66,7 @@ func Test_HardCodedEngine(t *testing.T) {
 				ts.mockHeuristic.EXPECT().Assess(e).
 					Return(expectedOut, nil).Times(1)
 
-				ts.mockHeuristic.EXPECT().SUUID().
+				ts.mockHeuristic.EXPECT().ID().
 					Return(core.UUID{}).Times(1)
 
 				as, err := ts.re.Execute(context.Background(), e, ts.mockHeuristic)

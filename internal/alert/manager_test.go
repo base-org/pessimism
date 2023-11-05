@@ -54,7 +54,7 @@ func TestEventLoop(t *testing.T) {
 				cm.SetSlackClients([]client.SlackClient{mocks.NewMockSlackClient(c)}, core.LOW)
 
 				alert := core.Alert{
-					Criticality: core.LOW,
+					Sev:         core.LOW,
 					HeuristicID: core.UUID{},
 				}
 				policy := &core.AlertPolicy{
@@ -80,7 +80,7 @@ func TestEventLoop(t *testing.T) {
 				time.Sleep(1 * time.Second)
 				id := core.NewUUID()
 				alert = core.Alert{
-					Criticality: core.UNKNOWN,
+					Sev:         core.UNKNOWN,
 					HeuristicID: id,
 				}
 				ingress <- alert
@@ -108,7 +108,7 @@ func TestEventLoop(t *testing.T) {
 				cm.SetPagerDutyClients([]client.PagerDutyClient{mocks.NewMockPagerDutyClient(c)}, core.MEDIUM)
 
 				alert := core.Alert{
-					Criticality: core.MEDIUM,
+					Sev:         core.MEDIUM,
 					HeuristicID: core.UUID{},
 				}
 				policy := &core.AlertPolicy{
@@ -134,7 +134,7 @@ func TestEventLoop(t *testing.T) {
 				time.Sleep(1 * time.Second)
 				id := core.UUID{}
 				alert = core.Alert{
-					Criticality: core.UNKNOWN,
+					Sev:         core.UNKNOWN,
 					HeuristicID: id,
 				}
 				ingress <- alert
@@ -163,7 +163,7 @@ func TestEventLoop(t *testing.T) {
 				cm.SetPagerDutyClients([]client.PagerDutyClient{mocks.NewMockPagerDutyClient(c), mocks.NewMockPagerDutyClient(c)}, core.HIGH)
 
 				alert := core.Alert{
-					Criticality: core.HIGH,
+					Sev:         core.HIGH,
 					HeuristicID: core.UUID{},
 				}
 				policy := &core.AlertPolicy{
@@ -197,7 +197,7 @@ func TestEventLoop(t *testing.T) {
 				time.Sleep(1 * time.Second)
 				id := core.UUID{}
 				alert = core.Alert{
-					Criticality: core.UNKNOWN,
+					Sev:         core.UNKNOWN,
 					HeuristicID: id,
 				}
 				ingress <- alert

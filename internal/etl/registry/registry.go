@@ -14,7 +14,7 @@ type Registry struct {
 	topics map[core.TopicType]*core.DataTopic
 }
 
-func NewRegistry() Registry {
+func New() *Registry {
 	topics := map[core.TopicType]*core.DataTopic{
 		core.BlockHeader: {
 			Addressing:  false,
@@ -42,7 +42,7 @@ func NewRegistry() Registry {
 		},
 	}
 
-	return Registry{topics}
+	return &Registry{topics}
 }
 
 // makeDeps ... Makes dependency slice
@@ -64,34 +64,34 @@ func noState() *core.StateKey {
 	return nil
 }
 
-// GetDependencyPath ... Returns in-order slice of ETL pipeline path
-func (cr *Registry) GetDependencyPath(rt core.TopicType) (core.RegisterDependencyPath, error) {
-	destRegister, err := cr.GetDataTopic(rt)
+// TopicPath ... Returns in-order slice of ETL pipeline path
+func (r *Registry) TopicPath(tt core.TopicType) (core.TopicPath, error) {
+	topic, err := r.GetDataTopic(tt)
 	if err != nil {
-		return core.RegisterDependencyPath{}, err
+		return core.TopicPath{}, err
 	}
 
-	topics := make([]*core.DataTopic, len(destRegister.Dependencies)+1)
+	topics := make([]*core.DataTopic, len(topic.Dependencies)+1)
 
-	topics[0] = destRegister
+	topics[0] = topic
 
-	for i, depType := range destRegister.Dependencies {
-		depRegister, err := cr.GetDataTopic(depType)
+	for i, depType := range topic.Dependencies {
+		depRegister, err := r.GetDataTopic(depType)
 		if err != nil {
-			return core.RegisterDependencyPath{}, err
+			return core.TopicPath{}, err
 		}
 
 		topics[i+1] = depRegister
 	}
 
-	return core.RegisterDependencyPath{Path: topics}, nil
+	return core.TopicPath{Path: topics}, nil
 }
 
 // GetDataTopic ... Returns a data register provided an enum type
-func (cr *Registry) GetDataTopic(rt core.TopicType) (*core.DataTopic, error) {
-	if _, exists := cr.topics[rt]; !exists {
-		return nil, fmt.Errorf(noEntryErr, rt)
+func (cr *Registry) GetDataTopic(tt core.TopicType) (*core.DataTopic, error) {
+	if _, exists := cr.topics[tt]; !exists {
+		return nil, fmt.Errorf(noEntryErr, tt)
 	}
 
-	return cr.topics[rt], nil
+	return cr.topics[tt], nil
 }

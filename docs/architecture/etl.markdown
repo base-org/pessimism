@@ -10,7 +10,7 @@ permalink: /architecture/etl
 
 The Pessimism ETL is a generalized abstraction for a DAG-based component system that continuously transforms chain data into inputs for consumption by a Risk Engine in the form of intertwined data “pipelines”. This DAG based representation of ETL operations is done to ensure that the application can optimally scale to support many active heuristics. This design allows for the reuse of modularized ETL components and de-duplication of conflicting pipelines under certain key logical circumstances.
 
-## Component
+## Process
 
 A component refers to a graph node within the ETL system. Every component performs some operation for transforming data from any data source into a consumable input for the Risk Engine to ingest.
 Currently, there are three total component types:
@@ -26,9 +26,9 @@ The diagram below showcases how interactivity between components occurs:
 {% raw %}
 <div class="mermaid">
 graph LR;
-    A((Component0)) -->|dataX| C[Ingress];
+    A((Process0)) -->|dataX| C[Ingress];
 
-    subgraph B["Component1"]
+    subgraph B["Process1"]
         C -->  D[ingressHandler];
         D --> |dataX| E(eventLoop);
         E --> |dataY| F[egressHandler];
@@ -36,8 +36,8 @@ graph LR;
         F --> |dataY| H[egress1];
     end
 
-    G --> K((Component2));
-    H --> J((Component3));
+    G --> K((Process2));
+    H --> J((Process3));
 </div>
 {% endraw %}
 
@@ -48,8 +48,8 @@ All component types use an `egressHandler` struct for routing transit data to ac
 {% raw %}
 <div class="mermaid">
 flowchart TD;
-    Component-->|Transit_Data|A[Egress0];
-    Component-->|Transit_Data|B[Egress1];
+    Process-->|Transit_Data|A[Egress0];
+    Process-->|Transit_Data|B[Egress1];
 </div>
 {% endraw %}
 
@@ -57,14 +57,14 @@ flowchart TD;
 
 All component types also use an `ingressHandler` struct for ingesting active transit data from upstream ETL components.
 
-### Component UUID (CUUID)
+### Process UUID (CUUID)
 
-All components have a UUID that stores critical identification data. Component IDs are used by higher order abstractions to:
+All components have a UUID that stores critical identification data. Process IDs are used by higher order abstractions to:
 
 * Represent a component DAG
 * Understand when component duplicates occur in the system
 
-Component UUID's constitute of both a randomly generated `UUID` and a deterministic `PID`. This is done to ensure uniqueness of each component instance while also ensuring collision based properties so that components can be reused when viable.
+Process UUID's constitute of both a randomly generated `UUID` and a deterministic `PID`. This is done to ensure uniqueness of each component instance while also ensuring collision based properties so that components can be reused when viable.
 
 A `ProcIdentifier` is encoded using the following four byte sequence:
 
@@ -179,7 +179,7 @@ A registry submodule is used to store all ETL data register definitions that pro
 
 * `DataType` - The output data type of the component node. This is used for data serialization/deserialization by both the ETL and Risk Engine subsystems.
 * `ProcessType` - The type of component being invoked (_e.g. Oracle_).
-* `ComponentConstructor` - Constructor function used to create unique component instances. All components must implement the `Component` interface.
+* `ProcessConstructor` - Constructor function used to create unique component instances. All components must implement the `Process` interface.
 * `Dependencies` - Ordered slice of data register dependencies that are necessary for the component to operate. For example, a component that requires a geth block would have a dependency list of `[geth.block]`. This dependency list is used to ensure that the ETL can properly construct a component graph that satisfies all component dependencies.
 
 ## Addressing
@@ -228,9 +228,9 @@ Unlike, the `BlockHeader` register, this register requires knowledge of an addre
 
 ## Managed ETL
 
-### Component Graph
+### Process Graph
 
-The ETL uses a `ComponentGraph` construct to represent and store critical component inter-connectivity data _(ie. component node entries and graph edges)_.
+The ETL uses a `ProcessGraph` construct to represent and store critical component inter-connectivity data _(ie. component node entries and graph edges)_.
 
 A graph edge is represented as a binded communication path between two arbitrary component nodes (`c1`, `c2`). Adding an edge from some component (`c1`) to some downstream component (`c2`) results in `c1` having a path to the ingress of `c2` in its [egress handler](#egress-handler). This would look something like:
 
@@ -255,11 +255,11 @@ graph TB;
 </div>
 {% endraw %}
 
-**NOTE:** The component graph used in the ETL is represented as a _DAG_ (Directed Acyclic Graph), meaning that no bipartite edge relationships should exist between two components (`c1`, `c2`) where `c1-->c2` && `c2-->c1`. While there are no explicit checks for this in the code software, it should be impossible given that all components declare entrypoint register dependencies within their metadata, meaning that a component could only be susceptible to bipartite connectivity in the circumstance where a component registry definition declares inversal input->output of an existing component.
+**NOTE:** The component graph used in the ETL is represented as a _DAG_ (Directed Acyclic Graph), meaning that no bipartite edge relationships should exist between two components (`c1`, `c2`) where `c1-->c2` && `c2-->c1`. While there are no explicit checks for this in the code software, it should be impossible given that all components declare entrypoint register dependencies within their metadata, meaning that a component could only be susceptible to bipartite connectivity in the circumstance where a component registry definition declares inversal input->output of an existing process
 
 ### Pipeline
 
-Pipelines are used to represent some full component path in a DAG based `ComponentGraph`. A pipeline is a sequence of components that are connected together in a way to express meaningful ETL operations for extracting some heuristic input for consumption by the Risk Engine.
+Pipelines are used to represent some full component path in a DAG based `ProcessGraph`. A pipeline is a sequence of components that are connected together in a way to express meaningful ETL operations for extracting some heuristic input for consumption by the Risk Engine.
 
 ### Pipeline States
 
@@ -315,7 +315,7 @@ Once a collision is detected, the ETL will attempt to deduplicate the pipeline b
 
 ## ETL Manager
 
-`EtlManager` is used for connecting lower-level objects (_Component Graph, Pipeline_) together in a way to express meaningful ETL administration logic; ie:
+`EtlManager` is used for connecting lower-level objects (_Process Graph, Pipeline_) together in a way to express meaningful ETL administration logic; ie:
 
 * Creating a new pipeline
 * Removing a pipeline

@@ -124,7 +124,7 @@ func NewWithdrawalSafetyHeuristic(ctx context.Context, cfg *WithdrawalSafetyCfg)
 		ixClient: clients.IxClient,
 		l1Client: clients.L1Client,
 
-		Heuristic: heuristic.New(core.Log),
+		Heuristic: heuristic.New(core.Log, core.WithdrawalSafety),
 	}, nil
 }
 

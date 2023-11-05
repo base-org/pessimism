@@ -14,57 +14,57 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Manager(t *testing.T) {
+func TestETL(t *testing.T) {
 	var tests = []struct {
 		name        string
 		function    string
 		description string
 
-		constructionLogic func() Manager
-		testLogic         func(t *testing.T, m Manager)
+		constructionLogic func() ETL
+		testLogic         func(t *testing.T, m ETL)
 	}{
 		{
-			name:        "Successful Pipe Component Construction",
+			name:        "Success - Subscription Process",
 			function:    "CreateProcess",
 			description: "CreateProcess function should generate pipe component instance provided valid params",
 
-			constructionLogic: func() Manager {
-				reg := registry.NewRegistry()
+			constructionLogic: func() ETL {
+				r := registry.New()
 				ctrl := gomock.NewController(t)
 
 				ctx, _ := mocks.Context(context.Background(), ctrl)
 
 				ctx = context.WithValue(ctx, core.State, state.NewMemState())
 
-				return NewManager(ctx, NewAnalyzer(reg), reg, NewEtlStore(), NewComponentGraph(), nil)
+				return New(ctx, NewAnalyzer(r), r, NewEtlStore(), NewGraph(), nil)
 			},
 
-			testLogic: func(t *testing.T, m Manager) {
+			testLogic: func(t *testing.T, etl ETL) {
 				cUUID := core.MakeProcessID(1, 1, 1, 1)
 
-				register, err := registry.NewRegistry().GetDataTopic(core.BlockHeader)
+				register, err := registry.New().GetDataTopic(core.BlockHeader)
 
 				assert.NoError(t, err)
 
 				cc := &core.ClientConfig{
 					Network: core.Layer1,
 				}
-				c, err := m.CreateProcess(cc, cUUID, core.PathID{}, register)
+				p, err := etl.CreateProcess(cc, cUUID, core.PathID{}, register)
 				assert.NoError(t, err)
 
-				assert.Equal(t, c.UUID(), cUUID)
-				assert.Equal(t, c.Type(), register.ProcessType)
-				assert.Equal(t, c.OutputType(), register.DataType)
+				assert.Equal(t, p.ID(), cUUID)
+				assert.Equal(t, p.Type(), register.ProcessType)
+				assert.Equal(t, p.EmitType(), register.DataType)
 
 			},
 		},
 		{
-			name:        "Successful Pipeline Creations",
-			function:    "CreateDataPipeline",
-			description: "CreateDataPipeline should reuse existing pipeline if it exists",
+			name:        "Successful Path Creation",
+			function:    "CreatePath",
+			description: "CreatePath should reuse an existing path when necessary",
 
-			constructionLogic: func() Manager {
-				reg := registry.NewRegistry()
+			constructionLogic: func() ETL {
+				reg := registry.New()
 				ctrl := gomock.NewController(t)
 
 				ctx, ms := mocks.Context(context.Background(), ctrl)
@@ -73,10 +73,10 @@ func Test_Manager(t *testing.T) {
 
 				ctx = context.WithValue(ctx, core.State, state.NewMemState())
 
-				return NewManager(ctx, NewAnalyzer(reg), reg, NewEtlStore(), NewComponentGraph(), nil)
+				return New(ctx, NewAnalyzer(reg), reg, NewEtlStore(), NewGraph(), nil)
 			},
 
-			testLogic: func(t *testing.T, m Manager) {
+			testLogic: func(t *testing.T, etl ETL) {
 				pCfg := &core.PathConfig{
 					Network:  core.Layer1,
 					DataType: core.Log,
@@ -87,28 +87,28 @@ func Test_Manager(t *testing.T) {
 					},
 				}
 
-				PathID1, reuse, err := m.CreateDataPipeline(pCfg)
+				id1, reuse, err := etl.CreateProcessPath(pCfg)
 				assert.NoError(t, err)
 				assert.False(t, reuse)
-				assert.NotEqual(t, PathID1, core.PathID{})
+				assert.NotEqual(t, id1, core.PathID{})
 
 				// Now create a new pipeline with the same config
 				// & ensure that the previous pipeline is reused
 
-				PathID2, reuse, err := m.CreateDataPipeline(pCfg)
+				id2, reuse, err := etl.CreateProcessPath(pCfg)
 				assert.NoError(t, err)
 				assert.True(t, reuse)
-				assert.Equal(t, PathID1, PathID2)
+				assert.Equal(t, id1, id2)
 
 				// Now run the pipeline
-				err = m.RunPipeline(PathID1)
+				err = etl.Run(id1)
 				assert.NoError(t, err)
 
 				// Ensure shutdown works
 				go func() {
-					_ = m.EventLoop()
+					_ = etl.EventLoop()
 				}()
-				err = m.Shutdown()
+				err = etl.Shutdown()
 				assert.NoError(t, err)
 			},
 		},

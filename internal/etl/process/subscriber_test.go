@@ -15,22 +15,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Pipe_Event_Flow(t *testing.T) {
+func TestSubscription(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	ts := time.Date(1969, time.April, 1, 4, 20, 0, 0, time.Local)
 
 	// Setup component dependencies
-	testID := core.MakeProcessID(6, 9, 6, 9)
+	id := core.MakeProcessID(6, 9, 6, 9)
 
-	outputChan := make(chan core.Event)
+	topics := make(chan core.Event)
 
 	// Construct test component
-	testPipe, err := mocks.NewSubscriber(ctx, core.BlockHeader, core.Log)
+	path, err := mocks.NewSubscriber(ctx, core.BlockHeader, core.Log)
 	assert.NoError(t, err)
 
-	err = testPipe.AddPublisher(testID, outputChan)
+	err = path.AddSubscriber(id, topics)
 	assert.NoError(t, err)
 
 	// Encoded value taken from https://github.com/ethereum/go-ethereum/blob/master/core/types/block_test.go#L36
@@ -42,37 +42,37 @@ func Test_Pipe_Event_Flow(t *testing.T) {
 
 	// Start component event loop on separate go routine
 	go func() {
-		if err := testPipe.EventLoop(); err != nil {
-			log.Printf("Got error from testPipe event loop %s", err.Error())
+		if err := path.EventLoop(); err != nil {
+			log.Printf("Got error from path event loop %s", err.Error())
 		}
 	}()
 
 	wg := sync.WaitGroup{}
 
-	inputData := core.Event{
+	e := core.Event{
 		Timestamp: ts,
 		Type:      core.BlockHeader,
 		Value:     block,
 	}
 	var outputData core.Event
 
-	// Spawn listener routine that reads for output from testPipe
+	// Spawn listener routine that reads for output from path
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 
 		// Read first value from channel and return
-		for output := range outputChan {
+		for output := range topics {
 			outputData = output
 			return
 		}
 
 	}()
 
-	entryChan, err := testPipe.GetIngress(core.BlockHeader)
+	relay, err := path.GetRelay(core.BlockHeader)
 	assert.NoError(t, err)
 
-	entryChan <- inputData
+	relay <- e
 
 	// Wait for pipe to transform block data into a transaction slice
 	wg.Wait()

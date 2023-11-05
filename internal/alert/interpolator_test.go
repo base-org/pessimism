@@ -8,14 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_InterpolatePagerDutyMessage(t *testing.T) {
-	id := core.UUID{}
+func TestPagerDutyMessage(t *testing.T) {
 
-	msg := "Test alert"
+	a := core.Alert{
+		HeuristicID: core.UUID{},
+		Content:     "Test alert",
+	}
 
 	expected := "\n\tHeuristic Triggered: unknown\n\tNetwork: unknown\n\tAssessment: \n\tTest alert\n\t"
-
-	actual := alert.NewInterpolator().InterpolatePagerDutyMessage(id, msg)
-
-	assert.Equal(t, expected, actual, "should be equal")
+	actual := new(alert.Interpolator).PagerDutyMessage(a)
+	assert.Equal(t, expected, actual)
 }

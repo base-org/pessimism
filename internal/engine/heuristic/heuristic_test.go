@@ -10,7 +10,7 @@ import (
 
 func Test_BaseHeuristic(t *testing.T) {
 	expected := core.NewUUID()
-	h := heuristic.New(core.TopicType(0))
+	h := heuristic.New(core.TopicType(0), core.BalanceEnforcement)
 
 	h.SetID(expected)
 	actual := h.ID()
@@ -33,4 +33,7 @@ func Test_BaseHeuristic(t *testing.T) {
 	})
 
 	assert.NotNil(t, err)
+
+	ht := h.Type()
+	assert.Equal(t, core.BalanceEnforcement, ht)
 }

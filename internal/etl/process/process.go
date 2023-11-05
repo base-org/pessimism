@@ -22,6 +22,7 @@ type Process interface {
 	EventLoop() error
 
 	AddSubscriber(id core.ProcessID, outChan chan core.Event) error
+	SetState(as ActivityState)
 
 	AddRelay(tt core.TopicType) error
 	GetRelay(tt core.TopicType) (chan core.Event, error)
@@ -34,10 +35,11 @@ type Process interface {
 	Type() core.ProcessType
 	EmitType() core.TopicType
 	StateKey() *core.StateKey
-	// TODO(#24): Add Internal Component Activity State Tracking
+	// TODO(#24): Add Internal Process Activity State Tracking
 	ActivityState() ActivityState
 }
 
+// Process state
 type State struct {
 	id     core.ProcessID
 	pathID core.PathID
@@ -66,8 +68,11 @@ func newState(pt core.ProcessType, tt core.TopicType) *State {
 		procType: pt,
 		publType: tt,
 
-		relay:       make(chan StateChange),
-		subscribers: new(subscribers),
+		close: make(chan int),
+		relay: make(chan StateChange),
+		subscribers: &subscribers{
+			subs: make(map[core.ProcIdentifier]chan core.Event),
+		},
 		topics: &topics{
 			relays: make(map[core.TopicType]chan core.Event),
 		},
@@ -77,6 +82,10 @@ func newState(pt core.ProcessType, tt core.TopicType) *State {
 
 func (s *State) ActivityState() ActivityState {
 	return s.as
+}
+
+func (s *State) SetState(as ActivityState) {
+	s.as = as
 }
 
 func (s *State) StateKey() *core.StateKey {

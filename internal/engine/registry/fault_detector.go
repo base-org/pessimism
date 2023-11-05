@@ -94,7 +94,7 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heu
 		l2Client:     bundle.L2Client,
 		l2GethClient: bundle.L2Geth,
 
-		Heuristic: heuristic.New(core.Log),
+		Heuristic: heuristic.New(core.Log, core.FaultDetector),
 	}, nil
 }
 

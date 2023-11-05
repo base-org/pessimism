@@ -41,7 +41,6 @@ func TestBalanceEnforcement(t *testing.T) {
 	// Deploy a balance enforcement heuristic session for Alice.
 	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{{
 		Network:       core.Layer2.String(),
-		PType:         core.Live.String(),
 		HeuristicType: core.BalanceEnforcement.String(),
 		StartHeight:   nil,
 		EndHeight:     nil,
@@ -95,8 +94,8 @@ func TestBalanceEnforcement(t *testing.T) {
 
 	// Wait for Pessimism to process the balance change and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
-		PathID := ids[0].PathID
-		height, err := ts.Subsystems.PipelineHeight(PathID)
+		id := ids[0].PathID
+		height, err := ts.Subsystems.PipelineHeight(id)
 		if err != nil {
 			return false, err
 		}
@@ -136,8 +135,8 @@ func TestBalanceEnforcement(t *testing.T) {
 
 	// Wait for Pessimism to process the balance change and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
-		PathID := ids[0].PathID
-		height, err := ts.Subsystems.PipelineHeight(PathID)
+		id := ids[0].PathID
+		height, err := ts.Subsystems.PipelineHeight(id)
 		if err != nil {
 			return false, err
 		}
@@ -169,7 +168,6 @@ func TestContractEvent(t *testing.T) {
 	// Deploy a contract event heuristic session for the L1 system config address.
 	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{{
 		Network:       core.Layer1.String(),
-		PType:         core.Live.String(),
 		HeuristicType: core.ContractEvent.String(),
 		StartHeight:   nil,
 		EndHeight:     nil,
@@ -208,8 +206,8 @@ func TestContractEvent(t *testing.T) {
 
 	// Wait for Pessimism to process the newly emitted event and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
-		PathID := ids[0].PathID
-		height, err := ts.Subsystems.PipelineHeight(PathID)
+		id := ids[0].PathID
+		height, err := ts.Subsystems.PipelineHeight(id)
 		if err != nil {
 			return false, err
 		}
@@ -246,7 +244,6 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{
 		{
 			Network:       core.Layer1.String(),
-			PType:         core.Live.String(),
 			HeuristicType: core.WithdrawalSafety.String(),
 			StartHeight:   nil,
 			EndHeight:     nil,
@@ -305,8 +302,8 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 
 	// Wait for Pessimism to process the proven withdrawal and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
-		PathID := ids[0].PathID
-		height, err := ts.Subsystems.PipelineHeight(PathID)
+		id := ids[0].PathID
+		height, err := ts.Subsystems.PipelineHeight(id)
 		if err != nil {
 			return false, err
 		}
@@ -340,8 +337,8 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 
 	// // Wait for Pessimism to process the finalized withdrawal and send a notification to the mocked Slack server.
 	// require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
-	// 	PathID := ids[0].PathID
-	// 	height, err := ts.Subsystems.PipelineHeight(PathID)
+	// 	id := ids[0].PathID
+	// 	height, err := ts.Subsystems.PipelineHeight(id)
 	// 	if err != nil {
 	// 		return false, err
 	// 	}
@@ -366,7 +363,6 @@ func TestWithdrawalSafetyNoInvariants(t *testing.T) {
 	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{
 		{
 			Network:       core.Layer1.String(),
-			PType:         core.Live.String(),
 			HeuristicType: core.WithdrawalSafety.String(),
 			StartHeight:   nil,
 			EndHeight:     nil,
@@ -426,8 +422,8 @@ func TestWithdrawalSafetyNoInvariants(t *testing.T) {
 
 	// Wait for Pessimism to process the proven withdrawal and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
-		PathID := ids[0].PathID
-		height, err := ts.Subsystems.PipelineHeight(PathID)
+		id := ids[0].PathID
+		height, err := ts.Subsystems.PipelineHeight(id)
 		if err != nil {
 			return false, err
 		}
@@ -462,7 +458,6 @@ func TestFaultDetector(t *testing.T) {
 	// Deploys a fault detector heuristic session instance using the locally spun-up Op-Stack chain
 	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{{
 		Network:       core.Layer1.String(),
-		PType:         core.Live.String(),
 		HeuristicType: core.FaultDetector.String(),
 		StartHeight:   big.NewInt(0),
 		EndHeight:     nil,
@@ -494,8 +489,8 @@ func TestFaultDetector(t *testing.T) {
 	require.Nil(t, err)
 
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
-		PathID := ids[0].PathID
-		height, err := ts.Subsystems.PipelineHeight(PathID)
+		id := ids[0].PathID
+		height, err := ts.Subsystems.PipelineHeight(id)
 		if err != nil {
 			return false, err
 		}

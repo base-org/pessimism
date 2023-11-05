@@ -52,7 +52,7 @@ func NewBalanceHeuristic(ctx context.Context, cfg *BalanceInvConfig) (heuristic.
 	return &BalanceHeuristic{
 		ctx:       ctx,
 		cfg:       cfg,
-		Heuristic: heuristic.New(core.BlockHeader),
+		Heuristic: heuristic.New(core.BlockHeader, core.BalanceEnforcement),
 	}, nil
 }
 

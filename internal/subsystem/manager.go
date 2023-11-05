@@ -55,7 +55,7 @@ type Manager struct {
 	cfg *Config
 	ctx context.Context
 
-	etl   etl.Manager
+	etl   etl.ETL
 	eng   engine.Manager
 	alert alert.Manager
 	stats metrics.Metricer
@@ -64,7 +64,7 @@ type Manager struct {
 }
 
 // NewManager ... Initializer for the subsystem manager
-func NewManager(ctx context.Context, cfg *Config, etl etl.Manager, eng engine.Manager,
+func NewManager(ctx context.Context, cfg *Config, etl etl.ETL, eng engine.Manager,
 	a alert.Manager,
 ) *Manager {
 	return &Manager{
@@ -142,7 +142,7 @@ func (m *Manager) BuildDeployCfg(pConfig *core.PathConfig,
 	}
 
 	logging.WithContext(m.ctx).
-		Info("Created etl pipeline", zap.String(logging.PathIDKey, PathID.String()))
+		Info("Created etl pipeline", zap.String(logging.Path, PathID.String()))
 
 	// 3. Create a deploy config
 	return &heuristic.DeployConfig{
@@ -159,10 +159,10 @@ func (m *Manager) BuildDeployCfg(pConfig *core.PathConfig,
 
 // RunHeuristic ... Runs a heuristic session
 func (m *Manager) RunHeuristic(cfg *heuristic.DeployConfig) (core.UUID, error) {
-	// 1. Verify that pipeline constraints are met
+	// 1. Verify that path constraints are met
 	// NOTE - Consider introducing a config validation step or module
 	if !cfg.Reuse && m.etlLimitReached() {
-		return core.UUID{}, fmt.Errorf(maxPipelineErr, m.cfg.MaxPipelineCount)
+		return core.UUID{}, fmt.Errorf(maxPathErr, m.cfg.MaxPipelineCount)
 	}
 
 	// 2. Deploy heuristic session to risk engine
@@ -184,7 +184,7 @@ func (m *Manager) RunHeuristic(cfg *heuristic.DeployConfig) (core.UUID, error) {
 		return id, nil
 	}
 
-	if err = m.etl.StartPath(cfg.PathID); err != nil { // Spin-up pipeline components
+	if err = m.etl.Run(cfg.PathID); err != nil { // Spin-up pipeline components
 		return core.UUID{}, err
 	}
 
@@ -206,7 +206,7 @@ func (m *Manager) BuildPipelineCfg(params *models.SessionRequestParams) (*core.P
 	return &core.PathConfig{
 		Network:  params.NetworkType(),
 		DataType: inType,
-		PathType: params.PathType(),
+		PathType: core.Live,
 		ClientConfig: &core.ClientConfig{
 			Network:      params.NetworkType(),
 			PollInterval: pollInterval,
@@ -222,5 +222,5 @@ func (m *Manager) etlLimitReached() bool {
 }
 
 func (m *Manager) PipelineHeight(PathID core.PathID) (*big.Int, error) {
-	return m.etl.GetHeightAtPath(PathID)
+	return m.etl.GetBlockHeight(PathID)
 }

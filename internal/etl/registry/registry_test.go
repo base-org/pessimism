@@ -9,25 +9,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_ComponentRegistry(t *testing.T) {
+func TestProcessRegistry(t *testing.T) {
 	var tests = []struct {
 		name        string
 		function    string
 		description string
 
-		constructionLogic func() registry.Registry
-		testLogic         func(*testing.T, registry.Registry)
+		test func(*testing.T, *registry.Registry)
 	}{
 		{
 			name:        "Fetch Failure",
 			function:    "GetDataTopic",
 			description: "When trying to get an invalid register, an error should be returned",
 
-			constructionLogic: registry.NewRegistry,
-			testLogic: func(t *testing.T, testRegistry registry.Registry) {
+			test: func(t *testing.T, r *registry.Registry) {
 
 				invalidType := core.TopicType(255)
-				register, err := testRegistry.GetDataTopic(invalidType)
+				register, err := r.GetDataTopic(invalidType)
 
 				assert.Error(t, err)
 				assert.Nil(t, register)
@@ -38,10 +36,9 @@ func Test_ComponentRegistry(t *testing.T) {
 			function:    "GetDataTopic",
 			description: "When trying to get a register provided a valid register type, a register should be returned",
 
-			constructionLogic: registry.NewRegistry,
-			testLogic: func(t *testing.T, testRegistry registry.Registry) {
+			test: func(t *testing.T, r *registry.Registry) {
 
-				reg, err := testRegistry.GetDataTopic(core.BlockHeader)
+				reg, err := r.GetDataTopic(core.BlockHeader)
 
 				assert.NoError(t, err)
 				assert.NotNil(t, reg)
@@ -53,10 +50,9 @@ func Test_ComponentRegistry(t *testing.T) {
 			function:    "GetDataTopic",
 			description: "When trying to get a register dependency path provided a valid register type, a path should be returned",
 
-			constructionLogic: registry.NewRegistry,
-			testLogic: func(t *testing.T, testRegistry registry.Registry) {
+			test: func(t *testing.T, r *registry.Registry) {
 
-				path, err := testRegistry.GetDependencyPath(core.Log)
+				path, err := r.TopicPath(core.Log)
 
 				assert.NoError(t, err)
 				assert.Len(t, path.Path, 2)
@@ -69,8 +65,8 @@ func Test_ComponentRegistry(t *testing.T) {
 
 	for i, tc := range tests {
 		t.Run(fmt.Sprintf("%d-%s-%s", i, tc.function, tc.name), func(t *testing.T) {
-			testRouter := tc.constructionLogic()
-			tc.testLogic(t, testRouter)
+			r := registry.New()
+			tc.test(t, r)
 		})
 
 	}

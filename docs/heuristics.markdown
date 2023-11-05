@@ -27,7 +27,6 @@ curl --location --request POST 'http://localhost:8080/v0/heuristic' \
   "method": "run",
   "params": {
     "network": "layer1",
-    "pipeline_type": "live",
     "type": "balance_enforcement", 
     "start_height": null,
     "alert_destination": "slack",
@@ -62,7 +61,6 @@ curl --location --request POST 'http://localhost:8080/v0/heuristic' \
   "method": "run",
   "params": {
     "network": "layer1",
-    "pipeline_type": "live",
     "type": "contract_event", 
     "start_height": null,
     "alert_destination": "slack",
@@ -101,7 +99,6 @@ curl --location --request POST 'http://localhost:8080/v0/heuristic' \
   "method": "run",
  "params": {
   "network": "layer1",
-  "pipeline_type": "live",
   "type": "withdrawal_safety",
   "start_height":  null,
   "alert_destination": "slack",
@@ -134,7 +131,6 @@ curl --location --request POST 'http://localhost:8080/v0/heuristic' \
   "method": "run",
  "params": {
   "network": "layer1",
-  "pipeline_type": "live",
   "type": "fault_detector",
   "start_height":  null,
   "alert_destination": "slack",

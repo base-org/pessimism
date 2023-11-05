@@ -33,21 +33,21 @@ func (sk *StateKey) IsNested() bool {
 	return sk.Nesting
 }
 
-func (sk *StateKey) SetPathID(PathID PathID) error {
+func (sk *StateKey) SetPathID(id PathID) error {
 	if sk.PathID != nil {
 		return fmt.Errorf("state key already has a pipeline UUID %s", sk.PathID.String())
 	}
 
-	sk.PathID = &PathID
+	sk.PathID = &id
 	return nil
 }
 
 func (sk StateKey) String() string {
-	PathID := ""
+	id := ""
 
 	if sk.PathID != nil {
-		PathID = sk.PathID.String()
+		id = sk.PathID.String()
 	}
 
-	return fmt.Sprintf("%s-%s-%s", PathID, sk.Prefix, sk.ID)
+	return fmt.Sprintf("%s-%s-%s", id, sk.Prefix, sk.ID)
 }
