@@ -20,6 +20,8 @@ type Registry struct {
 	Constructor     func(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error)
 }
 
+type Invariant func() (bool, string)
+
 // NewHeuristicTable ... Initializer
 func NewHeuristicTable() HeuristicTable {
 	tbl := map[core.HeuristicType]*Registry{

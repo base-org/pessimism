@@ -5,10 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"strings"
-	"time"
-
-	"github.com/base-org/pessimism/internal/common/math"
 
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
@@ -41,22 +37,41 @@ const WithdrawalSafetyMsg = `
 	Withdrawal Size: %s ETH
 `
 
-type WithdrawMetadata struct {
-	Hash common.Hash
-	From common.Address
-	To   common.Address
+type WithdrawalMeta struct {
+	Hash        common.Hash
+	InitTx      common.Hash
+	ProvenTx    common.Hash
+	FinalizedTx common.Hash
+	From        common.Address
+	To          common.Address
+	Value       *big.Int
 }
 
-func MetaFromProven(log types.Log, filter *bindings.OptimismPortalFilterer) (*WithdrawMetadata, error) {
-	provenWithdrawal, err := filter.ParseWithdrawalProven(log)
+func MetaFromProven(log types.Log, filter *bindings.OptimismPortalFilterer) (*WithdrawalMeta, error) {
+	proven, err := filter.ParseWithdrawalProven(log)
 	if err != nil {
 		return nil, err
 	}
 
-	return &WithdrawMetadata{
-		Hash: provenWithdrawal.WithdrawalHash,
-		From: provenWithdrawal.From,
-		To:   provenWithdrawal.To,
+	return &WithdrawalMeta{
+		FinalizedTx: common.HexToHash("0x0"),
+		Hash:        proven.WithdrawalHash,
+		From:        proven.From,
+		ProvenTx:    log.TxHash,
+		To:          proven.To,
+	}, nil
+}
+
+func MetaFromFinalized(log types.Log, filter *bindings.OptimismPortalFilterer) (*WithdrawalMeta, error) {
+	final, err := filter.ParseWithdrawalFinalized(log)
+	if err != nil {
+		return nil, err
+	}
+
+	return &WithdrawalMeta{
+		FinalizedTx: log.TxHash,
+		Hash:        final.WithdrawalHash,
+		ProvenTx:    common.HexToHash("0x0"),
 	}, nil
 }
 
@@ -150,14 +165,13 @@ func (wsh *L1WithdrawalSafety) Assess(td core.TransitData) (*heuristic.Activatio
 		return nil, fmt.Errorf(couldNotCastErr, "types.Log")
 	}
 
-	var wm *WithdrawMetadata
+	var wm *WithdrawalMeta
 	switch log.Topics[0] {
-	// TODO(#178) - Feat - Support WithdrawalProven processing in withdrawal_safety heuristic
-	// case WithdrawalFinalSig:
-	// 	wm, err = MetaFromFinalized(log, wi.l1PortalFilter)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
+	case WithdrawalFinalSig:
+		// Since the TO/FROM fields are unknown we cannot query
+		// the indexer API
+		invs := wsh.VerifyHash(wm.Hash)
+		return wsh.Execute(invs, wm)
 
 	case WithdrawalProvenSig:
 		wm, err = MetaFromProven(log, wsh.l1PortalFilter)
@@ -206,28 +220,10 @@ func (wsh *L1WithdrawalSafety) Assess(td core.TransitData) (*heuristic.Activatio
 	}
 
 	h := common.HexToHash(corrWithdrawal.TransactionHash)
-	invariants := wsh.GetInvariants(h, portalWEI, withdrawalWEI, correlated)
+	wm.Value = withdrawalWEI
 
-	// 5. Process activation set messages from invariant analysis
-	msgs := make([]string, 0)
+	invs := wsh.GetInvariants(h, portalWEI, withdrawalWEI, correlated)
+	invs = append(invs, wsh.VerifyHash(h)...)
 
-	for _, inv := range invariants {
-		if success, msg := inv(); success {
-			msgs = append(msgs, msg)
-		}
-	}
-
-	if len(msgs) == 0 {
-		return heuristic.NoActivations(), nil
-	}
-
-	msg := "\n*" + strings.Join(msgs[0:len(msgs)-1], "\n *")
-	msg += msgs[len(msgs)-1]
-	return heuristic.NewActivationSet().Add(
-		&heuristic.Activation{
-			TimeStamp: time.Now(),
-			Message: fmt.Sprintf(WithdrawalSafetyMsg, msg, wsh.cfg.L1PortalAddress, wsh.cfg.L2ToL1Address,
-				wsh.SUUID(), log.TxHash.String(), corrWithdrawal.TransactionHash, math.WeiToEther(withdrawalWEI).String()),
-		},
-	), nil
+	return wsh.Execute(invs, wm)
 }

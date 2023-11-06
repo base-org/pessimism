@@ -105,12 +105,12 @@ func (wsh *L2WithdrawalSafety) Assess(td core.TransitData) (*heuristic.Activatio
 
 	b := msgPassed.WithdrawalHash[0:len(msgPassed.WithdrawalHash)]
 
-	invariants := wsh.GetInvariants(common.BytesToHash(b), portalWEI, msgPassed.Value, true)
+	invs := wsh.GetInvariants(common.BytesToHash(b), portalWEI, msgPassed.Value, true)
 
 	// 5. Process activation set messages from invariant analysis
 	msgs := make([]string, 0)
 
-	for _, inv := range invariants {
+	for _, inv := range invs {
 		if success, msg := inv(); success {
 			msgs = append(msgs, msg)
 		}
@@ -133,15 +133,13 @@ func (wsh *L2WithdrawalSafety) Assess(td core.TransitData) (*heuristic.Activatio
 
 // GetInvariants ... Returns a list of invariants to be checked for in the assessment
 func (wsh *L2WithdrawalSafety) GetInvariants(hash common.Hash,
-	portalWEI, withdrawalWEI *big.Int, correlated bool) []func() (bool, string) {
-	maxAddr := common.HexToAddress("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
-	minAddr := common.HexToAddress("0x0000000000000000000000000000000000000000")
+	portalWEI, withdrawalWEI *big.Int, correlated bool) []Invariant {
 
 	portalAmt := new(big.Float).SetInt(portalWEI)
 	withdrawAmt := new(big.Float).SetInt(withdrawalWEI)
 
 	// Run the following invariant functions in order
-	return []func() (bool, string){
+	return []Invariant{
 		// A
 		// Check if the proven withdrawal amount is greater than the OptimismPortal value
 		func() (bool, string) {
@@ -158,7 +156,14 @@ func (wsh *L2WithdrawalSafety) GetInvariants(hash common.Hash,
 		func() (bool, string) {
 			return !correlated, UncorrelatedWithdraw
 		},
-		// D
+	}
+}
+
+func (wsh *L2WithdrawalSafety) VerifyHash(hash common.Hash) []Invariant {
+	maxAddr := common.HexToAddress("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
+	minAddr := common.HexToAddress("0x0000000000000000000000000000000000000000")
+
+	return []Invariant{
 		// Ensure message_hash != 0x0...0 and message_hash != 0xf...f
 		func() (bool, string) {
 			if hash.String() == minAddr.String() {
@@ -171,7 +176,6 @@ func (wsh *L2WithdrawalSafety) GetInvariants(hash common.Hash,
 
 			return false, ""
 		},
-		// E
 		// Ensure that message isn't super similar to erroneous values using Sorenson-Dice coefficient
 		func() (bool, string) {
 			c0 := math.SorensonDice(hash.String(), minAddr.String())
@@ -189,4 +193,29 @@ func (wsh *L2WithdrawalSafety) GetInvariants(hash common.Hash,
 			return false, ""
 		},
 	}
+}
+
+func (wsh *L2WithdrawalSafety) Execute(invs []Invariant, meta *WithdrawalMeta) (*heuristic.ActivationSet, error) {
+	// 5. Process activation set messages from invariant analysis
+	msgs := make([]string, 0)
+
+	for _, inv := range invs {
+		if success, msg := inv(); success {
+			msgs = append(msgs, msg)
+		}
+	}
+
+	if len(msgs) == 0 {
+		return heuristic.NoActivations(), nil
+	}
+
+	msg := "\n*" + strings.Join(msgs[0:len(msgs)-1], "\n *")
+	msg += msgs[len(msgs)-1]
+	return heuristic.NewActivationSet().Add(
+		&heuristic.Activation{
+			TimeStamp: time.Now(),
+			Message: fmt.Sprintf(WithdrawalSafetyMsg, msg, wsh.cfg.L1PortalAddress, wsh.cfg.L2ToL1Address,
+				wsh.SUUID(), meta.ProvenTx.String(), meta.InitTx.String(), math.WeiToEther(meta.Value).String()),
+		},
+	), nil
 }
