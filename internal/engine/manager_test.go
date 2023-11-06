@@ -49,7 +49,7 @@ func Test_EventLoop(t *testing.T) {
 		wg.Wait()
 	}()
 
-	isp := core.NewSessionParams()
+	isp := core.NewSessionParams(core.Layer1)
 	isp.SetValue("address", common.HexToAddress("0x69").String())
 	isp.SetValue("upper", 420)
 

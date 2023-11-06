@@ -239,6 +239,23 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 				core.L2ToL1MessagePasser: fakeAddr.String(),
 			},
 		},
+		{
+			Network:       core.Layer2.String(),
+			PType:         core.Live.String(),
+			HeuristicType: core.WithdrawalSafety.String(),
+			StartHeight:   nil,
+			EndHeight:     nil,
+			AlertingParams: &core.AlertPolicy{
+				Sev: core.LOW.String(),
+				Msg: alertMsg,
+			},
+			SessionParams: map[string]interface{}{
+				"threshold":              0.20,
+				"coefficient_threshold":  0.20,
+				core.L1Portal:            ts.Cfg.L1Deployments.OptimismPortalProxy.String(),
+				core.L2ToL1MessagePasser: predeploys.L2ToL1MessagePasserAddr.String(),
+			},
+		},
 	})
 	require.NoError(t, err, "Error bootstrapping heuristic session")
 
@@ -264,12 +281,33 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 	_, err = wait.ForReceiptOK(context.Background(), ts.L1Client, depositTx.Hash())
 	require.NoError(t, err)
 
-	// Initiate and prove a withdrawal
+	// Initiate withdrawal
 	withdrawTx, err := l2ToL1MessagePasser.InitiateWithdrawal(l2Opts, aliceAddr, big.NewInt(100_000), calldata)
 	require.NoError(t, err)
-	withdrawReceipt, err := wait.ForReceiptOK(context.Background(), ts.L2Client, withdrawTx.Hash())
+	initReceipt, err := wait.ForReceiptOK(context.Background(), ts.L2Client, withdrawTx.Hash())
 	require.NoError(t, err)
 
+	// Wait for Pessimism to process initiation
+	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
+		pUUID := ids[0].PUUID
+		height, err := ts.Subsystems.PipelineHeight(pUUID)
+		if err != nil {
+			return false, err
+		}
+
+		return height != nil && height.Uint64() > initReceipt.BlockNumber.Uint64(), nil
+	}))
+
+	// Ensure Pessimism has detected what it considers an unsafe withdrawal
+	alerts := ts.TestSlackSvr.SlackAlerts()
+	require.Equal(t, 1, len(alerts), "expected 1 alerts")
+	assert.Contains(t, alerts[0].Text, core.WithdrawalSafety.String(), "expected alert to be for withdrawal_safety")
+	assert.Contains(t, alerts[0].Text, alertMsg, "expected alert to have alert message")
+
+	// Ensure that specific invariant messages are included in the alert
+	assert.Contains(t, alerts[0].Text, alertMsg, registry.GreaterThanPortal)
+
+	ts.TestSlackSvr.ClearAlerts()
 	// Mock the indexer call to return a really high withdrawal amount
 	ts.TestIxClient.EXPECT().GetAllWithdrawalsByAddress(gomock.Any()).Return([]api_mods.WithdrawalItem{
 		{
@@ -278,7 +316,7 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 		},
 	}, nil).AnyTimes()
 
-	_, proveReceipt := op_e2e.ProveWithdrawal(t, *ts.Cfg, ts.L1Client, ts.Sys.EthInstances["sequencer"], ts.Cfg.Secrets.Alice, withdrawReceipt)
+	_, proveReceipt := op_e2e.ProveWithdrawal(t, *ts.Cfg, ts.L1Client, ts.Sys.EthInstances["sequencer"], ts.Cfg.Secrets.Alice, initReceipt)
 
 	// Wait for Pessimism to process the proven withdrawal and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
@@ -292,7 +330,7 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 	}))
 
 	// Ensure Pessimism has detected what it considers an unsafe withdrawal
-	alerts := ts.TestSlackSvr.SlackAlerts()
+	alerts = ts.TestSlackSvr.SlackAlerts()
 	require.Equal(t, 1, len(alerts), "expected 1 alerts")
 	assert.Contains(t, alerts[0].Text, core.WithdrawalSafety.String(), "expected alert to be for withdrawal_safety")
 	assert.Contains(t, alerts[0].Text, fakeAddr.String(), "expected alert to be for dummy L2ToL1MessagePasser")
