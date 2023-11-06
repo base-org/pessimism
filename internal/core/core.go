@@ -72,15 +72,15 @@ type HeuristicInput struct {
 // ExecInputRelay ... Represents a inter-subsystem
 // relay used to bind final ETL path outputs to risk engine inputs
 type ExecInputRelay struct {
-	PathID  PathID
-	outChan chan HeuristicInput
+	PathID PathID
+	relay  chan HeuristicInput
 }
 
 // NewEngineRelay ... Initializer
-func NewEngineRelay(id PathID, outChan chan HeuristicInput) *ExecInputRelay {
+func NewEngineRelay(id PathID, relay chan HeuristicInput) *ExecInputRelay {
 	return &ExecInputRelay{
-		PathID:  id,
-		outChan: outChan,
+		PathID: id,
+		relay:  relay,
 	}
 }
 
@@ -91,7 +91,7 @@ func (eir *ExecInputRelay) RelayEvent(e Event) error {
 		Input:  e,
 	}
 
-	eir.outChan <- hi
+	eir.relay <- hi
 	return nil
 }
 

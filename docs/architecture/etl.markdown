@@ -8,7 +8,7 @@ permalink: /architecture/etl
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10.3.0/dist/mermaid.min.js"></script>
 {% endraw %}
 
-The Pessimism ETL is a generalized abstraction for a DAG-based process system that continuously transforms chain data into inputs for consumption by a Risk Engine in the form of intertwined data “paths”. This DAG based representation of ETL operations is done to ensure that the application can optimally scale to support many active heuristics. This design allows for the reuse of modularized ETL processs and de-duplication of conflicting paths under certain key logical circumstances.
+The Pessimism ETL is a generalized abstraction for a DAG-based process system that continuously transforms chain data into inputs for consumption by a Risk Engine in the form of intertwined data “paths”. This DAG based representation of ETL operations is done to ensure that the application can optimally scale to support many active heuristics. This design allows for the reuse of modularized ETL processes and de-duplication of conflicting paths under certain key logical circumstances.
 
 ## Process
 
@@ -42,7 +42,7 @@ graph LR;
 
 #### Egress Handler
 
-All process types use an `egressHandler` struct for routing transit data to actively subscribed downstream ETL processs.
+All process types use an `egressHandler` struct for routing transit data to actively subscribed downstream ETL processes.
 
 {% raw %}
 <div class="mermaid">
@@ -54,16 +54,16 @@ flowchart TD;
 
 #### Ingress Handler
 
-All process types also use an `ingressHandler` struct for ingesting active transit data from upstream ETL processs.
+All process types also use an `ingressHandler` struct for ingesting active transit data from upstream ETL processes.
 
 ### Process UUID (CUUID)
 
-All processs have a UUID that stores critical identification data. Process IDs are used by higher order abstractions to:
+All processes have a UUID that stores critical identification data. Process IDs are used by higher order abstractions to:
 
 * Represent a process DAG
 * Understand when process duplicates occur in the system
 
-Process UUID's constitute of both a randomly generated `UUID` and a deterministic `PID`. This is done to ensure uniqueness of each process instance while also ensuring collision based properties so that processs can be reused when viable.
+Process UUID's constitute of both a randomly generated `UUID` and a deterministic `PID`. This is done to ensure uniqueness of each process instance while also ensuring collision based properties so that processes can be reused when viable.
 
 A `ProcIdentifier` is encoded using the following four byte sequence:
 
@@ -86,9 +86,9 @@ Once input data processing has been completed, the output data is then submitted
 #### Attributes
 
 * An `ActivityState` channel with a path manager
-* Ingress handler that other processs can write to
+* Ingress handler that other processes can write to
 * `TransformFunc` - A processing function that performs some data translation/transformation on respective inputs
-* An `egressHandler` that stores dependencies to write to (i.e. Other path processs, heuristic engine)
+* An `egressHandler` that stores dependencies to write to (i.e. Other path processes, heuristic engine)
 * A specified output data type
 
 #### Example Use Case(s)
@@ -103,7 +103,7 @@ The following key interface functions are supported/enforced:
 
 * `ReadRoutine` - Routine used for reading/polling real-time data for some arbitrarily configured data source
 
-Unlike other processs, `Oracles` actually employ _2 go routines_ to safely operate. This is because the definition routines are run as a separate go routine with a communication channel to the actual `Reader` event loop. This is visualized below:
+Unlike other processes, `Oracles` actually employ _2 go routines_ to safely operate. This is because the definition routines are run as a separate go routine with a communication channel to the actual `Reader` event loop. This is visualized below:
 
 {% raw %}
 <div class="mermaid">
@@ -120,7 +120,7 @@ graph LR;
 
 * A communication channel with the path manager
 * Poller/subscription logic that performs real-time data reads on some third-party source
-* An `egressHandler` that stores dependencies to write to (i.e. Other path processs, heuristic engine)
+* An `egressHandler` that stores dependencies to write to (i.e. Other path processes, heuristic engine)
 * A specified output data type
 
 * _(Optional)_ Interface with some storage (postgres, mongo, etc.) to persist lively extracted data
@@ -141,7 +141,7 @@ Aggregators are used to solve the problem where a Subscriber or a heuristic inpu
 
 * Able to read heterogenous transit data from an arbitrary number of process ingresses
 * A synchronization policy that defines how different transit data from multiple ingress streams will be aggregated into a collectively bound single piece of data
-* EgressHandler to handle downstream transit data routing to other processs or destinations
+* EgressHandler to handle downstream transit data routing to other processes or destinations
 
 #### Single Value Subscription
 
@@ -178,7 +178,7 @@ A registry submodule is used to store all ETL data register definitions that pro
 
 * `DataType` - The output data type of the process node. This is used for data serialization/deserialization by both the ETL and Risk Engine subsystems.
 * `ProcessType` - The type of process being invoked (_e.g. Oracle_).
-* `ProcessConstructor` - Constructor function used to create unique process instances. All processs must implement the `Process` interface.
+* `ProcessConstructor` - Constructor function used to create unique process instances. All processes must implement the `Process` interface.
 * `Dependencies` - Ordered slice of data register dependencies that are necessary for the process to operate. For example, a process that requires a geth block would have a dependency list of `[geth.block]`. This dependency list is used to ensure that the ETL can properly construct a process graph that satisfies all process dependencies.
 
 ## Addressing
@@ -218,11 +218,11 @@ graph LR;
 
 ### Geth Block Reader Register
 
-A `BlockHeader` register refers to a block output extracted from a go-ethereum node. This register is used for creating `Reader` processs that poll and extract block data from a go-ethereum node in real-time.
+A `BlockHeader` register refers to a block output extracted from a go-ethereum node. This register is used for creating `Reader` processes that poll and extract block data from a go-ethereum node in real-time.
 
 ### Geth Account Balance Reader Register
 
-An `AccountBalance` register refers to a native ETH balance output extracted from a go-ethereum node. This register is used for creating `Reader` processs that poll and extract native ETH balance data for some state persisted addresses from a go-ethereum node in real-time.
+An `AccountBalance` register refers to a native ETH balance output extracted from a go-ethereum node. This register is used for creating `Reader` processes that poll and extract native ETH balance data for some state persisted addresses from a go-ethereum node in real-time.
 Unlike, the `BlockHeader` register, this register requires knowledge of an address set that's shared with the risk engine to properly function and is therefore addressable. Because of this, any heuristic that uses this register must also be addressable.
 
 ## Managed ETL
@@ -254,11 +254,11 @@ graph TB;
 </div>
 {% endraw %}
 
-**NOTE:** The process graph used in the ETL is represented as a _DAG_ (Directed Acyclic Graph), meaning that no bipartite edge relationships should exist between two processs (`c1`, `c2`) where `c1-->c2` && `c2-->c1`. While there are no explicit checks for this in the code software, it should be impossible given that all processs declare entrypoint register dependencies within their metadata, meaning that a process could only be susceptible to bipartite connectivity in the circumstance where a process registry definition declares inversal input->output of an existing process
+**NOTE:** The process graph used in the ETL is represented as a _DAG_ (Directed Acyclic Graph), meaning that no bipartite edge relationships should exist between two processes (`c1`, `c2`) where `c1-->c2` && `c2-->c1`. While there are no explicit checks for this in the code software, it should be impossible given that all processes declare entrypoint register dependencies within their metadata, meaning that a process could only be susceptible to bipartite connectivity in the circumstance where a process registry definition declares inversal input->output of an existing process
 
 ### Path
 
-Paths are used to represent some full process path in a DAG based `ProcessGraph`. A path is a sequence of processs that are connected together in a way to express meaningful ETL operations for extracting some heuristic input for consumption by the Risk Engine.
+Paths are used to represent some full process path in a DAG based `ProcessGraph`. A path is a sequence of processes that are connected together in a way to express meaningful ETL operations for extracting some heuristic input for consumption by the Risk Engine.
 
 ### Path States
 
@@ -285,7 +285,7 @@ All paths have a PathID that stores critical identification data. Path UUIDs are
 * Route heuristic inputs between the ETL and Risk Engine
 * Understand when path collisions between `PIDs` occur
 
-Path UUID's constitute of both a randomly generated `UUID` and a deterministic `PID`. This is done to ensure uniqueness of each process instance while also ensuring collision based properties so that overlapping processs can be deduplicated when viable.
+Path UUID's constitute of both a randomly generated `UUID` and a deterministic `PID`. This is done to ensure uniqueness of each process instance while also ensuring collision based properties so that overlapping processes can be deduplicated when viable.
 
 A `PathPID` is encoded using the following 9 byte array sequence:
 

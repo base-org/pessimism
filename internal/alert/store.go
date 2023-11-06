@@ -11,7 +11,7 @@ import (
 // we can easily swap it out for a persistent store
 type Store interface {
 	AddAlertPolicy(core.UUID, *core.AlertPolicy) error
-	GetAlertPolicy(sUUID core.UUID) (*core.AlertPolicy, error)
+	GetAlertPolicy(id core.UUID) (*core.AlertPolicy, error)
 }
 
 // store ... Alert store implementation
@@ -29,20 +29,20 @@ func NewStore() Store {
 
 // AddAlertPolicy ... Adds an alert policy for the given heuristic session UUID
 // NOTE - There can only be one alert destination per heuristic session UUID
-func (am *store) AddAlertPolicy(sUUID core.UUID, policy *core.AlertPolicy) error {
-	if _, exists := am.defMap[sUUID]; exists {
-		return fmt.Errorf("alert destination already exists for heuristic session %s", sUUID.String())
+func (am *store) AddAlertPolicy(id core.UUID, policy *core.AlertPolicy) error {
+	if _, exists := am.defMap[id]; exists {
+		return fmt.Errorf("alert destination already exists for heuristic %s", id.String())
 	}
 
-	am.defMap[sUUID] = policy
+	am.defMap[id] = policy
 	return nil
 }
 
-// GetAlertPolicy ... Returns the alert destination for the given heuristic session UUID
-func (am *store) GetAlertPolicy(sUUID core.UUID) (*core.AlertPolicy, error) {
-	dest, exists := am.defMap[sUUID]
+// GetAlertPolicy ... Returns the alert destination for the given heuristic UUID
+func (am *store) GetAlertPolicy(id core.UUID) (*core.AlertPolicy, error) {
+	dest, exists := am.defMap[id]
 	if !exists {
-		return nil, fmt.Errorf("alert destination does not exist for heuristic session %s", sUUID.String())
+		return nil, fmt.Errorf("alert destination does not exist for heuristic %s", id.String())
 	}
 
 	return dest, nil

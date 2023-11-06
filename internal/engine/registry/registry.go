@@ -148,7 +148,7 @@ func ValidateNoTopicsExist(cfg *core.SessionParams) error {
 
 // WithdrawHeuristicPrep ... Ensures that the l2 to l1 message passer exists
 // and performs a "hack" operation to set the address key as the l2tol1MessagePasser
-// address for upstream ETL processs (ie. event log) to know which L1 address to
+// address for upstream ETL process (ie. event log) to know which L1 address to
 // query for events
 func WithdrawHeuristicPrep(cfg *core.SessionParams) error {
 	l1Portal, err := cfg.Value(core.L1Portal)

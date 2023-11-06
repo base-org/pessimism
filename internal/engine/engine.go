@@ -101,7 +101,7 @@ func (hce *hardCodedEngine) EventLoop(ctx context.Context) {
 
 			as, err := retry.Do[*heuristic.ActivationSet](ctx, 10, core.RetryStrategy(),
 				func() (*heuristic.ActivationSet, error) {
-					metrics.WithContext(ctx).RecordHeuristicRun(args.h)
+					metrics.WithContext(ctx).RecordHeuristicRun(args.hi.PathID.Network(), args.h)
 					return hce.Execute(ctx, args.hi.Input, args.h)
 				})
 
@@ -110,7 +110,7 @@ func (hce *hardCodedEngine) EventLoop(ctx context.Context) {
 				metrics.WithContext(ctx).RecordAssessmentError(args.h)
 			}
 
-			metrics.WithContext(ctx).RecordInvExecutionTime(args.h, float64(time.Since(start).Nanoseconds()))
+			metrics.WithContext(ctx).RecordAssessmentTime(args.h, float64(time.Since(start).Nanoseconds()))
 			if as.Activated() {
 				for _, act := range as.Entries() {
 					alert := core.Alert{
@@ -119,7 +119,6 @@ func (hce *hardCodedEngine) EventLoop(ctx context.Context) {
 						HT:          args.h.Type(),
 						Content:     act.Message,
 						PathID:      args.hi.PathID,
-						PathType:    args.hi.PathID.PathType(),
 						Net:         args.hi.PathID.Network(),
 					}
 

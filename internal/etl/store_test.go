@@ -45,30 +45,30 @@ func getTestPath(ctx context.Context) etl.Path {
 	return path
 }
 
-func TestETLStore(t *testing.T) {
+func TestStore(t *testing.T) {
 	var tests = []struct {
 		name        string
 		function    string
 		description string
 
-		constructionLogic func() etl.EtlStore
-		testLogic         func(*testing.T, etl.EtlStore)
+		constructionLogic func() *etl.Store
+		testLogic         func(*testing.T, *etl.Store)
 	}{
 		{
 			name:        "Successful Add When PID Already Exists",
 			function:    "AddPath",
 			description: "",
 
-			constructionLogic: func() etl.EtlStore {
+			constructionLogic: func() *etl.Store {
 				ctx := context.Background()
 
-				testRegistry := etl.NewEtlStore()
+				store := etl.NewStore()
 				testPath := getTestPath(ctx)
 
-				testRegistry.AddPath(core.PathID{}, testPath)
-				return testRegistry
+				store.AddPath(core.PathID{}, testPath)
+				return store
 			},
-			testLogic: func(t *testing.T, store etl.EtlStore) {
+			testLogic: func(t *testing.T, store *etl.Store) {
 				ctx := context.Background()
 				testPath := getTestPath(ctx)
 
@@ -96,11 +96,11 @@ func TestETLStore(t *testing.T) {
 			function:    "AddPath",
 			description: "",
 
-			constructionLogic: func() etl.EtlStore {
-				pr := etl.NewEtlStore()
+			constructionLogic: func() *etl.Store {
+				pr := etl.NewStore()
 				return pr
 			},
-			testLogic: func(t *testing.T, store etl.EtlStore) {
+			testLogic: func(t *testing.T, store *etl.Store) {
 				ctx := context.Background()
 				testPath := getTestPath(ctx)
 
@@ -127,8 +127,8 @@ func TestETLStore(t *testing.T) {
 			function:    "getpathIDs",
 			description: "",
 
-			constructionLogic: etl.NewEtlStore,
-			testLogic: func(t *testing.T, store etl.EtlStore) {
+			constructionLogic: etl.NewStore,
+			testLogic: func(t *testing.T, store *etl.Store) {
 				cID := core.MakeProcessID(0, 0, 0, 0)
 				pID := core.MakePathID(0, cID, cID)
 
@@ -147,8 +147,8 @@ func TestETLStore(t *testing.T) {
 			function:    "getpathIDs",
 			description: "",
 
-			constructionLogic: etl.NewEtlStore,
-			testLogic: func(t *testing.T, store etl.EtlStore) {
+			constructionLogic: etl.NewStore,
+			testLogic: func(t *testing.T, store *etl.Store) {
 				cID := core.MakeProcessID(0, 0, 0, 0)
 
 				_, err := store.GetPathIDs(cID)
@@ -161,8 +161,8 @@ func TestETLStore(t *testing.T) {
 			function:    "getpath",
 			description: "",
 
-			constructionLogic: etl.NewEtlStore,
-			testLogic: func(t *testing.T, store etl.EtlStore) {
+			constructionLogic: etl.NewStore,
+			testLogic: func(t *testing.T, store *etl.Store) {
 				cID := core.MakeProcessID(0, 0, 0, 0)
 				pID := core.MakePathID(0, cID, cID)
 
@@ -175,11 +175,11 @@ func TestETLStore(t *testing.T) {
 			function:    "getpath",
 			description: "",
 
-			constructionLogic: func() etl.EtlStore {
-				store := etl.NewEtlStore()
+			constructionLogic: func() *etl.Store {
+				store := etl.NewStore()
 				return store
 			},
-			testLogic: func(t *testing.T, store etl.EtlStore) {
+			testLogic: func(t *testing.T, store *etl.Store) {
 				cID := core.MakeProcessID(0, 0, 0, 0)
 				pID := core.MakePathID(0, cID, cID)
 
@@ -198,11 +198,11 @@ func TestETLStore(t *testing.T) {
 			function:    "getpath",
 			description: "",
 
-			constructionLogic: func() etl.EtlStore {
-				store := etl.NewEtlStore()
+			constructionLogic: func() *etl.Store {
+				store := etl.NewStore()
 				return store
 			},
-			testLogic: func(t *testing.T, store etl.EtlStore) {
+			testLogic: func(t *testing.T, store *etl.Store) {
 				cID := core.MakeProcessID(0, 0, 0, 0)
 				pID := core.MakePathID(0, cID, cID)
 
@@ -221,11 +221,11 @@ func TestETLStore(t *testing.T) {
 			function:    "Paths",
 			description: "",
 
-			constructionLogic: func() etl.EtlStore {
-				store := etl.NewEtlStore()
+			constructionLogic: func() *etl.Store {
+				store := etl.NewStore()
 				return store
 			},
-			testLogic: func(t *testing.T, store etl.EtlStore) {
+			testLogic: func(t *testing.T, store *etl.Store) {
 				cID := core.MakeProcessID(0, 0, 0, 0)
 				pID := core.MakePathID(0, cID, cID)
 
@@ -244,11 +244,11 @@ func TestETLStore(t *testing.T) {
 			function:    "ActiveCount",
 			description: "",
 
-			constructionLogic: func() etl.EtlStore {
-				store := etl.NewEtlStore()
+			constructionLogic: func() *etl.Store {
+				store := etl.NewStore()
 				return store
 			},
-			testLogic: func(t *testing.T, store etl.EtlStore) {
+			testLogic: func(t *testing.T, store *etl.Store) {
 				cID := core.MakeProcessID(0, 0, 0, 0)
 				pID := core.MakePathID(0, cID, cID)
 

@@ -14,18 +14,20 @@ func TestAddRemoveSubscription(t *testing.T) {
 		name        string
 		description string
 
-		constructionLogic func() *subscribers
-		testLogic         func(*testing.T, *subscribers)
+		construction func() *subscribers
+		test         func(*testing.T, *subscribers)
 	}{
 		{
 			name:        "Successful Multi Add Test",
-			description: "When multiple subs are passed to Addsub function, they should successfully be added to the sub mapping",
+			description: "Many subscriptions should be addable",
 
-			constructionLogic: func() *subscribers {
-				return new(subscribers)
+			construction: func() *subscribers {
+				return &subscribers{
+					subs: make(map[core.ProcIdentifier]chan core.Event),
+				}
 			},
 
-			testLogic: func(t *testing.T, s *subscribers) {
+			test: func(t *testing.T, s *subscribers) {
 
 				for _, id := range []core.ProcessID{
 					core.MakeProcessID(1, 54, 43, 32),
@@ -44,13 +46,15 @@ func TestAddRemoveSubscription(t *testing.T) {
 		},
 		{
 			name:        "Failed Add Test",
-			description: "When existing direcsubtive is passed to Addsub function it should fail to be added to the sub mapping",
+			description: "Duplicate subscribers cannot exist",
 
-			constructionLogic: func() *subscribers {
+			construction: func() *subscribers {
 				id := core.MakeProcessID(1, 54, 43, 32)
 				outChan := make(chan core.Event)
 
-				s := new(subscribers)
+				s := &subscribers{
+					subs: make(map[core.ProcIdentifier]chan core.Event),
+				}
 				if err := s.AddSubscriber(id, outChan); err != nil {
 					panic(err)
 				}
@@ -58,7 +62,7 @@ func TestAddRemoveSubscription(t *testing.T) {
 				return s
 			},
 
-			testLogic: func(t *testing.T, s *subscribers) {
+			test: func(t *testing.T, s *subscribers) {
 				id := core.MakeProcessID(1, 54, 43, 32)
 				outChan := make(chan core.Event)
 				err := s.AddSubscriber(id, outChan)
@@ -69,13 +73,15 @@ func TestAddRemoveSubscription(t *testing.T) {
 		},
 		{
 			name:        "Successful Remove Test",
-			description: "When existing sub is passed to Removesub function, it should be removed from mapping",
+			description: "Subscribers should be removable",
 
-			constructionLogic: func() *subscribers {
+			construction: func() *subscribers {
 				id := core.MakeProcessID(1, 54, 43, 32)
 				outChan := make(chan core.Event)
 
-				s := new(subscribers)
+				s := &subscribers{
+					subs: make(map[core.ProcIdentifier]chan core.Event),
+				}
 				if err := s.AddSubscriber(id, outChan); err != nil {
 					panic(err)
 				}
@@ -83,7 +89,7 @@ func TestAddRemoveSubscription(t *testing.T) {
 				return s
 			},
 
-			testLogic: func(t *testing.T, s *subscribers) {
+			test: func(t *testing.T, s *subscribers) {
 				id := core.MakeProcessID(1, 54, 43, 32)
 				err := s.RemoveSubscriber(id)
 
@@ -94,13 +100,15 @@ func TestAddRemoveSubscription(t *testing.T) {
 			},
 		}, {
 			name:        "Failed Remove Test",
-			description: "When non-existing sub key is passed to Removesub function, an error should be returned",
+			description: "Unknown keys should not be removable",
 
-			constructionLogic: func() *subscribers {
+			construction: func() *subscribers {
 				id := core.MakeProcessID(1, 54, 43, 32)
 				outChan := make(chan core.Event)
 
-				s := new(subscribers)
+				s := &subscribers{
+					subs: make(map[core.ProcIdentifier]chan core.Event),
+				}
 				if err := s.AddSubscriber(id, outChan); err != nil {
 					panic(err)
 				}
@@ -108,7 +116,7 @@ func TestAddRemoveSubscription(t *testing.T) {
 				return s
 			},
 
-			testLogic: func(t *testing.T, s *subscribers) {
+			test: func(t *testing.T, s *subscribers) {
 
 				id := core.MakeProcessID(69, 69, 69, 69)
 				err := s.RemoveSubscriber(id)
@@ -118,13 +126,13 @@ func TestAddRemoveSubscription(t *testing.T) {
 			},
 		},
 		{
-			name:        "Passed Engine sub Test",
+			name:        "Passed Engine Test",
 			description: "When a relay is passed to AddRelay, it should be used during transit operations",
 
-			constructionLogic: func() *subscribers {
-				return new(subscribers)
+			construction: func() *subscribers {
+				return &subscribers{}
 			},
-			testLogic: func(t *testing.T, s *subscribers) {
+			test: func(t *testing.T, s *subscribers) {
 				relayChan := make(chan core.HeuristicInput)
 
 				PathID := core.PathID{}
@@ -151,14 +159,16 @@ func TestAddRemoveSubscription(t *testing.T) {
 			},
 		},
 		{
-			name:        "Failed Engine sub Test",
+			name:        "Failed Engine Test",
 			description: "When relay already exists and AddRelay function is called, an error should be returned",
 
-			constructionLogic: func() *subscribers {
+			construction: func() *subscribers {
 				relayChan := make(chan core.HeuristicInput)
 
 				relay := core.NewEngineRelay(core.PathID{}, relayChan)
-				s := new(subscribers)
+				s := &subscribers{
+					subs: make(map[core.ProcIdentifier]chan core.Event),
+				}
 
 				if err := s.AddEngineRelay(relay); err != nil {
 					panic(err)
@@ -167,7 +177,7 @@ func TestAddRemoveSubscription(t *testing.T) {
 				return s
 			},
 
-			testLogic: func(t *testing.T, s *subscribers) {
+			test: func(t *testing.T, s *subscribers) {
 				relayChan := make(chan core.HeuristicInput)
 
 				relay := core.NewEngineRelay(core.PathID{}, relayChan)
@@ -181,15 +191,17 @@ func TestAddRemoveSubscription(t *testing.T) {
 
 	for i, tc := range tests {
 		t.Run(fmt.Sprintf("%d-%s", i, tc.name), func(t *testing.T) {
-			testsub := tc.constructionLogic()
-			tc.testLogic(t, testsub)
+			subs := tc.construction()
+			tc.test(t, subs)
 		})
 
 	}
 }
 
 func TestPublishToSubscribers(t *testing.T) {
-	s := new(subscribers)
+	s := &subscribers{
+		subs: make(map[core.ProcIdentifier]chan core.Event),
+	}
 
 	var subs = []struct {
 		channel chan core.Event

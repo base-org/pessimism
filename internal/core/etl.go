@@ -27,27 +27,3 @@ type PathType uint8
 const (
 	Live PathType = iota + 1
 )
-
-// StringToPathType ... Converts a string to a path type
-func StringToPathType(stringType string) PathType {
-	switch stringType {
-
-	case "live":
-		return Live
-
-	}
-
-	return PathType(0)
-}
-
-// String ... Converts the path type to a string
-func (pt PathType) String() string {
-	switch pt {
-
-	case Live:
-		return "live"
-
-	}
-
-	return UnknownType
-}

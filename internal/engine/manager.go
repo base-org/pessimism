@@ -52,13 +52,13 @@ type engineManager struct {
 	metrics    metrics.Metricer
 	engine     RiskEngine
 	addressing *AddressMap
-	store      SessionStore
+	store      *Store
 	heuristics registry.HeuristicTable
 }
 
 // NewManager ... Initializer
 func NewManager(ctx context.Context, cfg *Config, engine RiskEngine, addr *AddressMap,
-	store SessionStore, it registry.HeuristicTable, alertEgress chan core.Alert) Manager {
+	store *Store, it registry.HeuristicTable, alertEgress chan core.Alert) Manager {
 	ctx, cancel := context.WithCancel(ctx)
 
 	em := &engineManager{
@@ -97,10 +97,10 @@ func (em *engineManager) DeleteHeuristicSession(_ core.UUID) (core.UUID, error) 
 }
 
 func (em *engineManager) updateSharedState(params *core.SessionParams,
-	sk *core.StateKey, PathID core.PathID) error {
-	err := sk.SetPathID(PathID)
+	sk *core.StateKey, id core.PathID) error {
+	err := sk.SetPathID(id)
 	// PathID already exists in key but is different than the one we want
-	if err != nil && sk.PathID != &PathID {
+	if err != nil && sk.PathID != &id {
 		return err
 	}
 
@@ -122,7 +122,7 @@ func (em *engineManager) updateSharedState(params *core.SessionParams,
 				Nesting: false,
 				Prefix:  sk.Prefix,
 				ID:      params.Address().String(),
-				PathID:  &PathID,
+				PathID:  &id,
 			}
 
 			err = state.InsertUnique(em.ctx, innerKey, argStr)
@@ -133,7 +133,7 @@ func (em *engineManager) updateSharedState(params *core.SessionParams,
 	}
 
 	logging.WithContext(em.ctx).Debug("Setting to state store",
-		zap.String(logging.Path, PathID.String()),
+		zap.String(logging.Path, id.String()),
 		zap.String(logging.AddrKey, params.Address().String()))
 
 	return nil
@@ -179,7 +179,7 @@ func (em *engineManager) DeployHeuristic(cfg *heuristic.DeployConfig) (core.UUID
 		}
 	}
 
-	em.metrics.IncActiveHeuristics(cfg.HeuristicType, cfg.Network, cfg.PathID.PathType())
+	em.metrics.IncActiveHeuristics(cfg.HeuristicType, cfg.Network)
 
 	return id, nil
 }
@@ -238,12 +238,12 @@ func (em *engineManager) executeAddressHeuristics(ctx context.Context, data core
 		return
 	}
 
-	for _, sUUID := range ids {
-		h, err := em.store.GetInstanceByUUID(sUUID)
+	for _, id := range ids {
+		h, err := em.store.GetHeuristic(id)
 		if err != nil {
-			logger.Error("Could not find session by heuristic sUUID",
+			logger.Error("Could not find session by heuristic id",
 				zap.Error(err),
-				zap.String(logging.Path, sUUID.String()))
+				zap.String(logging.Path, id.String()))
 			continue
 		}
 
@@ -254,14 +254,14 @@ func (em *engineManager) executeAddressHeuristics(ctx context.Context, data core
 func (em *engineManager) executeNonAddressHeuristics(ctx context.Context, data core.HeuristicInput) {
 	logger := logging.WithContext(ctx)
 
-	ids, err := em.store.GetUUIDsByPathID(data.PathID)
+	ids, err := em.store.GetIDs(data.PathID)
 	if err != nil {
 		logger.Error("Could not fetch heuristics for path",
 			zap.Error(err),
 			zap.String(logging.Path, data.PathID.String()))
 	}
 
-	heuristics, err := em.store.GetInstancesByUUIDs(ids)
+	heuristics, err := em.store.GetHeuristics(ids)
 	if err != nil {
 		logger.Error("Could not fetch heuristics for path",
 			zap.Error(err),

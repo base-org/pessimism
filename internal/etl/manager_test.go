@@ -35,7 +35,7 @@ func TestETL(t *testing.T) {
 
 				ctx = context.WithValue(ctx, core.State, state.NewMemState())
 
-				return New(ctx, NewAnalyzer(r), r, NewEtlStore(), NewGraph(), nil)
+				return New(ctx, NewAnalyzer(r), r, NewStore(), NewGraph(), nil)
 			},
 
 			testLogic: func(t *testing.T, etl ETL) {
@@ -72,7 +72,7 @@ func TestETL(t *testing.T) {
 
 				ctx = context.WithValue(ctx, core.State, state.NewMemState())
 
-				return New(ctx, NewAnalyzer(reg), reg, NewEtlStore(), NewGraph(), nil)
+				return New(ctx, NewAnalyzer(reg), reg, NewStore(), NewGraph(), nil)
 			},
 
 			testLogic: func(t *testing.T, etl ETL) {

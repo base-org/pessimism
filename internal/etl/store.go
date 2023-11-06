@@ -11,18 +11,14 @@ type Entry struct {
 	p  Path
 }
 
-// etlStore ... Stores critical path information
-//
-//	paths - Mapping used for storing all existing paths
-//	procToPath - Mapping used for storing all process-->[]PID entries
-type EtlStore struct {
+type Store struct {
 	paths      map[core.PathIdentifier][]Entry
 	procToPath map[core.ProcessID][]core.PathID
 }
 
-// NewEtlStore ... Initializer
-func NewEtlStore() EtlStore {
-	return EtlStore{
+// NewStore ... Initializer
+func NewStore() *Store {
+	return &Store{
 		procToPath: make(map[core.ProcessID][]core.PathID),
 		paths:      make(map[core.PathIdentifier][]Entry),
 	}
@@ -34,7 +30,7 @@ Note - PathIDs can only conflict
 */
 
 // Link ... Creates an entry for some new C_UUID:P_UUID mapping
-func (store *EtlStore) Link(id1 core.ProcessID, id2 core.PathID) {
+func (store *Store) Link(id1 core.ProcessID, id2 core.PathID) {
 	// EDGE CASE - C_UUID:P_UUID pair already exists
 	if _, found := store.procToPath[id1]; !found { // Create slice
 		store.procToPath[id1] = make([]core.PathID, 0)
@@ -43,7 +39,7 @@ func (store *EtlStore) Link(id1 core.ProcessID, id2 core.PathID) {
 	store.procToPath[id1] = append(store.procToPath[id1], id2)
 }
 
-func (store *EtlStore) AddPath(id core.PathID, path Path) {
+func (store *Store) AddPath(id core.PathID, path Path) {
 	entry := Entry{
 		id: id,
 		p:  path,
@@ -63,8 +59,7 @@ func (store *EtlStore) AddPath(id core.PathID, path Path) {
 	}
 }
 
-// GetPathIDs ... Returns all entry PIDs for some CID
-func (store *EtlStore) GetPathIDs(cID core.ProcessID) ([]core.PathID, error) {
+func (store *Store) GetPathIDs(cID core.ProcessID) ([]core.PathID, error) {
 	pIDs, found := store.procToPath[cID]
 
 	if !found {
@@ -74,38 +69,36 @@ func (store *EtlStore) GetPathIDs(cID core.ProcessID) ([]core.PathID, error) {
 	return pIDs, nil
 }
 
-// getPathByPID ... Returns path store provided some PID
-func (store *EtlStore) GetPathByID(id core.PathID) (Path, error) {
+func (store *Store) GetPathByID(id core.PathID) (Path, error) {
 	if _, found := store.paths[id.ID]; !found {
 		return nil, fmt.Errorf(pIDNotFoundErr, id.String())
 	}
 
-	for _, plEntry := range store.paths[id.ID] {
-		if plEntry.id.UUID == id.UUID {
-			return plEntry.p, nil
+	for _, p := range store.paths[id.ID] {
+		if p.id.UUID == id.UUID {
+			return p.p, nil
 		}
 	}
 
 	return nil, fmt.Errorf(uuidNotFoundErr)
 }
 
-func (store *EtlStore) GetExistingPaths(id core.PathID) []core.PathID {
+func (store *Store) GetExistingPaths(id core.PathID) []core.PathID {
 	entries, exists := store.paths[id.ID]
 	if !exists {
 		return []core.PathID{}
 	}
 
-	PathIDs := make([]core.PathID, len(entries))
-
+	ids := make([]core.PathID, len(entries))
 	for i, entry := range entries {
-		PathIDs[i] = entry.id
+		ids[i] = entry.id
 	}
 
-	return PathIDs
+	return ids
 }
 
 // Count ... Returns the number of active paths
-func (store *EtlStore) ActiveCount() int {
+func (store *Store) ActiveCount() int {
 	count := 0
 
 	for _, entrySlice := range store.paths {
@@ -119,7 +112,7 @@ func (store *EtlStore) ActiveCount() int {
 	return count
 }
 
-func (store *EtlStore) Paths() []Path {
+func (store *Store) Paths() []Path {
 	paths := make([]Path, 0)
 
 	for _, entrySlice := range store.paths {

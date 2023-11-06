@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	noEntryErr = "could not find entry in registry for encoded register type %s"
+	noEntryErr = "could not find data topic type %s"
 )
 
 type Registry struct {
@@ -45,7 +45,6 @@ func New() *Registry {
 	return &Registry{topics}
 }
 
-// makeDeps ... Makes dependency slice
 func makeDeps(types ...core.TopicType) []core.TopicType {
 	deps := make([]core.TopicType, len(types))
 	copy(deps, types)
@@ -53,18 +52,15 @@ func makeDeps(types ...core.TopicType) []core.TopicType {
 	return deps
 }
 
-// noDeps ... Returns empty dependency slice
 func noDeps() []core.TopicType {
 	return []core.TopicType{}
 }
 
-// noState ... Returns empty state key, indicating no state dependencies
-// for cross subsystem communication (i.e. ETL -> Risk Engine)
 func noState() *core.StateKey {
 	return nil
 }
 
-// TopicPath ... Returns in-order slice of ETL path path
+// Returns in-order slice of ETL path path
 func (r *Registry) TopicPath(tt core.TopicType) (core.TopicPath, error) {
 	topic, err := r.GetDataTopic(tt)
 	if err != nil {
@@ -87,11 +83,10 @@ func (r *Registry) TopicPath(tt core.TopicType) (core.TopicPath, error) {
 	return core.TopicPath{Path: topics}, nil
 }
 
-// GetDataTopic ... Returns a data register provided an enum type
-func (cr *Registry) GetDataTopic(tt core.TopicType) (*core.DataTopic, error) {
-	if _, exists := cr.topics[tt]; !exists {
+func (r *Registry) GetDataTopic(tt core.TopicType) (*core.DataTopic, error) {
+	if _, exists := r.topics[tt]; !exists {
 		return nil, fmt.Errorf(noEntryErr, tt)
 	}
 
-	return cr.topics[tt], nil
+	return r.topics[tt], nil
 }

@@ -64,10 +64,10 @@ func Test_RunHeuristicSession(t *testing.T) {
 
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testParams := defaultBody.Clone()
-				actualSUUID, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
+				id, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
 
 				assert.NoError(t, err)
-				assert.Equal(t, id, actualSUUID)
+				assert.Equal(t, id, id)
 			},
 		},
 		{
@@ -84,10 +84,10 @@ func Test_RunHeuristicSession(t *testing.T) {
 
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testParams := defaultBody.Clone()
-				actualSUUID, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
+				id, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
 
 				assert.Error(t, err)
-				assert.Equal(t, core.UUID{}, actualSUUID)
+				assert.Equal(t, core.UUID{}, id)
 			},
 		},
 		{
@@ -110,10 +110,10 @@ func Test_RunHeuristicSession(t *testing.T) {
 
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testParams := defaultBody.Clone()
-				actualSUUID, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
+				id, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
 
 				assert.Error(t, err)
-				assert.Equal(t, core.UUID{}, actualSUUID)
+				assert.Equal(t, core.UUID{}, id)
 			},
 		},
 		{
@@ -141,10 +141,10 @@ func Test_RunHeuristicSession(t *testing.T) {
 
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testParams := defaultBody.Clone()
-				actualSUUID, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
+				id, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
 
 				assert.Error(t, err)
-				assert.Equal(t, core.UUID{}, actualSUUID)
+				assert.Equal(t, core.UUID{}, id)
 			},
 		},
 	}

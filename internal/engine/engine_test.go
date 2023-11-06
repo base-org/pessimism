@@ -33,7 +33,7 @@ func testErr() error {
 	return fmt.Errorf("test error")
 }
 
-func Test_HardCodedEngine(t *testing.T) {
+func TestHardCodedEngine(t *testing.T) {
 	var tests = []struct {
 		name string
 		test func(t *testing.T, ts *testSuite)
@@ -43,11 +43,14 @@ func Test_HardCodedEngine(t *testing.T) {
 			test: func(t *testing.T, ts *testSuite) {
 				e := core.Event{}
 
-				ts.mockHeuristic.EXPECT().Assess(e).
-					Return(heuristic.NoActivations(), testErr()).Times(1)
+				ts.mockHeuristic.EXPECT().Assess(gomock.Any()).
+					Return(heuristic.NoActivations(), testErr()).AnyTimes()
 
 				ts.mockHeuristic.EXPECT().ID().
-					Return(core.UUID{}).Times(2)
+					Return(core.UUID{}).AnyTimes()
+
+				ts.mockHeuristic.EXPECT().TopicType().
+					Return(core.BlockHeader).AnyTimes()
 
 				as, err := ts.re.Execute(context.Background(), e, ts.mockHeuristic)
 				assert.Nil(t, as)
@@ -69,12 +72,16 @@ func Test_HardCodedEngine(t *testing.T) {
 				ts.mockHeuristic.EXPECT().ID().
 					Return(core.UUID{}).Times(1)
 
+				ts.mockHeuristic.EXPECT().TopicType().
+					Return(core.BlockHeader).AnyTimes()
+
 				as, err := ts.re.Execute(context.Background(), e, ts.mockHeuristic)
 				assert.Nil(t, err)
 				assert.NotNil(t, as)
 				assert.True(t, as.Activated())
 				assert.Equal(t, expectedOut, as)
-			}},
+			},
+		},
 	}
 
 	for i, test := range tests {

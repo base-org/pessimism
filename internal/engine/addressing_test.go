@@ -16,23 +16,29 @@ var (
 )
 
 func TestGetUUIDs(t *testing.T) {
-	am := new(engine.AddressMap)
+	am := engine.NewAddressMap()
 
-	id := core.UUID{}
+	id1 := core.NewUUID()
+	id2 := core.NewUUID()
 	address := common.HexToAddress("0x24")
 
-	err := am.Insert(address, pathID, id)
+	err := am.Insert(address, pathID, id1)
 	assert.NoError(t, err)
 
 	// Test for found
 	ids, err := am.Get(address, pathID)
 	assert.NoError(t, err)
-	assert.Equal(t, core.UUID{}, ids[0])
+	assert.Equal(t, id1, ids[0])
+
+	// Test for multiple
+	err = am.Insert(address, pathID, id2)
+	assert.NoError(t, err)
 
 	ids, err = am.Get(address, pathID)
 	assert.NoError(t, err)
 	assert.Len(t, ids, 2)
-	assert.Contains(t, ids, id)
+	assert.Contains(t, ids, id1)
+	assert.Contains(t, ids, id2)
 
 	// Test for not found
 	ids, err = am.Get(address, core.PathID{})

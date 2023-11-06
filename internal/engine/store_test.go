@@ -17,13 +17,13 @@ func TestSessionStore(t *testing.T) {
 	var tests = []struct {
 		name        string
 		function    string
-		constructor func() engine.SessionStore
-		testFunc    func(t *testing.T, ss engine.SessionStore)
+		constructor func() *engine.Store
+		testFunc    func(t *testing.T, ss *engine.Store)
 	}{
 		{
 			name: "Successful Retrieval",
-			constructor: func() engine.SessionStore {
-				ss := engine.NewSessionStore()
+			constructor: func() *engine.Store {
+				ss := engine.NewStore()
 
 				h := heuristic.New(core.TopicType(0), core.BalanceEnforcement)
 				h.SetID(id1)
@@ -32,22 +32,22 @@ func TestSessionStore(t *testing.T) {
 
 				return ss
 			},
-			testFunc: func(t *testing.T, ss engine.SessionStore) {
+			testFunc: func(t *testing.T, ss *engine.Store) {
 				// Ensure that the heuristic is retrievable
-				h, err := ss.GetInstanceByUUID(id1)
+				h, err := ss.GetHeuristic(id1)
 				assert.NoError(t, err)
 				assert.Equal(t, h.ID(), id1)
 
 				// Ensure that path UUIDs are retrievable
-				ids, err := ss.GetUUIDsByPathID(core.PathID{})
+				ids, err := ss.GetIDs(core.PathID{})
 				assert.NoError(t, err)
 				assert.Equal(t, ids, []core.UUID{id1})
 			},
 		},
 		{
 			name: "Successful Retrieval with Multiple Heuristics",
-			constructor: func() engine.SessionStore {
-				ss := engine.NewSessionStore()
+			constructor: func() *engine.Store {
+				ss := engine.NewStore()
 
 				h := heuristic.New(core.TopicType(0), core.BalanceEnforcement)
 				h.SetID(id1)
@@ -61,32 +61,32 @@ func TestSessionStore(t *testing.T) {
 
 				return ss
 			},
-			testFunc: func(t *testing.T, ss engine.SessionStore) {
+			testFunc: func(t *testing.T, ss *engine.Store) {
 				// Ensure that the first inserted heuristic is retrievable
-				h, err := ss.GetInstanceByUUID(id1)
+				h, err := ss.GetHeuristic(id1)
 				assert.NoError(t, err)
 				assert.Equal(t, h.ID(), id1)
 
 				// Ensure that the second inserted heuristic is retrievable
-				h2, err := ss.GetInstanceByUUID(id2)
+				h2, err := ss.GetHeuristic(id2)
 				assert.NoError(t, err)
 				assert.Equal(t, h2.ID(), id2)
 
 				// Ensure that path UUIDs are retrievable
-				ids, err := ss.GetUUIDsByPathID(core.PathID{})
+				ids, err := ss.GetIDs(core.PathID{})
 				assert.NoError(t, err)
 				assert.Equal(t, ids, []core.UUID{id1, id2})
 
 				// Ensure that both heuristics are retrievable at once
-				hs, err := ss.GetInstancesByUUIDs([]core.UUID{id1, id2})
+				hs, err := ss.GetHeuristics([]core.UUID{id1, id2})
 				assert.NoError(t, err)
 				assert.Equal(t, hs, []heuristic.Heuristic{h, h2})
 			},
 		},
 		{
 			name: "Successful Retrieval",
-			constructor: func() engine.SessionStore {
-				ss := engine.NewSessionStore()
+			constructor: func() *engine.Store {
+				ss := engine.NewStore()
 
 				h := heuristic.New(core.TopicType(0), core.BalanceEnforcement)
 				h.SetID(id1)
@@ -94,46 +94,46 @@ func TestSessionStore(t *testing.T) {
 				_ = ss.AddSession(id1, core.PathID{}, h)
 				return ss
 			},
-			testFunc: func(t *testing.T, ss engine.SessionStore) {
+			testFunc: func(t *testing.T, ss *engine.Store) {
 				// Ensure that the heuristic is retrievable
-				h, err := ss.GetInstanceByUUID(id1)
+				h, err := ss.GetHeuristic(id1)
 				assert.NoError(t, err)
 				assert.Equal(t, h.ID(), id1)
 
 				// Ensure that path UUIDs are retrievable
-				ids, err := ss.GetUUIDsByPathID(core.PathID{})
+				ids, err := ss.GetIDs(core.PathID{})
 				assert.NoError(t, err)
 				assert.Equal(t, ids, []core.UUID{id1})
 			},
 		},
 		{
 			name: "Failed Retrieval",
-			constructor: func() engine.SessionStore {
-				ss := engine.NewSessionStore()
+			constructor: func() *engine.Store {
+				ss := engine.NewStore()
 
 				h := heuristic.New(core.TopicType(0), core.BalanceEnforcement)
 				_ = ss.AddSession(id1, core.PathID{}, h)
 
 				return ss
 			},
-			testFunc: func(t *testing.T, ss engine.SessionStore) {
-				h, err := ss.GetInstanceByUUID(id2)
+			testFunc: func(t *testing.T, ss *engine.Store) {
+				h, err := ss.GetHeuristic(id2)
 				assert.Nil(t, h)
 				assert.Error(t, err)
 			},
 		},
 		{
 			name: "Failed Add with Duplicate IDs",
-			constructor: func() engine.SessionStore {
-				ss := engine.NewSessionStore()
+			constructor: func() *engine.Store {
+				ss := engine.NewStore()
 
 				h := heuristic.New(core.TopicType(0), core.BalanceEnforcement)
 				_ = ss.AddSession(id1, core.PathID{}, h)
 
 				return ss
 			},
-			testFunc: func(t *testing.T, ss engine.SessionStore) {
-				// Ensure that only one suuid can exist in the store
+			testFunc: func(t *testing.T, ss *engine.Store) {
+				// Ensure that only one uuid can exist in the store
 				err := ss.AddSession(id1, core.PathID{}, heuristic.New(core.TopicType(0), core.BalanceEnforcement))
 				assert.Error(t, err)
 			},

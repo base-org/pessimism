@@ -35,17 +35,17 @@ type Config struct {
 
 // Metricer ... Interface for metrics
 type Metricer interface {
-	IncMissedBlock(PathType core.PathID)
-	IncActiveHeuristics(ht core.HeuristicType, network core.Network, PathType core.PathType)
-	IncActivePaths(PathType core.PathType, network core.Network)
-	DecActivePaths(PathType core.PathType, network core.Network)
+	IncMissedBlock(id core.PathID)
+	IncActiveHeuristics(ht core.HeuristicType, network core.Network)
+	IncActivePaths(network core.Network)
+	DecActivePaths(network core.Network)
 	RecordBlockLatency(network core.Network, latency float64)
-	RecordHeuristicRun(heuristic heuristic.Heuristic)
+	RecordHeuristicRun(n core.Network, h heuristic.Heuristic)
 	RecordAlertGenerated(alert core.Alert, dest core.AlertDestination, clientName string)
 	RecordNodeError(network core.Network)
 	RecordPathLatency(id core.PathID, latency float64)
 	RecordAssessmentError(h heuristic.Heuristic)
-	RecordInvExecutionTime(h heuristic.Heuristic, latency float64)
+	RecordAssessmentTime(h heuristic.Heuristic, latency float64)
 	RecordUp()
 	Start()
 	Shutdown(ctx context.Context) error
@@ -126,14 +126,14 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 			Help:      "Number of active heuristics",
 			Namespace: metricsNamespace,
 			Subsystem: SubsystemHeuristics,
-		}, []string{"heuristic", "network", "path"}),
+		}, []string{"heuristic", "network"}),
 
 		ActivePaths: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Name:      "active_paths",
 			Help:      "Number of active paths",
 			Namespace: metricsNamespace,
 			Subsystem: SubsystemEtl,
-		}, []string{"path", "network"}),
+		}, []string{"network"}),
 
 		HeuristicRuns: factory.NewCounterVec(prometheus.CounterOpts{
 			Name:      "heuristic_runs_total",
@@ -163,7 +163,7 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 			Name:      "path_latency",
 			Help:      "Millisecond latency of path processing",
 			Namespace: metricsNamespace,
-		}, []string{"PathType"}),
+		}, []string{"path_id"}),
 		InvExecutionTime: factory.NewGaugeVec(prometheus.GaugeOpts{
 			Name:      "heuristic_execution_time",
 			Help:      "Nanosecond time of heuristic execution",
@@ -178,7 +178,7 @@ func New(ctx context.Context, cfg *Config) (Metricer, func(), error) {
 			Name:      "missed_blocks_total",
 			Help:      "Number of missed blocks",
 			Namespace: metricsNamespace,
-		}, []string{"PathType"}),
+		}, []string{"path_id"}),
 
 		registry: registry,
 		factory:  factory,
@@ -210,10 +210,10 @@ func (m *Metrics) RecordAssessmentError(h heuristic.Heuristic) {
 	m.HeuristicErrors.WithLabelValues(ht).Inc()
 }
 
-// RecordInvExecutionTime ... Records the time it took to execute a heuristic
-func (m *Metrics) RecordInvExecutionTime(h heuristic.Heuristic, latency float64) {
-	// ht := h.SUUID().PID.HeuristicType().String()
-	// m.InvExecutionTime.WithLabelValues(ht).Set(latency)
+// RecordAssessmentTime ... Records the time it took to execute a heuristic
+func (m *Metrics) RecordAssessmentTime(h heuristic.Heuristic, latency float64) {
+	ht := h.Type().String()
+	m.InvExecutionTime.WithLabelValues(ht).Set(latency)
 }
 
 // IncMissedBlock ... Increments the number of missed blocks
@@ -222,29 +222,27 @@ func (m *Metrics) IncMissedBlock(id core.PathID) {
 }
 
 // IncActiveHeuristics ... Increments the number of active heuristics
-func (m *Metrics) IncActiveHeuristics(ht core.HeuristicType, n core.Network,
-	pt core.PathType) {
-	m.ActiveHeuristics.WithLabelValues(ht.String(), n.String(), pt.String()).Inc()
+func (m *Metrics) IncActiveHeuristics(ht core.HeuristicType, n core.Network) {
+	m.ActiveHeuristics.WithLabelValues(ht.String(), n.String()).Inc()
 }
 
 // IncActivePaths ... Increments the number of active paths
-func (m *Metrics) IncActivePaths(pt core.PathType, n core.Network) {
-	m.ActivePaths.WithLabelValues(pt.String(), n.String()).Inc()
+func (m *Metrics) IncActivePaths(n core.Network) {
+	m.ActivePaths.WithLabelValues(n.String()).Inc()
 }
 
 // DecActivePaths ... Decrements the number of active paths
-func (m *Metrics) DecActivePaths(pt core.PathType, n core.Network) {
-	m.ActivePaths.WithLabelValues(pt.String(), n.String()).Dec()
+func (m *Metrics) DecActivePaths(n core.Network) {
+	m.ActivePaths.WithLabelValues(n.String()).Dec()
 }
 
 // RecordHeuristicRun ... Records that a given heuristic has been run
-func (m *Metrics) RecordHeuristicRun(h heuristic.Heuristic) {
-	// net := h.SUUID().PID.Network().String()
-	// ht := h.SUUID().PID.HeuristicType().String()
-	// m.HeuristicRuns.WithLabelValues(net, ht).Inc()
+func (m *Metrics) RecordHeuristicRun(n core.Network, h heuristic.Heuristic) {
+	net := n.String()
+	ht := h.Type().String()
+	m.HeuristicRuns.WithLabelValues(net, ht).Inc()
 }
 
-// RecordAlertGenerated ... Records that an alert has been generated for a given heuristic
 func (m *Metrics) RecordAlertGenerated(alert core.Alert, dest core.AlertDestination, clientName string) {
 	net := alert.PathID.Network().String()
 	h := alert.HT.String()
@@ -253,17 +251,14 @@ func (m *Metrics) RecordAlertGenerated(alert core.Alert, dest core.AlertDestinat
 	m.AlertsGenerated.WithLabelValues(net, h, sev, dest.String(), clientName).Inc()
 }
 
-// RecordNodeError ... Records that an error has been caught for a given node
 func (m *Metrics) RecordNodeError(n core.Network) {
 	m.NodeErrors.WithLabelValues(n.String()).Inc()
 }
 
-// RecordBlockLatency ... Records the latency of block processing
 func (m *Metrics) RecordBlockLatency(n core.Network, latency float64) {
 	m.BlockLatency.WithLabelValues(n.String()).Set(latency)
 }
 
-// RecordPathLatency ... Records the latency of path processing
 func (m *Metrics) RecordPathLatency(id core.PathID, latency float64) {
 	m.PathLatency.WithLabelValues(id.String()).Set(latency)
 }
@@ -298,12 +293,10 @@ func (m *Metrics) RecordRPCClientBatchRequest(b []rpc.BatchElem) func(err error)
 	return nil
 }
 
-// Shutdown ... Shuts down the metrics server
 func (m *Metrics) Shutdown(ctx context.Context) error {
 	return m.server.Shutdown(ctx)
 }
 
-// Document ... Returns a list of documented metrics
 func (m *Metrics) Document() []DocumentedMetric {
 	return m.factory.Document()
 }
@@ -314,12 +307,12 @@ var NoopMetrics Metricer = new(noopMetricer)
 
 func (n *noopMetricer) IncMissedBlock(_ core.PathID) {}
 func (n *noopMetricer) RecordUp()                    {}
-func (n *noopMetricer) IncActiveHeuristics(_ core.HeuristicType, _ core.Network, _ core.PathType) {
+func (n *noopMetricer) IncActiveHeuristics(_ core.HeuristicType, _ core.Network) {
 }
-func (n *noopMetricer) RecordInvExecutionTime(_ heuristic.Heuristic, _ float64)              {}
-func (n *noopMetricer) IncActivePaths(_ core.PathType, _ core.Network)                       {}
-func (n *noopMetricer) DecActivePaths(_ core.PathType, _ core.Network)                       {}
-func (n *noopMetricer) RecordHeuristicRun(_ heuristic.Heuristic)                             {}
+func (n *noopMetricer) RecordAssessmentTime(_ heuristic.Heuristic, _ float64)                {}
+func (n *noopMetricer) IncActivePaths(_ core.Network)                                        {}
+func (n *noopMetricer) DecActivePaths(_ core.Network)                                        {}
+func (n *noopMetricer) RecordHeuristicRun(_ core.Network, _ heuristic.Heuristic)             {}
 func (n *noopMetricer) RecordAlertGenerated(_ core.Alert, _ core.AlertDestination, _ string) {}
 func (n *noopMetricer) RecordNodeError(_ core.Network)                                       {}
 func (n *noopMetricer) RecordBlockLatency(_ core.Network, _ float64)                         {}

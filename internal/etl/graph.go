@@ -49,7 +49,7 @@ func (graph *Graph) GetProcess(id core.ProcessID) (process.Process, error) {
 NOTE - There is no check to ensure that a cyclic edge is being added, meaning
 	a caller could create an edge between B->A assuming edge A->B already exists.
 	This would contradict the acyclic assumption of a DAG but is fortunately
-	circumnavigated since all processs declare entrypoint register dependencies,
+	circumnavigated since all processes declare entrypoint register dependencies,
 	meaning that process could only be susceptible to bipartite connectivity
 	in the circumstance where a process declares inverse input->output of an
 	existing process.

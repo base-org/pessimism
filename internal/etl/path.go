@@ -34,14 +34,14 @@ type path struct {
 }
 
 // NewPath ... Initializer
-func NewPath(cfg *core.PathConfig, PathID core.PathID, procs []process.Process) (Path, error) {
+func NewPath(cfg *core.PathConfig, id core.PathID, procs []process.Process) (Path, error) {
 	if len(procs) == 0 {
 		return nil, fmt.Errorf(emptyPathError)
 	}
 
 	p := &path{
 		cfg:       cfg,
-		id:        PathID,
+		id:        id,
 		processes: procs,
 		state:     INACTIVE,
 	}
@@ -49,26 +49,26 @@ func NewPath(cfg *core.PathConfig, PathID core.PathID, procs []process.Process) 
 	return p, nil
 }
 
-func (p *path) State() ActivityState {
-	return p.state
+func (path *path) State() ActivityState {
+	return path.state
 }
 
-func (p *path) Config() *core.PathConfig {
-	return p.cfg
+func (path *path) Config() *core.PathConfig {
+	return path.cfg
 }
 
-func (p *path) Processes() []process.Process {
-	return p.processes
+func (path *path) Processes() []process.Process {
+	return path.processes
 }
 
-func (p *path) UUID() core.PathID {
-	return p.id
+func (path *path) UUID() core.PathID {
+	return path.id
 }
 
-func (p *path) BlockHeight() (*big.Int, error) {
+func (path *path) BlockHeight() (*big.Int, error) {
 	// We assume that all paths have an oracle as their last process
-	comp := p.processes[len(p.processes)-1]
-	cr, ok := comp.(*process.ChainReader)
+	p := path.processes[len(path.processes)-1]
+	cr, ok := p.(*process.ChainReader)
 	if !ok {
 		return nil, fmt.Errorf("could not cast process to chain reader")
 	}
@@ -78,15 +78,15 @@ func (p *path) BlockHeight() (*big.Int, error) {
 
 // AddEngineRelay ... Adds a relay to the path that forces it to send transformed heuristic input
 // to a risk engine
-func (p *path) AddEngineRelay(engineChan chan core.HeuristicInput) error {
-	lastProcess := p.processes[0]
-	eir := core.NewEngineRelay(p.id, engineChan)
+func (path *path) AddEngineRelay(engineChan chan core.HeuristicInput) error {
+	p := path.processes[0]
+	eir := core.NewEngineRelay(path.id, engineChan)
 
 	logging.NoContext().Debug("Adding engine relay to path",
-		zap.String(logging.Process, lastProcess.ID().String()),
-		zap.String(logging.Path, p.id.String()))
+		zap.String(logging.Process, p.ID().String()),
+		zap.String(logging.Path, p.PathID().String()))
 
-	return lastProcess.AddEngineRelay(eir)
+	return p.AddEngineRelay(eir)
 }
 
 // Run  ... Spawns process event loops
@@ -117,8 +117,8 @@ func (path *path) Run(wg *sync.WaitGroup) {
 }
 
 // Close ... Closes all processes in the path
-func (p *path) Close() error {
-	for _, p := range p.processes {
+func (path *path) Close() error {
+	for _, p := range path.processes {
 		if p.ActivityState() != process.Terminated {
 			logging.NoContext().
 				Debug("Shutting down path process",
@@ -130,6 +130,6 @@ func (p *path) Close() error {
 			}
 		}
 	}
-	p.state = TERMINATED
+	path.state = TERMINATED
 	return nil
 }

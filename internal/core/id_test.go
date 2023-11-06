@@ -14,7 +14,7 @@ func TestProcessID(t *testing.T) {
 
 	assert.Equal(t, expected, actual.ID)
 
-	expectedStr := "layer1:live:reader:block_header"
+	expectedStr := "layer1:reader:block_header"
 	actualStr := actual.Identifier()
 
 	assert.Equal(t, expectedStr, actualStr)
@@ -28,7 +28,7 @@ func TestPathID(t *testing.T) {
 
 	assert.Equal(t, expected, actual.ID)
 
-	expectedStr := "live::layer1:live:reader:block_header::layer1:live:reader:block_header"
+	expectedStr := "layer1:reader:block_header::layer1:reader:block_header"
 	actualStr := actual.Identifier()
 
 	assert.Equal(t, expectedStr, actualStr)

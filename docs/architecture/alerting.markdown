@@ -24,7 +24,7 @@ end
 
 subgraph AM["Alerting Manager"]
     alertingRelay --> |Alert|EL
-    EL[eventLoop] --> |Alert SUUID|AS["AlertStore"]
+    EL[eventLoop] --> |Alert UUID|AS["AlertStore"]
     AS --> |Alert Policy|EL
     EL --> |Submit alert|SR["SeverityRouter"]
     SR --> SH["Slack"]
@@ -48,7 +48,7 @@ An `Alert` type stores all necessary metadata for external consumption by a down
 The alert store is a persistent storage layer that is used to store alerting entries. As of now, the alert store only supports configurable alert destinations for each alerting entry. Ie:
 
 ```
-    (SUUID) --> (AlertDestination)
+    (UUID) --> (AlertDestination)
 ```
 
 ### Alert Destinations
@@ -77,7 +77,7 @@ Done! You should now see any generated alerts being forwarded to your specified 
 
 #### PagerDuty
 
-The PagerDuty alert destination is a configurable destination that allows alerts to be sent to a specific PagerDuty services via the use of integration keys. Pessimism also uses the SUUID associated with an alert as a deduplication key for PagerDuty. This is done to ensure that PagerDuty will not be spammed with duplicate or incidents.
+The PagerDuty alert destination is a configurable destination that allows alerts to be sent to a specific PagerDuty services via the use of integration keys. Pessimism also uses the UUID associated with an alert as a deduplication key for PagerDuty. This is done to ensure that PagerDuty will not be spammed with duplicate or incidents.
 
 ### Alert CoolDowns
 

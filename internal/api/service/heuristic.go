@@ -29,10 +29,10 @@ func (svc *PessimismService) RunHeuristicSession(params *models.SessionRequestPa
 		return core.UUID{}, err
 	}
 
-	sUUID, err := svc.m.RunHeuristic(deployCfg)
+	id, err := svc.m.RunHeuristic(deployCfg)
 	if err != nil {
 		return core.UUID{}, err
 	}
 
-	return sUUID, nil
+	return id, nil
 }

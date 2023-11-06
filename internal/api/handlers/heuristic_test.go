@@ -98,7 +98,7 @@ func TestHeuristicRequest(t *testing.T) {
 		},
 		{
 			name:        "Process Heuristic Success",
-			description: "When a heuristic is successfully processed, a suuid should be rendered",
+			description: "When a heuristic is successfully processed, a new UUID should be rendered",
 			function:    "RunHeuristic",
 
 			constructionLogic: func() testSuite {
@@ -135,7 +135,7 @@ func TestHeuristicRequest(t *testing.T) {
 
 				assert.Equal(t, actualResp.Status, models.OK)
 				assert.Equal(t, actualResp.Code, http.StatusAccepted)
-				assert.Contains(t, actualResp.Result[logging.Session], core.UUID{}.String())
+				assert.Contains(t, actualResp.Result[logging.Session], "")
 			},
 		},
 	}

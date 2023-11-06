@@ -56,8 +56,8 @@ func blockToInfo(b *types.Block) blockInfo {
 	return blockInfo{b}
 }
 
-// faultDetectorInv ... faultDetectorInv implementation
-type faultDetectorInv struct {
+// faultDetection ... faultDetection implementation
+type faultDetection struct {
 	cfg *FaultDetectorCfg
 
 	l2tol1MessagePasser  common.Address
@@ -84,7 +84,7 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heu
 		return nil, err
 	}
 
-	return &faultDetectorInv{
+	return &faultDetection{
 		cfg: cfg,
 
 		l2OutputOracleFilter: outputOracle,
@@ -99,7 +99,7 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heu
 }
 
 // Assess ... Performs the fault detection heuristic logic
-func (fd *faultDetectorInv) Assess(e core.Event) (*heuristic.ActivationSet, error) {
+func (fd *faultDetection) Assess(e core.Event) (*heuristic.ActivationSet, error) {
 	logging.NoContext().Debug("Checking activation for fault detector heuristic",
 		zap.String("data", fmt.Sprintf("%v", e)))
 

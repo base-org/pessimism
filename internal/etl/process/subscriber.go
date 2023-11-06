@@ -26,7 +26,6 @@ type Subscriber struct {
 // NewSubscriber ... Initializer
 func NewSubscriber(ctx context.Context, s Subscription, tt core.TopicType,
 	outType core.TopicType, opts ...Option) (Process, error) {
-
 	sub := &Subscriber{
 		ctx: ctx,
 		spt: s,

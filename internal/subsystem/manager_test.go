@@ -151,9 +151,9 @@ func TestRunHeuristic(t *testing.T) {
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				actualSUUID, err := ts.sys.RunHeuristic(testCfg)
+				id, err := ts.sys.RunHeuristic(testCfg)
 				assert.Error(t, err)
-				assert.Equal(t, core.UUID{}, actualSUUID)
+				assert.Equal(t, core.UUID{}, id)
 			},
 		},
 		{
@@ -175,9 +175,9 @@ func TestRunHeuristic(t *testing.T) {
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				actualSUUID, err := ts.sys.RunHeuristic(testCfg)
+				id, err := ts.sys.RunHeuristic(testCfg)
 				assert.Error(t, err)
-				assert.Equal(t, core.UUID{}, actualSUUID)
+				assert.Equal(t, core.UUID{}, id)
 			},
 		},
 		{
@@ -204,9 +204,9 @@ func TestRunHeuristic(t *testing.T) {
 				return ts
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
-				actualSUUID, err := ts.sys.RunHeuristic(testCfg)
+				id, err := ts.sys.RunHeuristic(testCfg)
 				assert.NoError(t, err)
-				assert.Equal(t, id, actualSUUID)
+				assert.Equal(t, id, id)
 			},
 		},
 		{
@@ -226,9 +226,9 @@ func TestRunHeuristic(t *testing.T) {
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testCfg.Reuse = true
-				actualSUUID, err := ts.sys.RunHeuristic(testCfg)
+				id, err := ts.sys.RunHeuristic(testCfg)
 				assert.NoError(t, err)
-				assert.Equal(t, id, actualSUUID)
+				assert.Equal(t, id, id)
 			},
 		},
 		{
@@ -244,9 +244,9 @@ func TestRunHeuristic(t *testing.T) {
 			},
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testCfg.Reuse = false
-				actualSUUID, err := ts.sys.RunHeuristic(testCfg)
+				id, err := ts.sys.RunHeuristic(testCfg)
 				assert.Error(t, err)
-				assert.Equal(t, core.UUID{}, actualSUUID)
+				assert.Equal(t, core.UUID{}, id)
 			},
 		},
 	}

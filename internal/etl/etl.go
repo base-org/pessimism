@@ -35,7 +35,7 @@ type etl struct {
 
 	analyzer Analyzer
 	dag      *Graph
-	store    EtlStore
+	store    *Store
 	metrics  metrics.Metricer
 
 	egress chan core.HeuristicInput
@@ -46,10 +46,9 @@ type etl struct {
 
 // New ... Initializer
 func New(ctx context.Context, analyzer Analyzer, r *registry.Registry,
-	store EtlStore, dag *Graph, eo chan core.HeuristicInput) ETL {
+	store *Store, dag *Graph, eo chan core.HeuristicInput) ETL {
 	ctx, cancel := context.WithCancel(ctx)
 	stats := metrics.WithContext(ctx)
-
 	return &etl{
 		analyzer: analyzer,
 		ctx:      ctx,
@@ -61,7 +60,6 @@ func New(ctx context.Context, analyzer Analyzer, r *registry.Registry,
 		metrics:  stats,
 		wg:       sync.WaitGroup{},
 	}
-
 }
 
 // GetDataTopic ... Returns a data register for a given register type
@@ -81,7 +79,7 @@ func (etl *etl) CreateProcessPath(cfg *core.PathConfig) (core.PathID, bool, erro
 
 	id := depPath.GeneratePathID(cfg.PathType, cfg.Network)
 
-	processs, err := etl.topicPath(cfg, id, depPath)
+	processes, err := etl.topicPath(cfg, id, depPath)
 	if err != nil {
 		return core.PathID{}, false, err
 	}
@@ -89,7 +87,7 @@ func (etl *etl) CreateProcessPath(cfg *core.PathConfig) (core.PathID, bool, erro
 	logger.Debug("Constructing path",
 		zap.String(logging.Path, id.String()))
 
-	path, err := NewPath(cfg, id, processs)
+	path, err := NewPath(cfg, id, processes)
 	if err != nil {
 		return core.PathID{}, false, err
 	}
@@ -133,7 +131,7 @@ func (etl *etl) Run(id core.PathID) error {
 
 	// 3. Run processes
 	path.Run(&etl.wg)
-	etl.metrics.IncActivePaths(id.PathType(), id.NetworkType())
+	etl.metrics.IncActivePaths(id.NetworkType())
 	return nil
 }
 
@@ -162,7 +160,7 @@ func (etl *etl) Shutdown() error {
 				zap.String(logging.Path, p.UUID().String()))
 			return err
 		}
-		etl.metrics.DecActivePaths(p.UUID().PathType(), p.UUID().NetworkType())
+		etl.metrics.DecActivePaths(p.UUID().NetworkType())
 	}
 	logger.Debug("Waiting for all process routines to end")
 	etl.wg.Wait()
@@ -175,14 +173,14 @@ func (etl *etl) ActiveCount() int {
 	return etl.store.ActiveCount()
 }
 
-func (etl *etl) topicPath(cfg *core.PathConfig, PathID core.PathID,
+func (etl *etl) topicPath(cfg *core.PathConfig, pathID core.PathID,
 	depPath core.TopicPath) ([]process.Process, error) {
 	processes := make([]process.Process, 0)
 
 	for _, register := range depPath.Path {
 		id := core.MakeProcessID(cfg.PathType, register.ProcessType, register.DataType, cfg.Network)
 
-		p, err := etl.CreateProcess(cfg.ClientConfig, id, PathID, register)
+		p, err := etl.CreateProcess(cfg.ClientConfig, id, pathID, register)
 		if err != nil {
 			return []process.Process{}, err
 		}
@@ -212,20 +210,20 @@ func (etl *etl) getMergePath(id core.PathID, path Path) (core.PathID, error) {
 	return core.PathID{}, nil
 }
 
-func (etl *etl) CreateProcess(cc *core.ClientConfig, cUUID core.ProcessID, PathID core.PathID,
+func (etl *etl) CreateProcess(cc *core.ClientConfig, cUUID core.ProcessID, pathID core.PathID,
 	dt *core.DataTopic) (process.Process, error) {
 	logging.WithContext(etl.ctx).Debug("constructing process",
 		zap.String("type", dt.ProcessType.String()),
 		zap.String("register_type", dt.DataType.String()))
 
 	// embed options to avoid constructor boilerplate
-	opts := []process.Option{process.WithID(cUUID), process.WithPathID(PathID)}
+	opts := []process.Option{process.WithID(cUUID), process.WithPathID(pathID)}
 
 	if dt.Stateful() {
 		// Propagate state key to process so that it can be used
 		// by the process's definition logic
 		sk := dt.StateKey()
-		err := sk.SetPathID(PathID)
+		err := sk.SetPathID(pathID)
 		if err != nil {
 			return nil, err
 		}

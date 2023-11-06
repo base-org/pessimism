@@ -58,7 +58,7 @@ func Test_Graph(t *testing.T) {
 		{
 			name:        "Failed Cyclic Edge Addition",
 			function:    "addEdge",
-			description: "When an edge between two processs already exists (A->B), then an inverted edge (B->A) should not be possible",
+			description: "When an edge between two processes already exists (A->B), then an inverted edge (B->A) should not be possible",
 
 			constructionLogic: func() *etl.Graph {
 				g := etl.NewGraph()
@@ -97,7 +97,7 @@ func Test_Graph(t *testing.T) {
 		{
 			name:        "Failed Duplicate Edge Addition",
 			function:    "AddEdge",
-			description: "When a unique edge exists between two processs (A->B), a new edge should not be possible",
+			description: "When a unique edge exists between two processes (A->B), a new edge should not be possible",
 
 			constructionLogic: func() *etl.Graph {
 				g := etl.NewGraph()
@@ -136,7 +136,7 @@ func Test_Graph(t *testing.T) {
 		{
 			name:        "Successful Edge Addition",
 			function:    "AddEdge",
-			description: "When two processs are inserted, an edge should be possible between them",
+			description: "When two processes are inserted, an edge should be possible between them",
 
 			constructionLogic: func() *etl.Graph {
 				g := etl.NewGraph()

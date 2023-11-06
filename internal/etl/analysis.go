@@ -58,8 +58,8 @@ func (a *analyzer) Mergable(path1 Path, path2 Path) bool {
 
 // // MergePaths ... Merges two paths into one (p1 --merge-> p2)
 // func (a *analyzer) MergePaths(ctx context.Context, p1 Path, p2 Path) (Path, error) {
-// 	for i, compi := range p1.Processs() {
-// 		compj := p2.Processs()[i]
+// 	for i, compi := range p1.processes() {
+// 		compj := p2.processes()[i]
 
 // 		reg, err := a.r.GetDataTopic(compi.OutputType())
 // 		if err != nil {
@@ -67,7 +67,7 @@ func (a *analyzer) Mergable(path1 Path, path2 Path) bool {
 // 		}
 
 // 		if reg.Stateful() { // Merge state items from compi into compj
-// 			err = a.mergeProcessState(ctx, compi, compj, p1.UUID(), p2.UUID())
+// 			err = a.mergeprocessestate(ctx, compi, compj, p1.UUID(), p2.UUID())
 // 			if err != nil {
 // 				return nil, err
 // 			}
@@ -76,8 +76,8 @@ func (a *analyzer) Mergable(path1 Path, path2 Path) bool {
 // 	return p2, nil
 // }
 
-// // mergeProcessState ... Merges state items from p2 into p1
-// func (a *analyzer) mergeProcessState(ctx context.Context, compi, compj processProcess,
+// // mergeprocessestate ... Merges state items from p2 into p1
+// func (a *analyzer) mergeprocessestate(ctx context.Context, compi, compj processProcess,
 // 	p1, p2 core.PathID) error {
 // 	ss, err := state.FromContext(ctx)
 // 	if err != nil {

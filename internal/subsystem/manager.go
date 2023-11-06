@@ -136,17 +136,17 @@ func (m *Manager) BuildDeployCfg(pConfig *core.PathConfig,
 	}
 
 	// 2. Create data path
-	PathID, reuse, err := m.etl.CreateProcessPath(pConfig)
+	id, reuse, err := m.etl.CreateProcessPath(pConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	logging.WithContext(m.ctx).
-		Info("Created etl path", zap.String(logging.Path, PathID.String()))
+		Info("Created etl path", zap.String(logging.Path, id.String()))
 
 	// 3. Create a deploy config
 	return &heuristic.DeployConfig{
-		PathID:         PathID,
+		PathID:         id,
 		Reuse:          reuse,
 		HeuristicType:  sConfig.Type,
 		Params:         sConfig.Params,
@@ -221,6 +221,6 @@ func (m *Manager) etlLimitReached() bool {
 	return m.etl.ActiveCount() >= m.cfg.MaxPathCount
 }
 
-func (m *Manager) PathHeight(PathID core.PathID) (*big.Int, error) {
-	return m.etl.GetBlockHeight(PathID)
+func (m *Manager) PathHeight(id core.PathID) (*big.Int, error) {
+	return m.etl.GetBlockHeight(id)
 }

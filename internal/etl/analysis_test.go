@@ -58,11 +58,11 @@ func Test_Mergable(t *testing.T) {
 			},
 			testLogic: func(t *testing.T, a etl.Analyzer) {
 				// Setup test paths
-				mockOracle, err := mocks.NewReader(context.Background(), core.BlockHeader)
+				reader, err := mocks.NewReader(context.Background(), core.BlockHeader)
 				assert.NoError(t, err)
 
-				processes := []process.Process{mockOracle}
-				id1 := core.MakePathID(0, core.MakeProcessID(core.Live, 0, 0, 0), core.MakeProcessID(core.Live, 0, 0, 0))
+				processes := []process.Process{reader}
+				id1 := core.MakePathID(0, core.MakeProcessID(core.Live, 1, 0, 0), core.MakeProcessID(core.Live, 0, 0, 0))
 				id2 := core.MakePathID(0, core.MakeProcessID(core.Live, 0, 0, 0), core.MakeProcessID(core.Live, 0, 0, 0))
 
 				testCfg := &core.PathConfig{

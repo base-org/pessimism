@@ -70,8 +70,8 @@ func NewManager(ctx context.Context, cfg *Config, cm RoutingDirectory) Manager {
 }
 
 // AddSession ... Adds a heuristic session to the alert manager store
-func (am *alertManager) AddSession(sUUID core.UUID, policy *core.AlertPolicy) error {
-	return am.store.AddAlertPolicy(sUUID, policy)
+func (am *alertManager) AddSession(id core.UUID, policy *core.AlertPolicy) error {
+	return am.store.AddAlertPolicy(id, policy)
 }
 
 // Transit ... Returns inter-subsystem transit channel for receiving alerts

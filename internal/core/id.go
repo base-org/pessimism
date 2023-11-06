@@ -59,10 +59,6 @@ func (id PathID) Equal(other PathID) bool {
 	return id.ID == other.ID
 }
 
-func (id PathID) PathType() PathType {
-	return PathType(id.ID[0])
-}
-
 func (id PathID) NetworkType() Network {
 	return Network(id.ID[1])
 }
@@ -82,11 +78,10 @@ func MakeProcessID(pt PathType, ct ProcessType, tt TopicType, n Network) Process
 	}
 }
 
-// MakePathID ... Constructs a path PID sequence & random UUID
 func MakePathID(pt PathType, proc1, proc2 ProcessID) PathID {
 	id1, id2 := proc1.ID, proc2.ID
 
-	id := PathIdentifier{
+	pathID := PathIdentifier{
 		byte(pt),
 		id1[0],
 		id1[1],
@@ -99,42 +94,36 @@ func MakePathID(pt PathType, proc1, proc2 ProcessID) PathID {
 	}
 
 	return PathID{
-		ID:   id,
+		ID:   pathID,
 		UUID: NewUUID(),
 	}
 }
 
 // String ... Returns string representation of a process PID
 func (pid ProcIdentifier) String() string {
-	return fmt.Sprintf("%s:%s:%s:%s",
+	return fmt.Sprintf("%s:%s:%s",
 		Network(pid[0]).String(),
-		PathType(pid[1]).String(),
 		ProcessType(pid[2]).String(),
 		TopicType(pid[3]).String(),
 	)
 }
 
 func (id ProcessID) String() string {
-	return fmt.Sprintf("%s",
-		id.UUID.ShortString(),
-	)
+	return id.UUID.ShortString()
 }
 
 func (id ProcessID) Identifier() string {
-	return fmt.Sprintf("%s",
-		id.ID.String(),
-	)
+	return id.ID.String()
 }
 func (id ProcessID) Type() ProcessType {
 	return ProcessType(id.ID[2])
 }
 
 func (id PathIdentifier) String() string {
-	pt := PathType(id[0]).String()
 	first := ProcIdentifier(*(*[4]byte)(id[1:5])).String()
 	last := ProcIdentifier(*(*[4]byte)(id[5:9])).String()
 
-	return fmt.Sprintf("%s::%s::%s", pt, first, last)
+	return fmt.Sprintf("%s::%s", first, last)
 }
 
 func (id PathID) Network() Network {
