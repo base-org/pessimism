@@ -168,7 +168,7 @@ func (wsh *L1WithdrawalSafety) Assess(td core.TransitData) (*heuristic.Activatio
 	var wm *WithdrawalMeta
 	switch log.Topics[0] {
 	case WithdrawalFinalSig:
-		// Since the TO/FROM fields are unknown we cannot query
+		// Since the to/from fields are unknown we cannot query
 		// the indexer API
 		invs := wsh.VerifyHash(wm.Hash)
 		return wsh.Execute(invs, wm)
@@ -222,7 +222,7 @@ func (wsh *L1WithdrawalSafety) Assess(td core.TransitData) (*heuristic.Activatio
 	h := common.HexToHash(corrWithdrawal.TransactionHash)
 	wm.Value = withdrawalWEI
 
-	invs := wsh.GetInvariants(h, portalWEI, withdrawalWEI, correlated)
+	invs := wsh.GetInvariants(portalWEI, withdrawalWEI, correlated)
 	invs = append(invs, wsh.VerifyHash(h)...)
 
 	return wsh.Execute(invs, wm)

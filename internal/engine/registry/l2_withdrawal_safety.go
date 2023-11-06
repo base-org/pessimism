@@ -58,6 +58,9 @@ func NewL2WithdrawalSafety(ctx context.Context, cfg *WithdrawalSafetyCfg) (heuri
 	}
 
 	l2ToL1Filter, err := bindings.NewL2ToL1MessagePasserFilterer(l2ToL1Addr, clients.L2Client)
+	if err != nil {
+		return nil, err
+	}
 
 	return &L2WithdrawalSafety{
 		ctx: ctx,
@@ -105,7 +108,8 @@ func (wsh *L2WithdrawalSafety) Assess(td core.TransitData) (*heuristic.Activatio
 
 	b := msgPassed.WithdrawalHash[0:len(msgPassed.WithdrawalHash)]
 
-	invs := wsh.GetInvariants(common.BytesToHash(b), portalWEI, msgPassed.Value, true)
+	invs := wsh.GetInvariants(portalWEI, msgPassed.Value, true)
+	invs = append(invs, wsh.VerifyHash(common.BytesToHash(b))...)
 
 	// 5. Process activation set messages from invariant analysis
 	msgs := make([]string, 0)
@@ -132,9 +136,7 @@ func (wsh *L2WithdrawalSafety) Assess(td core.TransitData) (*heuristic.Activatio
 }
 
 // GetInvariants ... Returns a list of invariants to be checked for in the assessment
-func (wsh *L2WithdrawalSafety) GetInvariants(hash common.Hash,
-	portalWEI, withdrawalWEI *big.Int, correlated bool) []Invariant {
-
+func (wsh *L2WithdrawalSafety) GetInvariants(portalWEI, withdrawalWEI *big.Int, correlated bool) []Invariant {
 	portalAmt := new(big.Float).SetInt(portalWEI)
 	withdrawAmt := new(big.Float).SetInt(withdrawalWEI)
 
