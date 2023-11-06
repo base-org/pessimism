@@ -34,24 +34,24 @@ func Test_Graph(t *testing.T) {
 
 			constructionLogic: etl.NewGraph,
 			testLogic: func(t *testing.T, g *etl.Graph) {
-				cUUID := core.MakeProcessID(69, 69, 69, 69)
+				id := core.MakeProcessID(69, 69, 69, 69)
 
 				process, err := mocks.NewSubscriber(context.Background(), core.BlockHeader, core.BlockHeader)
 				assert.NoError(t, err)
 
-				err = g.Add(cUUID, process)
+				err = g.Add(id, process)
 				assert.NoError(t, err, "Process addition should resolve to Nil")
 
-				actualProcess, err := g.GetProcess(cUUID)
+				actualProcess, err := g.GetProcess(id)
 				assert.NoError(t, err, "Process retrieval should resolve to Nil")
 
 				assert.Equal(t, process, actualProcess)
 
 				edges := g.Edges()
 
-				assert.Contains(t, edges, cUUID)
+				assert.Contains(t, edges, id)
 
-				assert.Len(t, edges[cUUID], 0, "No edges should exist yet")
+				assert.Len(t, edges[id], 0, "No edges should exist yet")
 
 			},
 		},

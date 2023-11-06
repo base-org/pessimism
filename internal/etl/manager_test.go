@@ -39,7 +39,7 @@ func TestETL(t *testing.T) {
 			},
 
 			testLogic: func(t *testing.T, etl ETL) {
-				cUUID := core.MakeProcessID(1, 1, 1, 1)
+				id := core.MakeProcessID(1, 1, 1, 1)
 
 				register, err := registry.New().GetDataTopic(core.BlockHeader)
 
@@ -48,10 +48,10 @@ func TestETL(t *testing.T) {
 				cc := &core.ClientConfig{
 					Network: core.Layer1,
 				}
-				p, err := etl.CreateProcess(cc, cUUID, core.PathID{}, register)
+				p, err := etl.CreateProcess(cc, id, core.PathID{}, register)
 				assert.NoError(t, err)
 
-				assert.Equal(t, p.ID(), cUUID)
+				assert.Equal(t, p.ID(), id)
 				assert.Equal(t, p.Type(), register.ProcessType)
 				assert.Equal(t, p.EmitType(), register.DataType)
 

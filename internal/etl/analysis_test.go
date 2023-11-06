@@ -14,19 +14,19 @@ import (
 
 func Test_Mergable(t *testing.T) {
 	var tests = []struct {
-		name        string
-		description string
-		construct   func() etl.Analyzer
-		testLogic   func(t *testing.T, a etl.Analyzer)
+		name         string
+		description  string
+		construction func() etl.Analyzer
+		test         func(t *testing.T, a etl.Analyzer)
 	}{
 		{
 			name:        "Successful Path Merge",
 			description: "Mergable function should return true if paths are mergable",
-			construct: func() etl.Analyzer {
+			construction: func() etl.Analyzer {
 				r := registry.New()
 				return etl.NewAnalyzer(r)
 			},
-			testLogic: func(t *testing.T, a etl.Analyzer) {
+			test: func(t *testing.T, a etl.Analyzer) {
 				// Setup test paths
 				mockOracle, err := mocks.NewReader(context.Background(), core.BlockHeader)
 				assert.NoError(t, err)
@@ -52,11 +52,11 @@ func Test_Mergable(t *testing.T) {
 		{
 			name:        "Failure Path Merge",
 			description: "Mergable function should return false when PID's do not match",
-			construct: func() etl.Analyzer {
+			construction: func() etl.Analyzer {
 				r := registry.New()
 				return etl.NewAnalyzer(r)
 			},
-			testLogic: func(t *testing.T, a etl.Analyzer) {
+			test: func(t *testing.T, a etl.Analyzer) {
 				// Setup test paths
 				reader, err := mocks.NewReader(context.Background(), core.BlockHeader)
 				assert.NoError(t, err)
@@ -83,8 +83,8 @@ func Test_Mergable(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			a := test.construct()
-			test.testLogic(t, a)
+			a := test.construction()
+			test.test(t, a)
 		})
 	}
 

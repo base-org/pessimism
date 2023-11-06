@@ -19,7 +19,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// LogSubscription ...
 type LogSubscription struct {
 	PathID core.PathID
 	SK     *core.StateKey
@@ -28,7 +27,6 @@ type LogSubscription struct {
 	ss     state.Store
 }
 
-// NewLogSubscript ...
 func NewLogSubscript(ctx context.Context, n core.Network) (*LogSubscription, error) {
 	client, err := client.FromNetwork(ctx, n)
 	if err != nil {
@@ -47,7 +45,6 @@ func NewLogSubscript(ctx context.Context, n core.Network) (*LogSubscription, err
 	return sub, nil
 }
 
-// NewLogSubscriber ... Initializer
 func NewLogSubscriber(ctx context.Context, cfg *core.ClientConfig,
 	opts ...process.Option) (process.Process, error) {
 	s, err := NewLogSubscript(ctx, cfg.Network)

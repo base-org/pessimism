@@ -42,7 +42,7 @@ func (graph *Graph) GetProcess(id core.ProcessID) (process.Process, error) {
 		return graph.edgeMap[id].p, nil
 	}
 
-	return nil, fmt.Errorf(cUUIDNotFoundErr, id)
+	return nil, fmt.Errorf(procNotFoundErr, id)
 }
 
 /*
@@ -59,12 +59,12 @@ NOTE - There is no check to ensure that a cyclic edge is being added, meaning
 func (graph *Graph) Subscribe(from, to core.ProcessID) error {
 	fromNode, found := graph.edgeMap[from]
 	if !found {
-		return fmt.Errorf(cUUIDNotFoundErr, from.String())
+		return fmt.Errorf(procNotFoundErr, from.String())
 	}
 
 	toNode, found := graph.edgeMap[to]
 	if !found {
-		return fmt.Errorf(cUUIDNotFoundErr, to.String())
+		return fmt.Errorf(procNotFoundErr, to.String())
 	}
 
 	if _, exists := fromNode.edges[toNode.p.ID()]; exists {
@@ -93,8 +93,8 @@ func (graph *Graph) RemoveEdge(_, _ core.ProcessID) error {
 }
 
 // TODO(#23): Manager DAG process Removal Support
-// removeprocess ... Removes a process from the graph
-func (graph *Graph) Removeprocess(_ core.ProcessID) error {
+// Remove ... Removes a process from the graph
+func (graph *Graph) Remove(_ core.ProcessID) error {
 	return nil
 }
 

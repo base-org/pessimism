@@ -19,7 +19,7 @@ import (
 )
 
 type ETL interface {
-	CreateProcess(cc *core.ClientConfig, cUUID core.ProcessID, PathID core.PathID,
+	CreateProcess(cc *core.ClientConfig, id core.ProcessID, PathID core.PathID,
 		dt *core.DataTopic) (process.Process, error)
 	GetStateKey(rt core.TopicType) (*core.StateKey, bool, error)
 	GetBlockHeight(id core.PathID) (*big.Int, error)
@@ -210,14 +210,14 @@ func (etl *etl) getMergePath(id core.PathID, path Path) (core.PathID, error) {
 	return core.PathID{}, nil
 }
 
-func (etl *etl) CreateProcess(cc *core.ClientConfig, cUUID core.ProcessID, pathID core.PathID,
+func (etl *etl) CreateProcess(cc *core.ClientConfig, id core.ProcessID, pathID core.PathID,
 	dt *core.DataTopic) (process.Process, error) {
 	logging.WithContext(etl.ctx).Debug("constructing process",
 		zap.String("type", dt.ProcessType.String()),
 		zap.String("register_type", dt.DataType.String()))
 
 	// embed options to avoid constructor boilerplate
-	opts := []process.Option{process.WithID(cUUID), process.WithPathID(pathID)}
+	opts := []process.Option{process.WithID(id), process.WithPathID(pathID)}
 
 	if dt.Stateful() {
 		// Propagate state key to process so that it can be used

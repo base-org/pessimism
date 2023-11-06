@@ -56,14 +56,14 @@ flowchart TD;
 
 All process types also use an `ingressHandler` struct for ingesting active transit data from upstream ETL processes.
 
-### Process UUID (CUUID)
+### Process ID
 
-All processes have a UUID that stores critical identification data. Process IDs are used by higher order abstractions to:
+All processes have an ID that stores critical identification data. Process IDs are used by higher order abstractions to:
 
 * Represent a process DAG
-* Understand when process duplicates occur in the system
+* Understand when duplicate processes are generated
 
-Process UUID's constitute of both a randomly generated `UUID` and a deterministic `PID`. This is done to ensure uniqueness of each process instance while also ensuring collision based properties so that processes can be reused when viable.
+Process ID's constitute of both a randomly generated `UUID` and a deterministic `PID`. This is done to ensure uniqueness of each process instance while also ensuring collision based properties so that processes can be reused when viable.
 
 A `ProcIdentifier` is encoded using the following four byte sequence:
 

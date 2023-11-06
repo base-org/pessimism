@@ -34,9 +34,9 @@ const (
 	uuidNotFoundErr = "could not find matching UUID for path entry"
 
 	// ProcessGraph error constants
-	cUUIDNotFoundErr = "process with ID %s does not exist within dag"
-	procExistsErr    = "process with ID %s already exists in dag"
-	edgeExistsErr    = "edge already exists from (%s) to (%s) in dag"
+	procNotFoundErr = "process with ID %s does not exist within dag"
+	procExistsErr   = "process with ID %s already exists in dag"
+	edgeExistsErr   = "edge already exists from (%s) to (%s) in dag"
 
 	emptyPathError = "path must contain at least one process"
 	// Manager error constants
