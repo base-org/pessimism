@@ -90,7 +90,7 @@ func constructFaultDetector(ctx context.Context, isp *core.SessionParams) (heuri
 	return NewFaultDetector(ctx, cfg)
 }
 
-// constructWithdrawalSafety ... Constructs a large withdrawal heuristic instance
+// constructWithdrawalSafety ... Constructs a withdrawal safety heuristic instance
 func constructWithdrawalSafety(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
 	cfg := &WithdrawalSafetyCfg{}
 	err := cfg.Unmarshal(isp)

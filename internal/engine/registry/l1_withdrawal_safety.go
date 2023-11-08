@@ -11,7 +11,6 @@ import (
 	"github.com/base-org/pessimism/internal/engine/heuristic"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/ethereum-optimism/optimism/op-bindings/bindings"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 
@@ -212,9 +211,7 @@ func (wsh *L1WithdrawalSafety) Assess(td core.TransitData) (*heuristic.Activatio
 	b := []byte(corrWithdrawal.Amount)
 	withdrawalWEI := big.NewInt(0).SetBytes(b)
 
-	correlated, err := wsh.l2ToL1MsgPasser.SentMessages(&bind.CallOpts{
-		BlockNumber: big.NewInt(int64(log.BlockNumber)),
-	}, wm.Hash)
+	correlated, err := wsh.l2ToL1MsgPasser.SentMessages(nil, wm.Hash)
 	if err != nil {
 		return nil, err
 	}
