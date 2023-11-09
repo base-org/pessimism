@@ -10,6 +10,8 @@ import (
 
 type IxClient interface {
 	GetAllWithdrawalsByAddress(common.Address) ([]models.WithdrawalItem, error)
+	GetSupplyAssessment() (*models.BridgeSupplyView, error)
+	GetAllDepositsByAddress(common.Address) ([]models.DepositItem, error)
 }
 
 // NewIndexerClient ... Construct a new indexer client

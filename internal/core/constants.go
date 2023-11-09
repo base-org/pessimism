@@ -90,6 +90,7 @@ const (
 	BalanceEnforcement HeuristicType = iota + 1
 	ContractEvent
 	FaultDetector
+	SupplyParity
 	WithdrawalSafety
 )
 
@@ -107,6 +108,9 @@ func (it HeuristicType) String() string {
 
 	case WithdrawalSafety:
 		return "withdrawal_safety"
+
+	case SupplyParity:
+		return "supply_parity"
 
 	default:
 		return "unknown"
@@ -127,6 +131,9 @@ func StringToHeuristicType(stringType string) HeuristicType {
 
 	case "withdrawal_safety":
 		return WithdrawalSafety
+
+	case "supply_parity":
+		return SupplyParity
 
 	default:
 		return HeuristicType(0)

@@ -35,6 +35,21 @@ func (m *MockIxClient) EXPECT() *MockIxClientMockRecorder {
 	return m.recorder
 }
 
+// GetAllDepositsByAddress mocks base method.
+func (m *MockIxClient) GetAllDepositsByAddress(arg0 common.Address) ([]models.DepositItem, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllDepositsByAddress", arg0)
+	ret0, _ := ret[0].([]models.DepositItem)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllDepositsByAddress indicates an expected call of GetAllDepositsByAddress.
+func (mr *MockIxClientMockRecorder) GetAllDepositsByAddress(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllDepositsByAddress", reflect.TypeOf((*MockIxClient)(nil).GetAllDepositsByAddress), arg0)
+}
+
 // GetAllWithdrawalsByAddress mocks base method.
 func (m *MockIxClient) GetAllWithdrawalsByAddress(arg0 common.Address) ([]models.WithdrawalItem, error) {
 	m.ctrl.T.Helper()
@@ -48,4 +63,19 @@ func (m *MockIxClient) GetAllWithdrawalsByAddress(arg0 common.Address) ([]models
 func (mr *MockIxClientMockRecorder) GetAllWithdrawalsByAddress(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllWithdrawalsByAddress", reflect.TypeOf((*MockIxClient)(nil).GetAllWithdrawalsByAddress), arg0)
+}
+
+// GetSupplyAssessment mocks base method.
+func (m *MockIxClient) GetSupplyAssessment() (*models.BridgeSupplyView, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSupplyAssessment")
+	ret0, _ := ret[0].(*models.BridgeSupplyView)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSupplyAssessment indicates an expected call of GetSupplyAssessment.
+func (mr *MockIxClientMockRecorder) GetSupplyAssessment() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSupplyAssessment", reflect.TypeOf((*MockIxClient)(nil).GetSupplyAssessment))
 }

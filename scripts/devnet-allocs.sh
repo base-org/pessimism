@@ -1,12 +1,21 @@
 #!/bin/bash
 
 VERSION=$(cat go.mod | grep ethereum-optimism/optimism | awk '{print $2}' | sed 's/\/v//g')
-VERSION=$(echo ${VERSION} | sed 's/v//g')
 
-REPO_NAME=optimism-$(echo ${VERSION} | sed 's/v//g')
+REPO_NAME=optimism-$(echo ${VERSION})
 
 echo "Downloading ${REPO_NAME} ..."
-git clone --branch v${VERSION} https://github.com/ethereum-optimism/optimism.git ${REPO_NAME}
+
+## commit hash 
+if [ ${#$(echo $VERSION)} -gt 6] ; then
+    git clone --branch ${VERSION} https://github.com/ethereum-optimism/optimism.git ${REPO_NAME}
+
+## version tag
+else 
+    git clone --branch v${VERSION} https://github.com/ethereum-optimism/optimism.git ${REPO_NAME}
+fi
+
+
 cd ${REPO_NAME}
 
 echo "Initializing monorepo..."
