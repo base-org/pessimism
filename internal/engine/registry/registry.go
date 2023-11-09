@@ -42,6 +42,12 @@ func NewHeuristicTable() HeuristicTable {
 			InputType:       core.EventLog,
 			Constructor:     constructFaultDetector,
 		},
+		core.SupplyParity: {
+			PrepareValidate: SupplyParityPrep,
+			Policy:          core.OnlyLayer1,
+			InputType:       core.AccountBalance,
+			Constructor:     constructSupplyParity,
+		},
 		core.WithdrawalSafety: {
 			PrepareValidate: WithdrawHeuristicPrep,
 			Policy:          core.OnlyLayer1,
@@ -110,6 +116,22 @@ func constructWithdrawalSafety(ctx context.Context, isp *core.SessionParams) (he
 	return NewWithdrawalSafetyHeuristic(ctx, cfg)
 }
 
+func constructSupplyParity(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
+	cfg := &SupplyParityCfg{}
+	err := cfg.Unmarshal(isp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate that thresholds are on exclusive range (0, 1)
+	if cfg.Threshold >= 1 || cfg.Threshold <= 0 {
+		return nil, fmt.Errorf("invalid threshold supplied for supply parity heuristic")
+	}
+
+	return NewSupplyParity(ctx, cfg)
+}
+
 // ValidateEventTracking ... Ensures that an address and nested args exist in the session params
 func ValidateEventTracking(cfg *core.SessionParams) error {
 	err := ValidateAddressing(cfg)
@@ -144,6 +166,15 @@ func ValidateNoTopicsExist(cfg *core.SessionParams) error {
 		return fmt.Errorf(noNestedArgsErr)
 	}
 	return nil
+}
+
+func SupplyParityPrep(cfg *core.SessionParams) error {
+	_, err := cfg.Value(core.L1Portal)
+	if err != nil {
+		return err
+	}
+
+	return ValidateEventTracking(cfg)
 }
 
 // WithdrawHeuristicPrep ... Ensures that the l2 to l1 message passer exists

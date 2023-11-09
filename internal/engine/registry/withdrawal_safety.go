@@ -259,11 +259,11 @@ func (wsh *WithdrawalSafetyHeuristic) GetInvariants(corrWithdrawal *models.Withd
 		// D
 		// Ensure message_hash != 0x0...0 and message_hash != 0xf...f
 		func() (bool, string) {
-			if corrWithdrawal.MessageHash == minAddr.String() {
+			if corrWithdrawal.CrossDomainMessageHash == minAddr.String() {
 				return true, TooSimilarToZero
 			}
 
-			if corrWithdrawal.MessageHash == maxAddr.String() {
+			if corrWithdrawal.CrossDomainMessageHash == maxAddr.String() {
 				return true, TooSimilarToMax
 			}
 
@@ -272,8 +272,8 @@ func (wsh *WithdrawalSafetyHeuristic) GetInvariants(corrWithdrawal *models.Withd
 		// E
 		// Ensure that message isn't super similar to erroneous values using Sorenson-Dice coefficient
 		func() (bool, string) {
-			c0 := math.SorensonDice(corrWithdrawal.MessageHash, minAddr.String())
-			c1 := math.SorensonDice(corrWithdrawal.MessageHash, maxAddr.String())
+			c0 := math.SorensonDice(corrWithdrawal.CrossDomainMessageHash, minAddr.String())
+			c1 := math.SorensonDice(corrWithdrawal.CrossDomainMessageHash, maxAddr.String())
 			threshold := wsh.cfg.CoefficientThreshold
 
 			if c0 >= threshold {
