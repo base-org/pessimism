@@ -2,7 +2,7 @@
 
 ## Code of Conduct
 
-All interactions with this project follow our [Code of Conduct][code-of-conduct].
+All interactions with this project follow our [Code of Conduct](https://github.com/coinbase/code-of-conduct).
 By participating, you are expected to honor this code. Violators can be banned
 from further participation in this project, or potentially all Base and/or
 Coinbase projects.
