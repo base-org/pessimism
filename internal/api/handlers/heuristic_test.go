@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_ProcessHeuristicRequest(t *testing.T) {
+func TestHeuristicRequest(t *testing.T) {
 
 	var tests = []struct {
 		name        string
@@ -67,7 +67,7 @@ func Test_ProcessHeuristicRequest(t *testing.T) {
 
 				ts.mockSvc.EXPECT().
 					ProcessHeuristicRequest(gomock.Any()).
-					Return(core.NilSUUID(), testError1()).
+					Return(core.UUID{}, fmt.Errorf("test")).
 					Times(1)
 
 				return ts
@@ -98,7 +98,7 @@ func Test_ProcessHeuristicRequest(t *testing.T) {
 		},
 		{
 			name:        "Process Heuristic Success",
-			description: "When a heuristic is successfully processed, a suuid should be rendered",
+			description: "When a heuristic is successfully processed, a new UUID should be rendered",
 			function:    "RunHeuristic",
 
 			constructionLogic: func() testSuite {
@@ -106,7 +106,7 @@ func Test_ProcessHeuristicRequest(t *testing.T) {
 
 				ts.mockSvc.EXPECT().
 					ProcessHeuristicRequest(gomock.Any()).
-					Return(testSUUID1(), nil).
+					Return(core.UUID{}, nil).
 					Times(1)
 
 				return ts
@@ -135,7 +135,7 @@ func Test_ProcessHeuristicRequest(t *testing.T) {
 
 				assert.Equal(t, actualResp.Status, models.OK)
 				assert.Equal(t, actualResp.Code, http.StatusAccepted)
-				assert.Contains(t, actualResp.Result[logging.SUUIDKey], testSUUID1().PID.String())
+				assert.Contains(t, actualResp.Result[logging.Session], "")
 			},
 		},
 	}

@@ -33,7 +33,7 @@ func testErr() error {
 	return fmt.Errorf("test error")
 }
 
-func Test_HardCodedEngine(t *testing.T) {
+func TestHardCodedEngine(t *testing.T) {
 	var tests = []struct {
 		name string
 		test func(t *testing.T, ts *testSuite)
@@ -41,39 +41,47 @@ func Test_HardCodedEngine(t *testing.T) {
 		{
 			name: "Activation Failure From Error",
 			test: func(t *testing.T, ts *testSuite) {
-				td := core.TransitData{}
+				e := core.Event{}
 
-				ts.mockHeuristic.EXPECT().Assess(td).
-					Return(heuristic.NoActivations(), testErr()).Times(1)
+				ts.mockHeuristic.EXPECT().Assess(gomock.Any()).
+					Return(heuristic.NoActivations(), testErr()).AnyTimes()
 
-				ts.mockHeuristic.EXPECT().SUUID().
-					Return(core.NilSUUID()).Times(2)
+				ts.mockHeuristic.EXPECT().ID().
+					Return(core.UUID{}).AnyTimes()
 
-				as := ts.re.Execute(context.Background(), td, ts.mockHeuristic)
-				assert.False(t, as.Activated())
+				ts.mockHeuristic.EXPECT().TopicType().
+					Return(core.BlockHeader).AnyTimes()
 
+				as, err := ts.re.Execute(context.Background(), e, ts.mockHeuristic)
+				assert.Nil(t, as)
+				assert.NotNil(t, err)
 			}},
 		{
 			name: "Successful Activation",
 			test: func(t *testing.T, ts *testSuite) {
-				td := core.TransitData{}
+				e := core.Event{}
 
 				expectedOut := heuristic.NewActivationSet().Add(
 					&heuristic.Activation{
 						Message: "20 inch blade on the Impala",
 					})
 
-				ts.mockHeuristic.EXPECT().Assess(td).
+				ts.mockHeuristic.EXPECT().Assess(e).
 					Return(expectedOut, nil).Times(1)
 
-				ts.mockHeuristic.EXPECT().SUUID().
-					Return(core.NilSUUID()).Times(1)
+				ts.mockHeuristic.EXPECT().ID().
+					Return(core.UUID{}).Times(1)
 
-				as := ts.re.Execute(context.Background(), td, ts.mockHeuristic)
+				ts.mockHeuristic.EXPECT().TopicType().
+					Return(core.BlockHeader).AnyTimes()
+
+				as, err := ts.re.Execute(context.Background(), e, ts.mockHeuristic)
+				assert.Nil(t, err)
 				assert.NotNil(t, as)
 				assert.True(t, as.Activated())
 				assert.Equal(t, expectedOut, as)
-			}},
+			},
+		},
 	}
 
 	for i, test := range tests {

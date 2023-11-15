@@ -12,7 +12,7 @@ Currently, interactive endpoint documentation is hosted via [Swagger UI](https:/
 
 ### Configuration
 
-The API can be customly configured using environment variables stored in a `config.env` file. The following environment variables are used to configure the API:
+The API can be configured using environment variables stored in a `config.env` file. The following environment variables are used to configure the API:
 
 - `SERVER_HOST`: The host address to serve the API on (eg. `localhost`)
 - `SERVER_PORT`: The port to serve the API on (eg. `8080`)
@@ -20,9 +20,9 @@ The API can be customly configured using environment variables stored in a `conf
 - `SERVER_READ_TIMEOUT`: The read timeout second duration for the server (eg. `10`)
 - `SERVER_WRITE_TIMEOUT`: The write timeout second duration for the server (eg. `10`)
 
-### Components
+### Processes
 
-The Pessimism API is broken down into the following constituent components:
+The Pessimism API is broken down into the following constituent processes:
 
 - `handlers`: The handlers package contains the HTTP handlers for the API. Each handler is responsible for handling a specific endpoint and is responsible for parsing the request, calling the appropriate service method, and renders a response.
 - `service`: The service package contains the business logic for the API. The service is responsible for handling calls to the core Pessimism subsystems and is responsible for validating incoming requests.

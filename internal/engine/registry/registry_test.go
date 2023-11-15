@@ -22,15 +22,15 @@ func Test_AddressPreprocess(t *testing.T) {
 
 func Test_EventPreprocess(t *testing.T) {
 	isp := core.NewSessionParams()
-	err := registry.ValidateEventTracking(isp)
+	err := registry.ValidateTracking(isp)
 	assert.Error(t, err, "failure should occur when no address is provided")
 
 	isp.SetValue(logging.AddrKey, "0x69")
-	err = registry.ValidateEventTracking(isp)
+	err = registry.ValidateTracking(isp)
 	assert.Error(t, err, "failure should occur when no event is provided")
 
 	isp.SetNestedArg("transfer(address,address,uint256)")
-	err = registry.ValidateEventTracking(isp)
+	err = registry.ValidateTracking(isp)
 	assert.Nil(t, err, "no error should occur when nested args are provided")
 }
 

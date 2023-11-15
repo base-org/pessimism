@@ -28,15 +28,15 @@ func Test_Event_Log_Heuristic(t *testing.T) {
 
 				hash := crypto.Keccak256Hash([]byte("0x420"))
 
-				td := core.TransitData{
-					Type:    core.EventLog,
+				e := core.Event{
+					Type:    core.Log,
 					Address: common.HexToAddress("0x0000000000000000000000000000000000000420"),
 					Value: types.Log{
 						Topics: []common.Hash{hash},
 					},
 				}
 
-				as, err := ei.Assess(td)
+				as, err := ei.Assess(e)
 
 				assert.NoError(t, err)
 				assert.NotNil(t, as)
@@ -55,15 +55,15 @@ func Test_Event_Log_Heuristic(t *testing.T) {
 
 				hash := crypto.Keccak256Hash([]byte("0x420"))
 
-				td := core.TransitData{
-					Type:    core.EventLog,
+				e := core.Event{
+					Type:    core.Log,
 					Address: common.HexToAddress("0x0000000000000000000000000000000000000069"),
 					Value: types.Log{
 						Topics: []common.Hash{hash},
 					},
 				}
 
-				as, err := ei.Assess(td)
+				as, err := ei.Assess(e)
 
 				assert.Error(t, err)
 				assert.Nil(t, as)
@@ -81,15 +81,15 @@ func Test_Event_Log_Heuristic(t *testing.T) {
 
 				hash := crypto.Keccak256Hash([]byte("0x420"))
 
-				td := core.TransitData{
-					Type:    core.EventLog,
+				e := core.Event{
+					Type:    core.Log,
 					Address: common.HexToAddress("0x0000000000000000000000000000000000000420"),
 					Value: types.Log{
 						Topics: []common.Hash{hash},
 					},
 				}
 
-				as, err := ei.Assess(td)
+				as, err := ei.Assess(e)
 
 				assert.NoError(t, err)
 				assert.NotNil(t, as)

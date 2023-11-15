@@ -4,118 +4,89 @@ import (
 	"fmt"
 
 	"github.com/base-org/pessimism/internal/core"
-	"github.com/base-org/pessimism/internal/etl/registry/oracle"
-	"github.com/base-org/pessimism/internal/etl/registry/pipe"
 )
 
 const (
-	noEntryErr = "could not find entry in registry for encoded register type %s"
+	noEntryErr = "could not find data topic type %s"
 )
 
-// Registry ... Interface for registry
-type Registry interface {
-	GetDependencyPath(rt core.RegisterType) (core.RegisterDependencyPath, error)
-	GetRegister(rt core.RegisterType) (*core.DataRegister, error)
+type Registry struct {
+	topics map[core.TopicType]*core.DataTopic
 }
 
-// componentRegistry ... Registry implementation
-type componentRegistry struct {
-	registers map[core.RegisterType]*core.DataRegister
-}
-
-// NewRegistry ... Instantiates a new hardcoded registry
-// that contains all extractable ETL data types
-func NewRegistry() Registry {
-	registers := map[core.RegisterType]*core.DataRegister{
-		core.GethBlock: {
-			Addressing:           false,
-			DataType:             core.GethBlock,
-			ComponentType:        core.Oracle,
-			ComponentConstructor: oracle.NewGethBlockOracle,
+func New() *Registry {
+	topics := map[core.TopicType]*core.DataTopic{
+		core.BlockHeader: {
+			Addressing:  false,
+			DataType:    core.BlockHeader,
+			ProcessType: core.Read,
+			Constructor: NewHeaderTraversal,
 
 			Dependencies: noDeps(),
 			Sk:           noState(),
 		},
-		core.AccountBalance: {
-			Addressing:           true,
-			DataType:             core.AccountBalance,
-			ComponentType:        core.Oracle,
-			ComponentConstructor: oracle.NewAddressBalanceOracle,
 
-			Dependencies: noDeps(),
-			Sk: &core.StateKey{
-				Nesting: false,
-				Prefix:  core.AccountBalance,
-				ID:      core.AddressKey,
-				PUUID:   nil,
-			},
-		},
-		core.EventLog: {
-			Addressing:           true,
-			DataType:             core.EventLog,
-			ComponentType:        core.Pipe,
-			ComponentConstructor: pipe.NewEventParserPipe,
+		core.Log: {
+			Addressing:  true,
+			DataType:    core.Log,
+			ProcessType: core.Subscribe,
+			Constructor: NewLogSubscriber,
 
-			Dependencies: makeDeps(core.GethBlock),
+			Dependencies: makeDeps(core.BlockHeader),
 			Sk: &core.StateKey{
 				Nesting: true,
-				Prefix:  core.EventLog,
+				Prefix:  core.Log,
 				ID:      core.AddressKey,
-				PUUID:   nil,
+				PathID:  nil,
 			},
 		},
 	}
 
-	return &componentRegistry{registers}
+	return &Registry{topics}
 }
 
-// makeDeps ... Makes dependency slice
-func makeDeps(types ...core.RegisterType) []core.RegisterType {
-	deps := make([]core.RegisterType, len(types))
+func makeDeps(types ...core.TopicType) []core.TopicType {
+	deps := make([]core.TopicType, len(types))
 	copy(deps, types)
 
 	return deps
 }
 
-// noDeps ... Returns empty dependency slice
-func noDeps() []core.RegisterType {
-	return []core.RegisterType{}
+func noDeps() []core.TopicType {
+	return []core.TopicType{}
 }
 
-// noState ... Returns empty state key, indicating no state dependencies
-// for cross subsystem communication (i.e. ETL -> Risk Engine)
 func noState() *core.StateKey {
 	return nil
 }
 
-// GetDependencyPath ... Returns in-order slice of ETL pipeline path
-func (cr *componentRegistry) GetDependencyPath(rt core.RegisterType) (core.RegisterDependencyPath, error) {
-	destRegister, err := cr.GetRegister(rt)
+// Returns in-order slice of ETL path path
+func (r *Registry) TopicPath(tt core.TopicType) (core.TopicPath, error) {
+	topic, err := r.GetDataTopic(tt)
 	if err != nil {
-		return core.RegisterDependencyPath{}, err
+		return core.TopicPath{}, err
 	}
 
-	registers := make([]*core.DataRegister, len(destRegister.Dependencies)+1)
+	topics := make([]*core.DataTopic, len(topic.Dependencies)+1)
 
-	registers[0] = destRegister
+	topics[0] = topic
 
-	for i, depType := range destRegister.Dependencies {
-		depRegister, err := cr.GetRegister(depType)
+	for i, depType := range topic.Dependencies {
+		depRegister, err := r.GetDataTopic(depType)
 		if err != nil {
-			return core.RegisterDependencyPath{}, err
+			return core.TopicPath{}, err
 		}
 
-		registers[i+1] = depRegister
+		topics[i+1] = depRegister
 	}
 
-	return core.RegisterDependencyPath{Path: registers}, nil
+	return core.TopicPath{Path: topics}, nil
 }
 
-// GetRegister ... Returns a data register provided an enum type
-func (cr *componentRegistry) GetRegister(rt core.RegisterType) (*core.DataRegister, error) {
-	if _, exists := cr.registers[rt]; !exists {
-		return nil, fmt.Errorf(noEntryErr, rt)
+func (r *Registry) GetDataTopic(tt core.TopicType) (*core.DataTopic, error) {
+	if _, exists := r.topics[tt]; !exists {
+		return nil, fmt.Errorf(noEntryErr, tt)
 	}
 
-	return cr.registers[rt], nil
+	return r.topics[tt], nil
 }

@@ -89,9 +89,9 @@ func NewConfig(fileName core.FilePath) *Config {
 		},
 
 		SystemConfig: &subsystem.Config{
-			MaxPipelineCount: getEnvInt("MAX_PIPELINE_COUNT"),
-			L1PollInterval:   getEnvInt("L1_POLL_INTERVAL"),
-			L2PollInterval:   getEnvInt("L2_POLL_INTERVAL"),
+			MaxPathCount:   getEnvInt("MAX_PATH_COUNT"),
+			L1PollInterval: getEnvInt("L1_POLL_INTERVAL"),
+			L2PollInterval: getEnvInt("L2_POLL_INTERVAL"),
 		},
 	}
 

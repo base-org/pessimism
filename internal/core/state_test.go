@@ -7,19 +7,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_StateKey(t *testing.T) {
+func TestStateKey(t *testing.T) {
 	sk := core.MakeStateKey(0, "testId", false)
 
-	puuid := core.NilPUUID()
-	puuid.PID[0] = 1
+	id := core.PathID{}
+	id.ID[0] = 1
 
 	// Successfully set the key
-	err := sk.SetPUUID(puuid)
+	err := sk.SetPathID(id)
 	assert.NoError(t, err)
-	assert.Contains(t, sk.String(), puuid.String())
+	assert.Contains(t, sk.String(), id.String())
 
-	pUUID2 := core.NilPUUID()
+	// Fail to set key again
+	id = core.PathID{}
 
-	err = sk.SetPUUID(pUUID2)
-	assert.Error(t, err, "cannot set puuid more than once")
+	err = sk.SetPathID(id)
+	assert.Error(t, err, "cannot set PathID more than once")
 }
