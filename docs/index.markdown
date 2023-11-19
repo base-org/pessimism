@@ -21,4 +21,4 @@ The Pessimism documentation is hosted on Github Pages. To view the documentation
 
 ## Contributing
 
-If you would like to contribute to the Pessimism documentation, please advise the guidelines stipulated in the [CONTRIBUTING.md](../CONTRIBUTING.md) file __before__ submitting a pull request.
+If you would like to contribute to the Pessimism documentation, please advise the guidelines stipulated in the [CONTRIBUTING.md](https://github.com/base-org/pessimism/blob/master/CONTRIBUTING.md) file __before__ submitting a pull request.

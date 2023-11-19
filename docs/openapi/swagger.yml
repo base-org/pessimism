@@ -11,7 +11,7 @@ info:
   version: 0.0.1
 externalDocs:
   description: Find out more about Pessimism's architecture
-  url: 'https://github.com/base-org/pessimism/blob/master/docs/architecture.markdown'
+  url: 'https://github.com/base-org/pessimism/blob/master/docs/architecture/architecture.markdown'
 tags:
   - name: heuristic
     description: 'Heuristic endpoints'
