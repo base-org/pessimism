@@ -15,7 +15,7 @@ func TestStringToSev(t *testing.T) {
 	assert.Equal(t, core.StringToSev(""), core.UNKNOWN)
 }
 
-func TestSeverity_String(t *testing.T) {
+func TestSevString(t *testing.T) {
 	assert.Equal(t, core.LOW.String(), "low")
 	assert.Equal(t, core.MEDIUM.String(), "medium")
 	assert.Equal(t, core.HIGH.String(), "high")
@@ -23,7 +23,6 @@ func TestSeverity_String(t *testing.T) {
 }
 
 func TestToPagerDutySev(t *testing.T) {
-
 	assert.Equal(t, core.LOW.ToPagerDutySev(), core.PagerDutySeverity("warning"))
 	assert.Equal(t, core.MEDIUM.ToPagerDutySev(), core.PagerDutySeverity("error"))
 	assert.Equal(t, core.HIGH.ToPagerDutySev(), core.PagerDutySeverity("critical"))

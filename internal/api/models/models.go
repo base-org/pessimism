@@ -8,11 +8,11 @@ import (
 )
 
 // NewSessionAcceptedResp ...Returns a heuristic response with status accepted
-func NewSessionAcceptedResp(id core.SUUID) *SessionResponse {
+func NewSessionAcceptedResp(id core.UUID) *SessionResponse {
 	return &SessionResponse{
 		Status: OK,
 		Code:   http.StatusAccepted,
-		Result: Result{logging.SUUIDKey: id.String()},
+		Result: Result{logging.UUID: id.String()},
 	}
 }
 

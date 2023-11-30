@@ -109,11 +109,13 @@ func (s Severity) ToPagerDutySev() PagerDutySeverity {
 
 // Alert ... An alert
 type Alert struct {
-	Criticality Severity
-	PUUID       PUUID
-	SUUID       SUUID
+	Net         Network
+	HT          HeuristicType
+	Sev         Severity
+	PathID      PathID
+	HeuristicID UUID
 	Timestamp   time.Time
-	Ptype       PipelineType
+	PathType    PathType
 
 	Content string
 }

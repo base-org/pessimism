@@ -1,28 +1,19 @@
-//go:generate mockgen -package mocks --destination ../mocks/eth_client.go . EthClient
+//go:generate mockgen -package mocks --destination ../mocks/eth_client.go . EthClient,NodeClient
 
 package client
-
-/*
-	NOTE
-	eth client docs: https://pkg.go.dev/github.com/ethereum/go-ethereum/ethclient
-	eth api docs: https://geth.ethereum.org/docs/rpc/server
-*/
 
 import (
 	"context"
 	"math/big"
 
+	"github.com/base-org/pessimism/internal/metrics"
+	ix_node "github.com/ethereum-optimism/optimism/indexer/node"
 	"github.com/ethereum/go-ethereum"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-// TODO (#20) : Introduce optional Retry-able EthClient
-
-// EthClient ... Provides interface wrapper for ethClient functions
-// Useful for mocking go-ethereum json rpc client logic
 type EthClient interface {
 	CallContract(ctx context.Context, msg ethereum.CallMsg, blockNumber *big.Int) ([]byte, error)
 	CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error)
@@ -36,7 +27,24 @@ type EthClient interface {
 		ch chan<- types.Log) (ethereum.Subscription, error)
 }
 
+type NodeClient interface {
+	BlockHeaderByNumber(*big.Int) (*types.Header, error)
+	BlockHeaderByHash(common.Hash) (*types.Header, error)
+	BlockHeadersByRange(*big.Int, *big.Int) ([]types.Header, error)
+
+	TxByHash(common.Hash) (*types.Transaction, error)
+
+	StorageHash(common.Address, *big.Int) (common.Hash, error)
+	FilterLogs(ethereum.FilterQuery) ([]types.Log, error)
+}
+
 // NewEthClient ... Initializer
 func NewEthClient(ctx context.Context, rawURL string) (EthClient, error) {
 	return ethclient.DialContext(ctx, rawURL)
+}
+
+func NewNodeClient(ctx context.Context, rpcURL string) (NodeClient, error) {
+	stats := metrics.WithContext(ctx)
+
+	return ix_node.DialEthClient(rpcURL, stats)
 }

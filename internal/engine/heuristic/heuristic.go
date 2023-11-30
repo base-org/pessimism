@@ -16,34 +16,31 @@ const (
 	// HardCoded ... Hard coded execution type (ie native application code)
 	HardCoded ExecutionType = iota
 
-	invalidInTypeErr = "invalid input type provided for heuristic. expected %s, got %s"
+	invalidTopicErr = "invalid input type provided for heuristic. expected %s, got %s"
 )
 
-// Heuristic ... Interface that all heuristic implementations must adhere to
 type Heuristic interface {
-	InputType() core.RegisterType
-	ValidateInput(core.TransitData) error
-	Assess(td core.TransitData) (*ActivationSet, error)
-	SUUID() core.SUUID
-	SetSUUID(core.SUUID)
+	TopicType() core.TopicType
+	Validate(core.Event) error
+	Assess(e core.Event) (*ActivationSet, error)
+	Type() core.HeuristicType
+	ID() core.UUID
+	SetID(core.UUID)
 }
 
-// BaseHeuristicOpt ... Functional option for BaseHeuristic
-type BaseHeuristicOpt = func(bi *BaseHeuristic) *BaseHeuristic
+type BaseHeuristicOpt = func(bh *BaseHeuristic) *BaseHeuristic
 
-// BaseHeuristic ... Base heuristic implementation
 type BaseHeuristic struct {
-	sUUID  core.SUUID
-	inType core.RegisterType
+	ht    core.HeuristicType
+	id    core.UUID
+	topic core.TopicType
 }
 
-// NewBaseHeuristic ... Initializer for BaseHeuristic
-// This is a base type that's inherited by all hardcoded
-// heuristic implementations
-func NewBaseHeuristic(inType core.RegisterType,
+func New(topic core.TopicType, t core.HeuristicType,
 	opts ...BaseHeuristicOpt) Heuristic {
 	bi := &BaseHeuristic{
-		inType: inType,
+		ht:    t,
+		topic: topic,
 	}
 
 	for _, opt := range opts {
@@ -53,36 +50,34 @@ func NewBaseHeuristic(inType core.RegisterType,
 	return bi
 }
 
-// SUUID ... Returns the heuristic session UUID
-func (bi *BaseHeuristic) SUUID() core.SUUID {
-	return bi.sUUID
+func (bi *BaseHeuristic) Type() core.HeuristicType {
+	return bi.ht
 }
 
-// InputType ... Returns the input type for the heuristic
-func (bi *BaseHeuristic) InputType() core.RegisterType {
-	return bi.inType
+func (bi *BaseHeuristic) ID() core.UUID {
+	return bi.id
 }
 
-// Assess ... Determines if a heuristic activation has occurred; defaults to no-op
-func (bi *BaseHeuristic) Assess(_ core.TransitData) (*ActivationSet, error) {
+func (bi *BaseHeuristic) TopicType() core.TopicType {
+	return bi.topic
+}
+
+func (bi *BaseHeuristic) Assess(_ core.Event) (*ActivationSet, error) {
 	return NoActivations(), nil
 }
 
-// SetSUUID ... Sets the heuristic session UUID
-func (bi *BaseHeuristic) SetSUUID(sUUID core.SUUID) {
-	bi.sUUID = sUUID
+func (bi *BaseHeuristic) SetID(id core.UUID) {
+	bi.id = id
 }
 
-// ValidateInput ... Validates the input type for the heuristic
-func (bi *BaseHeuristic) ValidateInput(td core.TransitData) error {
-	if td.Type != bi.InputType() {
-		return fmt.Errorf(invalidInTypeErr, bi.InputType(), td.Type)
+func (bi *BaseHeuristic) Validate(e core.Event) error {
+	if e.Type != bi.TopicType() {
+		return fmt.Errorf(invalidTopicErr, bi.TopicType(), e.Type)
 	}
 
 	return nil
 }
 
-// Activation ... Represents an activation event
 type Activation struct {
 	TimeStamp time.Time
 	Message   string
@@ -98,28 +93,23 @@ func NewActivationSet() *ActivationSet {
 	}
 }
 
-// Len ... Returns the number of activations in the set
 func (as *ActivationSet) Len() int {
 	return len(as.acts)
 }
 
-// Add ... Adds an activation to the set
 func (as *ActivationSet) Add(a *Activation) *ActivationSet {
 	as.acts = append(as.acts, a)
 	return as
 }
 
-// Entries ... Returns the activations in the set
 func (as *ActivationSet) Entries() []*Activation {
 	return as.acts
 }
 
-// Activated ... Returns true if the activation set is not empty
 func (as *ActivationSet) Activated() bool {
 	return as.Len() > 0
 }
 
-// NoActivations ... Returns an empty activation set
 func NoActivations() *ActivationSet {
 	return NewActivationSet()
 }

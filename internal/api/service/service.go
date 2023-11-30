@@ -12,8 +12,8 @@ import (
 
 // Service ... Interface for API service
 type Service interface {
-	ProcessHeuristicRequest(ir *models.SessionRequestBody) (core.SUUID, error)
-	RunHeuristicSession(params *models.SessionRequestParams) (core.SUUID, error)
+	ProcessHeuristicRequest(ir *models.SessionRequestBody) (core.UUID, error)
+	RunHeuristicSession(params *models.SessionRequestParams) (core.UUID, error)
 
 	CheckHealth() *models.HealthCheck
 	CheckETHRPCHealth(n core.Network) bool

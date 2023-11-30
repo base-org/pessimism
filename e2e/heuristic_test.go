@@ -31,17 +31,16 @@ import (
 // balance enforcement heuristic session on L2 network.
 func TestBalanceEnforcement(t *testing.T) {
 
-	ts := e2e.CreateL2TestSuite(t)
+	ts := e2e.CreateSysTestSuite(t)
 	defer ts.Close()
 
-	alice := ts.L2Cfg.Secrets.Addresses().Alice
-	bob := ts.L2Cfg.Secrets.Addresses().Bob
+	alice := ts.Cfg.Secrets.Addresses().Alice
+	bob := ts.Cfg.Secrets.Addresses().Bob
 
 	alertMsg := "one baby to another says:"
 	// Deploy a balance enforcement heuristic session for Alice.
-	_, err := ts.App.BootStrap([]*models.SessionRequestParams{{
+	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{{
 		Network:       core.Layer2.String(),
-		PType:         core.Live.String(),
 		HeuristicType: core.BalanceEnforcement.String(),
 		StartHeight:   nil,
 		EndHeight:     nil,
@@ -58,21 +57,21 @@ func TestBalanceEnforcement(t *testing.T) {
 	require.NoError(t, err, "Failed to bootstrap balance enforcement heuristic session")
 
 	// Get Alice's balance.
-	aliceAmt, err := ts.L2Geth.L2Client.BalanceAt(context.Background(), alice, nil)
+	aliceAmt, err := ts.L2Client.BalanceAt(context.Background(), alice, nil)
 	require.NoError(t, err, "Failed to get Alice's balance")
 
 	// Determine the gas cost of the transaction.
 	gasAmt := 1_000_001
 	bigAmt := big.NewInt(1_000_001)
-	gasPrice := big.NewInt(int64(ts.L2Cfg.DeployConfig.L2GenesisBlockGasLimit))
+	gasPrice := big.NewInt(int64(ts.Cfg.DeployConfig.L2GenesisBlockGasLimit))
 
 	gasCost := gasPrice.Mul(gasPrice, bigAmt)
 
-	signer := types.LatestSigner(ts.L2Geth.L2ChainConfig)
+	signer := types.LatestSigner(ts.Sys.L2GenesisCfg.Config)
 
 	// Create a transaction from Alice to Bob that will drain almost all of Alice's ETH.
-	drainAliceTx := types.MustSignNewTx(ts.L2Cfg.Secrets.Alice, signer, &types.DynamicFeeTx{
-		ChainID:   big.NewInt(int64(ts.L2Cfg.DeployConfig.L2ChainID)),
+	drainAliceTx := types.MustSignNewTx(ts.Cfg.Secrets.Alice, signer, &types.DynamicFeeTx{
+		ChainID:   big.NewInt(int64(ts.Cfg.DeployConfig.L2ChainID)),
 		Nonce:     0,
 		GasTipCap: big.NewInt(100),
 		GasFeeCap: big.NewInt(100000),
@@ -86,11 +85,23 @@ func TestBalanceEnforcement(t *testing.T) {
 	require.Equal(t, len(ts.TestPagerDutyServer.PagerDutyAlerts()), 0, "No alerts should be sent before the transaction is sent")
 
 	// Send the transaction to drain Alice's account of almost all ETH.
-	_, err = ts.L2Geth.AddL2Block(context.Background(), drainAliceTx)
+
+	err = ts.L2Client.SendTransaction(context.Background(), drainAliceTx)
+	require.NoError(t, err)
+
+	receipt, err := wait.ForReceipt(context.Background(), ts.L2Client, drainAliceTx.Hash(), types.ReceiptStatusSuccessful)
 	require.NoError(t, err, "Failed to create L2 block with transaction")
 
 	// Wait for Pessimism to process the balance change and send a notification to the mocked Slack server.
-	time.Sleep(1 * time.Second)
+	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
+		id := ids[0].PathID
+		height, err := ts.Subsystems.PathHeight(id)
+		if err != nil {
+			return false, err
+		}
+
+		return height != nil && height.Uint64() > receipt.BlockNumber.Uint64(), nil
+	}))
 
 	// Check that the balance enforcement was triggered using the mocked server cache.
 	pdMsgs := ts.TestPagerDutyServer.PagerDutyAlerts()
@@ -100,12 +111,12 @@ func TestBalanceEnforcement(t *testing.T) {
 	assert.Contains(t, pdMsgs[0].Payload.Summary, "balance_enforcement", "Balance enforcement alert was not sent")
 
 	// Get Bobs's balance.
-	bobAmt, err := ts.L2Geth.L2Client.BalanceAt(context.Background(), bob, nil)
+	bobAmt, err := ts.L2Client.BalanceAt(context.Background(), bob, nil)
 	require.NoError(t, err, "Failed to get Alice's balance")
 
 	// Create a transaction to send the ETH back to Alice.
-	drainBobTx := types.MustSignNewTx(ts.L2Cfg.Secrets.Bob, signer, &types.DynamicFeeTx{
-		ChainID:   big.NewInt(int64(ts.L2Cfg.DeployConfig.L2ChainID)),
+	drainBobTx := types.MustSignNewTx(ts.Cfg.Secrets.Bob, signer, &types.DynamicFeeTx{
+		ChainID:   big.NewInt(int64(ts.Cfg.DeployConfig.L2ChainID)),
 		Nonce:     0,
 		GasTipCap: big.NewInt(100),
 		GasFeeCap: big.NewInt(100000),
@@ -116,11 +127,22 @@ func TestBalanceEnforcement(t *testing.T) {
 	})
 
 	// Send the transaction to re-disperse the ETH from Bob back to Alice.
-	_, err = ts.L2Geth.AddL2Block(context.Background(), drainBobTx)
-	require.NoError(t, err, "Failed to create L2 block with transaction")
+	err = ts.L2Client.SendTransaction(context.Background(), drainBobTx)
+	require.NoError(t, err)
 
-	// Wait for Pessimism to process the balance change.
-	time.Sleep(1 * time.Second)
+	receipt, err = wait.ForReceipt(context.Background(), ts.L2Client, drainBobTx.Hash(), types.ReceiptStatusSuccessful)
+	require.NoError(t, err)
+
+	// Wait for Pessimism to process the balance change and send a notification to the mocked Slack server.
+	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
+		id := ids[0].PathID
+		height, err := ts.Subsystems.PathHeight(id)
+		if err != nil {
+			return false, err
+		}
+
+		return height != nil && height.Uint64() > receipt.BlockNumber.Uint64(), nil
+	}))
 
 	// Empty the mocked PagerDuty server cache.
 	ts.TestPagerDutyServer.ClearAlerts()
@@ -129,7 +151,7 @@ func TestBalanceEnforcement(t *testing.T) {
 	time.Sleep(1 * time.Second)
 
 	// Ensure that no new alerts were sent.
-	assert.Equal(t, len(ts.TestPagerDutyServer.Payloads), 0, "No alerts should be sent after the transaction is sent")
+	assert.Equal(t, 0, len(ts.TestPagerDutyServer.Payloads))
 }
 
 // TestContractEvent ... Tests the E2E flow of a single
@@ -146,7 +168,6 @@ func TestContractEvent(t *testing.T) {
 	// Deploy a contract event heuristic session for the L1 system config address.
 	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{{
 		Network:       core.Layer1.String(),
-		PType:         core.Live.String(),
 		HeuristicType: core.ContractEvent.String(),
 		StartHeight:   nil,
 		EndHeight:     nil,
@@ -185,8 +206,8 @@ func TestContractEvent(t *testing.T) {
 
 	// Wait for Pessimism to process the newly emitted event and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
-		pUUID := ids[0].PUUID
-		height, err := ts.Subsystems.PipelineHeight(pUUID)
+		id := ids[0].PathID
+		height, err := ts.Subsystems.PathHeight(id)
 		if err != nil {
 			return false, err
 		}
@@ -223,7 +244,6 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{
 		{
 			Network:       core.Layer1.String(),
-			PType:         core.Live.String(),
 			HeuristicType: core.WithdrawalSafety.String(),
 			StartHeight:   nil,
 			EndHeight:     nil,
@@ -320,8 +340,8 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 
 	// Wait for Pessimism to process the proven withdrawal and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
-		pUUID := ids[0].PUUID
-		height, err := ts.Subsystems.PipelineHeight(pUUID)
+		id := ids[0].PathID
+		height, err := ts.Subsystems.PathHeight(id)
 		if err != nil {
 			return false, err
 		}
@@ -353,8 +373,8 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 
 	// Wait for Pessimism to process the finalized withdrawal and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
-		pUUID := ids[0].PUUID
-		height, err := ts.Subsystems.PipelineHeight(pUUID)
+		id := ids[0].PathID
+		height, err := ts.Subsystems.PathHeight(id)
 		if err != nil {
 			return false, err
 		}
@@ -381,7 +401,6 @@ func TestWithdrawalSafetyNoInvariants(t *testing.T) {
 	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{
 		{
 			Network:       core.Layer1.String(),
-			PType:         core.Live.String(),
 			HeuristicType: core.WithdrawalSafety.String(),
 			StartHeight:   nil,
 			EndHeight:     nil,
@@ -441,8 +460,8 @@ func TestWithdrawalSafetyNoInvariants(t *testing.T) {
 
 	// Wait for Pessimism to process the proven withdrawal and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
-		pUUID := ids[0].PUUID
-		height, err := ts.Subsystems.PipelineHeight(pUUID)
+		id := ids[0].PathID
+		height, err := ts.Subsystems.PathHeight(id)
 		if err != nil {
 			return false, err
 		}
@@ -455,8 +474,8 @@ func TestWithdrawalSafetyNoInvariants(t *testing.T) {
 
 	// Wait for Pessimism to process the finalized withdrawal and send a notification to the mocked Slack server.
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
-		pUUID := ids[0].PUUID
-		height, err := ts.Subsystems.PipelineHeight(pUUID)
+		id := ids[0].PathID
+		height, err := ts.Subsystems.PathHeight(id)
 		if err != nil {
 			return false, err
 		}
@@ -491,7 +510,6 @@ func TestFaultDetector(t *testing.T) {
 	// Deploys a fault detector heuristic session instance using the locally spun-up Op-Stack chain
 	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{{
 		Network:       core.Layer1.String(),
-		PType:         core.Live.String(),
 		HeuristicType: core.FaultDetector.String(),
 		StartHeight:   big.NewInt(0),
 		EndHeight:     nil,
@@ -523,8 +541,8 @@ func TestFaultDetector(t *testing.T) {
 	require.Nil(t, err)
 
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
-		pUUID := ids[0].PUUID
-		height, err := ts.Subsystems.PipelineHeight(pUUID)
+		id := ids[0].PathID
+		height, err := ts.Subsystems.PathHeight(id)
 		if err != nil {
 			return false, err
 		}

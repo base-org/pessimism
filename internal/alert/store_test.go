@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_Store(t *testing.T) {
+func TestStore(t *testing.T) {
 	var tests = []struct {
 		name        string
 		description string
@@ -22,18 +22,18 @@ func Test_Store(t *testing.T) {
 			testLogic: func(t *testing.T) {
 				am := alert.NewStore()
 
-				sUUID := core.MakeSUUID(core.Layer1, core.Live, core.BalanceEnforcement)
+				id := core.UUID{}
 				policy := &core.AlertPolicy{
 					Msg:  "test message",
 					Dest: core.Slack.String(),
 				}
 
-				err := am.AddAlertPolicy(sUUID, policy)
-				assert.NoError(t, err, "failed to add Alert Policy")
+				err := am.AddAlertPolicy(id, policy)
+				assert.NoError(t, err)
 
-				actualPolicy, err := am.GetAlertPolicy(sUUID)
-				assert.NoError(t, err, "failed to get Alert Policy")
-				assert.Equal(t, policy, actualPolicy, "Alert Policy mismatch")
+				actualPolicy, err := am.GetAlertPolicy(id)
+				assert.NoError(t, err)
+				assert.Equal(t, policy, actualPolicy)
 			},
 		},
 		{
@@ -42,17 +42,17 @@ func Test_Store(t *testing.T) {
 			testLogic: func(t *testing.T) {
 				am := alert.NewStore()
 
-				sUUID := core.MakeSUUID(core.Layer1, core.Live, core.BalanceEnforcement)
+				id := core.UUID{}
 				policy := &core.AlertPolicy{
 					Dest: core.Slack.String(),
 				}
 
-				err := am.AddAlertPolicy(sUUID, policy)
-				assert.NoError(t, err, "failed to add Alert Policy")
+				err := am.AddAlertPolicy(id, policy)
+				assert.NoError(t, err)
 
 				// add again
-				err = am.AddAlertPolicy(sUUID, policy)
-				assert.Error(t, err, "failed to add Alert Policy")
+				err = am.AddAlertPolicy(id, policy)
+				assert.Error(t, err)
 			},
 		},
 		{
@@ -60,7 +60,7 @@ func Test_Store(t *testing.T) {
 			description: "Test NewStore logic",
 			testLogic: func(t *testing.T) {
 				am := alert.NewStore()
-				assert.NotNil(t, am, "failed to instantiate alert store")
+				assert.NotNil(t, am)
 			},
 		},
 	}

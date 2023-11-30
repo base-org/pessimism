@@ -39,36 +39,26 @@ const (
 	`
 )
 
-// Interpolator ... Interface for interpolating messages
-type Interpolator interface {
-	InterpolateSlackMessage(sev core.Severity, sUUID core.SUUID, content string, msg string) string
-	InterpolatePagerDutyMessage(sUUID core.SUUID, message string) string
+type Interpolator struct{}
+
+func NewInterpolator() *Interpolator {
+	return &Interpolator{}
 }
 
-// interpolator ... Interpolator implementation
-type interpolator struct{}
-
-// NewInterpolator ... Initializer
-func NewInterpolator() Interpolator {
-	return &interpolator{}
-}
-
-// InterpolateSlackMessage ... Interpolates a slack message with the given heuristic session UUID and message
-func (*interpolator) InterpolateSlackMessage(sev core.Severity, sUUID core.SUUID, content string, msg string) string {
+func (*Interpolator) SlackMessage(a core.Alert, msg string) string {
 	return fmt.Sprintf(SlackMsgFmt,
-		sev.Symbol(),
-		sUUID.PID.HeuristicType().String(),
-		sUUID.PID.Network(),
-		cases.Title(language.English).String(sev.String()),
-		sUUID.String(),
-		fmt.Sprintf(CodeBlockFmt, content),
+		a.Sev.Symbol(),
+		a.HT.String(),
+		a.Net.String(),
+		cases.Title(language.English).String(a.Sev.String()),
+		a.HeuristicID.String(),
+		fmt.Sprintf(CodeBlockFmt, a.Content),
 		msg)
 }
 
-// InterpolatePagerDutyMessage ... Interpolates a pagerduty message with the given heuristic session UUID and message
-func (*interpolator) InterpolatePagerDutyMessage(sUUID core.SUUID, message string) string {
+func (*Interpolator) PagerDutyMessage(a core.Alert) string {
 	return fmt.Sprintf(PagerDutyMsgFmt,
-		sUUID.PID.HeuristicType().String(),
-		sUUID.PID.Network(),
-		message)
+		a.HT.String(),
+		a.Net.String(),
+		a.Content)
 }

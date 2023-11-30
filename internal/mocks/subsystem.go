@@ -38,7 +38,7 @@ func (m *SubManager) EXPECT() *SubManagerMockRecorder {
 }
 
 // BuildDeployCfg mocks base method.
-func (m *SubManager) BuildDeployCfg(arg0 *core.PipelineConfig, arg1 *core.SessionConfig) (*heuristic.DeployConfig, error) {
+func (m *SubManager) BuildDeployCfg(arg0 *core.PathConfig, arg1 *core.SessionConfig) (*heuristic.DeployConfig, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BuildDeployCfg", arg0, arg1)
 	ret0, _ := ret[0].(*heuristic.DeployConfig)
@@ -52,34 +52,34 @@ func (mr *SubManagerMockRecorder) BuildDeployCfg(arg0, arg1 interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildDeployCfg", reflect.TypeOf((*SubManager)(nil).BuildDeployCfg), arg0, arg1)
 }
 
-// BuildPipelineCfg mocks base method.
-func (m *SubManager) BuildPipelineCfg(arg0 *models.SessionRequestParams) (*core.PipelineConfig, error) {
+// BuildPathCfg mocks base method.
+func (m *SubManager) BuildPathCfg(arg0 *models.SessionRequestParams) (*core.PathConfig, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BuildPipelineCfg", arg0)
-	ret0, _ := ret[0].(*core.PipelineConfig)
+	ret := m.ctrl.Call(m, "BuildPathCfg", arg0)
+	ret0, _ := ret[0].(*core.PathConfig)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// BuildPipelineCfg indicates an expected call of BuildPipelineCfg.
-func (mr *SubManagerMockRecorder) BuildPipelineCfg(arg0 interface{}) *gomock.Call {
+// BuildPathCfg indicates an expected call of BuildPathCfg.
+func (mr *SubManagerMockRecorder) BuildPathCfg(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildPipelineCfg", reflect.TypeOf((*SubManager)(nil).BuildPipelineCfg), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BuildPathCfg", reflect.TypeOf((*SubManager)(nil).BuildPathCfg), arg0)
 }
 
-// RunSession mocks base method.
-func (m *SubManager) RunSession(arg0 *heuristic.DeployConfig) (core.SUUID, error) {
+// RunHeuristic mocks base method.
+func (m *SubManager) RunHeuristic(arg0 *heuristic.DeployConfig) (core.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RunSession", arg0)
-	ret0, _ := ret[0].(core.SUUID)
+	ret := m.ctrl.Call(m, "RunHeuristic", arg0)
+	ret0, _ := ret[0].(core.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// RunSession indicates an expected call of RunSession.
-func (mr *SubManagerMockRecorder) RunSession(arg0 interface{}) *gomock.Call {
+// RunHeuristic indicates an expected call of RunHeuristic.
+func (mr *SubManagerMockRecorder) RunHeuristic(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunSession", reflect.TypeOf((*SubManager)(nil).RunSession), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RunHeuristic", reflect.TypeOf((*SubManager)(nil).RunHeuristic), arg0)
 }
 
 // Shutdown mocks base method.

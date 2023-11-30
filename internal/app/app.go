@@ -74,35 +74,35 @@ func (a *Application) End() <-chan os.Signal {
 }
 
 // BootStrap ... Bootstraps the application
-func (a *Application) BootStrap(sessions []*BootSession) ([]*core.HeuristicID, error) {
+func (a *Application) BootStrap(sessions []*BootSession) ([]core.SessionID, error) {
 	logger := logging.WithContext(a.ctx)
-	ids := make([]*core.HeuristicID, 0, len(sessions))
+	ids := make([]core.SessionID, 0, len(sessions))
 
 	for _, session := range sessions {
-		pConfig, err := a.Subsystems.BuildPipelineCfg(session)
+		pConfig, err := a.Subsystems.BuildPathCfg(session)
 		if err != nil {
 			return nil, err
 		}
 
 		sConfig := session.SessionConfig()
 
-		deployCfg, err := a.Subsystems.BuildDeployCfg(pConfig, sConfig)
+		cfg, err := a.Subsystems.BuildDeployCfg(pConfig, sConfig)
 		if err != nil {
 			return nil, err
 		}
 
-		sUUID, err := a.Subsystems.RunSession(deployCfg)
+		id, err := a.Subsystems.RunHeuristic(cfg)
 		if err != nil {
 			return nil, err
 		}
 
-		ids = append(ids, &core.HeuristicID{
-			SUUID: sUUID,
-			PUUID: deployCfg.PUUID,
+		ids = append(ids, core.SessionID{
+			HeuristicID: id,
+			PathID:      cfg.PathID,
 		})
 
 		logger.Info("heuristic session started",
-			zap.String(logging.SUUIDKey, sUUID.String()))
+			zap.String(logging.Session, cfg.PathID.String()))
 	}
 
 	return ids, nil

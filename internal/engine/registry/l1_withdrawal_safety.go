@@ -147,19 +147,19 @@ func NewL1WithdrawalSafety(ctx context.Context, cfg *WithdrawalSafetyCfg) (heuri
 }
 
 // Assess ...
-func (wsh *L1WithdrawalSafety) Assess(td core.TransitData) (*heuristic.ActivationSet, error) {
+func (wsh *WithdrawalSafetyHeuristic) Assess(e core.Event) (*heuristic.ActivationSet, error) {
 	// TODO - Support running from withdrawal finalized events as well
 
 	// 1. Validate input
 	logging.NoContext().Debug("Checking activation for withdrawal enforcement heuristic",
-		zap.String("data", fmt.Sprintf("%v", td)))
+		zap.String("data", fmt.Sprintf("%v", e)))
 
-	err := wsh.ValidateInput(td)
+	err := wsh.Validate(e)
 	if err != nil {
 		return nil, err
 	}
 
-	log, success := td.Value.(types.Log)
+	log, success := e.Value.(types.Log)
 	if !success {
 		return nil, fmt.Errorf(couldNotCastErr, "types.Log")
 	}

@@ -12,7 +12,7 @@ import (
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/engine"
 	e_registry "github.com/base-org/pessimism/internal/engine/registry"
-	"github.com/base-org/pessimism/internal/etl/pipeline"
+	"github.com/base-org/pessimism/internal/etl"
 	"github.com/base-org/pessimism/internal/etl/registry"
 	"github.com/base-org/pessimism/internal/logging"
 	"github.com/base-org/pessimism/internal/metrics"
@@ -77,20 +77,21 @@ func InitializeAlerting(ctx context.Context, cfg *config.Config) (alert.Manager,
 }
 
 // InitializeETL ... Performs dependency injection to build etl struct
-func InitializeETL(ctx context.Context, transit chan core.HeuristicInput) pipeline.Manager {
-	compRegistry := registry.NewRegistry()
-	analyzer := pipeline.NewAnalyzer(compRegistry)
-	store := pipeline.NewEtlStore()
-	dag := pipeline.NewComponentGraph()
+func InitializeETL(ctx context.Context, transit chan core.HeuristicInput) etl.ETL {
+	r := registry.New()
+	analyzer := etl.NewAnalyzer(r)
+	store := etl.NewStore()
+	dag := etl.NewGraph()
 
-	return pipeline.NewManager(ctx, analyzer, compRegistry, store, dag, transit)
+	return etl.New(ctx, analyzer, r, store, dag, transit)
 }
 
 // InitializeEngine ... Performs dependency injection to build engine struct
 func InitializeEngine(ctx context.Context, cfg *config.Config, transit chan core.Alert) engine.Manager {
-	store := engine.NewSessionStore()
-	am := engine.NewAddressingMap()
+	store := engine.NewStore()
+	am := engine.NewAddressMap()
 	re := engine.NewHardCodedEngine(transit)
+
 	it := e_registry.NewHeuristicTable()
 
 	return engine.NewManager(ctx, cfg.EngineConfig, re, am, store, it, transit)
@@ -98,7 +99,7 @@ func InitializeEngine(ctx context.Context, cfg *config.Config, transit chan core
 
 // NewPessimismApp ... Performs dependency injection to build app struct
 func NewPessimismApp(ctx context.Context, cfg *config.Config) (*Application, func(), error) {
-	mSvr, mShutDown, err := InitializeMetrics(ctx, cfg)
+	stats, shutDown, err := InitializeMetrics(ctx, cfg)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -120,11 +121,11 @@ func NewPessimismApp(ctx context.Context, cfg *config.Config) (*Application, fun
 
 	appShutDown := func() {
 		shutDown()
-		mShutDown()
+		shutDown()
 		if err := m.Shutdown(); err != nil {
 			logging.WithContext(ctx).Error("error shutting down subsystems", zap.Error(err))
 		}
 	}
 
-	return New(ctx, cfg, m, svr, mSvr), appShutDown, nil
+	return New(ctx, cfg, m, svr, stats), appShutDown, nil
 }

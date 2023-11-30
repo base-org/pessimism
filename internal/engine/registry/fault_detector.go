@@ -56,8 +56,8 @@ func blockToInfo(b *types.Block) blockInfo {
 	return blockInfo{b}
 }
 
-// faultDetectorInv ... faultDetectorInv implementation
-type faultDetectorInv struct {
+// faultDetection ... faultDetection implementation
+type faultDetection struct {
 	cfg *FaultDetectorCfg
 
 	l2tol1MessagePasser  common.Address
@@ -84,7 +84,7 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heu
 		return nil, err
 	}
 
-	return &faultDetectorInv{
+	return &faultDetection{
 		cfg: cfg,
 
 		l2OutputOracleFilter: outputOracle,
@@ -94,26 +94,26 @@ func NewFaultDetector(ctx context.Context, cfg *FaultDetectorCfg) (heuristic.Heu
 		l2Client:     bundle.L2Client,
 		l2GethClient: bundle.L2Geth,
 
-		Heuristic: heuristic.NewBaseHeuristic(core.EventLog),
+		Heuristic: heuristic.New(core.Log, core.FaultDetector),
 	}, nil
 }
 
 // Assess ... Performs the fault detection heuristic logic
-func (fd *faultDetectorInv) Assess(td core.TransitData) (*heuristic.ActivationSet, error) {
+func (fd *faultDetection) Assess(e core.Event) (*heuristic.ActivationSet, error) {
 	logging.NoContext().Debug("Checking activation for fault detector heuristic",
-		zap.String("data", fmt.Sprintf("%v", td)))
+		zap.String("data", fmt.Sprintf("%v", e)))
 
 	// 1. Validate and extract data input
-	err := fd.ValidateInput(td)
+	err := fd.Validate(e)
 	if err != nil {
 		return nil, err
 	}
 
-	if td.Address.String() != fd.cfg.L2OutputOracle {
-		return nil, fmt.Errorf(invalidAddrErr, td.Address.String(), fd.cfg.L2OutputOracle)
+	if e.Address.String() != fd.cfg.L2OutputOracle {
+		return nil, fmt.Errorf(invalidAddrErr, e.Address.String(), fd.cfg.L2OutputOracle)
 	}
 
-	log, success := td.Value.(types.Log)
+	log, success := e.Value.(types.Log)
 	if !success {
 		return nil, fmt.Errorf(couldNotCastErr, "types.Log")
 	}
@@ -153,7 +153,7 @@ func (fd *faultDetectorInv) Assess(td core.TransitData) (*heuristic.ActivationSe
 	if expectedStateRoot != actualStateRoot {
 		return heuristic.NewActivationSet().Add(&heuristic.Activation{
 			TimeStamp: time.Now(),
-			Message:   fmt.Sprintf(faultDetectMsg, fd.cfg.L2OutputOracle, fd.cfg.L2ToL1Address, fd.SUUID(), log.TxHash),
+			Message:   fmt.Sprintf(faultDetectMsg, fd.cfg.L2OutputOracle, fd.cfg.L2ToL1Address, fd.ID(), log.TxHash),
 		}), nil
 	}
 

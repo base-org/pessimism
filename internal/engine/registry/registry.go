@@ -16,7 +16,7 @@ type HeuristicTable map[core.HeuristicType]*Registry
 type Registry struct {
 	PrepareValidate func(*core.SessionParams) error
 	Policy          core.ChainSubscription
-	InputType       core.RegisterType
+	InputType       core.TopicType
 	Constructor     func(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error)
 }
 
@@ -28,25 +28,25 @@ func NewHeuristicTable() HeuristicTable {
 		core.BalanceEnforcement: {
 			PrepareValidate: ValidateAddressing,
 			Policy:          core.BothNetworks,
-			InputType:       core.AccountBalance,
+			InputType:       core.BlockHeader,
 			Constructor:     constructBalanceEnforcement,
 		},
 		core.ContractEvent: {
-			PrepareValidate: ValidateEventTracking,
+			PrepareValidate: ValidateTracking,
 			Policy:          core.BothNetworks,
-			InputType:       core.EventLog,
+			InputType:       core.Log,
 			Constructor:     constructEventInv,
 		},
 		core.FaultDetector: {
 			PrepareValidate: FaultDetectionPrepare,
 			Policy:          core.OnlyLayer1,
-			InputType:       core.EventLog,
+			InputType:       core.Log,
 			Constructor:     constructFaultDetector,
 		},
 		core.WithdrawalSafety: {
 			PrepareValidate: WithdrawHeuristicPrep,
 			Policy:          core.OnlyLayer1,
-			InputType:       core.EventLog,
+			InputType:       core.Log,
 			Constructor:     constructWithdrawalSafety,
 		},
 	}
@@ -67,7 +67,7 @@ func constructEventInv(_ context.Context, isp *core.SessionParams) (heuristic.He
 }
 
 // constructBalanceEnforcement ... Constructs a balance heuristic instance
-func constructBalanceEnforcement(_ context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
+func constructBalanceEnforcement(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
 	cfg := &BalanceInvConfig{}
 
 	err := cfg.Unmarshal(isp)
@@ -75,7 +75,7 @@ func constructBalanceEnforcement(_ context.Context, isp *core.SessionParams) (he
 		return nil, err
 	}
 
-	return NewBalanceHeuristic(cfg)
+	return NewBalanceHeuristic(ctx, cfg)
 }
 
 // constructFaultDetector ... Constructs a fault detector heuristic instance
@@ -120,8 +120,8 @@ func constructWithdrawalSafety(ctx context.Context, isp *core.SessionParams) (he
 	}
 }
 
-// ValidateEventTracking ... Ensures that an address and nested args exist in the session params
-func ValidateEventTracking(cfg *core.SessionParams) error {
+// ValidateTracking ... Ensures that an address and nested args exist in the session params
+func ValidateTracking(cfg *core.SessionParams) error {
 	err := ValidateAddressing(cfg)
 	if err != nil {
 		return err
@@ -158,7 +158,7 @@ func ValidateNoTopicsExist(cfg *core.SessionParams) error {
 
 // WithdrawHeuristicPrep ... Ensures that the l2 to l1 message passer exists
 // and performs a "hack" operation to set the address key as the l2tol1MessagePasser
-// address for upstream ETL components (ie. event log) to know which L1 address to
+// address for upstream ETL process (ie. event log) to know which L1 address to
 // query for events
 func WithdrawHeuristicPrep(cfg *core.SessionParams) error {
 	l1Portal, err := cfg.Value(core.L1Portal)

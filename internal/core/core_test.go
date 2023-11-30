@@ -10,42 +10,42 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_TransitData(t *testing.T) {
+func Test_Event(t *testing.T) {
 	// Verify construction
-	td := core.NewTransitData(
-		core.GethBlock,
+	e := core.NewEvent(
+		core.BlockHeader,
 		nil,
 	)
 
-	assert.NotNil(t, td, "TransitData should not be nil")
-	assert.NotNil(t, td.Timestamp, "TransitData timestamp should not be nil")
+	assert.NotNil(t, e, "Event should not be nil")
+	assert.NotNil(t, e.Timestamp, "Event timestamp should not be nil")
 
 	// Verify addressing
-	addressed := td.Addressed()
-	assert.False(t, addressed, "TransitData should not be addressed")
+	addressed := e.Addressed()
+	assert.False(t, addressed, "Event should not be addressed")
 
-	td.Address = common.HexToAddress("0x456")
-	addressed = td.Addressed()
-	assert.True(t, addressed, "TransitData should be addressed")
+	e.Address = common.HexToAddress("0x456")
+	addressed = e.Addressed()
+	assert.True(t, addressed, "Event should be addressed")
 }
 
 func Test_EngineRelay(t *testing.T) {
-	outChan := make(chan core.HeuristicInput)
+	feed := make(chan core.HeuristicInput)
 
-	eir := core.NewEngineRelay(core.NilPUUID(), outChan)
-	dummyTD := core.NewTransitData(core.AccountBalance, nil)
+	eir := core.NewEngineRelay(core.PathID{}, feed)
+	dummyTD := core.NewEvent(core.BlockHeader, nil)
 
 	// Verify relay and wrapping
 
 	go func() {
-		_ = eir.RelayTransitData(dummyTD)
+		_ = eir.RelayEvent(dummyTD)
 	}()
 
-	heurInput := <-outChan
+	args := <-feed
 
-	assert.NotNil(t, heurInput, "HeuristicInput should not be nil")
-	assert.Equal(t, heurInput.PUUID, core.NilPUUID(), "HeuristicInput PUUID should be nil")
-	assert.Equal(t, heurInput.Input, dummyTD, "HeuristicInput Input should be dummyTD")
+	assert.NotNil(t, args)
+	assert.Equal(t, args.PathID, core.PathID{})
+	assert.Equal(t, args.Input, dummyTD)
 }
 
 func Test_SessionParams(t *testing.T) {
