@@ -261,7 +261,6 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 		},
 		{
 			Network:       core.Layer2.String(),
-			PType:         core.Live.String(),
 			HeuristicType: core.WithdrawalSafety.String(),
 			StartHeight:   nil,
 			EndHeight:     nil,
@@ -309,8 +308,8 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 
 	// Wait for Pessimism to process initiation
 	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
-		pUUID := ids[0].PUUID
-		height, err := ts.Subsystems.PipelineHeight(pUUID)
+		id := ids[0].PathID
+		height, err := ts.Subsystems.PathHeight(id)
 		if err != nil {
 			return false, err
 		}

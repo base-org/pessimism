@@ -147,7 +147,7 @@ func NewL1WithdrawalSafety(ctx context.Context, cfg *WithdrawalSafetyCfg) (heuri
 }
 
 // Assess ...
-func (wsh *WithdrawalSafetyHeuristic) Assess(e core.Event) (*heuristic.ActivationSet, error) {
+func (wsh *L1WithdrawalSafety) Assess(e core.Event) (*heuristic.ActivationSet, error) {
 	// TODO - Support running from withdrawal finalized events as well
 
 	// 1. Validate input

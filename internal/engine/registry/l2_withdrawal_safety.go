@@ -73,19 +73,19 @@ func NewL2WithdrawalSafety(ctx context.Context, cfg *WithdrawalSafetyCfg) (heuri
 		ixClient: clients.IxClient,
 		l1Client: clients.L1Client,
 
-		Heuristic: heuristic.NewBaseHeuristic(core.EventLog),
+		Heuristic: heuristic.New(core.Log, core.WithdrawalSafety),
 	}, nil
 }
 
 // Assess ...
-func (wsh *L2WithdrawalSafety) Assess(td core.TransitData) (*heuristic.ActivationSet, error) {
+func (wsh *L2WithdrawalSafety) Assess(td core.Event) (*heuristic.ActivationSet, error) {
 	// TODO - Support running from withdrawal finalized events as well
 
 	// 1. Validate input
 	logging.NoContext().Debug("Checking activation for withdrawal safety heuristic",
 		zap.String("data", fmt.Sprintf("%v", td)))
 
-	err := wsh.ValidateInput(td)
+	err := wsh.Validate(td)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +130,7 @@ func (wsh *L2WithdrawalSafety) Assess(td core.TransitData) (*heuristic.Activatio
 		&heuristic.Activation{
 			TimeStamp: time.Now(),
 			Message: fmt.Sprintf(WithdrawalSafetyMsg, msg, wsh.cfg.L1PortalAddress, wsh.cfg.L2ToL1Address,
-				wsh.SUUID(), "N/A", log.TxHash.String(), math.WeiToEther(msgPassed.Value).String()),
+				wsh.ID(), "N/A", log.TxHash.String(), math.WeiToEther(msgPassed.Value).String()),
 		},
 	), nil
 }
@@ -217,7 +217,7 @@ func (wsh *L2WithdrawalSafety) Execute(invs []Invariant, meta *WithdrawalMeta) (
 		&heuristic.Activation{
 			TimeStamp: time.Now(),
 			Message: fmt.Sprintf(WithdrawalSafetyMsg, msg, wsh.cfg.L1PortalAddress, wsh.cfg.L2ToL1Address,
-				wsh.SUUID(), meta.ProvenTx.String(), meta.InitTx.String(), math.WeiToEther(meta.Value).String()),
+				wsh.ID(), meta.ProvenTx.String(), meta.InitTx.String(), math.WeiToEther(meta.Value).String()),
 		},
 	), nil
 }
