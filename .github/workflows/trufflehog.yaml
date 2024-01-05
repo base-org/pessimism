@@ -1,0 +1,40 @@
+name: Trufflehog
+
+on:
+  push:
+    branches: [ "master", "development" ]
+  pull_request:
+
+permissions:
+  contents: read
+  id-token: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  # Scan for secrets with trufflehog; surface verified only.
+  # https://github.com/trufflesecurity/trufflehog
+  TruffleHog:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: TruffleHog OSS
+        id: trufflehog
+        uses: trufflesecurity/trufflehog@main
+        continue-on-error: true
+        with:
+          path: ./
+          base: "${{ github.event.repository.default_branch }}"
+          head: HEAD
+          extra_args: --only-verified
+
+      - name: Scan Results Status
+        if: steps.trufflehog.outcome == 'failure'
+        run: exit 1
