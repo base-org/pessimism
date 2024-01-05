@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
   issues: write
   pull-requests: write
 
@@ -27,7 +26,7 @@ jobs:
 
       - name: TruffleHog OSS
         id: trufflehog
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@1cc41e2c757017b55e447c015485e166486376c1 #v3.63.7
         continue-on-error: true
         with:
           path: ./
