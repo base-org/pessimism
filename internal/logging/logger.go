@@ -26,9 +26,10 @@ const (
 const (
 	AddrKey LogKey = "address"
 
-	CUUIDKey LogKey = "cuuid"
-	PUUIDKey LogKey = "puuid"
-	SUUIDKey LogKey = "suuid"
+	Process LogKey = "process_id"
+	Path    LogKey = "path_id"
+	UUID    LogKey = "uuid"
+	Session LogKey = "session_id"
 )
 
 // NOTE - Logger is set to Nop as default to avoid redundant testing
@@ -133,7 +134,7 @@ type stringJSONEncoder struct {
 }
 
 // NewStringJSONEncoder returns an encoder that encodes the JSON log dict as a string
-// so the log processing pipeline can correctly process logs with nested JSON.
+// so the log processing path can correctly process logs with nested JSON.
 func NewStringJSONEncoder(cfg zapcore.EncoderConfig) (zapcore.Encoder, error) {
 	return newStringJSONEncoder(cfg), nil
 }

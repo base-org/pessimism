@@ -36,10 +36,10 @@ func (m *EngineManager) EXPECT() *EngineManagerMockRecorder {
 }
 
 // DeleteHeuristicSession mocks base method.
-func (m *EngineManager) DeleteHeuristicSession(arg0 core.SUUID) (core.SUUID, error) {
+func (m *EngineManager) DeleteHeuristicSession(arg0 core.UUID) (core.UUID, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteHeuristicSession", arg0)
-	ret0, _ := ret[0].(core.SUUID)
+	ret0, _ := ret[0].(core.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -50,19 +50,19 @@ func (mr *EngineManagerMockRecorder) DeleteHeuristicSession(arg0 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteHeuristicSession", reflect.TypeOf((*EngineManager)(nil).DeleteHeuristicSession), arg0)
 }
 
-// DeployHeuristicSession mocks base method.
-func (m *EngineManager) DeployHeuristicSession(arg0 *heuristic.DeployConfig) (core.SUUID, error) {
+// DeployHeuristic mocks base method.
+func (m *EngineManager) DeployHeuristic(arg0 *heuristic.DeployConfig) (core.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeployHeuristicSession", arg0)
-	ret0, _ := ret[0].(core.SUUID)
+	ret := m.ctrl.Call(m, "DeployHeuristic", arg0)
+	ret0, _ := ret[0].(core.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// DeployHeuristicSession indicates an expected call of DeployHeuristicSession.
-func (mr *EngineManagerMockRecorder) DeployHeuristicSession(arg0 interface{}) *gomock.Call {
+// DeployHeuristic indicates an expected call of DeployHeuristic.
+func (mr *EngineManagerMockRecorder) DeployHeuristic(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployHeuristicSession", reflect.TypeOf((*EngineManager)(nil).DeployHeuristicSession), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeployHeuristic", reflect.TypeOf((*EngineManager)(nil).DeployHeuristic), arg0)
 }
 
 // EventLoop mocks base method.
@@ -80,10 +80,10 @@ func (mr *EngineManagerMockRecorder) EventLoop() *gomock.Call {
 }
 
 // GetInputType mocks base method.
-func (m *EngineManager) GetInputType(arg0 core.HeuristicType) (core.RegisterType, error) {
+func (m *EngineManager) GetInputType(arg0 core.HeuristicType) (core.TopicType, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetInputType", arg0)
-	ret0, _ := ret[0].(core.RegisterType)
+	ret0, _ := ret[0].(core.TopicType)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

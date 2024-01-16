@@ -16,7 +16,7 @@ func testErr() error {
 }
 
 func Test_RunHeuristicSession(t *testing.T) {
-	testSUUID := core.MakeSUUID(1, 1, 1)
+	id := core.UUID{}
 
 	ctrl := gomock.NewController(t)
 
@@ -26,7 +26,6 @@ func Test_RunHeuristicSession(t *testing.T) {
 		Method: "run",
 		Params: models.SessionRequestParams{
 			Network:       "layer1",
-			PType:         "live",
 			HeuristicType: "contract_event",
 			StartHeight:   nil,
 			EndHeight:     nil,
@@ -46,7 +45,7 @@ func Test_RunHeuristicSession(t *testing.T) {
 				ts := createTestSuite(ctrl)
 
 				ts.mockSub.EXPECT().
-					BuildPipelineCfg(&defaultBody.Params).
+					BuildPathCfg(&defaultBody.Params).
 					Return(nil, nil).
 					Times(1)
 
@@ -56,8 +55,8 @@ func Test_RunHeuristicSession(t *testing.T) {
 					Times(1)
 
 				ts.mockSub.EXPECT().
-					RunSession(testCfg).
-					Return(testSUUID, nil).
+					RunHeuristic(testCfg).
+					Return(id, nil).
 					Times(1)
 
 				return ts
@@ -65,19 +64,19 @@ func Test_RunHeuristicSession(t *testing.T) {
 
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testParams := defaultBody.Clone()
-				actualSUUID, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
+				id, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
 
 				assert.NoError(t, err)
-				assert.Equal(t, testSUUID, actualSUUID)
+				assert.Equal(t, id, id)
 			},
 		},
 		{
-			name: "Failure when building pipeline config",
+			name: "Failure when building path config",
 			constructionLogic: func() *testSuite {
 				ts := createTestSuite(ctrl)
 
 				ts.mockSub.EXPECT().
-					BuildPipelineCfg(&defaultBody.Params).
+					BuildPathCfg(&defaultBody.Params).
 					Return(nil, testErr()).
 					Times(1)
 				return ts
@@ -85,10 +84,10 @@ func Test_RunHeuristicSession(t *testing.T) {
 
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testParams := defaultBody.Clone()
-				actualSUUID, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
+				id, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
 
 				assert.Error(t, err)
-				assert.Equal(t, core.NilSUUID(), actualSUUID)
+				assert.Equal(t, core.UUID{}, id)
 			},
 		},
 		{
@@ -97,7 +96,7 @@ func Test_RunHeuristicSession(t *testing.T) {
 				ts := createTestSuite(ctrl)
 
 				ts.mockSub.EXPECT().
-					BuildPipelineCfg(&defaultBody.Params).
+					BuildPathCfg(&defaultBody.Params).
 					Return(nil, nil).
 					Times(1)
 
@@ -111,10 +110,10 @@ func Test_RunHeuristicSession(t *testing.T) {
 
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testParams := defaultBody.Clone()
-				actualSUUID, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
+				id, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
 
 				assert.Error(t, err)
-				assert.Equal(t, core.NilSUUID(), actualSUUID)
+				assert.Equal(t, core.UUID{}, id)
 			},
 		},
 		{
@@ -123,7 +122,7 @@ func Test_RunHeuristicSession(t *testing.T) {
 				ts := createTestSuite(ctrl)
 
 				ts.mockSub.EXPECT().
-					BuildPipelineCfg(&defaultBody.Params).
+					BuildPathCfg(&defaultBody.Params).
 					Return(nil, nil).
 					Times(1)
 
@@ -133,8 +132,8 @@ func Test_RunHeuristicSession(t *testing.T) {
 					Times(1)
 
 				ts.mockSub.EXPECT().
-					RunSession(testCfg).
-					Return(core.NilSUUID(), testErr()).
+					RunHeuristic(testCfg).
+					Return(core.UUID{}, testErr()).
 					Times(1)
 
 				return ts
@@ -142,10 +141,10 @@ func Test_RunHeuristicSession(t *testing.T) {
 
 			testLogic: func(t *testing.T, ts *testSuite) {
 				testParams := defaultBody.Clone()
-				actualSUUID, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
+				id, err := ts.apiSvc.ProcessHeuristicRequest(testParams)
 
 				assert.Error(t, err)
-				assert.Equal(t, core.NilSUUID(), actualSUUID)
+				assert.Equal(t, core.UUID{}, id)
 			},
 		},
 	}

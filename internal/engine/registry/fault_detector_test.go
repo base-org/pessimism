@@ -85,12 +85,12 @@ func Test_FaultDetector(t *testing.T) {
 					Return(nil, assert.AnError).
 					Times(1)
 
-				td := core.TransitData{
-					Type:  core.EventLog,
+				e := core.Event{
+					Type:  core.Log,
 					Value: testLog,
 				}
 
-				as, err := ts.fd.Assess(td)
+				as, err := ts.fd.Assess(e)
 				assert.Nil(t, as)
 				assert.Error(t, err)
 
@@ -111,12 +111,12 @@ func Test_FaultDetector(t *testing.T) {
 					Return(nil, testErr()).
 					Times(1)
 
-				td := core.TransitData{
-					Type:  core.EventLog,
+				e := core.Event{
+					Type:  core.Log,
 					Value: testLog,
 				}
 
-				as, err := ts.fd.Assess(td)
+				as, err := ts.fd.Assess(e)
 				assert.Error(t, err)
 				assert.Nil(t, as)
 
@@ -146,12 +146,12 @@ func Test_FaultDetector(t *testing.T) {
 					}, nil).
 					Times(1)
 
-				td := core.TransitData{
-					Type:  core.EventLog,
+				e := core.Event{
+					Type:  core.Log,
 					Value: testLog,
 				}
 
-				as, err := ts.fd.Assess(td)
+				as, err := ts.fd.Assess(e)
 				assert.NotNil(t, as)
 				assert.True(t, as.Activated())
 				assert.NoError(t, err)

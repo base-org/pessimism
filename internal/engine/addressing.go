@@ -7,60 +7,50 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-// AddressingMap ... Interface for mapping addresses to session UUIDs
-type AddressingMap interface {
-	GetSUUIDsByPair(address common.Address, pUUID core.PUUID) ([]core.SUUID, error)
-	Insert(addr common.Address, pUUID core.PUUID, sUUID core.SUUID) error
+type AddressMap struct {
+	m map[common.Address]map[core.PathID][]core.UUID
 }
 
-// addressingMap ... Implementation of AddressingMap
-type addressingMap struct {
-	m map[common.Address]map[core.PUUID][]core.SUUID
+func NewAddressMap() *AddressMap {
+	return &AddressMap{
+		m: make(map[common.Address]map[core.PathID][]core.UUID),
+	}
 }
 
-// GetSessionUUIDsByPair ... Gets the session UUIDs by the pair of address and pipeline UUID
-func (am *addressingMap) GetSUUIDsByPair(address common.Address, pUUID core.PUUID) ([]core.SUUID, error) {
+func (am *AddressMap) Get(address common.Address, id core.PathID) ([]core.UUID, error) {
 	if _, found := am.m[address]; !found {
-		return []core.SUUID{}, fmt.Errorf("address provided is not tracked %s", address.String())
+		return []core.UUID{}, fmt.Errorf("address provided is not tracked %s", address.String())
 	}
 
-	if _, found := am.m[address][pUUID]; !found {
-		return []core.SUUID{}, fmt.Errorf("PUUID provided is not tracked %s", pUUID.String())
+	if _, found := am.m[address][id]; !found {
+		return []core.UUID{}, fmt.Errorf("id provided is not tracked %s", id.String())
 	}
 
-	return am.m[address][pUUID], nil
+	return am.m[address][id], nil
 }
 
-// Insert ... Inserts a new entry into the addressing map
-func (am *addressingMap) Insert(addr common.Address, pUUID core.PUUID, sUUID core.SUUID) error {
+func (am *AddressMap) Insert(addr common.Address, id core.PathID, uuid core.UUID) error {
 	// 1. Check if address exists; create nested entry & return if not
 	if _, found := am.m[addr]; !found {
-		am.m[addr] = make(map[core.PUUID][]core.SUUID)
-		am.m[addr][pUUID] = []core.SUUID{sUUID}
+		am.m[addr] = make(map[core.PathID][]core.UUID)
+		am.m[addr][id] = []core.UUID{uuid}
 		return nil
 	}
 
-	// 2. Check if pipeline UUID exists; create entry & return if not
-	if _, found := am.m[addr][pUUID]; !found {
-		am.m[addr][pUUID] = []core.SUUID{sUUID}
+	// 2. Check if path UUID exists; create entry & return if not
+	if _, found := am.m[addr][id]; !found {
+		am.m[addr][id] = []core.UUID{uuid}
 		return nil
 	}
 
 	// 3. Ensure that entry doesn't already exist
-	for _, entry := range am.m[addr][pUUID] {
-		if entry == sUUID {
+	for _, entry := range am.m[addr][id] {
+		if entry == uuid {
 			return fmt.Errorf("entry already exists")
 		}
 	}
 
 	// 4. Append entry and return
-	am.m[addr][pUUID] = append(am.m[addr][pUUID], sUUID)
+	am.m[addr][id] = append(am.m[addr][id], uuid)
 	return nil
-}
-
-// NewAddressingMap ... Initializer
-func NewAddressingMap() AddressingMap {
-	return &addressingMap{
-		m: make(map[common.Address]map[core.PUUID][]core.SUUID),
-	}
 }

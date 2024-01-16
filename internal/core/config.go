@@ -3,9 +3,14 @@ package core
 import (
 	"math/big"
 	"time"
+
+	"github.com/ethereum-optimism/optimism/op-service/retry"
 )
 
-// ClientConfig ... Configuration passed through to an oracle component constructor
+func RetryStrategy() *retry.ExponentialStrategy {
+	return &retry.ExponentialStrategy{Min: 1000, Max: 20_000, MaxJitter: 250}
+}
+
 type ClientConfig struct {
 	Network      Network
 	PollInterval time.Duration
@@ -14,29 +19,21 @@ type ClientConfig struct {
 	EndHeight    *big.Int
 }
 
-// SessionConfig ... Configuration passed through to a session constructor
 type SessionConfig struct {
 	Network     Network
-	PT          PipelineType
+	PT          PathType
 	AlertPolicy *AlertPolicy
 	Type        HeuristicType
 	Params      *SessionParams
 }
 
-// PipelineConfig ... Configuration passed through to a pipeline constructor
-type PipelineConfig struct {
+type PathConfig struct {
 	Network      Network
-	DataType     RegisterType
-	PipelineType PipelineType
+	DataType     TopicType
+	PathType     PathType
 	ClientConfig *ClientConfig
 }
 
-// Backfill ... Returns true if the oracle is configured to backfill
 func (oc *ClientConfig) Backfill() bool {
 	return oc.StartHeight != nil
-}
-
-// Backtest ... Returns true if the oracle is configured to backtest
-func (oc *ClientConfig) Backtest() bool {
-	return oc.EndHeight != nil
 }

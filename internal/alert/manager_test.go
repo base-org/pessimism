@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_EventLoop(t *testing.T) {
+func TestEventLoop(t *testing.T) {
 
 	cfg := &config.Config{
 		AlertConfig: &alert.Config{
@@ -54,15 +54,15 @@ func Test_EventLoop(t *testing.T) {
 				cm.SetSlackClients([]client.SlackClient{mocks.NewMockSlackClient(c)}, core.LOW)
 
 				alert := core.Alert{
-					Criticality: core.LOW,
-					SUUID:       core.NilSUUID(),
+					Sev:         core.LOW,
+					HeuristicID: core.UUID{},
 				}
 				policy := &core.AlertPolicy{
 					Sev: core.LOW.String(),
 					Msg: "test",
 				}
 
-				err := am.AddSession(core.NilSUUID(), policy)
+				err := am.AddSession(core.UUID{}, policy)
 				assert.Nil(t, err)
 
 				for _, cli := range cm.GetSlackClients(core.LOW) {
@@ -78,10 +78,10 @@ func Test_EventLoop(t *testing.T) {
 
 				ingress <- alert
 				time.Sleep(1 * time.Second)
-				testid := core.MakeSUUID(1, 1, 1)
+				id := core.NewUUID()
 				alert = core.Alert{
-					Criticality: core.UNKNOWN,
-					SUUID:       testid,
+					Sev:         core.UNKNOWN,
+					HeuristicID: id,
 				}
 				ingress <- alert
 				time.Sleep(1 * time.Second)
@@ -108,15 +108,15 @@ func Test_EventLoop(t *testing.T) {
 				cm.SetPagerDutyClients([]client.PagerDutyClient{mocks.NewMockPagerDutyClient(c)}, core.MEDIUM)
 
 				alert := core.Alert{
-					Criticality: core.MEDIUM,
-					SUUID:       core.NilSUUID(),
+					Sev:         core.MEDIUM,
+					HeuristicID: core.UUID{},
 				}
 				policy := &core.AlertPolicy{
 					Sev: core.MEDIUM.String(),
 					Msg: "test",
 				}
 
-				err := am.AddSession(core.NilSUUID(), policy)
+				err := am.AddSession(core.UUID{}, policy)
 				assert.Nil(t, err)
 
 				for _, cli := range cm.GetPagerDutyClients(core.MEDIUM) {
@@ -132,10 +132,10 @@ func Test_EventLoop(t *testing.T) {
 
 				ingress <- alert
 				time.Sleep(1 * time.Second)
-				testid := core.MakeSUUID(1, 1, 1)
+				id := core.UUID{}
 				alert = core.Alert{
-					Criticality: core.UNKNOWN,
-					SUUID:       testid,
+					Sev:         core.UNKNOWN,
+					HeuristicID: id,
 				}
 				ingress <- alert
 				time.Sleep(1 * time.Second)
@@ -163,14 +163,14 @@ func Test_EventLoop(t *testing.T) {
 				cm.SetPagerDutyClients([]client.PagerDutyClient{mocks.NewMockPagerDutyClient(c), mocks.NewMockPagerDutyClient(c)}, core.HIGH)
 
 				alert := core.Alert{
-					Criticality: core.HIGH,
-					SUUID:       core.NilSUUID(),
+					Sev:         core.HIGH,
+					HeuristicID: core.UUID{},
 				}
 				policy := &core.AlertPolicy{
 					Sev: core.HIGH.String(),
 					Msg: "test",
 				}
-				err := am.AddSession(core.NilSUUID(), policy)
+				err := am.AddSession(core.UUID{}, policy)
 				assert.Nil(t, err)
 
 				for _, cli := range cm.GetPagerDutyClients(core.HIGH) {
@@ -195,10 +195,10 @@ func Test_EventLoop(t *testing.T) {
 				}
 				ingress <- alert
 				time.Sleep(1 * time.Second)
-				testid := core.MakeSUUID(1, 1, 1)
+				id := core.UUID{}
 				alert = core.Alert{
-					Criticality: core.UNKNOWN,
-					SUUID:       testid,
+					Sev:         core.UNKNOWN,
+					HeuristicID: id,
 				}
 				ingress <- alert
 				time.Sleep(1 * time.Second)

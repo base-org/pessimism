@@ -29,7 +29,7 @@ func (ph *PessimismHandler) RunHeuristic(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	sUUID, err := ph.service.ProcessHeuristicRequest(body)
+	id, err := ph.service.ProcessHeuristicRequest(body)
 	if err != nil {
 		logging.WithContext(ph.ctx).
 			Error("Could not process heuristic request", zap.Error(err))
@@ -38,5 +38,5 @@ func (ph *PessimismHandler) RunHeuristic(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	renderHeuristicResponse(w, r, models.NewSessionAcceptedResp(sUUID))
+	renderHeuristicResponse(w, r, models.NewSessionAcceptedResp(id))
 }

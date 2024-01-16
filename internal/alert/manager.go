@@ -16,7 +16,7 @@ import (
 
 // Manager ... Interface for alert manager
 type Manager interface {
-	AddSession(core.SUUID, *core.AlertPolicy) error
+	AddSession(core.UUID, *core.AlertPolicy) error
 	Transit() chan core.Alert
 
 	core.Subsystem
@@ -36,7 +36,7 @@ type alertManager struct {
 	cfg    *Config
 
 	store        Store
-	interpolator Interpolator
+	interpolator *Interpolator
 	cdHandler    CoolDownHandler
 	cm           RoutingDirectory
 
@@ -59,7 +59,7 @@ func NewManager(ctx context.Context, cfg *Config, cm RoutingDirectory) Manager {
 		cm:        cm,
 
 		cancel:       cancel,
-		interpolator: NewInterpolator(),
+		interpolator: new(Interpolator),
 		store:        NewStore(),
 		alertTransit: make(chan core.Alert),
 		metrics:      metrics.WithContext(ctx),
@@ -70,8 +70,8 @@ func NewManager(ctx context.Context, cfg *Config, cm RoutingDirectory) Manager {
 }
 
 // AddSession ... Adds a heuristic session to the alert manager store
-func (am *alertManager) AddSession(sUUID core.SUUID, policy *core.AlertPolicy) error {
-	return am.store.AddAlertPolicy(sUUID, policy)
+func (am *alertManager) AddSession(id core.UUID, policy *core.AlertPolicy) error {
+	return am.store.AddAlertPolicy(id, policy)
 }
 
 // Transit ... Returns inter-subsystem transit channel for receiving alerts
@@ -82,7 +82,7 @@ func (am *alertManager) Transit() chan core.Alert {
 
 // handleSlackPost ... Handles posting an alert to slack channels
 func (am *alertManager) handleSlackPost(alert core.Alert, policy *core.AlertPolicy) error {
-	slackClients := am.cm.GetSlackClients(alert.Criticality)
+	slackClients := am.cm.GetSlackClients(alert.Sev)
 	if slackClients == nil {
 		am.logger.Warn("No slack clients defined for criticality", zap.Any("alert", alert))
 		return nil
@@ -90,8 +90,8 @@ func (am *alertManager) handleSlackPost(alert core.Alert, policy *core.AlertPoli
 
 	// Create event trigger
 	event := &client.AlertEventTrigger{
-		Message:  am.interpolator.InterpolateSlackMessage(alert.Criticality, alert.SUUID, alert.Content, policy.Msg),
-		Severity: alert.Criticality,
+		Message:  am.interpolator.SlackMessage(alert, policy.Msg),
+		Severity: alert.Sev,
 	}
 
 	for _, sc := range slackClients {
@@ -112,7 +112,7 @@ func (am *alertManager) handleSlackPost(alert core.Alert, policy *core.AlertPoli
 
 // handlePagerDutyPost ... Handles posting an alert to pagerduty
 func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
-	pdClients := am.cm.GetPagerDutyClients(alert.Criticality)
+	pdClients := am.cm.GetPagerDutyClients(alert.Sev)
 
 	if pdClients == nil {
 		am.logger.Warn("No pagerduty clients defined for criticality", zap.Any("alert", alert))
@@ -120,9 +120,9 @@ func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
 	}
 
 	event := &client.AlertEventTrigger{
-		Message:  am.interpolator.InterpolatePagerDutyMessage(alert.SUUID, alert.Content),
-		DedupKey: alert.PUUID,
-		Severity: alert.Criticality,
+		Message:  am.interpolator.PagerDutyMessage(alert),
+		DedupKey: alert.PathID,
+		Severity: alert.Sev,
 	}
 
 	for _, pdc := range pdClients {
@@ -164,28 +164,28 @@ func (am *alertManager) EventLoop() error {
 		case alert := <-am.alertTransit: // Upstream alert
 
 			// 1. Fetch alert policy
-			policy, err := am.store.GetAlertPolicy(alert.SUUID)
+			policy, err := am.store.GetAlertPolicy(alert.HeuristicID)
 			if err != nil {
 				am.logger.Error("Could not determine alerting destination", zap.Error(err))
 				continue
 			}
 
 			// 2. Check if alert is in cool down
-			if policy.HasCoolDown() && am.cdHandler.IsCoolDown(alert.SUUID) {
+			if policy.HasCoolDown() && am.cdHandler.IsCoolDown(alert.HeuristicID) {
 				am.logger.Debug("Alert is in cool down",
-					zap.String(logging.SUUIDKey, alert.SUUID.String()))
+					zap.String(logging.UUID, alert.HeuristicID.String()))
 				continue
 			}
 
 			// 3. Log & propagate alert
 			am.logger.Info("received alert",
-				zap.String(logging.SUUIDKey, alert.SUUID.String()))
+				zap.String(logging.UUID, alert.HeuristicID.String()))
 
 			am.HandleAlert(alert, policy)
 
 			// 4. Add alert to cool down if applicable
 			if policy.HasCoolDown() {
-				am.cdHandler.Add(alert.SUUID, time.Duration(policy.CoolDown)*time.Second)
+				am.cdHandler.Add(alert.HeuristicID, time.Duration(policy.CoolDown)*time.Second)
 			}
 		}
 	}
@@ -193,7 +193,7 @@ func (am *alertManager) EventLoop() error {
 
 // HandleAlert ... Handles the alert propagation logic
 func (am *alertManager) HandleAlert(alert core.Alert, policy *core.AlertPolicy) {
-	alert.Criticality = policy.Severity()
+	alert.Sev = policy.Severity()
 
 	if err := am.handleSlackPost(alert, policy); err != nil {
 		am.logger.Error("could not post to slack", zap.Error(err))

@@ -10,38 +10,38 @@ import (
 )
 
 var (
-	testPUUID = core.MakePUUID(0,
-		core.MakeCUUID(core.Live, 0, 0, 0),
-		core.MakeCUUID(core.Live, 0, 0, 0))
+	pathID = core.MakePathID(0,
+		core.MakeProcessID(core.Live, 0, 0, 0),
+		core.MakeProcessID(core.Live, 0, 0, 0))
 )
 
-func Test_GetSUUIDsByPair(t *testing.T) {
-	am := engine.NewAddressingMap()
+func TestGetUUIDs(t *testing.T) {
+	am := engine.NewAddressMap()
 
-	sUUID := core.NilSUUID()
+	id1 := core.NewUUID()
+	id2 := core.NewUUID()
 	address := common.HexToAddress("0x24")
 
-	err := am.Insert(address, testPUUID, sUUID)
-	assert.NoError(t, err, "should not error")
+	err := am.Insert(address, pathID, id1)
+	assert.NoError(t, err)
 
 	// Test for found
-	ids, err := am.GetSUUIDsByPair(address, testPUUID)
-	assert.NoError(t, err, "should not error")
-	assert.Equal(t, core.NilSUUID(), ids[0], "should be equal")
+	ids, err := am.Get(address, pathID)
+	assert.NoError(t, err)
+	assert.Equal(t, id1, ids[0])
 
-	// Test for found with multiple entries
-	sUUID2 := core.MakeSUUID(0, 0, 1)
-	err = am.Insert(address, testPUUID, sUUID2)
-	assert.NoError(t, err, "should not error")
+	// Test for multiple
+	err = am.Insert(address, pathID, id2)
+	assert.NoError(t, err)
 
-	ids, err = am.GetSUUIDsByPair(address, testPUUID)
-	assert.NoError(t, err, "should not error")
-	assert.Len(t, ids, 2, "should have length of 2")
-	assert.Contains(t, ids, sUUID, "should contain sUUID")
-	assert.Contains(t, ids, sUUID2, "should contain sUUID2")
+	ids, err = am.Get(address, pathID)
+	assert.NoError(t, err)
+	assert.Len(t, ids, 2)
+	assert.Contains(t, ids, id1)
+	assert.Contains(t, ids, id2)
 
 	// Test for not found
-	ids, err = am.GetSUUIDsByPair(address, core.NilPUUID())
+	ids, err = am.Get(address, core.PathID{})
 	assert.Error(t, err, "should error")
 	assert.Empty(t, ids, "should be empty")
 }
