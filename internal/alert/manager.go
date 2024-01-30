@@ -227,7 +227,6 @@ func (am *alertManager) HandleAlert(alert core.Alert, policy *core.AlertPolicy) 
 	if err := am.handleSNSPublish(alert, policy); err != nil {
 		am.logger.Error("could not publish to sns", zap.Error(err))
 	}
-
 }
 
 // Shutdown ... Shuts down the alert manager subsystem

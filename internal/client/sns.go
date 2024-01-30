@@ -4,13 +4,15 @@ package client
 
 import (
 	"context"
+	"os"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sns"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/base-org/pessimism/internal/logging"
+
 	"go.uber.org/zap"
-	"os"
 )
 
 // SNSClient ... An interface for SNS clients to implement
@@ -31,14 +33,15 @@ type snsClient struct {
 
 // NewSNSClient ... Initializer
 func NewSNSClient(cfg *SNSConfig, name string) SNSClient {
-
 	if cfg.TopicArn == "" {
 		logging.NoContext().Warn("No SNS topic ARN provided")
 	}
 
 	logging.NoContext().Debug("AWS Region", zap.String("region", os.Getenv("AWS_REGION")))
 
-	// Initialize a session that the SDK will use
+	// Initialize a session that the SDK will use to load configuration,
+	// credentials, and region. AWS_REGION, AWS_SECRET_ACCESS_KEY, and AWS_ACCESS_KEY_ID should be set in the
+	// environment's runtime
 	sess, err := session.NewSession()
 	if err != nil {
 		logging.NoContext().Error("Failed to create SNS session", zap.Error(err))
@@ -53,7 +56,7 @@ func NewSNSClient(cfg *SNSConfig, name string) SNSClient {
 }
 
 // PostEvent ... Posts an event to an SNS topic ARN
-func (sc snsClient) PostEvent(ctx context.Context, event *AlertEventTrigger) (*AlertAPIResponse, error) {
+func (sc snsClient) PostEvent(_ context.Context, event *AlertEventTrigger) (*AlertAPIResponse, error) {
 	// Publish a message to the topic
 	result, err := sc.svc.Publish(&sns.PublishInput{
 		MessageAttributes: getAttributesFromEvent(event),
