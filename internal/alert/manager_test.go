@@ -39,7 +39,9 @@ func TestEventLoop(t *testing.T) {
 			description: "Test low sev alert sends to slack",
 			test: func(t *testing.T) {
 				cm := alert.NewRoutingDirectory(cfg.AlertConfig)
-				am := alert.NewManager(ctx, cfg.AlertConfig, cm)
+				sns := mocks.NewMockSNSClient(c)
+
+				am := alert.NewManager(ctx, cfg.AlertConfig, cm, sns)
 
 				go func() {
 					_ = am.EventLoop()
@@ -76,6 +78,12 @@ func TestEventLoop(t *testing.T) {
 						}, nil).Times(1)
 				}
 
+				sns.EXPECT().PostEvent(gomock.Any(), gomock.Any()).Return(
+					&client.AlertAPIResponse{
+						Message: "test",
+						Status:  core.SuccessStatus,
+					}, nil).AnyTimes()
+
 				ingress <- alert
 				time.Sleep(1 * time.Second)
 				id := core.NewUUID()
@@ -93,7 +101,8 @@ func TestEventLoop(t *testing.T) {
 			description: "Test medium sev alert sends to just PagerDuty",
 			test: func(t *testing.T) {
 				cm := alert.NewRoutingDirectory(cfg.AlertConfig)
-				am := alert.NewManager(ctx, cfg.AlertConfig, cm)
+				sns := mocks.NewMockSNSClient(c)
+				am := alert.NewManager(ctx, cfg.AlertConfig, cm, sns)
 
 				go func() {
 					_ = am.EventLoop()
@@ -130,6 +139,12 @@ func TestEventLoop(t *testing.T) {
 						}, nil).Times(1)
 				}
 
+				sns.EXPECT().PostEvent(gomock.Any(), gomock.Any()).Return(
+					&client.AlertAPIResponse{
+						Message: "test",
+						Status:  core.SuccessStatus,
+					}, nil).AnyTimes()
+
 				ingress <- alert
 				time.Sleep(1 * time.Second)
 				id := core.UUID{}
@@ -147,7 +162,8 @@ func TestEventLoop(t *testing.T) {
 			description: "Test high sev alert sends to both slack and PagerDuty",
 			test: func(t *testing.T) {
 				cm := alert.NewRoutingDirectory(cfg.AlertConfig)
-				am := alert.NewManager(ctx, cfg.AlertConfig, cm)
+				sns := mocks.NewMockSNSClient(c)
+				am := alert.NewManager(ctx, cfg.AlertConfig, cm, sns)
 
 				go func() {
 					_ = am.EventLoop()
@@ -181,7 +197,7 @@ func TestEventLoop(t *testing.T) {
 						&client.AlertAPIResponse{
 							Message: "test",
 							Status:  core.SuccessStatus,
-						}, nil).Times(1)
+						}, nil)
 				}
 
 				for _, cli := range cm.GetSlackClients(core.HIGH) {
@@ -191,8 +207,15 @@ func TestEventLoop(t *testing.T) {
 						&client.AlertAPIResponse{
 							Message: "test",
 							Status:  core.SuccessStatus,
-						}, nil).Times(1)
+						}, nil)
 				}
+
+				sns.EXPECT().PostEvent(gomock.Any(), gomock.Any()).Return(
+					&client.AlertAPIResponse{
+						Message: "test",
+						Status:  core.SuccessStatus,
+					}, nil).AnyTimes()
+
 				ingress <- alert
 				time.Sleep(1 * time.Second)
 				id := core.UUID{}

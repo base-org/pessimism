@@ -27,6 +27,7 @@ type Config struct {
 	RoutingCfgPath          string
 	PagerdutyAlertEventsURL string
 	RoutingParams           *core.AlertRoutingParams
+	SNSConfig               *client.SNSConfig
 }
 
 // alertManager ... Alert manager implementation
@@ -39,6 +40,7 @@ type alertManager struct {
 	interpolator *Interpolator
 	cdHandler    CoolDownHandler
 	cm           RoutingDirectory
+	sns          client.SNSClient
 
 	logger       *zap.Logger
 	metrics      metrics.Metricer
@@ -46,21 +48,22 @@ type alertManager struct {
 }
 
 // NewManager ... Instantiates a new alert manager
-func NewManager(ctx context.Context, cfg *Config, cm RoutingDirectory) Manager {
+func NewManager(ctx context.Context, cfg *Config, cm RoutingDirectory, sns client.SNSClient) Manager {
 	// NOTE - Consider constructing dependencies in higher level
 	// abstraction and passing them in
 
 	ctx, cancel := context.WithCancel(ctx)
 
+	// NOTE - Consider adding support for additional sns configurations
 	am := &alertManager{
-		ctx:       ctx,
-		cdHandler: NewCoolDownHandler(),
-		cfg:       cfg,
-		cm:        cm,
-
+		ctx:          ctx,
+		cdHandler:    NewCoolDownHandler(),
+		cfg:          cfg,
+		cm:           cm,
 		cancel:       cancel,
 		interpolator: new(Interpolator),
 		store:        NewStore(),
+		sns:          sns,
 		alertTransit: make(chan core.Alert),
 		metrics:      metrics.WithContext(ctx),
 		logger:       logging.WithContext(ctx),
@@ -142,6 +145,24 @@ func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
 	return nil
 }
 
+func (am *alertManager) handleSNSPublish(alert core.Alert, policy *core.AlertPolicy) error {
+	event := &client.AlertEventTrigger{
+		Message:  am.interpolator.SlackMessage(alert, policy.Msg),
+		DedupKey: alert.PathID,
+		Severity: alert.Sev,
+	}
+
+	resp, err := am.sns.PostEvent(am.ctx, event)
+	if err != nil {
+		return err
+	}
+
+	if resp.Status != core.SuccessStatus {
+		return fmt.Errorf("client %s could not post to sns: %s", am.sns.GetName(), resp.Message)
+	}
+	return nil
+}
+
 // EventLoop ... Event loop for alert manager subsystem
 func (am *alertManager) EventLoop() error {
 	ticker := time.NewTicker(time.Second * 1)
@@ -202,6 +223,11 @@ func (am *alertManager) HandleAlert(alert core.Alert, policy *core.AlertPolicy) 
 	if err := am.handlePagerDutyPost(alert); err != nil {
 		am.logger.Error("could not post to pagerduty", zap.Error(err))
 	}
+
+	if err := am.handleSNSPublish(alert, policy); err != nil {
+		am.logger.Error("could not publish to sns", zap.Error(err))
+	}
+
 }
 
 // Shutdown ... Shuts down the alert manager subsystem
