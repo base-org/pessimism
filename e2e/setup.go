@@ -165,6 +165,9 @@ func DefaultTestConfig() *config.Config {
 		AlertConfig: &alert.Config{
 			PagerdutyAlertEventsURL: "",
 			RoutingCfgPath:          "",
+			SNSConfig: &client.SNSConfig{
+				TopicArn: "e2e-test-arn",
+			},
 		},
 		EngineConfig: &engine.Config{
 			WorkerCount: workerCount,
