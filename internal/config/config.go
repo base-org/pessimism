@@ -60,6 +60,7 @@ func NewConfig(fileName core.FilePath) *Config {
 			RoutingParams:           nil, // This is populated after the config is created (see IngestAlertConfig)
 			SNSConfig: &client.SNSConfig{
 				TopicArn: getEnvStrWithDefault("SNS_TOPIC_ARN", ""),
+				Endpoint: getEnvStrWithDefault("AWS_ENDPOINT", ""),
 			},
 		},
 

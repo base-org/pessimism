@@ -4,7 +4,6 @@ package client
 
 import (
 	"context"
-	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -23,6 +22,7 @@ type SNSClient interface {
 // SNSConfig ... Configuration for SNS client
 type SNSConfig struct {
 	TopicArn string
+	Endpoint string
 }
 
 type snsClient struct {
@@ -37,14 +37,14 @@ func NewSNSClient(cfg *SNSConfig, name string) SNSClient {
 		logging.NoContext().Warn("No SNS topic ARN provided")
 	}
 
-	logging.NoContext().Debug("AWS Region", zap.String("region", os.Getenv("AWS_REGION")))
-
 	// Initialize a session that the SDK will use to load configuration,
 	// credentials, and region. AWS_REGION, AWS_SECRET_ACCESS_KEY, and AWS_ACCESS_KEY_ID should be set in the
 	// environment's runtime
-	sess, err := session.NewSession()
+	sess, err := session.NewSession(&aws.Config{
+		Endpoint: aws.String(cfg.Endpoint),
+	})
 	if err != nil {
-		logging.NoContext().Error("Failed to create SNS session", zap.Error(err))
+		logging.NoContext().Error("Failed to create AWS session", zap.Error(err))
 		return nil
 	}
 

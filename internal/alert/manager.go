@@ -138,7 +138,7 @@ func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
 			return fmt.Errorf("client %s could not post to pagerduty: %s", pdc.GetName(), resp.Message)
 		}
 
-		am.logger.Debug("Successfully posted to ", zap.Any("resp", resp))
+		am.logger.Debug("Successfully posted to PagerDuty", zap.Any("resp", resp))
 		am.metrics.RecordAlertGenerated(alert, core.PagerDuty, pdc.GetName())
 	}
 
@@ -160,6 +160,9 @@ func (am *alertManager) handleSNSPublish(alert core.Alert, policy *core.AlertPol
 	if resp.Status != core.SuccessStatus {
 		return fmt.Errorf("client %s could not post to sns: %s", am.sns.GetName(), resp.Message)
 	}
+
+	am.logger.Debug("Successfully posted to SNS", zap.Any("resp", resp))
+	am.metrics.RecordAlertGenerated(alert, core.SNS, am.sns.GetName())
 	return nil
 }
 

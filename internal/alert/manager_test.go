@@ -84,6 +84,8 @@ func TestEventLoop(t *testing.T) {
 						Status:  core.SuccessStatus,
 					}, nil).AnyTimes()
 
+				sns.EXPECT().GetName().AnyTimes()
+
 				ingress <- alert
 				time.Sleep(1 * time.Second)
 				id := core.NewUUID()
@@ -144,6 +146,8 @@ func TestEventLoop(t *testing.T) {
 						Message: "test",
 						Status:  core.SuccessStatus,
 					}, nil).AnyTimes()
+
+				sns.EXPECT().GetName().AnyTimes()
 
 				ingress <- alert
 				time.Sleep(1 * time.Second)
@@ -215,6 +219,8 @@ func TestEventLoop(t *testing.T) {
 						Message: "test",
 						Status:  core.SuccessStatus,
 					}, nil).AnyTimes()
+
+				sns.EXPECT().GetName().AnyTimes()
 
 				ingress <- alert
 				time.Sleep(1 * time.Second)
