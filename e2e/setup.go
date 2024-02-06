@@ -115,13 +115,9 @@ func CreateSysTestSuite(t *testing.T, topicArn string) *SysTestSuite {
 
 	pagerdutyServer := NewTestPagerDutyServer("127.0.0.1", 0)
 
-	err = os.Setenv("AWS_REGION", "us-east-1")       //nolint:tenv // Cannot use t.SetEnv in parallel tests
-	err = os.Setenv("AWS_SECRET_ACCESS_KEY", "test") //nolint:tenv // Cannot use t.SetEnv in parallel tests
-	err = os.Setenv("AWS_ACCESS_KEY_ID", "test")     //nolint:tenv // Cannot use t.SetEnv in parallel tests
-
-	if err != nil {
-		panic(err)
-	}
+	os.Setenv("AWS_REGION", "us-east-1")       //nolint:tenv // Cannot use t.SetEnv in parallel tests
+	os.Setenv("AWS_SECRET_ACCESS_KEY", "test") //nolint:tenv // Cannot use t.SetEnv in parallel tests
+	os.Setenv("AWS_ACCESS_KEY_ID", "test")     //nolint:tenv // Cannot use t.SetEnv in parallel tests
 
 	slackURL := fmt.Sprintf("http://127.0.0.1:%d", slackServer.Port)
 	pagerdutyURL := fmt.Sprintf("http://127.0.0.1:%d", pagerdutyServer.Port)
