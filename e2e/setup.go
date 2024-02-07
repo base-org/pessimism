@@ -115,13 +115,13 @@ func CreateSysTestSuite(t *testing.T, topicArn string) *SysTestSuite {
 
 	pagerdutyServer := NewTestPagerDutyServer("127.0.0.1", 0)
 
-	if err := os.Setenv("AWS_REGION", "us-east-1"); err != nil { //nolint:tenv // Cannot use t.SetEnv in parallel tests
+	if err := os.Setenv("AWS_REGION", "us-east-1"); err != nil { //nolint:tenv // Cannot use t.SetEnv here
 		t.Fatal(err)
 	}
-	if err := os.Setenv("AWS_SECRET_ACCESS_KEY", "test"); err != nil { //nolint:tenv // Cannot use t.SetEnv in parallel tests
+	if err := os.Setenv("AWS_SECRET_ACCESS_KEY", "test"); err != nil { //nolint:tenv // Cannot t.Setenv here
 		t.Fatal(err)
 	}
-	if err := os.Setenv("AWS_ACCESS_KEY_ID", "test"); err != nil { //nolint:tenv // Cannot use t.SetEnv in parallel tests
+	if err := os.Setenv("AWS_ACCESS_KEY_ID", "test"); err != nil { //nolint:tenv // Cannot use t.SetEnv here
 		t.Fatal(err)
 	}
 
