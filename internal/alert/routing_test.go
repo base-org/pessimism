@@ -2,10 +2,10 @@ package alert_test
 
 import (
 	"fmt"
-	"github.com/base-org/pessimism/internal/client"
 	"testing"
 
 	"github.com/base-org/pessimism/internal/alert"
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/stretchr/testify/assert"
