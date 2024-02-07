@@ -72,9 +72,8 @@ func InitializeAlerting(ctx context.Context, cfg *config.Config) (alert.Manager,
 	}
 
 	clientMap := alert.NewRoutingDirectory(cfg.AlertConfig)
-	snsClient := client.NewSNSClient(cfg.AlertConfig.SNSConfig, "pessimism")
 
-	return alert.NewManager(ctx, cfg.AlertConfig, clientMap, snsClient), nil
+	return alert.NewManager(ctx, cfg.AlertConfig, clientMap), nil
 }
 
 // InitializeETL ... Performs dependency injection to build etl struct

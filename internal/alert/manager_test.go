@@ -22,6 +22,9 @@ func TestEventLoop(t *testing.T) {
 		AlertConfig: &alert.Config{
 			RoutingCfgPath:          "test_data/alert-routing-test.yaml",
 			PagerdutyAlertEventsURL: "test",
+			SNSConfig: &client.SNSConfig{
+				TopicArn: "test",
+			},
 		},
 	}
 
@@ -40,8 +43,7 @@ func TestEventLoop(t *testing.T) {
 			test: func(t *testing.T) {
 				cm := alert.NewRoutingDirectory(cfg.AlertConfig)
 				sns := mocks.NewMockSNSClient(c)
-
-				am := alert.NewManager(ctx, cfg.AlertConfig, cm, sns)
+				am := alert.NewManager(ctx, cfg.AlertConfig, cm)
 
 				go func() {
 					_ = am.EventLoop()
@@ -53,6 +55,7 @@ func TestEventLoop(t *testing.T) {
 
 				ingress := am.Transit()
 
+				cm.SetSNSClient(sns)
 				cm.SetSlackClients([]client.SlackClient{mocks.NewMockSlackClient(c)}, core.LOW)
 
 				alert := core.Alert{
@@ -104,7 +107,7 @@ func TestEventLoop(t *testing.T) {
 			test: func(t *testing.T) {
 				cm := alert.NewRoutingDirectory(cfg.AlertConfig)
 				sns := mocks.NewMockSNSClient(c)
-				am := alert.NewManager(ctx, cfg.AlertConfig, cm, sns)
+				am := alert.NewManager(ctx, cfg.AlertConfig, cm)
 
 				go func() {
 					_ = am.EventLoop()
@@ -117,6 +120,7 @@ func TestEventLoop(t *testing.T) {
 				ingress := am.Transit()
 
 				cm.SetPagerDutyClients([]client.PagerDutyClient{mocks.NewMockPagerDutyClient(c)}, core.MEDIUM)
+				cm.SetSNSClient(sns)
 
 				alert := core.Alert{
 					Sev:         core.MEDIUM,
@@ -167,7 +171,7 @@ func TestEventLoop(t *testing.T) {
 			test: func(t *testing.T) {
 				cm := alert.NewRoutingDirectory(cfg.AlertConfig)
 				sns := mocks.NewMockSNSClient(c)
-				am := alert.NewManager(ctx, cfg.AlertConfig, cm, sns)
+				am := alert.NewManager(ctx, cfg.AlertConfig, cm)
 
 				go func() {
 					_ = am.EventLoop()
@@ -181,6 +185,7 @@ func TestEventLoop(t *testing.T) {
 
 				cm.SetSlackClients([]client.SlackClient{mocks.NewMockSlackClient(c), mocks.NewMockSlackClient(c)}, core.HIGH)
 				cm.SetPagerDutyClients([]client.PagerDutyClient{mocks.NewMockPagerDutyClient(c), mocks.NewMockPagerDutyClient(c)}, core.HIGH)
+				cm.SetSNSClient(sns)
 
 				alert := core.Alert{
 					Sev:         core.HIGH,

@@ -40,7 +40,6 @@ type alertManager struct {
 	interpolator *Interpolator
 	cdHandler    CoolDownHandler
 	cm           RoutingDirectory
-	sns          client.SNSClient
 
 	logger       *zap.Logger
 	metrics      metrics.Metricer
@@ -48,7 +47,7 @@ type alertManager struct {
 }
 
 // NewManager ... Instantiates a new alert manager
-func NewManager(ctx context.Context, cfg *Config, cm RoutingDirectory, sns client.SNSClient) Manager {
+func NewManager(ctx context.Context, cfg *Config, cm RoutingDirectory) Manager {
 	// NOTE - Consider constructing dependencies in higher level
 	// abstraction and passing them in
 
@@ -63,7 +62,6 @@ func NewManager(ctx context.Context, cfg *Config, cm RoutingDirectory, sns clien
 		cancel:       cancel,
 		interpolator: new(Interpolator),
 		store:        NewStore(),
-		sns:          sns,
 		alertTransit: make(chan core.Alert),
 		metrics:      metrics.WithContext(ctx),
 		logger:       logging.WithContext(ctx),
@@ -152,17 +150,19 @@ func (am *alertManager) handleSNSPublish(alert core.Alert, policy *core.AlertPol
 		Severity: alert.Sev,
 	}
 
-	resp, err := am.sns.PostEvent(am.ctx, event)
+	cli := am.cm.GetSNSClient()
+
+	resp, err := cli.PostEvent(am.ctx, event)
 	if err != nil {
 		return err
 	}
 
 	if resp.Status != core.SuccessStatus {
-		return fmt.Errorf("client %s could not post to sns: %s", am.sns.GetName(), resp.Message)
+		return fmt.Errorf("client %s could not post to sns: %s", cli.GetName(), resp.Message)
 	}
 
 	am.logger.Debug("Successfully posted to SNS", zap.Any("resp", resp))
-	am.metrics.RecordAlertGenerated(alert, core.SNS, am.sns.GetName())
+	am.metrics.RecordAlertGenerated(alert, core.SNS, cli.GetName())
 	return nil
 }
 

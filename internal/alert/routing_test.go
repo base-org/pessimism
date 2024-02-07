@@ -2,6 +2,7 @@ package alert_test
 
 import (
 	"fmt"
+	"github.com/base-org/pessimism/internal/client"
 	"testing"
 
 	"github.com/base-org/pessimism/internal/alert"
@@ -13,6 +14,9 @@ import (
 func getCfg() *config.Config {
 	return &config.Config{
 		AlertConfig: &alert.Config{
+			SNSConfig: &client.SNSConfig{
+				TopicArn: "test",
+			},
 			RoutingParams: &core.AlertRoutingParams{
 				AlertRoutes: &core.SeverityMap{
 					Low: &core.AlertClientCfg{
