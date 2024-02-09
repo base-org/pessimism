@@ -58,6 +58,7 @@ func NewSNSClient(cfg *SNSConfig, name string) SNSClient {
 	// Initialize a session that the SDK will use to load configuration,
 	// credentials, and region. AWS_REGION, AWS_SECRET_ACCESS_KEY, and AWS_ACCESS_KEY_ID should be set in the
 	// environment's runtime
+	// Note: If session is to arbitrarily crash, there is a possibility that message publishing will fail
 	sess, err := session.NewSession(&aws.Config{
 		Endpoint: aws.String(cfg.Endpoint),
 	})

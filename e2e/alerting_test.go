@@ -80,11 +80,11 @@ func TestMultiDirectiveRouting(t *testing.T) {
 		return height != nil && height.Uint64() > receipt.BlockNumber.Uint64(), nil
 	}))
 
-	sqsMessages, err := e2e.GetSNSMessages(ts.AppCfg.AlertConfig.SNSConfig.Endpoint, "multi-directive-test-queue")
+	snsMessages, err := e2e.GetSNSMessages(ts.AppCfg.AlertConfig.SNSConfig.Endpoint, "multi-directive-test-queue")
 	require.NoError(t, err)
 
-	assert.Len(t, sqsMessages.Messages, 1, "Incorrect number of SNS messages sent")
-	assert.Contains(t, *sqsMessages.Messages[0].Body, "contract_event", "System contract event alert was not sent")
+	assert.Len(t, snsMessages.Messages, 1, "Incorrect number of SNS messages sent")
+	assert.Contains(t, *snsMessages.Messages[0].Body, "contract_event", "System contract event alert was not sent")
 
 	slackPosts := ts.TestSlackSvr.SlackAlerts()
 	pdPosts := ts.TestPagerDutyServer.PagerDutyAlerts()
