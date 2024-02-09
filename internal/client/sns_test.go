@@ -2,10 +2,11 @@ package client
 
 import (
 	"encoding/json"
-	"github.com/base-org/pessimism/internal/core"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/base-org/pessimism/internal/core"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSNSMessagePayload_Marshal(t *testing.T) {
