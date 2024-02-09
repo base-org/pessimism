@@ -49,14 +49,14 @@ Pessimism currently defines the following severities for alerts:
 | high     | Alerts that require immediate attention and could result in a loss of funds |
 
 ## Publishing to an SNS Topic
+
 To publish alerts to an SNS topic, you must first create an SNS topic in the AWS
 console. Once you have created the topic, you will need to add the ARN of the
-topic to the `.env` file. Ensure that you have AWS_REGION, 
-`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` set in your environment if you are looking to publish messages to an SNS 
+topic to the `.env` file. Ensure that you have AWS_REGION,
+`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` set in your environment if you are looking to publish messages to an SNS
 topic. The ARN should be added to the `SNS_TOPIC_ARN` variable found in the `.env` file.
 The AWS_ENDPOINT is optional and is primarily used for testing with localstack.
-> Note: Currently, Pessimism only support one SNS topic to publish alerts to. 
-
+> Note: Currently, Pessimism only support one SNS topic to publish alerts to.
 
 ## PagerDuty Severity Mapping
 
