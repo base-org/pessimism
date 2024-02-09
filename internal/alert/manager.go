@@ -23,6 +23,7 @@ type Manager interface {
 }
 
 // Config ... Alert manager configuration
+// SNSConfig is not part of the RoutingParams as we only support publishing to one SNS client
 type Config struct {
 	RoutingCfgPath          string
 	PagerdutyAlertEventsURL string
@@ -91,8 +92,8 @@ func (am *alertManager) handleSlackPost(alert core.Alert, policy *core.AlertPoli
 
 	// Create event trigger
 	event := &client.AlertEventTrigger{
-		Message:  am.interpolator.SlackMessage(alert, policy.Msg),
-		Severity: alert.Sev,
+		Message: am.interpolator.SlackMessage(alert, policy.Msg),
+		Alert:   alert,
 	}
 
 	for _, sc := range slackClients {
@@ -121,9 +122,8 @@ func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
 	}
 
 	event := &client.AlertEventTrigger{
-		Message:  am.interpolator.PagerDutyMessage(alert),
-		DedupKey: alert.PathID,
-		Severity: alert.Sev,
+		Message: am.interpolator.PagerDutyMessage(alert),
+		Alert:   alert,
 	}
 
 	for _, pdc := range pdClients {
@@ -145,24 +145,23 @@ func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
 
 func (am *alertManager) handleSNSPublish(alert core.Alert, policy *core.AlertPolicy) error {
 	event := &client.AlertEventTrigger{
-		Message:  am.interpolator.SlackMessage(alert, policy.Msg),
-		DedupKey: alert.PathID,
-		Severity: alert.Sev,
+		Message: am.interpolator.SlackMessage(alert, policy.Msg),
+		Alert:   alert,
 	}
 
-	cli := am.cm.GetSNSClient()
+	c := am.cm.GetSNSClient()
 
-	resp, err := cli.PostEvent(am.ctx, event)
+	resp, err := c.PostEvent(am.ctx, event)
 	if err != nil {
 		return err
 	}
 
 	if resp.Status != core.SuccessStatus {
-		return fmt.Errorf("client %s could not post to sns: %s", cli.GetName(), resp.Message)
+		return fmt.Errorf("client %s could not post to sns: %s", c.GetName(), resp.Message)
 	}
 
 	am.logger.Debug("Successfully posted to SNS", zap.Any("resp", resp))
-	am.metrics.RecordAlertGenerated(alert, core.SNS, cli.GetName())
+	am.metrics.RecordAlertGenerated(alert, core.SNS, c.GetName())
 	return nil
 }
 

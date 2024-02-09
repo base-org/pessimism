@@ -115,15 +115,7 @@ func CreateSysTestSuite(t *testing.T, topicArn string) *SysTestSuite {
 
 	pagerdutyServer := NewTestPagerDutyServer("127.0.0.1", 0)
 
-	if err := os.Setenv("AWS_REGION", "us-east-1"); err != nil { //nolint:tenv // Cannot use t.SetEnv here
-		t.Fatal(err)
-	}
-	if err := os.Setenv("AWS_SECRET_ACCESS_KEY", "test"); err != nil { //nolint:tenv // Cannot t.Setenv here
-		t.Fatal(err)
-	}
-	if err := os.Setenv("AWS_ACCESS_KEY_ID", "test"); err != nil { //nolint:tenv // Cannot use t.SetEnv here
-		t.Fatal(err)
-	}
+	setAwsVars(t)
 
 	slackURL := fmt.Sprintf("http://127.0.0.1:%d", slackServer.Port)
 	pagerdutyURL := fmt.Sprintf("http://127.0.0.1:%d", pagerdutyServer.Port)
@@ -203,7 +195,20 @@ func DefaultTestConfig() *config.Config {
 	}
 }
 
-func GetMessages(endpoint string, queueName string) (*sqs.ReceiveMessageOutput, error) {
+func setAwsVars(t *testing.T) {
+	awsEnvVariables := map[string]string{
+		"AWS_REGION":            "us-east-1",
+		"AWS_SECRET_ACCESS_KEY": "test",
+		"AWS_ACCESS_KEY_ID":     "test",
+	}
+	for key, value := range awsEnvVariables {
+		if err := os.Setenv(key, value); err != nil {
+			t.Fatalf("Error setting %s environment variable: %s", key, err)
+		}
+	}
+}
+
+func GetSNSMessages(endpoint string, queueName string) (*sqs.ReceiveMessageOutput, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Endpoint: aws.String(endpoint),
 	})

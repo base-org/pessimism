@@ -4,6 +4,8 @@ package client
 
 import (
 	"context"
+	"encoding/json"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -23,6 +25,22 @@ type SNSClient interface {
 type SNSConfig struct {
 	TopicArn string
 	Endpoint string
+}
+
+// SNSMessagePayload ... The json message payload published to SNS
+type SNSMessagePayload struct {
+	Network       string    `json:"network"`
+	HeuristicType string    `json:"heuristic_type"`
+	Severity      string    `json:"severity"`
+	PathID        string    `json:"path_id"`
+	HeuristicID   string    `json:"heuristic_id"`
+	Timestamp     time.Time `json:"timestamp"`
+	Content       string    `json:"content"`
+}
+
+// SNSMessage ... The SNS message structure. Required for SNS Publish API
+type SNSMessage struct {
+	Default string `json:"default"`
 }
 
 type snsClient struct {
@@ -55,13 +73,37 @@ func NewSNSClient(cfg *SNSConfig, name string) SNSClient {
 	}
 }
 
-// PostEvent ... Posts an event to an SNS topic ARN
+// Marshal ... Marshals the SNS message payload
+func (p *SNSMessagePayload) Marshal() ([]byte, error) {
+	payloadBytes, err := json.Marshal(p)
+	if err != nil {
+		return nil, err
+	}
+
+	msg := &SNSMessage{
+		Default: string(payloadBytes),
+	}
+
+	msgBytes, err := json.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return msgBytes, nil
+}
+
+// PostEvent ... Publishes an event to an SNS topic ARN
 func (sc snsClient) PostEvent(_ context.Context, event *AlertEventTrigger) (*AlertAPIResponse, error) {
+	msgPayload, err := event.ToSNSMessagePayload().Marshal()
+	if err != nil {
+		return nil, err
+	}
+
 	// Publish a message to the topic
 	result, err := sc.svc.Publish(&sns.PublishInput{
-		MessageAttributes: getAttributesFromEvent(event),
-		Message:           &event.Message,
-		TopicArn:          &sc.topicArn,
+		Message:          aws.String(string(msgPayload)),
+		MessageStructure: aws.String("json"),
+		TopicArn:         &sc.topicArn,
 	})
 	if err != nil {
 		return &AlertAPIResponse{
@@ -74,20 +116,6 @@ func (sc snsClient) PostEvent(_ context.Context, event *AlertEventTrigger) (*Ale
 		Status:  core.SuccessStatus,
 		Message: *result.MessageId,
 	}, nil
-}
-
-// getAttributesFromEvent ... Helper method to get attributes from an AlertEventTrigger
-func getAttributesFromEvent(event *AlertEventTrigger) map[string]*sns.MessageAttributeValue {
-	return map[string]*sns.MessageAttributeValue{
-		"severity": {
-			DataType:    aws.String("String"),
-			StringValue: aws.String(event.Severity.String()),
-		},
-		"dedup_key": {
-			DataType:    aws.String("String"),
-			StringValue: aws.String(event.DedupKey.String()),
-		},
-	}
 }
 
 func (sc snsClient) GetName() string {

@@ -21,6 +21,7 @@ type RoutingDirectory interface {
 // routingDirectory ... Routing directory implementation
 // NOTE: This implementation works for now, but if we add more routing clients in the future,
 // we should consider refactoring this to be more generic
+// Only one SNS client is needed in most cases. If we need to support multiple SNS clients, we can refactor this
 type routingDirectory struct {
 	pagerDutyClients map[core.Severity][]client.PagerDutyClient
 	slackClients     map[core.Severity][]client.SlackClient

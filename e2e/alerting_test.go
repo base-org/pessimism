@@ -80,7 +80,7 @@ func TestMultiDirectiveRouting(t *testing.T) {
 		return height != nil && height.Uint64() > receipt.BlockNumber.Uint64(), nil
 	}))
 
-	sqsMessages, err := e2e.GetMessages(ts.AppCfg.AlertConfig.SNSConfig.Endpoint, "multi-directive-test-queue")
+	sqsMessages, err := e2e.GetSNSMessages(ts.AppCfg.AlertConfig.SNSConfig.Endpoint, "multi-directive-test-queue")
 	require.NoError(t, err)
 
 	assert.Len(t, sqsMessages.Messages, 1, "Incorrect number of SNS messages sent")
@@ -172,19 +172,17 @@ func TestCoolDown(t *testing.T) {
 		return height != nil && height.Uint64() > receipt.BlockNumber.Uint64(), nil
 	}))
 
-	time.Sleep(1 * time.Second)
-
 	// Check that the balance enforcement was triggered using the mocked server cache.
 	posts := ts.TestSlackSvr.SlackAlerts()
+
+	sqsMessages, err := e2e.GetSNSMessages(ts.AppCfg.AlertConfig.SNSConfig.Endpoint, "alert-cooldown-test-queue")
+	assert.NoError(t, err)
+	assert.Len(t, sqsMessages.Messages, 1, "Incorrect number of SNS messages sent")
+	assert.Contains(t, *sqsMessages.Messages[0].Body, "balance_enforcement", "Balance enforcement alert was not sent")
 
 	require.Equal(t, 1, len(posts), "No balance enforcement alert was sent")
 	assert.Contains(t, posts[0].Text, "balance_enforcement", "Balance enforcement alert was not sent")
 	assert.Contains(t, posts[0].Text, alertMsg)
-
-	sqsMessages, err := e2e.GetMessages(ts.AppCfg.AlertConfig.SNSConfig.Endpoint, "alert-cooldown-test-queue")
-	assert.NoError(t, err)
-	assert.Len(t, sqsMessages.Messages, 1, "Incorrect number of SNS messages sent")
-	assert.Contains(t, *sqsMessages.Messages[0].Body, "balance_enforcement", "Balance enforcement alert was not sent")
 
 	// Ensure that no new alerts are sent for provided cooldown period.
 	time.Sleep(1 * time.Second)

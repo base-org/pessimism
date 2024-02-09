@@ -11,22 +11,24 @@ import (
 
 func TestToPagerDutyEvent(t *testing.T) {
 	alert := &client.AlertEventTrigger{
-		Message:  "test",
-		Severity: core.HIGH,
-		DedupKey: core.PathID{},
+		Message: "test",
+		Alert: core.Alert{
+			Sev:    core.HIGH,
+			PathID: core.PathID{},
+		},
 	}
 
-	sPathID := alert.DedupKey.String()
+	sPathID := alert.Alert.PathID.String()
 	res := alert.ToPagerdutyEvent()
 	assert.Equal(t, core.Critical, res.Severity)
 	assert.Equal(t, "test", res.Message)
 	assert.Equal(t, sPathID, res.DedupKey)
 
-	alert.Severity = core.MEDIUM
+	alert.Alert.Sev = core.MEDIUM
 	res = alert.ToPagerdutyEvent()
 	assert.Equal(t, core.Error, res.Severity)
 
-	alert.Severity = core.LOW
+	alert.Alert.Sev = core.LOW
 	res = alert.ToPagerdutyEvent()
 	assert.Equal(t, core.Warning, res.Severity)
 }
