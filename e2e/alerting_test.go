@@ -19,6 +19,7 @@ import (
 )
 
 const (
+	// These are localstack specific Topic ARNs that are used to test the SNS integration.
 	MultiDirectiveTopicArn = "arn:aws:sns:us-east-1:000000000000:multi-directive-test-topic"
 	CoolDownTopicArn       = "arn:aws:sns:us-east-1:000000000000:alert-cooldown-test-topic"
 )
