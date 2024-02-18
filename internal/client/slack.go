@@ -43,7 +43,7 @@ type slackClient struct {
 // NewSlackClient ... Initializer
 func NewSlackClient(cfg *SlackConfig, name string) SlackClient {
 	if cfg.URL == "" {
-		logging.NoContext().Warn("No Slack webhook URL not provided")
+		logging.NoContext().Warn("No Slack webhook URL provided")
 	}
 
 	return &slackClient{
