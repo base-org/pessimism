@@ -16,9 +16,8 @@ type AlertClient interface {
 
 // AlertEventTrigger ... A standardized event trigger for alert clients
 type AlertEventTrigger struct {
-	Message  string
-	Severity core.Severity
-	DedupKey core.PathID
+	Message string
+	Alert   core.Alert
 }
 
 // AlertAPIResponse ... A standardized response for alert clients
@@ -30,8 +29,20 @@ type AlertAPIResponse struct {
 // ToPagerdutyEvent ... Converts an AlertEventTrigger to a PagerDutyEventTrigger
 func (a *AlertEventTrigger) ToPagerdutyEvent() *PagerDutyEventTrigger {
 	return &PagerDutyEventTrigger{
-		DedupKey: a.DedupKey.String(),
-		Severity: a.Severity.ToPagerDutySev(),
+		DedupKey: a.Alert.PathID.String(),
+		Severity: a.Alert.Sev.ToPagerDutySev(),
 		Message:  a.Message,
+	}
+}
+
+func (a *AlertEventTrigger) ToSNSMessagePayload() *SNSMessagePayload {
+	return &SNSMessagePayload{
+		Network:       a.Alert.Net.String(),
+		HeuristicType: a.Alert.HT.String(),
+		Severity:      a.Alert.Sev.String(),
+		PathID:        a.Alert.PathID.String(),
+		HeuristicID:   a.Alert.HeuristicID.String(),
+		Timestamp:     a.Alert.Timestamp,
+		Content:       a.Message,
 	}
 }

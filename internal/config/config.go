@@ -58,6 +58,10 @@ func NewConfig(fileName core.FilePath) *Config {
 			RoutingCfgPath:          getEnvStrWithDefault("ALERT_ROUTE_CFG_PATH", "alerts-routing.yaml"),
 			PagerdutyAlertEventsURL: getEnvStrWithDefault("PAGERDUTY_ALERT_EVENTS_URL", ""),
 			RoutingParams:           nil, // This is populated after the config is created (see IngestAlertConfig)
+			SNSConfig: &client.SNSConfig{
+				TopicArn: getEnvStrWithDefault("SNS_TOPIC_ARN", ""),
+				Endpoint: getEnvStrWithDefault("AWS_ENDPOINT", ""),
+			},
 		},
 
 		ClientConfig: &client.Config{

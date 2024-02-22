@@ -31,7 +31,7 @@ import (
 // balance enforcement heuristic session on L2 network.
 func TestBalanceEnforcement(t *testing.T) {
 
-	ts := e2e.CreateSysTestSuite(t)
+	ts := e2e.CreateSysTestSuite(t, "")
 	defer ts.Close()
 
 	alice := ts.Cfg.Secrets.Addresses().Alice
@@ -158,7 +158,7 @@ func TestBalanceEnforcement(t *testing.T) {
 // contract event heuristic session on L1 network.
 func TestContractEvent(t *testing.T) {
 
-	ts := e2e.CreateSysTestSuite(t)
+	ts := e2e.CreateSysTestSuite(t, "")
 	defer ts.Close()
 
 	// The string declaration of the event we want to listen for.
@@ -226,7 +226,7 @@ func TestContractEvent(t *testing.T) {
 // safety heuristic session. This test ensures that an alert is produced in the event
 // of a highly suspicious withdrawal.
 func TestWithdrawalSafetyAllInvariants(t *testing.T) {
-	ts := e2e.CreateSysTestSuite(t)
+	ts := e2e.CreateSysTestSuite(t, "")
 	defer ts.Close()
 
 	opts, err := bind.NewKeyedTransactorWithChainID(ts.Cfg.Secrets.Alice, ts.Cfg.L2ChainIDBig())
@@ -357,7 +357,7 @@ func TestWithdrawalSafetyAllInvariants(t *testing.T) {
 // of a normal tx
 func TestWithdrawalSafetyNoInvariants(t *testing.T) {
 
-	ts := e2e.CreateSysTestSuite(t)
+	ts := e2e.CreateSysTestSuite(t, "")
 	defer ts.Close()
 
 	ids, err := ts.App.BootStrap([]*models.SessionRequestParams{
@@ -439,7 +439,7 @@ func TestWithdrawalSafetyNoInvariants(t *testing.T) {
 // TestFaultDetector ... Ensures that an alert is produced in the presence of a faulty L2Output root
 // on the L1 Optimism portal contract.
 func TestFaultDetector(t *testing.T) {
-	ts := e2e.CreateSysTestSuite(t)
+	ts := e2e.CreateSysTestSuite(t, "")
 	defer ts.Close()
 
 	// Generate transactor opts

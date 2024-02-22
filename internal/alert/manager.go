@@ -23,10 +23,12 @@ type Manager interface {
 }
 
 // Config ... Alert manager configuration
+// SNSConfig is not part of the RoutingParams as we only support publishing to one SNS client
 type Config struct {
 	RoutingCfgPath          string
 	PagerdutyAlertEventsURL string
 	RoutingParams           *core.AlertRoutingParams
+	SNSConfig               *client.SNSConfig
 }
 
 // alertManager ... Alert manager implementation
@@ -52,12 +54,12 @@ func NewManager(ctx context.Context, cfg *Config, cm RoutingDirectory) Manager {
 
 	ctx, cancel := context.WithCancel(ctx)
 
+	// NOTE - Consider adding support for additional sns configurations
 	am := &alertManager{
-		ctx:       ctx,
-		cdHandler: NewCoolDownHandler(),
-		cfg:       cfg,
-		cm:        cm,
-
+		ctx:          ctx,
+		cdHandler:    NewCoolDownHandler(),
+		cfg:          cfg,
+		cm:           cm,
 		cancel:       cancel,
 		interpolator: new(Interpolator),
 		store:        NewStore(),
@@ -90,8 +92,8 @@ func (am *alertManager) handleSlackPost(alert core.Alert, policy *core.AlertPoli
 
 	// Create event trigger
 	event := &client.AlertEventTrigger{
-		Message:  am.interpolator.SlackMessage(alert, policy.Msg),
-		Severity: alert.Sev,
+		Message: am.interpolator.SlackMessage(alert, policy.Msg),
+		Alert:   alert,
 	}
 
 	for _, sc := range slackClients {
@@ -120,9 +122,8 @@ func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
 	}
 
 	event := &client.AlertEventTrigger{
-		Message:  am.interpolator.PagerDutyMessage(alert),
-		DedupKey: alert.PathID,
-		Severity: alert.Sev,
+		Message: am.interpolator.PagerDutyMessage(alert),
+		Alert:   alert,
 	}
 
 	for _, pdc := range pdClients {
@@ -135,10 +136,32 @@ func (am *alertManager) handlePagerDutyPost(alert core.Alert) error {
 			return fmt.Errorf("client %s could not post to pagerduty: %s", pdc.GetName(), resp.Message)
 		}
 
-		am.logger.Debug("Successfully posted to ", zap.Any("resp", resp))
+		am.logger.Debug("Successfully posted to PagerDuty", zap.Any("resp", resp))
 		am.metrics.RecordAlertGenerated(alert, core.PagerDuty, pdc.GetName())
 	}
 
+	return nil
+}
+
+func (am *alertManager) handleSNSPublish(alert core.Alert, policy *core.AlertPolicy) error {
+	event := &client.AlertEventTrigger{
+		Message: am.interpolator.SlackMessage(alert, policy.Msg),
+		Alert:   alert,
+	}
+
+	c := am.cm.GetSNSClient()
+
+	resp, err := c.PostEvent(am.ctx, event)
+	if err != nil {
+		return err
+	}
+
+	if resp.Status != core.SuccessStatus {
+		return fmt.Errorf("client %s could not post to sns: %s", c.GetName(), resp.Message)
+	}
+
+	am.logger.Debug("Successfully posted to SNS", zap.Any("resp", resp))
+	am.metrics.RecordAlertGenerated(alert, core.SNS, c.GetName())
 	return nil
 }
 
@@ -201,6 +224,10 @@ func (am *alertManager) HandleAlert(alert core.Alert, policy *core.AlertPolicy) 
 
 	if err := am.handlePagerDutyPost(alert); err != nil {
 		am.logger.Error("could not post to pagerduty", zap.Error(err))
+	}
+
+	if err := am.handleSNSPublish(alert, policy); err != nil {
+		am.logger.Error("could not publish to sns", zap.Error(err))
 	}
 }
 

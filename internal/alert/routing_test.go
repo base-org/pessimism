@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/base-org/pessimism/internal/alert"
+	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/config"
 	"github.com/base-org/pessimism/internal/core"
 	"github.com/stretchr/testify/assert"
@@ -13,6 +14,9 @@ import (
 func getCfg() *config.Config {
 	return &config.Config{
 		AlertConfig: &alert.Config{
+			SNSConfig: &client.SNSConfig{
+				TopicArn: "test",
+			},
 			RoutingParams: &core.AlertRoutingParams{
 				AlertRoutes: &core.SeverityMap{
 					Low: &core.AlertClientCfg{

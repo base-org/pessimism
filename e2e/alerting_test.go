@@ -3,6 +3,7 @@ package e2e_test
 import (
 	"context"
 	"math/big"
+
 	"testing"
 	"time"
 
@@ -17,11 +18,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	// These are localstack specific Topic ARNs that are used to test the SNS integration.
+	MultiDirectiveTopicArn = "arn:aws:sns:us-east-1:000000000000:multi-directive-test-topic"
+	CoolDownTopicArn       = "arn:aws:sns:us-east-1:000000000000:alert-cooldown-test-topic"
+)
+
 // TestMultiDirectiveRouting ... Tests the E2E flow of a contract event heuristic with high priority alerts all
 // necessary destinations
 func TestMultiDirectiveRouting(t *testing.T) {
 
-	ts := e2e.CreateSysTestSuite(t)
+	ts := e2e.CreateSysTestSuite(t, MultiDirectiveTopicArn)
+	defer ts.Close()
 
 	updateSig := "ConfigUpdate(uint256,uint8,bytes)"
 	alertMsg := "System config gas config updated"
@@ -73,6 +81,12 @@ func TestMultiDirectiveRouting(t *testing.T) {
 		return height != nil && height.Uint64() > receipt.BlockNumber.Uint64(), nil
 	}))
 
+	snsMessages, err := e2e.GetSNSMessages(ts.AppCfg.AlertConfig.SNSConfig.Endpoint, "multi-directive-test-queue")
+	require.NoError(t, err)
+
+	assert.Len(t, snsMessages.Messages, 1, "Incorrect number of SNS messages sent")
+	assert.Contains(t, *snsMessages.Messages[0].Body, "contract_event", "System contract event alert was not sent")
+
 	slackPosts := ts.TestSlackSvr.SlackAlerts()
 	pdPosts := ts.TestPagerDutyServer.PagerDutyAlerts()
 
@@ -90,7 +104,7 @@ func TestMultiDirectiveRouting(t *testing.T) {
 // balance enforcement heuristic session on L2 network with a cooldown.
 func TestCoolDown(t *testing.T) {
 
-	ts := e2e.CreateSysTestSuite(t)
+	ts := e2e.CreateSysTestSuite(t, CoolDownTopicArn)
 	defer ts.Close()
 
 	alice := ts.Cfg.Secrets.Addresses().Alice
@@ -149,7 +163,7 @@ func TestCoolDown(t *testing.T) {
 	receipt, err := wait.ForReceipt(context.Background(), ts.L2Client, drainAliceTx.Hash(), types.ReceiptStatusSuccessful)
 	require.NoError(t, err)
 
-	require.NoError(t, wait.For(context.Background(), 500*time.Millisecond, func() (bool, error) {
+	require.NoError(t, wait.For(context.Background(), 1000*time.Millisecond, func() (bool, error) {
 		id := ids[0].PathID
 		height, err := ts.Subsystems.PathHeight(id)
 		if err != nil {
@@ -162,6 +176,11 @@ func TestCoolDown(t *testing.T) {
 	// Check that the balance enforcement was triggered using the mocked server cache.
 	posts := ts.TestSlackSvr.SlackAlerts()
 
+	sqsMessages, err := e2e.GetSNSMessages(ts.AppCfg.AlertConfig.SNSConfig.Endpoint, "alert-cooldown-test-queue")
+	assert.NoError(t, err)
+	assert.Len(t, sqsMessages.Messages, 1, "Incorrect number of SNS messages sent")
+	assert.Contains(t, *sqsMessages.Messages[0].Body, "balance_enforcement", "Balance enforcement alert was not sent")
+
 	require.Equal(t, 1, len(posts), "No balance enforcement alert was sent")
 	assert.Contains(t, posts[0].Text, "balance_enforcement", "Balance enforcement alert was not sent")
 	assert.Contains(t, posts[0].Text, alertMsg)
@@ -170,4 +189,5 @@ func TestCoolDown(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	posts = ts.TestSlackSvr.SlackAlerts()
 	assert.Equal(t, 1, len(posts), "No alerts should be sent after the transaction is sent")
+
 }

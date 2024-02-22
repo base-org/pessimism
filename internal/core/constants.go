@@ -172,6 +172,7 @@ type AlertDestination uint8
 const (
 	Slack AlertDestination = iota + 1
 	PagerDuty
+	SNS
 	ThirdParty
 )
 
@@ -182,6 +183,8 @@ func (ad AlertDestination) String() string {
 		return "slack"
 	case PagerDuty:
 		return "pager_duty"
+	case SNS:
+		return "sns"
 	case ThirdParty:
 		return "third_party"
 	default:
