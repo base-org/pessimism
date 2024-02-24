@@ -14,7 +14,7 @@ please advise the documentation.
 [![GitHub commit activity](https://img.shields.io/github/commit-activity/w/base-org/pessimism)](https://github.com/base-org/pessimism/graphs/contributors)
 [![GitHub Stars](https://img.shields.io/github/stars/base-org/pessimism.svg)](https://github.com/base-org/pessimism/stargazers)
 ![GitHub repo size](https://img.shields.io/github/repo-size/base-org/pessimism)
-[![GitHub](https://img.shields.io/github/license/base-org/pessimism?color=blue)](https://github.com/base-org/pessimism/blob/main/LICENSE)
+[![GitHub](https://img.shields.io/github/license/base-org/pessimism?color=blue)](/LICENSE)
 
 <!-- Badge row 2 - detailed status -->
 
