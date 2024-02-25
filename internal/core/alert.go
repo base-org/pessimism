@@ -136,11 +136,14 @@ type SeverityMap struct {
 type AlertClientCfg struct {
 	Slack     map[string]*AlertConfig `yaml:"slack"`
 	PagerDuty map[string]*AlertConfig `yaml:"pagerduty"`
+	Telegram  map[string]*AlertConfig `yaml:"telegram"`
 }
 
 // AlertConfig ... The config for an alert client
 type AlertConfig struct {
-	URL            StringFromEnv `yaml:"url"`
-	Channel        StringFromEnv `yaml:"channel"`
-	IntegrationKey StringFromEnv `yaml:"integration_key"`
+	URL              StringFromEnv `yaml:"url"`
+	Channel          StringFromEnv `yaml:"channel"`
+	IntegrationKey   StringFromEnv `yaml:"integration_key"`
+	TelegramBotToken StringFromEnv `yaml:"telegram_bot_token"`
+	TelegramChatID   StringFromEnv `yaml:"telegram_chat_id"`
 }
