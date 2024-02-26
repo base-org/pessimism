@@ -14,14 +14,18 @@ type RoutingDirectory interface {
 	InitializeRouting(params *core.AlertRoutingParams)
 	SetPagerDutyClients([]client.PagerDutyClient, core.Severity)
 	SetSlackClients([]client.SlackClient, core.Severity)
+	GetSNSClient() client.SNSClient
+	SetSNSClient(client.SNSClient)
 }
 
 // routingDirectory ... Routing directory implementation
 // NOTE: This implementation works for now, but if we add more routing clients in the future,
 // we should consider refactoring this to be more generic
+// Only one SNS client is needed in most cases. If we need to support multiple SNS clients, we can refactor this
 type routingDirectory struct {
 	pagerDutyClients map[core.Severity][]client.PagerDutyClient
 	slackClients     map[core.Severity][]client.SlackClient
+	snsClient        client.SNSClient
 	cfg              *Config
 }
 
@@ -31,6 +35,7 @@ func NewRoutingDirectory(cfg *Config) RoutingDirectory {
 		cfg:              cfg,
 		pagerDutyClients: make(map[core.Severity][]client.PagerDutyClient),
 		slackClients:     make(map[core.Severity][]client.SlackClient),
+		snsClient:        nil,
 	}
 }
 
@@ -49,6 +54,14 @@ func (rd *routingDirectory) SetSlackClients(clients []client.SlackClient, sev co
 	copy(rd.slackClients[sev][0:], clients)
 }
 
+func (rd *routingDirectory) GetSNSClient() client.SNSClient {
+	return rd.snsClient
+}
+
+func (rd *routingDirectory) SetSNSClient(client client.SNSClient) {
+	rd.snsClient = client
+}
+
 // SetPagerDutyClients ... Sets the pager duty clients for the given severity level
 func (rd *routingDirectory) SetPagerDutyClients(clients []client.PagerDutyClient, sev core.Severity) {
 	copy(rd.pagerDutyClients[sev][0:], clients)
@@ -56,6 +69,7 @@ func (rd *routingDirectory) SetPagerDutyClients(clients []client.PagerDutyClient
 
 // InitializeRouting ... Parses alert routing parameters for each severity level
 func (rd *routingDirectory) InitializeRouting(params *core.AlertRoutingParams) {
+	rd.snsClient = client.NewSNSClient(rd.cfg.SNSConfig, "sns")
 	if params != nil {
 		rd.paramsToRouteDirectory(params.AlertRoutes.Low, core.LOW)
 		rd.paramsToRouteDirectory(params.AlertRoutes.Medium, core.MEDIUM)

@@ -6,6 +6,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/base-org/pessimism/internal/alert"
 	"github.com/base-org/pessimism/internal/api/server"
 	"github.com/base-org/pessimism/internal/app"
@@ -19,11 +22,11 @@ import (
 	"github.com/base-org/pessimism/internal/state"
 	"github.com/base-org/pessimism/internal/subsystem"
 	ix_node "github.com/ethereum-optimism/optimism/indexer/node"
-	"github.com/golang/mock/gomock"
-
 	op_e2e "github.com/ethereum-optimism/optimism/op-e2e"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/golang/mock/gomock"
+	"go.uber.org/zap"
 )
 
 // SysTestSuite ... Stores all the information needed to run an e2e system test
@@ -51,7 +54,7 @@ type SysTestSuite struct {
 }
 
 // CreateSysTestSuite ... Creates a new SysTestSuite
-func CreateSysTestSuite(t *testing.T) *SysTestSuite {
+func CreateSysTestSuite(t *testing.T, topicArn string) *SysTestSuite {
 	t.Log("Creating system test suite")
 	ctx := context.Background()
 	logging.New(core.Development)
@@ -112,11 +115,14 @@ func CreateSysTestSuite(t *testing.T) *SysTestSuite {
 
 	pagerdutyServer := NewTestPagerDutyServer("127.0.0.1", 0)
 
+	setAwsVars(t)
+
 	slackURL := fmt.Sprintf("http://127.0.0.1:%d", slackServer.Port)
 	pagerdutyURL := fmt.Sprintf("http://127.0.0.1:%d", pagerdutyServer.Port)
 
 	appCfg.AlertConfig.PagerdutyAlertEventsURL = pagerdutyURL
 	appCfg.AlertConfig.RoutingParams = DefaultRoutingParams(core.StringFromEnv(slackURL))
+	appCfg.AlertConfig.SNSConfig.TopicArn = topicArn
 
 	pess, kill, err := app.NewPessimismApp(ctx, appCfg)
 	if err != nil {
@@ -165,6 +171,9 @@ func DefaultTestConfig() *config.Config {
 		AlertConfig: &alert.Config{
 			PagerdutyAlertEventsURL: "",
 			RoutingCfgPath:          "",
+			SNSConfig: &client.SNSConfig{
+				Endpoint: "http://localhost:4566",
+			},
 		},
 		EngineConfig: &engine.Config{
 			WorkerCount: workerCount,
@@ -184,6 +193,52 @@ func DefaultTestConfig() *config.Config {
 			L1PollInterval: l1PollInterval,
 		},
 	}
+}
+
+func setAwsVars(t *testing.T) {
+	awsEnvVariables := map[string]string{
+		"AWS_REGION":            "us-east-1",
+		"AWS_SECRET_ACCESS_KEY": "test",
+		"AWS_ACCESS_KEY_ID":     "test",
+	}
+	for key, value := range awsEnvVariables {
+		if err := os.Setenv(key, value); err != nil {
+			t.Fatalf("Error setting %s environment variable: %s", key, err)
+		}
+	}
+}
+
+func GetSNSMessages(endpoint string, queueName string) (*sqs.ReceiveMessageOutput, error) {
+	sess, err := session.NewSession(&aws.Config{
+		Endpoint: aws.String(endpoint),
+	})
+	if err != nil {
+		logging.NoContext().Error("failed to create AWS session", zap.Error(err))
+		return nil, err
+	}
+
+	svc := sqs.New(sess)
+	urlResult, err := svc.GetQueueUrl(&sqs.GetQueueUrlInput{
+		QueueName: aws.String(queueName),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	queueURL := urlResult.QueueUrl
+	msgResult, err := svc.ReceiveMessage(&sqs.ReceiveMessageInput{
+		QueueUrl:            queueURL,
+		MaxNumberOfMessages: aws.Int64(10),
+		WaitTimeSeconds:     aws.Int64(5),
+		MessageAttributeNames: []*string{
+			aws.String(sqs.QueueAttributeNameAll),
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return msgResult, nil
 }
 
 // DefaultRoutingParams ... Returns a default routing params configuration for testing

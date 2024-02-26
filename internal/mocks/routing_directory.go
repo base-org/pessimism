@@ -49,6 +49,20 @@ func (mr *MockRoutingDirectoryMockRecorder) GetPagerDutyClients(arg0 interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPagerDutyClients", reflect.TypeOf((*MockRoutingDirectory)(nil).GetPagerDutyClients), arg0)
 }
 
+// GetSNSClient mocks base method.
+func (m *MockRoutingDirectory) GetSNSClient() client.SNSClient {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSNSClient")
+	ret0, _ := ret[0].(client.SNSClient)
+	return ret0
+}
+
+// GetSNSClient indicates an expected call of GetSNSClient.
+func (mr *MockRoutingDirectoryMockRecorder) GetSNSClient() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSNSClient", reflect.TypeOf((*MockRoutingDirectory)(nil).GetSNSClient))
+}
+
 // GetSlackClients mocks base method.
 func (m *MockRoutingDirectory) GetSlackClients(arg0 core.Severity) []client.SlackClient {
 	m.ctrl.T.Helper()
@@ -85,6 +99,18 @@ func (m *MockRoutingDirectory) SetPagerDutyClients(arg0 []client.PagerDutyClient
 func (mr *MockRoutingDirectoryMockRecorder) SetPagerDutyClients(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPagerDutyClients", reflect.TypeOf((*MockRoutingDirectory)(nil).SetPagerDutyClients), arg0, arg1)
+}
+
+// SetSNSClient mocks base method.
+func (m *MockRoutingDirectory) SetSNSClient(arg0 client.SNSClient) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetSNSClient", arg0)
+}
+
+// SetSNSClient indicates an expected call of SetSNSClient.
+func (mr *MockRoutingDirectoryMockRecorder) SetSNSClient(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetSNSClient", reflect.TypeOf((*MockRoutingDirectory)(nil).SetSNSClient), arg0)
 }
 
 // SetSlackClients mocks base method.

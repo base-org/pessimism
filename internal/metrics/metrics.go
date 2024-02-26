@@ -247,8 +247,9 @@ func (m *Metrics) RecordAlertGenerated(alert core.Alert, dest core.AlertDestinat
 	net := alert.PathID.Network().String()
 	h := alert.HT.String()
 	sev := alert.Sev.String()
+	id := alert.PathID.String()
 
-	m.AlertsGenerated.WithLabelValues(net, h, sev, dest.String(), clientName).Inc()
+	m.AlertsGenerated.WithLabelValues(net, h, id, sev, dest.String(), clientName).Inc()
 }
 
 func (m *Metrics) RecordNodeError(n core.Network) {
