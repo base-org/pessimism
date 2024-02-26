@@ -1,5 +1,5 @@
-name: hygeiene
-
+name: hygeine 
+ 
 on:
   push:
     branches: [ "master", "development" ]
