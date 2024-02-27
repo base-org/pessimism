@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,9 +29,10 @@ type telegramClient struct {
 	client *http.Client
 }
 
-func NewTelegramClient(cfg *TelegramConfig, name string) TelegramClient {
+func NewTelegramClient(cfg *TelegramConfig, name string) (TelegramClient, error) {
 	if cfg.Token == "" {
-		logging.NoContext().Warn("No Telegram token provided")
+		logging.NoContext().Warn("No Telegram bot token provided")
+		return nil, errors.New("No Telegram bot token was provided")
 	}
 
 	return &telegramClient{
@@ -38,7 +40,7 @@ func NewTelegramClient(cfg *TelegramConfig, name string) TelegramClient {
 		chatID: cfg.ChatID,
 		name:   name,
 		client: &http.Client{},
-	}
+	}, nil
 }
 
 type TelegramPayload struct {

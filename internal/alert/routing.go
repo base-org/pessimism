@@ -3,8 +3,11 @@
 package alert
 
 import (
+	"go.uber.org/zap"
+
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/logging"
 )
 
 // RoutingDirectory ... Interface for routing directory
@@ -126,7 +129,11 @@ func (rd *routingDirectory) paramsToRouteDirectory(acc *core.AlertClientCfg, sev
 				ChatID: cfg.ChatID.String(),
 				Token:  cfg.Token.String(),
 			}
-			client := client.NewTelegramClient(conf, name)
+			client, err := client.NewTelegramClient(conf, name)
+			if err != nil {
+				logging.NoContext().Error("Failed to create Telegram client", zap.String("name", name), zap.Error(err))
+				continue
+			}
 			rd.telegramClients[sev] = append(rd.telegramClients[sev], client)
 		}
 	}
