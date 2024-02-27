@@ -22,12 +22,13 @@ type TelegramConfig struct {
 }
 
 type telegramClient struct {
+	name   string
 	token  string
 	chatID string
 	client *http.Client
 }
 
-func NewTelegramClient(cfg *TelegramConfig) TelegramClient {
+func NewTelegramClient(cfg *TelegramConfig, name string) TelegramClient {
 	if cfg.Token == "" {
 		logging.NoContext().Warn("No Telegram token provided")
 	}
@@ -35,6 +36,7 @@ func NewTelegramClient(cfg *TelegramConfig) TelegramClient {
 	return &telegramClient{
 		token:  cfg.Token,
 		chatID: cfg.ChatID,
+		name:   name,
 		client: &http.Client{},
 	}
 }
@@ -101,5 +103,5 @@ func (tc *telegramClient) PostEvent(ctx context.Context, data *AlertEventTrigger
 }
 
 func (tc *telegramClient) GetName() string {
-	return "TelegramClient"
+	return tc.name
 }

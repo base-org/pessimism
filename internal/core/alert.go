@@ -141,9 +141,9 @@ type AlertClientCfg struct {
 
 // AlertConfig ... The config for an alert client
 type AlertConfig struct {
-	URL              StringFromEnv `yaml:"url"`
-	Channel          StringFromEnv `yaml:"channel"`
-	IntegrationKey   StringFromEnv `yaml:"integration_key"`
-	TelegramBotToken StringFromEnv `yaml:"telegram_bot_token"`
-	TelegramChatID   StringFromEnv `yaml:"telegram_chat_id"`
+	URL            StringFromEnv `yaml:"url"`
+	Channel        StringFromEnv `yaml:"channel"`
+	IntegrationKey StringFromEnv `yaml:"integration_key"`
+	Token          StringFromEnv `yaml:"telegram_bot_token"`
+	ChatID         StringFromEnv `yaml:"telegram_chat_id"`
 }

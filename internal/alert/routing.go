@@ -123,8 +123,8 @@ func (rd *routingDirectory) paramsToRouteDirectory(acc *core.AlertClientCfg, sev
 	if acc.Telegram != nil {
 		for name, cfg := range acc.Telegram {
 			conf := &client.TelegramConfig{
-				Bot:   cfg.Bot.String(),
-				Token: cfg.Token.String(),
+				ChatID: cfg.ChatID.String(),
+				Token:  cfg.Token.String(),
 			}
 			client := client.NewTelegramClient(conf, name)
 			rd.telegramClients[sev] = append(rd.telegramClients[sev], client)
