@@ -10,7 +10,7 @@ import (
 )
 
 func Test_AddressPreprocess(t *testing.T) {
-	isp := core.NewSessionParams()
+	isp := core.NewSessionParams(core.Layer2)
 	err := registry.ValidateAddressing(isp)
 	assert.Error(t, err, "failure should occur when no address is provided")
 
@@ -21,7 +21,7 @@ func Test_AddressPreprocess(t *testing.T) {
 }
 
 func Test_EventPreprocess(t *testing.T) {
-	isp := core.NewSessionParams()
+	isp := core.NewSessionParams(core.Layer1)
 	err := registry.ValidateTracking(isp)
 	assert.Error(t, err, "failure should occur when no address is provided")
 
@@ -35,7 +35,7 @@ func Test_EventPreprocess(t *testing.T) {
 }
 
 func TestUnsafeWithdrawPrepare(t *testing.T) {
-	isp := core.NewSessionParams()
+	isp := core.NewSessionParams(core.Layer1)
 
 	err := registry.WithdrawHeuristicPrep(isp)
 	assert.Error(t, err, "failure should occur when no l1_portal is provided")

@@ -11,19 +11,20 @@ import (
 )
 
 // HeuristicTable ... Heuristic table
-type HeuristicTable map[core.HeuristicType]*InvRegister
+type HeuristicTable map[core.HeuristicType]*Registry
 
-// InvRegister ... Heuristic register struct
-type InvRegister struct {
+type Registry struct {
 	PrepareValidate func(*core.SessionParams) error
 	Policy          core.ChainSubscription
 	InputType       core.TopicType
 	Constructor     func(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error)
 }
 
+type Invariant func() (bool, string)
+
 // NewHeuristicTable ... Initializer
 func NewHeuristicTable() HeuristicTable {
-	tbl := map[core.HeuristicType]*InvRegister{
+	tbl := map[core.HeuristicType]*Registry{
 		core.BalanceEnforcement: {
 			PrepareValidate: ValidateAddressing,
 			Policy:          core.BothNetworks,
@@ -89,7 +90,7 @@ func constructFaultDetector(ctx context.Context, isp *core.SessionParams) (heuri
 	return NewFaultDetector(ctx, cfg)
 }
 
-// constructWithdrawalSafety ... Constructs a large withdrawal heuristic instance
+// constructWithdrawalSafety ... Constructs a withdrawal safety heuristic instance
 func constructWithdrawalSafety(ctx context.Context, isp *core.SessionParams) (heuristic.Heuristic, error) {
 	cfg := &WithdrawalSafetyCfg{}
 	err := cfg.Unmarshal(isp)
@@ -107,7 +108,16 @@ func constructWithdrawalSafety(ctx context.Context, isp *core.SessionParams) (he
 		return nil, fmt.Errorf("invalid coefficient threshold supplied for withdrawal safety heuristic")
 	}
 
-	return NewWithdrawalSafetyHeuristic(ctx, cfg)
+	switch isp.Net {
+	case core.Layer1:
+		return NewL1WithdrawalSafety(ctx, cfg)
+
+	case core.Layer2:
+		return NewL2WithdrawalSafety(ctx, cfg)
+
+	default:
+		return nil, fmt.Errorf("invalid network supplied for withdrawal safety heuristic")
+	}
 }
 
 // ValidateTracking ... Ensures that an address and nested args exist in the session params
@@ -156,23 +166,26 @@ func WithdrawHeuristicPrep(cfg *core.SessionParams) error {
 		return err
 	}
 
-	_, err = cfg.Value(core.L2ToL1MessagePasser)
+	l2MsgPasser, err := cfg.Value(core.L2ToL1MessagePasser)
 	if err != nil {
 		return err
 	}
-
-	// Configure the session to inform the ETL to subscribe
-	// to withdrawal proof events from the L1Portal contract
-	cfg.SetValue(logging.AddrKey, l1Portal)
 
 	err = ValidateNoTopicsExist(cfg)
 	if err != nil {
 		return err
 	}
 
-	cfg.SetNestedArg(WithdrawalProvenEvent)
-	// TODO(#178) - Feat - Support WithdrawalProven processing in withdrawal_safety heuristic
-	// cfg.SetNestedArg(WithdrawalFinalEvent)
+	switch cfg.Net {
+	case core.Layer1:
+		cfg.SetValue(logging.AddrKey, l1Portal)
+		cfg.SetNestedArg(WithdrawalProvenEvent)
+		// cfg.SetNestedArg(WithdrawalFinalEvent)
+	case core.Layer2:
+		cfg.SetValue(logging.AddrKey, l2MsgPasser)
+		cfg.SetNestedArg(MessagePassed)
+	}
+
 	return nil
 }
 

@@ -49,7 +49,7 @@ func Test_EngineRelay(t *testing.T) {
 }
 
 func Test_SessionParams(t *testing.T) {
-	isp := core.NewSessionParams()
+	isp := core.NewSessionParams(core.Layer1)
 	assert.NotNil(t, isp, "SessionParams should not be nil")
 
 	isp.SetValue("tst", "tst")

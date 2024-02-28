@@ -102,6 +102,7 @@ const (
 
 // SessionParams ... Parameters used to initialize a heuristic session
 type SessionParams struct {
+	Net    Network
 	params map[string]any
 }
 
@@ -112,8 +113,9 @@ func (sp *SessionParams) Bytes() []byte {
 }
 
 // NewSessionParams ... Initializes heuristic session params
-func NewSessionParams() *SessionParams {
+func NewSessionParams(n Network) *SessionParams {
 	isp := &SessionParams{
+		Net:    n,
 		params: make(map[string]any, 0),
 	}
 	isp.params[NestedArgs] = []any{}

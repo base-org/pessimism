@@ -53,7 +53,7 @@ type SessionRequestParams struct {
 
 // Params ... Returns the heuristic session params
 func (hrp *SessionRequestParams) Params() *core.SessionParams {
-	isp := core.NewSessionParams()
+	isp := core.NewSessionParams(hrp.NetworkType())
 
 	for k, v := range hrp.SessionParams {
 		isp.SetValue(k, v)
