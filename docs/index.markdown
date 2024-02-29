@@ -11,6 +11,7 @@ Detect real-time threats on Op-stack compatible chains
   - [ETL Subsystem](../pessimism/architecture/etl)
   - [Engine Subsystem](../pessimism/architecture/risk-engine)
   - [Alerting Subsystem](../pessimism/architecture/alerting)
+- [Requirements][../pessimism/requirements]
 - [API Swaggerdoc](swaggerdoc.html)
 - [Heuristic Documentation](../pessimism/heuristics)
 - [Telemetry Documentation](../pessimism/telemetry)
