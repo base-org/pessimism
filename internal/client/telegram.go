@@ -17,6 +17,9 @@ type TelegramClient interface {
 	AlertClient
 }
 
+// TelegramConfig holds configuration details for creating a new Telegram client.
+// Token: The Bot Token provided by BotFather upon creating a new bot (https://core.telegram.org/bots/api).
+// ChatID: Unique identifier for the target chat (https://core.telegram.org/constructor/channel).
 type TelegramConfig struct {
 	Token  string
 	ChatID string
@@ -78,6 +81,7 @@ func (tc *telegramClient) PostEvent(ctx context.Context, data *AlertEventTrigger
 		return nil, err
 	}
 
+	// API endpoint "https://api.telegram.org/bot%s/sendMessage" is used to send messages (https://core.telegram.org/bots/api#sendmessage)
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", tc.token)
 	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(payloadBytes))
 	if err != nil {
