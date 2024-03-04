@@ -48,6 +48,7 @@ type pagerdutyClient struct {
 }
 
 // NewPagerDutyClient ... Initializer for PagerDuty client
+// Todo: implement error handling for client
 func NewPagerDutyClient(cfg *PagerDutyConfig, name string) PagerDutyClient {
 	if cfg.IntegrationKey == "" {
 		logging.NoContext().Warn("No PagerDuty integration key provided")

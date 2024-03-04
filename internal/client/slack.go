@@ -41,6 +41,7 @@ type slackClient struct {
 }
 
 // NewSlackClient ... Initializer
+// Todo: implement error handling for client
 func NewSlackClient(cfg *SlackConfig, name string) SlackClient {
 	if cfg.URL == "" {
 		logging.NoContext().Warn("No Slack webhook URL provided")
