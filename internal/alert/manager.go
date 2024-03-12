@@ -174,8 +174,8 @@ func (am *alertManager) handleTelegramPost(alert core.Alert, policy *core.AlertP
 
 	// Create Telegram event trigger
 	event := &client.AlertEventTrigger{
-		Message:  am.interpolator.TelegramMessage(alert, policy.Msg),
-		Severity: alert.Sev,
+		Message: am.interpolator.TelegramMessage(alert, policy.Msg),
+		Alert:   alert,
 	}
 
 	for _, tc := range telegramClients {
