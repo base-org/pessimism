@@ -27,7 +27,7 @@ func (s *subscribers) Publish(e core.Event) error {
 		}
 	}
 
-	// NOTE - Consider introducing a fail safe timeout to ensure that freezing on clogged chanel buffers is recognized
+	// NOTE - Consider introducing a fail safe timeout to ensure that freezing on clogged channel buffers is recognized
 	for _, channel := range s.subs {
 		channel <- e
 	}
@@ -36,7 +36,7 @@ func (s *subscribers) Publish(e core.Event) error {
 }
 
 func (s *subscribers) PublishBatch(dataSlice []core.Event) error {
-	// NOTE - Consider introducing a fail safe timeout to ensure that freezing on clogged chanel buffers is recognized
+	// NOTE - Consider introducing a fail safe timeout to ensure that freezing on clogged channel buffers is recognized
 	for _, data := range dataSlice {
 		// NOTE - Does it make sense to fail loudly here?
 
