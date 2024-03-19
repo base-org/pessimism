@@ -7,8 +7,8 @@ alertRoutes:
         channel: ""
     telegram:
       low_oncall:
-        telegram_bot_token: ""
-        telegram_chat_id: ""
+        bot_token: ""
+        chat_id: ""
 
   medium:
     slack:
@@ -21,8 +21,8 @@ alertRoutes:
         integration_key: ""
     telegram:
       medium_oncall:
-        telegram_bot_token: ""
-        telegram_chat_id: ""
+        bot_token: ""
+        chat_id: ""
 
   high:
     slack:
@@ -36,5 +36,5 @@ alertRoutes:
         integration_key: ""
     telegram:
       high_oncall:
-        telegrambot_token: ""
-        telegram_chat_id: ""
+        bot_token: ""
+        chat_id: ""

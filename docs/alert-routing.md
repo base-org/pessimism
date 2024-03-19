@@ -62,11 +62,9 @@ The AWS_ENDPOINT is optional and is primarily used for testing with localstack.
 ## Publishing to a Telegram Channel
 
 It's possible to publish alerts to a Telegram channel by adding the channel's
-ID and bot token to the `telegram_bot_token` and `telegram_bot_token`
+ID and bot token to the `chat_id` and `bot_token`
 variables in the `alerts-routing.` configuration file. Generate a bot token by leveraging the
 following [guide](https://core.telegram.org/bots#how-do-i-create-a-bot).
-
-> Note: Currently, Pessimism only support one Telegram channel to publish alerts to.
 
 ## PagerDuty Severity Mapping
 

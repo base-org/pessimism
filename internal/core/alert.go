@@ -144,6 +144,6 @@ type AlertConfig struct {
 	URL            StringFromEnv `yaml:"url"`
 	Channel        StringFromEnv `yaml:"channel"`
 	IntegrationKey StringFromEnv `yaml:"integration_key"`
-	Token          StringFromEnv `yaml:"telegram_bot_token"`
-	ChatID         StringFromEnv `yaml:"telegram_chat_id"`
+	Token          StringFromEnv `yaml:"bot_token"`
+	ChatID         StringFromEnv `yaml:"chat_id"`
 }

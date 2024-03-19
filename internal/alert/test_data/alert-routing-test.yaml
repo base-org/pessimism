@@ -4,6 +4,10 @@ alertRoutes:
       config:
         url: "test-low"
         channel: "#test-low"
+    telegram:
+      config:
+        bot_token: "test-low"
+        chat_id: "test-low"
 
   medium:
     slack:
@@ -13,6 +17,10 @@ alertRoutes:
     pagerduty:
       config:
         integration_key: "test-medium"
+      telegram:
+      config:
+        bot_token: "test-medium"
+        chat_id: "test-medium"
 
   high:
     slack:
@@ -22,9 +30,15 @@ alertRoutes:
       config_2:
         url: "test-high-2"
         channel: "#test-high-2"
-
     pagerduty:
       config:
         integration_key: "test-high-1"
       config_2:
         integration_key: "test-high-2"
+    telegram:
+      config:
+        bot_token: "test-high"
+        chat_id: "test-high"
+      config_2:
+        bot_token: "test-high-2"
+        chat_id: "test-high-2"
