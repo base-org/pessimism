@@ -39,6 +39,23 @@ const (
 	`
 )
 
+// Telegram message format
+const (
+	TelegramMsgFmt = `
+    *%s %s*
+
+    Network: *%s*
+    Severity: *%s*
+    Session UUID: *%s*
+
+    *Assessment Content:*
+    %s
+
+    *Message:*
+    %s
+    `
+)
+
 type Interpolator struct{}
 
 func NewInterpolator() *Interpolator {
@@ -61,4 +78,18 @@ func (*Interpolator) PagerDutyMessage(a core.Alert) string {
 		a.HT.String(),
 		a.Net.String(),
 		a.Content)
+}
+
+func (*Interpolator) TelegramMessage(a core.Alert, msg string) string {
+	sev := cases.Title(language.English).String(a.Sev.String())
+	ht := cases.Title(language.English).String(a.HT.String())
+
+	return fmt.Sprintf(TelegramMsgFmt,
+		a.Sev.Symbol(),
+		ht,
+		a.Net.String(),
+		sev,
+		a.HeuristicID.String(),
+		fmt.Sprintf(CodeBlockFmt, a.Content), // Reusing the Slack code block format
+		msg)
 }

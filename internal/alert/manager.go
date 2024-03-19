@@ -165,6 +165,35 @@ func (am *alertManager) handleSNSPublish(alert core.Alert, policy *core.AlertPol
 	return nil
 }
 
+func (am *alertManager) handleTelegramPost(alert core.Alert, policy *core.AlertPolicy) error {
+	telegramClients := am.cm.GetTelegramClients(alert.Sev)
+	if telegramClients == nil {
+		am.logger.Warn("No telegram clients defined for criticality", zap.Any("alert", alert))
+		return nil
+	}
+
+	// Create Telegram event trigger
+	event := &client.AlertEventTrigger{
+		Message: am.interpolator.TelegramMessage(alert, policy.Msg),
+		Alert:   alert,
+	}
+
+	for _, tc := range telegramClients {
+		resp, err := tc.PostEvent(am.ctx, event)
+		if err != nil {
+			return err
+		}
+
+		if resp.Status != core.SuccessStatus {
+			return fmt.Errorf("client %s could not post to telegram: %s", tc.GetName(), resp.Message)
+		}
+		am.logger.Debug("Successfully posted to Telegram", zap.String("resp", resp.Message))
+		am.metrics.RecordAlertGenerated(alert, core.Telegram, tc.GetName())
+	}
+
+	return nil
+}
+
 // EventLoop ... Event loop for alert manager subsystem
 func (am *alertManager) EventLoop() error {
 	ticker := time.NewTicker(time.Second * 1)
@@ -228,6 +257,10 @@ func (am *alertManager) HandleAlert(alert core.Alert, policy *core.AlertPolicy) 
 
 	if err := am.handleSNSPublish(alert, policy); err != nil {
 		am.logger.Error("could not publish to sns", zap.Error(err))
+	}
+
+	if err := am.handleTelegramPost(alert, policy); err != nil {
+		am.logger.Error("could not post to telegram", zap.Error(err))
 	}
 }
 

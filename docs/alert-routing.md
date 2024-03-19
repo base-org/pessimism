@@ -37,6 +37,7 @@ Pessimism currently supports the following alert destinations:
 | slack     | Sends alerts to a Slack channel                   |
 | pagerduty | Sends alerts to a PagerDuty service               |
 | sns       | Sends alerts to an SNS topic defined in .env file |
+| telegram  | Sends alerts to a Telegram channel                |
 
 ## Alert Severity
 
@@ -57,6 +58,13 @@ topic to the `.env` file. Ensure that you have AWS_REGION,
 topic. The ARN should be added to the `SNS_TOPIC_ARN` variable found in the `.env` file.
 The AWS_ENDPOINT is optional and is primarily used for testing with localstack.
 > Note: Currently, Pessimism only support one SNS topic to publish alerts to.
+
+## Publishing to a Telegram Channel
+
+It's possible to publish alerts to a Telegram channel by adding the channel's
+ID and bot token to the `chat_id` and `bot_token`
+variables in the `alerts-routing.` configuration file. Generate a bot token by leveraging the
+following [guide](https://core.telegram.org/bots#how-do-i-create-a-bot).
 
 ## PagerDuty Severity Mapping
 

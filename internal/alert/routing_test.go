@@ -26,6 +26,12 @@ func getCfg() *config.Config {
 								URL:     "test1",
 							},
 						},
+						Telegram: map[string]*core.AlertConfig{
+							"test1": {
+								Token:  "test1",
+								ChatID: "test1",
+							},
+						},
 					},
 					Medium: &core.AlertClientCfg{
 						PagerDuty: map[string]*core.AlertConfig{
@@ -37,6 +43,12 @@ func getCfg() *config.Config {
 							"test2": {
 								Channel: "test2",
 								URL:     "test2",
+							},
+						},
+						Telegram: map[string]*core.AlertConfig{
+							"test2": {
+								Token:  "test2",
+								ChatID: "test2",
 							},
 						},
 					},
@@ -57,6 +69,16 @@ func getCfg() *config.Config {
 							"test3": {
 								Channel: "test3",
 								URL:     "test3",
+							},
+						},
+						Telegram: map[string]*core.AlertConfig{
+							"test2": {
+								Token:  "test2",
+								ChatID: "test2",
+							},
+							"test3": {
+								Token:  "test3",
+								ChatID: "test3",
 							},
 						},
 					},
@@ -84,11 +106,14 @@ func Test_AlertClientCfgToClientMap(t *testing.T) {
 				cm.InitializeRouting(cfg.AlertConfig.RoutingParams)
 
 				assert.Len(t, cm.GetSlackClients(core.LOW), 1)
+				assert.Len(t, cm.GetTelegramClients(core.LOW), 1)
 				assert.Len(t, cm.GetPagerDutyClients(core.LOW), 0)
 				assert.Len(t, cm.GetSlackClients(core.MEDIUM), 1)
+				assert.Len(t, cm.GetTelegramClients(core.MEDIUM), 1)
 				assert.Len(t, cm.GetPagerDutyClients(core.MEDIUM), 1)
 				assert.Len(t, cm.GetSlackClients(core.HIGH), 2)
 				assert.Len(t, cm.GetPagerDutyClients(core.HIGH), 2)
+				assert.Len(t, cm.GetTelegramClients(core.HIGH), 2)
 			},
 		},
 		{
@@ -107,6 +132,27 @@ func Test_AlertClientCfgToClientMap(t *testing.T) {
 				assert.Len(t, cm.GetPagerDutyClients(core.MEDIUM), 0)
 				assert.Len(t, cm.GetSlackClients(core.HIGH), 2)
 				assert.Len(t, cm.GetPagerDutyClients(core.HIGH), 2)
+				assert.Len(t, cm.GetTelegramClients(core.HIGH), 2)
+			},
+		},
+		{
+			name:        "Test AlertClientCfgToClientMap Telegram Nil",
+			description: "Test AlertClientCfgToClientMap doesn't fail when telegram is nil",
+			testLogic: func(t *testing.T) {
+				cfg := getCfg()
+				cfg.AlertConfig.RoutingParams.AlertRoutes.Medium.Telegram = nil
+				cm := alert.NewRoutingDirectory(cfg.AlertConfig)
+				assert.NotNil(t, cm, "client map is nil")
+
+				cm.InitializeRouting(cfg.AlertConfig.RoutingParams)
+				assert.Len(t, cm.GetSlackClients(core.LOW), 1)
+				assert.Len(t, cm.GetPagerDutyClients(core.LOW), 0)
+				assert.Len(t, cm.GetTelegramClients(core.MEDIUM), 0)
+				assert.Len(t, cm.GetSlackClients(core.MEDIUM), 1)
+				assert.Len(t, cm.GetPagerDutyClients(core.MEDIUM), 1)
+				assert.Len(t, cm.GetSlackClients(core.HIGH), 2)
+				assert.Len(t, cm.GetPagerDutyClients(core.HIGH), 2)
+				assert.Len(t, cm.GetTelegramClients(core.HIGH), 2)
 			},
 		},
 		{
@@ -125,6 +171,7 @@ func Test_AlertClientCfgToClientMap(t *testing.T) {
 				assert.Len(t, cm.GetPagerDutyClients(core.MEDIUM), 1)
 				assert.Len(t, cm.GetSlackClients(core.HIGH), 2)
 				assert.Len(t, cm.GetPagerDutyClients(core.HIGH), 2)
+				assert.Len(t, cm.GetTelegramClients(core.HIGH), 2)
 			},
 		},
 		{
@@ -142,10 +189,13 @@ func Test_AlertClientCfgToClientMap(t *testing.T) {
 
 				assert.Len(t, cm.GetSlackClients(core.LOW), 0)
 				assert.Len(t, cm.GetPagerDutyClients(core.LOW), 0)
+				assert.Len(t, cm.GetTelegramClients(core.LOW), 0)
 				assert.Len(t, cm.GetSlackClients(core.MEDIUM), 0)
 				assert.Len(t, cm.GetPagerDutyClients(core.MEDIUM), 0)
+				assert.Len(t, cm.GetTelegramClients(core.MEDIUM), 0)
 				assert.Len(t, cm.GetSlackClients(core.HIGH), 0)
 				assert.Len(t, cm.GetPagerDutyClients(core.HIGH), 0)
+				assert.Len(t, cm.GetTelegramClients(core.HIGH), 0)
 			},
 		},
 	}

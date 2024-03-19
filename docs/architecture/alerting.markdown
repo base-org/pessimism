@@ -29,11 +29,13 @@ subgraph AM["Alerting Manager"]
     EL --> |Submit alert|SR["SeverityRouter"]
     SR --> SH["Slack"]
     SR --> PH["PagerDuty"]
+    SR --> TH["Telegram"]
     SR --> CPH["CounterParty Handler"]
 
 end
 CPH --> |"HTTP POST"|TPH["Third Party API"]
 SH --> |"HTTP POST"|SlackAPI("Slack Webhook API")
+TH --> |"HTTP POST"|TelegramBotAPI("Telegram Bot API")
 PH --> |"HTTP POST"|PagerDutyAPI("PagerDuty API")
 
 </div>
@@ -78,6 +80,8 @@ Done! You should now see any generated alerts being forwarded to your specified 
 #### PagerDuty
 
 The PagerDuty alert destination is a configurable destination that allows alerts to be sent to a specific PagerDuty services via the use of integration keys. Pessimism also uses the UUID associated with an alert as a deduplication key for PagerDuty. This is done to ensure that PagerDuty will not be spammed with duplicate or incidents.
+
+#### Telegram
 
 ### Alert CoolDowns
 

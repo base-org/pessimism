@@ -5,15 +5,24 @@ alertRoutes:
       low_oncall:
         url: ""
         channel: ""
+    telegram:
+      low_oncall:
+        bot_token: ""
+        chat_id: ""
 
   medium:
     slack:
       medium_oncall:
         url: ""
         channel: ""
-    medium_oncall:
+    pagerduty:
+      medium_oncall:
       config:
         integration_key: ""
+    telegram:
+      medium_oncall:
+        bot_token: ""
+        chat_id: ""
 
   high:
     slack:
@@ -25,3 +34,7 @@ alertRoutes:
         integration_key: ${MY_INTEGRATION_KEY}
       medium_oncall:
         integration_key: ""
+    telegram:
+      high_oncall:
+        bot_token: ""
+        chat_id: ""
