@@ -53,7 +53,7 @@ func TestEventLoop(t *testing.T) {
 					_ = am.Shutdown()
 				}()
 
-				ingress := am.Transit()
+				ingress := am.Ingress()
 
 				cm.SetSNSClient(sns)
 				cm.SetSlackClients([]client.SlackClient{mocks.NewMockSlackClient(c)}, core.LOW)
@@ -117,7 +117,7 @@ func TestEventLoop(t *testing.T) {
 					_ = am.Shutdown()
 				}()
 
-				ingress := am.Transit()
+				ingress := am.Ingress()
 
 				cm.SetPagerDutyClients([]client.PagerDutyClient{mocks.NewMockPagerDutyClient(c)}, core.MEDIUM)
 				cm.SetSNSClient(sns)
@@ -181,7 +181,7 @@ func TestEventLoop(t *testing.T) {
 					_ = am.Shutdown()
 				}()
 
-				ingress := am.Transit()
+				ingress := am.Ingress()
 
 				cm.SetSlackClients([]client.SlackClient{mocks.NewMockSlackClient(c), mocks.NewMockSlackClient(c)}, core.HIGH)
 				cm.SetPagerDutyClients([]client.PagerDutyClient{mocks.NewMockPagerDutyClient(c), mocks.NewMockPagerDutyClient(c)}, core.HIGH)
