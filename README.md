@@ -1,6 +1,6 @@
 # pessimism
 
-*As of May 28, 2024, Pessimism has been deprecated and is no longer being actively maintained*
+### As of May 28, 2024, Pessimism has been deprecated and is no longer being actively maintained
 
 ## Because you can't always be optimistic
 
