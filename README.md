@@ -1,5 +1,7 @@
 # pessimism
 
+### As of May 28, 2024, Pessimism has been deprecated and is no longer being actively maintained
+
 ## Because you can't always be optimistic
 
 _Pessimism_ is a public good monitoring service that allows for [OP Stack](https://stack.optimism.io/)
