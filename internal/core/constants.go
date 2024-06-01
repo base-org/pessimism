@@ -174,6 +174,7 @@ const (
 	PagerDuty
 	SNS
 	ThirdParty
+	Telegram
 )
 
 // String ... Converts an alerting destination type to a string
@@ -185,6 +186,8 @@ func (ad AlertDestination) String() string {
 		return "pager_duty"
 	case SNS:
 		return "sns"
+	case Telegram:
+		return "telegram"
 	case ThirdParty:
 		return "third_party"
 	default:
@@ -199,6 +202,8 @@ func StringToAlertingDestType(stringType string) AlertDestination {
 		return Slack
 	case "pager_duty":
 		return PagerDuty
+	case "telegram":
+		return Telegram
 	case "third_party":
 		return ThirdParty
 	}

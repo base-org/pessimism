@@ -3,19 +3,24 @@
 package alert
 
 import (
+	"go.uber.org/zap"
+
 	"github.com/base-org/pessimism/internal/client"
 	"github.com/base-org/pessimism/internal/core"
+	"github.com/base-org/pessimism/internal/logging"
 )
 
 // RoutingDirectory ... Interface for routing directory
 type RoutingDirectory interface {
 	GetPagerDutyClients(sev core.Severity) []client.PagerDutyClient
 	GetSlackClients(sev core.Severity) []client.SlackClient
+	GetTelegramClients(sev core.Severity) []client.TelegramClient
 	InitializeRouting(params *core.AlertRoutingParams)
 	SetPagerDutyClients([]client.PagerDutyClient, core.Severity)
 	SetSlackClients([]client.SlackClient, core.Severity)
 	GetSNSClient() client.SNSClient
 	SetSNSClient(client.SNSClient)
+	SetTelegramClients([]client.TelegramClient, core.Severity)
 }
 
 // routingDirectory ... Routing directory implementation
@@ -26,6 +31,7 @@ type routingDirectory struct {
 	pagerDutyClients map[core.Severity][]client.PagerDutyClient
 	slackClients     map[core.Severity][]client.SlackClient
 	snsClient        client.SNSClient
+	telegramClients  map[core.Severity][]client.TelegramClient
 	cfg              *Config
 }
 
@@ -36,6 +42,7 @@ func NewRoutingDirectory(cfg *Config) RoutingDirectory {
 		pagerDutyClients: make(map[core.Severity][]client.PagerDutyClient),
 		slackClients:     make(map[core.Severity][]client.SlackClient),
 		snsClient:        nil,
+		telegramClients:  make(map[core.Severity][]client.TelegramClient),
 	}
 }
 
@@ -47,6 +54,11 @@ func (rd *routingDirectory) GetPagerDutyClients(sev core.Severity) []client.Page
 // GetSlackClients ... Returns the slack clients for the given severity level
 func (rd *routingDirectory) GetSlackClients(sev core.Severity) []client.SlackClient {
 	return rd.slackClients[sev]
+}
+
+// GetTelegramClients ... Returns the telegram clients for the given severity level
+func (rd *routingDirectory) GetTelegramClients(sev core.Severity) []client.TelegramClient {
+	return rd.telegramClients[sev]
 }
 
 // SetSlackClients ... Sets the slack clients for the given severity level
@@ -65,6 +77,12 @@ func (rd *routingDirectory) SetSNSClient(client client.SNSClient) {
 // SetPagerDutyClients ... Sets the pager duty clients for the given severity level
 func (rd *routingDirectory) SetPagerDutyClients(clients []client.PagerDutyClient, sev core.Severity) {
 	copy(rd.pagerDutyClients[sev][0:], clients)
+}
+
+// SetTelegramClients ... Sets the telegram clients for the given severity level
+func (rd *routingDirectory) SetTelegramClients(clients []client.TelegramClient, sev core.Severity) {
+	rd.telegramClients[sev] = make([]client.TelegramClient, len(clients))
+	copy(rd.telegramClients[sev], clients)
 }
 
 // InitializeRouting ... Parses alert routing parameters for each severity level
@@ -102,6 +120,21 @@ func (rd *routingDirectory) paramsToRouteDirectory(acc *core.AlertClientCfg, sev
 			}
 			client := client.NewPagerDutyClient(conf, name)
 			rd.pagerDutyClients[sev] = append(rd.pagerDutyClients[sev], client)
+		}
+	}
+
+	if acc.Telegram != nil {
+		for name, cfg := range acc.Telegram {
+			conf := &client.TelegramConfig{
+				Token:  cfg.Token.String(),
+				ChatID: cfg.ChatID.String(),
+			}
+			client, err := client.NewTelegramClient(conf, name)
+			if err != nil {
+				logging.NoContext().Error("Failed to create Telegram client", zap.String("name", name), zap.Error(err))
+				continue
+			}
+			rd.telegramClients[sev] = append(rd.telegramClients[sev], client)
 		}
 	}
 }

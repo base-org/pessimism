@@ -35,7 +35,7 @@ To use the template, run the following command(s):
 
 1. Create local config file (`config.env`) to store all necessary environmental variables. There's already an example `config.env.template` in the repo that stores default env vars.
 
-2. [Download](https://go.dev/doc/install) or upgrade to `golang 1.19`.
+2. [Download](https://go.dev/doc/install) or upgrade to `golang 1.21`.
 
 3. Install all project golang dependencies by running `go mod download`.
 
