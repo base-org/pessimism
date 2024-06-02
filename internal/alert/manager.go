@@ -17,7 +17,7 @@ import (
 // Manager ... Interface for alert manager
 type Manager interface {
 	AddSession(core.UUID, *core.AlertPolicy) error
-	Transit() chan core.Alert
+	Ingress() chan core.Alert
 
 	core.Subsystem
 }
@@ -76,9 +76,8 @@ func (am *alertManager) AddSession(id core.UUID, policy *core.AlertPolicy) error
 	return am.store.AddAlertPolicy(id, policy)
 }
 
-// Transit ... Returns inter-subsystem transit channel for receiving alerts
-// TODO - Rename this to ingress()
-func (am *alertManager) Transit() chan core.Alert {
+// Ingress ... Returns inter-subsystem transit channel for receiving alerts
+func (am *alertManager) Ingress() chan core.Alert {
 	return am.alertTransit
 }
 
